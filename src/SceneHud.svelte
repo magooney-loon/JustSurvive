@@ -2,29 +2,43 @@
 	import { fade } from 'svelte/transition';
 	import { stageState } from './stage.svelte.js';
 	import { settingsState } from './settings.svelte.js';
-	import HomeHud from '$lib/HomeHud.svelte';
-	import GalaxyHud from '$lib/GalaxyHud.svelte';
+	import MenuHud from '$lib/MenuHud.svelte';
+	import LobbyHud from '$lib/LobbyHud.svelte';
+	import GameHud from '$lib/GameHud.svelte';
+	import GameOverHud from '$lib/GameOverHud.svelte';
+	import LeaderboardHud from '$lib/LeaderboardHud.svelte';
 	import Settings from '$lib/Settings.svelte';
-	import WelcomeModal from '$lib/WelcomeModal.svelte';
 </script>
 
 <!-- HTML overlay — rendered as a sibling to <Canvas> in App.svelte -->
-<WelcomeModal />
-
 {#if settingsState.general.uiVisible}
 	<div
 		transition:fade={{ duration: 150 }}
 		style="position: absolute; inset: 0; pointer-events: none;"
 	>
 		<div style="position: relative; width: 100%; height: 100%; pointer-events: none;">
+			{#if stageState.currentStage === 'menu'}
+				<div style="pointer-events: auto;"><MenuHud /></div>
+			{/if}
+
+			{#if stageState.currentStage === 'lobby'}
+				<div style="pointer-events: auto;"><LobbyHud /></div>
+			{/if}
+
+			{#if stageState.currentStage === 'game'}
+				<div style="pointer-events: auto;"><GameHud /></div>
+			{/if}
+
+			{#if stageState.currentStage === 'game_over'}
+				<div style="pointer-events: auto;"><GameOverHud /></div>
+			{/if}
+
+			{#if stageState.currentStage === 'leaderboard'}
+				<div style="pointer-events: auto;"><LeaderboardHud /></div>
+			{/if}
+
 			{#if stageState.currentStage === 'settings'}
 				<div style="pointer-events: auto;"><Settings /></div>
-			{/if}
-			{#if stageState.currentStage === 'home'}
-				<div style="pointer-events: auto;"><HomeHud /></div>
-			{/if}
-			{#if stageState.currentStage === 'galaxy'}
-				<div style="pointer-events: auto;"><GalaxyHud /></div>
 			{/if}
 		</div>
 	</div>

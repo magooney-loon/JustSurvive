@@ -2,7 +2,7 @@ import type { CameraControlsRef } from '@threlte/extras';
 import { soundActions } from './Sound.svelte';
 import { settingsState, log } from './settings.svelte.js';
 
-export type StageType = 'settings' | 'home' | 'galaxy';
+export type StageType = 'menu' | 'lobby' | 'game' | 'game_over' | 'leaderboard' | 'settings';
 
 export type StageConfig = {
 	id: StageType;
@@ -13,33 +13,61 @@ export type StageConfig = {
 
 export const STAGES: StageConfig[] = [
 	{
-		id: 'home',
-		label: 'Home',
+		id: 'menu',
+		label: 'Menu',
 		icon: 'mdiHome',
-		camera(controls, animated) {
-			controls.reset(animated);
-			controls.moveTo(0, 1.8, 0, animated);
-		}
+		camera: (controls, animated) => {
+			// Cinematic forest vista — adjust values in Phase 3 art pass
+			controls.setTarget(0, 0, 0, animated);
+			controls.setPosition(0, 8, 20, animated);
+		},
 	},
 	{
-		id: 'galaxy',
-		label: 'Galaxy',
-		icon: 'mdiEarth',
-		camera(controls, animated) {
-			controls.reset(animated);
-			controls.moveTo(0, 7.2, 0, animated);
-			controls.lookInDirectionOf(0, 10, -20, animated);
-			controls.zoomTo(0.27, animated);
-		}
+		id: 'lobby',
+		label: 'Lobby',
+		icon: 'mdiAccountGroup',
+		camera: (controls, animated) => {
+			controls.setTarget(0, 0, 0, animated);
+			controls.setPosition(0, 8, 20, animated);
+		},
+	},
+	{
+		id: 'game',
+		label: 'Game',
+		icon: 'mdiRun',
+		camera: (controls, animated) => {
+			// Placeholder — overridden by follow-cam in Phase 3
+			controls.setTarget(0, 2, 0, animated);
+			controls.setPosition(0, 6, 12, animated);
+		},
+	},
+	{
+		id: 'game_over',
+		label: 'Game Over',
+		icon: 'mdiSkull',
+		camera: (controls, animated) => {
+			controls.setTarget(0, 0, 0, animated);
+			controls.setPosition(5, 4, 15, animated);
+		},
+	},
+	{
+		id: 'leaderboard',
+		label: 'Leaderboard',
+		icon: 'mdiTrophy',
+		camera: (controls, animated) => {
+			controls.setTarget(0, 0, 0, animated);
+			controls.setPosition(0, 8, 20, animated);
+		},
 	},
 	{
 		id: 'settings',
 		label: 'Settings',
 		icon: 'mdiCog',
-		camera(controls, animated) {
-			controls.reset(animated);
-		}
-	}
+		camera: (controls, animated) => {
+			controls.setTarget(0, 0, 0, animated);
+			controls.setPosition(0, 8, 20, animated);
+		},
+	},
 ];
 
 export interface StageState {
@@ -51,7 +79,7 @@ export interface StageState {
 let cameraControls = $state<CameraControlsRef | undefined>(undefined);
 
 export const stageState = $state<StageState>({
-	currentStage: 'home',
+	currentStage: 'menu',
 	previousStage: null,
 	isTransitioning: false
 });
@@ -74,16 +102,28 @@ export const stageActions = {
 		applyCamera(stage);
 	},
 
+	goToMenu() {
+		this.setStage('menu');
+	},
+
+	goToLobby() {
+		this.setStage('lobby');
+	},
+
+	goToGame() {
+		this.setStage('game');
+	},
+
+	goToGameOver() {
+		this.setStage('game_over');
+	},
+
+	goToLeaderboard() {
+		this.setStage('leaderboard');
+	},
+
 	goToSettings() {
 		this.setStage('settings');
-	},
-
-	goToHome() {
-		this.setStage('home');
-	},
-
-	goToGalaxy() {
-		this.setStage('galaxy');
 	},
 
 	goBack() {
