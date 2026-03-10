@@ -8,9 +8,66 @@ import {
   t as __t,
   type AlgebraicTypeType as __AlgebraicTypeType,
   type Infer as __Infer,
-} from 'spacetimedb';
+} from "spacetimedb";
 
-export const Person = __t.object('Person', {
-  name: __t.string(),
+export const GameSession = __t.object("GameSession", {
+  id: __t.u64(),
+  lobbyId: __t.u64(),
+  status: __t.string(),
+  startedAt: __t.timestamp(),
+  endedAt: __t.option(__t.timestamp()),
+  dayPhase: __t.string(),
+  cycleNumber: __t.u64(),
+  phaseStartedAt: __t.timestamp(),
+  fogActive: __t.bool(),
+  mapSeed: __t.u64(),
 });
-export type Person = __Infer<typeof Person>;
+export type GameSession = __Infer<typeof GameSession>;
+
+export const Lobby = __t.object("Lobby", {
+  id: __t.u64(),
+  hostIdentity: __t.identity(),
+  code: __t.string(),
+  isPublic: __t.bool(),
+  status: __t.string(),
+  playerCount: __t.u64(),
+  maxPlayers: __t.u64(),
+  createdAt: __t.timestamp(),
+});
+export type Lobby = __Infer<typeof Lobby>;
+
+export const LobbyCountdown = __t.object("LobbyCountdown", {
+  scheduledId: __t.u64(),
+  scheduledAt: __t.scheduleAt(),
+  lobbyId: __t.u64(),
+});
+export type LobbyCountdown = __Infer<typeof LobbyCountdown>;
+
+export const LobbyPlayer = __t.object("LobbyPlayer", {
+  id: __t.u64(),
+  lobbyId: __t.u64(),
+  playerIdentity: __t.identity(),
+  playerName: __t.string(),
+  classChoice: __t.string(),
+  isReady: __t.bool(),
+  joinedAt: __t.timestamp(),
+});
+export type LobbyPlayer = __Infer<typeof LobbyPlayer>;
+
+export const PlayerState = __t.object("PlayerState", {
+  id: __t.u64(),
+  sessionId: __t.u64(),
+  playerIdentity: __t.identity(),
+  classChoice: __t.string(),
+  hp: __t.u64(),
+  maxHp: __t.u64(),
+  stamina: __t.u64(),
+  maxStamina: __t.u64(),
+  posX: __t.i64(),
+  posY: __t.i64(),
+  posZ: __t.i64(),
+  status: __t.string(),
+  score: __t.u64(),
+});
+export type PlayerState = __Infer<typeof PlayerState>;
+

@@ -1,26 +1,74 @@
+import type { DbConnection } from './module_bindings/index.js';
+
 export type PlayerClass = 'spotter' | 'gunner' | 'tank' | 'healer';
 
 const gameState = $state({
 	currentLobbyId: null as bigint | null,
 	currentSessionId: null as bigint | null,
 	localPlayerClass: null as PlayerClass | null,
+	localPlayerName: 'Player',
+	error: null as string | null,
 });
 
 export { gameState };
 
+let conn: DbConnection | null = null;
+
 export const gameActions = {
-	setClass(cls: PlayerClass) {
+	init(connection: DbConnection) {
+		conn = connection;
+	},
+	setPlayerName(name: string) {
+		gameState.localPlayerName = name.trim() || 'Player';
+	},
+	async hostLobby(isPublic: boolean) {
+		if (!conn) return;
+		gameState.error = null;
+		try {
+			conn.reducers.createLobby({
+				playerName: gameState.localPlayerName,
+				classChoice: gameState.localPlayerClass ?? '',
+				isPublic,
+			});
+		} catch (e) {
+			gameState.error = String(e);
+		}
+	},
+	async joinById(lobbyId: bigint) {
+		if (!conn) return;
+		conn.reducers.joinLobby({
+			lobbyId,
+			playerName: gameState.localPlayerName,
+			classChoice: gameState.localPlayerClass ?? '',
+		});
+	},
+	async joinByCode(code: string) {
+		if (!conn) return;
+		conn.reducers.joinByCode({
+			code: code.toUpperCase(),
+			playerName: gameState.localPlayerName,
+			classChoice: gameState.localPlayerClass ?? '',
+		});
+	},
+	setClass(cls: PlayerClass, lobbyId: bigint) {
+		if (!conn) return;
 		gameState.localPlayerClass = cls;
+		conn.reducers.setClass({ lobbyId, classChoice: cls });
 	},
-	setLobby(id: bigint) {
-		gameState.currentLobbyId = id;
+	setReady(lobbyId: bigint, isReady: boolean) {
+		if (!conn) return;
+		conn.reducers.setReady({ lobbyId, isReady });
 	},
-	setSession(id: bigint) {
-		gameState.currentSessionId = id;
+	startCountdown(lobbyId: bigint) {
+		if (!conn) return;
+		conn.reducers.startCountdown({ lobbyId });
 	},
-	clearGame() {
+	leaveLobby(lobbyId: bigint) {
+		if (!conn) return;
+		conn.reducers.leaveLobby({ lobbyId });
 		gameState.currentLobbyId = null;
-		gameState.currentSessionId = null;
-		gameState.localPlayerClass = null;
+	},
+	clearError() {
+		gameState.error = null;
 	},
 };

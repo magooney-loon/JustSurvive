@@ -3,11 +3,22 @@
 
 /* eslint-disable */
 /* tslint:disable */
-import { type Infer as __Infer } from 'spacetimedb';
+import { type Infer as __Infer } from "spacetimedb";
 
 // Import all reducer arg schemas
-import AddReducer from '../add_reducer';
-import SayHelloReducer from '../say_hello_reducer';
+import CreateLobbyReducer from "../create_lobby_reducer";
+import JoinByCodeReducer from "../join_by_code_reducer";
+import JoinLobbyReducer from "../join_lobby_reducer";
+import LeaveLobbyReducer from "../leave_lobby_reducer";
+import SetClassReducer from "../set_class_reducer";
+import SetReadyReducer from "../set_ready_reducer";
+import StartCountdownReducer from "../start_countdown_reducer";
 
-export type AddParams = __Infer<typeof AddReducer>;
-export type SayHelloParams = __Infer<typeof SayHelloReducer>;
+export type CreateLobbyParams = __Infer<typeof CreateLobbyReducer>;
+export type JoinByCodeParams = __Infer<typeof JoinByCodeReducer>;
+export type JoinLobbyParams = __Infer<typeof JoinLobbyReducer>;
+export type LeaveLobbyParams = __Infer<typeof LeaveLobbyReducer>;
+export type SetClassParams = __Infer<typeof SetClassReducer>;
+export type SetReadyParams = __Infer<typeof SetReadyReducer>;
+export type StartCountdownParams = __Infer<typeof StartCountdownReducer>;
+
