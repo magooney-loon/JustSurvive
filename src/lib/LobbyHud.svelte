@@ -104,7 +104,7 @@
 			<div style="display: flex; gap: 1rem; margin-bottom: 1rem;">
 				<button
 					onclick={() => gameActions.setReady(currentLobby.id, !myEntry?.isReady)}
-					disabled={!myEntry?.classChoice}
+					disabled={!myEntry?.classChoice || currentLobby?.status !== 'waiting'}
 					style="flex: 1; background: {myEntry?.isReady ? '#4a8' : '#555'}; padding: 0.6rem; border-radius: 8px;"
 				>
 					{myEntry?.isReady ? '✓ Ready' : 'Ready Up'}
@@ -129,6 +129,7 @@
 			{/if}
 
 			<button onclick={() => { gameActions.leaveLobby(currentLobby.id); stageActions.setStage('menu'); }}
+			        disabled={currentLobby?.status !== 'waiting'}
 			        style="width: 100%; margin-top: 0.5rem; padding: 0.4rem; background: rgba(255,50,50,0.3); border-radius: 8px;">
 				Leave Lobby
 			</button>
