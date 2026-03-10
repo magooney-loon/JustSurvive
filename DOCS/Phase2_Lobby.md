@@ -2,375 +2,255 @@
 
 **Goal:** Full multiplayer lobby — host, join by code, quickplay, class select, ready up, start gate (min 2 players). By end of phase, multiple players can find each other and launch a game session.
 
+**Status: COMPLETE**
+
 ---
 
 ## SpacetimeDB Backend
 
-### New Tables (`schema.ts`)
+All backend code lives in a single file: `spacetimedb/src/index.ts`. There is no separate `schema.ts` — tables, schema, helpers, reducers, and lifecycle hooks are all co-located. The schema export lives in the middle of the file after table definitions and before reducer definitions.
+
+### Tables
+
+#### `Lobby`
+
+```
+id            u64  primaryKey autoInc
+hostIdentity  identity
+code          string          — 6-char uppercase join code (LCG-generated, deterministic)
+isPublic      bool
+status        string          — 'waiting' | 'countdown' | 'in_progress' | 'game_over'
+playerCount   u64
+maxPlayers    u64             — always 4
+createdAt     timestamp
+```
+
+Indexes: `lobby_status` (btree on `status`), `lobby_code` (btree on `code`).
+
+#### `LobbyPlayer`
+
+```
+id              u64  primaryKey autoInc
+lobbyId         u64
+playerIdentity  identity
+playerName      string
+classChoice     string   — 'spotter' | 'gunner' | 'tank' | 'healer' | '' (unselected)
+isReady         bool
+joinedAt        timestamp
+```
+
+Indexes: `lobby_player_lobby_id` (btree on `lobbyId`), `lobby_player_identity` (btree on `playerIdentity`).
+
+#### `GameSession`
+
+```
+id             u64  primaryKey autoInc
+lobbyId        u64
+status         string    — 'active' | 'finished'
+startedAt      timestamp
+endedAt        timestamp optional
+dayPhase       string    — 'sunset' | 'dusk' | 'twilight' | 'night' | 'deep_night'
+cycleNumber    u64
+phaseStartedAt timestamp
+fogActive      bool
+mapSeed        u64       — set from ctx.timestamp.microsSinceUnixEpoch at game start
+```
+
+Index: `game_session_lobby_id` (btree on `lobbyId`).
+
+#### `PlayerState`
+
+```
+id              u64  primaryKey autoInc
+sessionId       u64
+playerIdentity  identity
+classChoice     string
+hp              u64
+maxHp           u64
+stamina         u64
+maxStamina      u64
+posX            i64   — fixed-point: value * 0.001 = world units
+posY            i64
+posZ            i64
+status          string   — 'alive' | 'downed' | 'eliminated'
+score           u64
+```
+
+Indexes: `player_state_session_id` (btree on `sessionId`), `player_state_identity` (btree on `playerIdentity`).
+
+#### `LobbyCountdown` (scheduled table)
+
+```
+scheduledId  u64  primaryKey autoInc
+scheduledAt  scheduleAt
+lobbyId      u64
+```
+
+Scheduled reducer: `fire_start_game`. The `scheduled` option references `fire_start_game` via a lazy arrow (`(): any => fire_start_game`) to avoid a circular reference since the reducer is defined after the table.
+
+### Schema Export
 
 ```typescript
-import { schema, table, t } from 'spacetimedb/server';
-
-export const Lobby = table({
-  name: 'lobby',
-  public: true,
-  indexes: [
-    { name: 'lobby_status', algorithm: 'btree', columns: ['status'] },
-    { name: 'lobby_code', algorithm: 'btree', columns: ['code'] },
-  ],
-}, {
-  id: t.u64().primaryKey().autoInc(),
-  hostIdentity: t.identity(),
-  code: t.string(),             // 6-char uppercase join code
-  isPublic: t.bool(),
-  status: t.string(),           // 'waiting' | 'countdown' | 'in_progress' | 'game_over'
-  playerCount: t.u64(),
-  maxPlayers: t.u64(),          // always 4
-  createdAt: t.timestamp(),
+const spacetimedb = schema({
+  lobby: Lobby,
+  lobbyPlayer: LobbyPlayer,
+  gameSession: GameSession,
+  playerState: PlayerState,
+  lobbyCountdown: LobbyCountdown,
 });
-
-export const LobbyPlayer = table({
-  name: 'lobby_player',
-  public: true,
-  indexes: [
-    { name: 'lobby_player_lobby_id', algorithm: 'btree', columns: ['lobbyId'] },
-    { name: 'lobby_player_identity', algorithm: 'btree', columns: ['playerIdentity'] },
-  ],
-}, {
-  id: t.u64().primaryKey().autoInc(),
-  lobbyId: t.u64(),
-  playerIdentity: t.identity(),
-  playerName: t.string(),
-  classChoice: t.string(),      // 'spotter' | 'gunner' | 'tank' | 'healer' | '' (unselected)
-  isReady: t.bool(),
-  joinedAt: t.timestamp(),
-});
-
-export const GameSession = table({
-  name: 'game_session',
-  public: true,
-  indexes: [
-    { name: 'game_session_lobby_id', algorithm: 'btree', columns: ['lobbyId'] },
-  ],
-}, {
-  id: t.u64().primaryKey().autoInc(),
-  lobbyId: t.u64(),
-  status: t.string(),           // 'active' | 'finished'
-  startedAt: t.timestamp(),
-  endedAt: t.timestamp().optional(),
-  dayPhase: t.string(),         // 'sunset' | 'dusk' | 'twilight' | 'night' | 'deep_night'
-  cycleNumber: t.u64(),
-  phaseStartedAt: t.timestamp(),
-  fogActive: t.bool(),
-  mapSeed: t.u64(),
-});
-
-export const PlayerState = table({
-  name: 'player_state',
-  public: true,
-  indexes: [
-    { name: 'player_state_session_id', algorithm: 'btree', columns: ['sessionId'] },
-    { name: 'player_state_identity', algorithm: 'btree', columns: ['playerIdentity'] },
-  ],
-}, {
-  id: t.u64().primaryKey().autoInc(),
-  sessionId: t.u64(),
-  playerIdentity: t.identity(),
-  classChoice: t.string(),
-  hp: t.u64(),
-  maxHp: t.u64(),
-  stamina: t.u64(),
-  maxStamina: t.u64(),
-  posX: t.i64(),                // fixed-point: value * 0.001 = world units
-  posY: t.i64(),
-  posZ: t.i64(),
-  status: t.string(),           // 'alive' | 'downed' | 'eliminated'
-  score: t.u64(),
-});
-
-// Scheduled table for countdown before game start
-export const LobbyCountdown = table({
-  name: 'lobby_countdown',
-  scheduled: () => fire_start_game,
-}, {
-  scheduledId: t.u64().primaryKey().autoInc(),
-  scheduledAt: t.scheduleAt(),
-  lobbyId: t.u64(),
-});
-
-const spacetimedb = schema({ Lobby, LobbyPlayer, GameSession, PlayerState, LobbyCountdown });
 export default spacetimedb;
 ```
 
-### New Reducers (`index.ts`)
+Note: keys in the schema object are camelCase (`lobbyPlayer`, `gameSession`, etc.) matching how `ctx.db` will expose them.
+
+### Index Accessor Names
+
+All indexes use explicit `accessor` fields (same as `name`) to ensure the generated accessor on `ctx.db.<table>.<accessor>` matches exactly what's coded:
 
 ```typescript
-import spacetimedb, { Lobby, LobbyPlayer, GameSession, PlayerState, LobbyCountdown } from './schema.js';
-import { t, SenderError, Timestamp, ScheduleAt } from 'spacetimedb/server';
+{ name: 'lobby_player_lobby_id', accessor: 'lobby_player_lobby_id', algorithm: 'btree', columns: ['lobbyId'] }
+```
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
+This is required because the SpacetimeDB TypeScript SDK does not automatically transform index names to camelCase — they are used verbatim.
 
-function generateCode(): string {
-  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // no confusable chars
+---
+
+### Helpers
+
+#### `generateCode(seed: bigint): string`
+
+Uses a Linear Congruential Generator (LCG) to produce a deterministic 6-character join code from the reducer's timestamp. This satisfies SpacetimeDB's requirement that reducers be deterministic (no `Math.random()`).
+
+```typescript
+function generateCode(seed: bigint): string {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // no visually confusable chars
+  let s = seed;
   let code = '';
-  // Note: SpacetimeDB reducers must be deterministic — cannot use Math.random()
-  // Use the reducer's timestamp as a deterministic seed instead
-  // This is a simplified approach; improve with a proper LCG if needed
-  for (let i = 0; i < 6; i++) code += chars[i % chars.length];
+  for (let i = 0; i < 6; i++) {
+    s = (s * 1664525n + 1013904223n) & 0xFFFFFFFFn;
+    code += chars[Number(s % BigInt(chars.length))];
+  }
   return code;
 }
-
-function classMaxHp(cls: string): bigint {
-  return cls === 'tank' ? 150n : 100n;
-}
-
-function classMaxStamina(cls: string): bigint {
-  if (cls === 'spotter') return 150n;
-  if (cls === 'tank') return 200n;
-  return 80n; // gunner, healer
-}
-
-// ─── Lobby Management ─────────────────────────────────────────────────────────
-
-export const create_lobby = spacetimedb.reducer({
-  playerName: t.string(),
-  classChoice: t.string(),
-  isPublic: t.bool(),
-}, (ctx, { playerName, classChoice, isPublic }) => {
-  if (!playerName) throw new SenderError('playerName required');
-
-  const lobby = ctx.db.lobby.insert({
-    id: 0n,
-    hostIdentity: ctx.sender,
-    code: generateCode(),
-    isPublic,
-    status: 'waiting',
-    playerCount: 1n,
-    maxPlayers: 4n,
-    createdAt: ctx.timestamp,
-  });
-
-  ctx.db.lobbyPlayer.insert({
-    id: 0n,
-    lobbyId: lobby.id,
-    playerIdentity: ctx.sender,
-    playerName,
-    classChoice: classChoice || '',
-    isReady: false,
-    joinedAt: ctx.timestamp,
-  });
-});
-
-export const join_lobby = spacetimedb.reducer({
-  lobbyId: t.u64(),
-  playerName: t.string(),
-  classChoice: t.string(),
-}, (ctx, { lobbyId, playerName, classChoice }) => {
-  const lobby = ctx.db.lobby.id.find(lobbyId);
-  if (!lobby) throw new SenderError('Lobby not found');
-  if (lobby.status !== 'waiting') throw new SenderError('Lobby already started');
-  if (lobby.playerCount >= lobby.maxPlayers) throw new SenderError('Lobby full');
-
-  // Check not already in lobby
-  for (const p of ctx.db.lobbyPlayer.lobby_player_lobby_id.filter(lobbyId)) {
-    if (p.playerIdentity.isEqual(ctx.sender)) throw new SenderError('Already in lobby');
-  }
-
-  ctx.db.lobbyPlayer.insert({
-    id: 0n,
-    lobbyId,
-    playerIdentity: ctx.sender,
-    playerName,
-    classChoice: classChoice || '',
-    isReady: false,
-    joinedAt: ctx.timestamp,
-  });
-
-  ctx.db.lobby.id.update({ ...lobby, playerCount: lobby.playerCount + 1n });
-});
-
-export const join_by_code = spacetimedb.reducer({
-  code: t.string(),
-  playerName: t.string(),
-  classChoice: t.string(),
-}, (ctx, { code, playerName, classChoice }) => {
-  const results = [...ctx.db.lobby.lobby_code.filter(code.toUpperCase())];
-  if (!results.length) throw new SenderError('Lobby not found');
-  const lobby = results[0];
-  if (lobby.status !== 'waiting') throw new SenderError('Lobby already started');
-  if (lobby.playerCount >= lobby.maxPlayers) throw new SenderError('Lobby full');
-
-  ctx.db.lobbyPlayer.insert({
-    id: 0n,
-    lobbyId: lobby.id,
-    playerIdentity: ctx.sender,
-    playerName,
-    classChoice: classChoice || '',
-    isReady: false,
-    joinedAt: ctx.timestamp,
-  });
-
-  ctx.db.lobby.id.update({ ...lobby, playerCount: lobby.playerCount + 1n });
-});
-
-export const set_class = spacetimedb.reducer({
-  lobbyId: t.u64(),
-  classChoice: t.string(),
-}, (ctx, { lobbyId, classChoice }) => {
-  const valid = ['spotter', 'gunner', 'tank', 'healer'];
-  if (!valid.includes(classChoice)) throw new SenderError('Invalid class');
-
-  for (const p of ctx.db.lobbyPlayer.lobby_player_lobby_id.filter(lobbyId)) {
-    if (p.playerIdentity.isEqual(ctx.sender)) {
-      ctx.db.lobbyPlayer.id.update({ ...p, classChoice, isReady: false });
-      return;
-    }
-  }
-  throw new SenderError('Not in this lobby');
-});
-
-export const set_ready = spacetimedb.reducer({
-  lobbyId: t.u64(),
-  isReady: t.bool(),
-}, (ctx, { lobbyId, isReady }) => {
-  for (const p of ctx.db.lobbyPlayer.lobby_player_lobby_id.filter(lobbyId)) {
-    if (p.playerIdentity.isEqual(ctx.sender)) {
-      if (isReady && !p.classChoice) throw new SenderError('Select a class first');
-      ctx.db.lobbyPlayer.id.update({ ...p, isReady });
-      return;
-    }
-  }
-  throw new SenderError('Not in this lobby');
-});
-
-export const leave_lobby = spacetimedb.reducer({
-  lobbyId: t.u64(),
-}, (ctx, { lobbyId }) => {
-  const lobby = ctx.db.lobby.id.find(lobbyId);
-  if (!lobby) return;
-
-  for (const p of ctx.db.lobbyPlayer.lobby_player_lobby_id.filter(lobbyId)) {
-    if (p.playerIdentity.isEqual(ctx.sender)) {
-      ctx.db.lobbyPlayer.id.delete(p.id);
-      break;
-    }
-  }
-
-  const remaining = [...ctx.db.lobbyPlayer.lobby_player_lobby_id.filter(lobbyId)];
-  if (remaining.length === 0) {
-    ctx.db.lobby.id.delete(lobbyId);
-    return;
-  }
-
-  // If host left, transfer to next player
-  const newCount = lobby.playerCount - 1n;
-  const isHost = lobby.hostIdentity.isEqual(ctx.sender);
-  const newHost = isHost ? remaining[0].playerIdentity : lobby.hostIdentity;
-  ctx.db.lobby.id.update({ ...lobby, playerCount: newCount, hostIdentity: newHost });
-});
-
-export const start_countdown = spacetimedb.reducer({
-  lobbyId: t.u64(),
-}, (ctx, { lobbyId }) => {
-  const lobby = ctx.db.lobby.id.find(lobbyId);
-  if (!lobby) throw new SenderError('Lobby not found');
-  if (!lobby.hostIdentity.isEqual(ctx.sender)) throw new SenderError('Only host can start');
-  if (lobby.status !== 'waiting') throw new SenderError('Already starting');
-
-  const players = [...ctx.db.lobbyPlayer.lobby_player_lobby_id.filter(lobbyId)];
-  if (players.length < 2) throw new SenderError('Need at least 2 players');
-  if (!players.every(p => p.isReady && p.classChoice)) {
-    throw new SenderError('All players must be ready with a class selected');
-  }
-
-  ctx.db.lobby.id.update({ ...lobby, status: 'countdown' });
-
-  // Schedule game start in 3 seconds
-  const startAt = ctx.timestamp.microsSinceUnixEpoch + 3_000_000n;
-  ctx.db.lobbyCountdown.insert({
-    scheduledId: 0n,
-    scheduledAt: ScheduleAt.time(startAt),
-    lobbyId,
-  });
-});
-
-export const fire_start_game = spacetimedb.reducer({
-  arg: LobbyCountdown.rowType,
-}, (ctx, { arg }) => {
-  const lobby = ctx.db.lobby.id.find(arg.lobbyId);
-  if (!lobby || lobby.status !== 'countdown') return;
-
-  // Create game session with a deterministic seed from timestamp
-  const session = ctx.db.gameSession.insert({
-    id: 0n,
-    lobbyId: arg.lobbyId,
-    status: 'active',
-    startedAt: ctx.timestamp,
-    endedAt: undefined,
-    dayPhase: 'sunset',
-    cycleNumber: 0n,
-    phaseStartedAt: ctx.timestamp,
-    fogActive: false,
-    mapSeed: ctx.timestamp.microsSinceUnixEpoch,
-  });
-
-  // Create player_state rows per lobby member
-  for (const p of ctx.db.lobbyPlayer.lobby_player_lobby_id.filter(arg.lobbyId)) {
-    ctx.db.playerState.insert({
-      id: 0n,
-      sessionId: session.id,
-      playerIdentity: p.playerIdentity,
-      classChoice: p.classChoice,
-      hp: classMaxHp(p.classChoice),
-      maxHp: classMaxHp(p.classChoice),
-      stamina: classMaxStamina(p.classChoice),
-      maxStamina: classMaxStamina(p.classChoice),
-      posX: 0n,
-      posY: 0n,
-      posZ: 0n,
-      status: 'alive',
-      score: 0n,
-    });
-  }
-
-  ctx.db.lobby.id.update({ ...lobby, status: 'in_progress' });
-});
-
-// ─── Lifecycle ─────────────────────────────────────────────────────────────────
-
-spacetimedb.clientDisconnected((ctx) => {
-  // Remove player from any lobby they're in
-  for (const p of ctx.db.lobbyPlayer.lobby_player_identity.filter(ctx.sender)) {
-    const lobby = ctx.db.lobby.id.find(p.lobbyId);
-    if (lobby && lobby.status === 'waiting') {
-      ctx.db.lobbyPlayer.id.delete(p.id);
-      const remaining = [...ctx.db.lobbyPlayer.lobby_player_lobby_id.filter(p.lobbyId)];
-      if (remaining.length === 0) {
-        ctx.db.lobby.id.delete(p.lobbyId);
-      } else {
-        const isHost = lobby.hostIdentity.isEqual(ctx.sender);
-        const newHost = isHost ? remaining[0].playerIdentity : lobby.hostIdentity;
-        ctx.db.lobby.id.update({ ...lobby, playerCount: lobby.playerCount - 1n, hostIdentity: newHost });
-      }
-    }
-    break;
-  }
-});
 ```
+
+Called as: `generateCode(ctx.timestamp.microsSinceUnixEpoch)`.
+
+#### `classMaxHp(cls: string): bigint`
+
+Returns `150n` for `'tank'`, `100n` for all others.
+
+#### `classMaxStamina(cls: string): bigint`
+
+Returns `150n` for `'spotter'`, `200n` for `'tank'`, `80n` for `'gunner'` and `'healer'`.
+
+---
+
+### Reducers
+
+#### `create_lobby`
+
+Parameters: `{ playerName: string, classChoice: string, isPublic: bool }`
+
+1. Validates `playerName` is non-empty.
+2. Inserts a `Lobby` row with `status: 'waiting'`, `playerCount: 1n`, `maxPlayers: 4n`, and a LCG-generated code.
+3. Inserts a `LobbyPlayer` row for `ctx.sender`.
+
+#### `join_lobby`
+
+Parameters: `{ lobbyId: u64, playerName: string, classChoice: string }`
+
+1. Looks up lobby by primary key — throws if not found.
+2. Rejects if status is not `'waiting'`, or lobby is full.
+3. Checks existing `LobbyPlayer` rows for the sender — throws `'Already in lobby'` if found.
+4. Inserts `LobbyPlayer` row.
+5. Updates lobby `playerCount + 1n`.
+
+#### `join_by_code`
+
+Parameters: `{ code: string, playerName: string, classChoice: string }`
+
+1. Filters `lobby_code` index with `code.toUpperCase()`.
+2. Rejects if not found, already started, or full.
+3. Does **not** re-check for duplicate join (relies on UI to prevent it; `clientDisconnected` handles cleanup).
+4. Inserts `LobbyPlayer` row, increments `playerCount`.
+
+#### `set_class`
+
+Parameters: `{ lobbyId: u64, classChoice: string }`
+
+1. Validates class is one of `['spotter', 'gunner', 'tank', 'healer']`.
+2. Finds the caller's `LobbyPlayer` row via the `lobby_player_lobby_id` index.
+3. Updates `classChoice` and resets `isReady` to `false` (changing class un-readies the player).
+
+#### `set_ready`
+
+Parameters: `{ lobbyId: u64, isReady: bool }`
+
+1. Finds caller's `LobbyPlayer` row.
+2. Throws `'Select a class first'` if trying to ready without a class selected.
+3. Updates `isReady`.
+
+#### `leave_lobby`
+
+Parameters: `{ lobbyId: u64 }`
+
+Idempotent pattern: if the caller is not in the lobby (row not found), sets `found = false` and returns early without decrementing `playerCount`. This prevents a double-decrement if `leave_lobby` is called after `clientDisconnected` already cleaned up.
+
+1. Looks up lobby — returns silently if not found.
+2. Scans `lobby_player_lobby_id` for the caller's row. Deletes it if found, sets `found = true`.
+3. If `!found`, returns immediately.
+4. Re-queries remaining players. If zero, deletes the lobby and returns.
+5. Otherwise, decrements `playerCount` and transfers host if the leaver was the host.
+
+#### `start_countdown`
+
+Parameters: `{ lobbyId: u64 }`
+
+1. Validates caller is host and lobby is `'waiting'`.
+2. Requires `players.length >= 2`.
+3. Requires all players to have `isReady && classChoice`.
+4. Sets lobby status to `'countdown'`.
+5. Inserts a `LobbyCountdown` row scheduled 3 seconds in the future (`ctx.timestamp.microsSinceUnixEpoch + 3_000_000n`).
+
+#### `fire_start_game` (scheduled)
+
+Parameter: `{ arg: LobbyCountdown.rowType }`
+
+Fires automatically when the `LobbyCountdown` row's `scheduledAt` time is reached. The row is auto-deleted by SpacetimeDB after the reducer completes.
+
+1. Guards against stale or cancelled countdowns: returns early if lobby is not in `'countdown'` state.
+2. Inserts a `GameSession` row with `status: 'active'`, initial day phase `'sunset'`, `mapSeed` from `ctx.timestamp.microsSinceUnixEpoch`.
+3. Iterates all `LobbyPlayer` rows for the lobby and inserts a `PlayerState` row for each, setting HP and stamina from class helpers.
+4. Updates lobby status to `'in_progress'`.
+
+### Lifecycle Hooks
+
+#### `clientConnected`
+
+Stub — no-op in Phase 2.
+
+#### `clientDisconnected`
+
+Iterates the caller's `LobbyPlayer` rows via the `lobby_player_identity` index. For any lobby in `'waiting'` status:
+
+1. Deletes the `LobbyPlayer` row.
+2. Re-queries remaining players. Deletes lobby if empty.
+3. Otherwise decrements `playerCount` and transfers host if needed.
+
+Uses `break` after processing the first matching row (a player should only be in one lobby at a time).
 
 ---
 
 ## Frontend
 
-### `src/game.svelte.ts` (update from Phase 1 stub)
+### `src/game.svelte.ts`
 
-Add lobby-related state and actions:
+Reactive singleton (`$state` at module level in a `.svelte.ts` file) that holds client-side game state and wraps all reducer calls.
+
+**State:**
 
 ```typescript
-import type { DbConnection } from './module_bindings/index.js';
-
-export type PlayerClass = 'spotter' | 'gunner' | 'tank' | 'healer';
-
 const gameState = $state({
   currentLobbyId: null as bigint | null,
   currentSessionId: null as bigint | null,
@@ -378,298 +258,201 @@ const gameState = $state({
   localPlayerName: 'Player',
   error: null as string | null,
 });
+```
 
-export { gameState };
+**`setError(e)` helper:** Strips the `SenderError:` prefix that SpacetimeDB prepends to server-thrown errors before storing in `gameState.error`. This keeps the displayed error message clean.
 
-let conn: DbConnection | null = null;
+**`gameActions`:**
 
-export const gameActions = {
-  init(connection: DbConnection) {
-    conn = connection;
-  },
-  setPlayerName(name: string) {
-    gameState.localPlayerName = name.trim() || 'Player';
-  },
-  async hostLobby(isPublic: boolean) {
-    if (!conn) return;
-    gameState.error = null;
-    try {
-      conn.reducers.createLobby({
-        playerName: gameState.localPlayerName,
-        classChoice: gameState.localPlayerClass ?? '',
-        isPublic,
-      });
-    } catch (e) {
-      gameState.error = String(e);
+| Action | Behaviour |
+|--------|-----------|
+| `init(conn)` | Stores the `DbConnection` reference. Called from `Root.svelte` `onConnect`. |
+| `setPlayerName(name)` | Trims and stores player name, falling back to `'Player'`. |
+| `hostLobby(isPublic)` | `await conn.reducers.createLobby(...)`. Sets error on failure. |
+| `joinById(lobbyId)` | `await conn.reducers.joinLobby(...)`. Sets error on failure. |
+| `joinByCode(code)` | `await conn.reducers.joinByCode({ code: code.toUpperCase(), ... })`. |
+| `quickplay(lobbies)` | Receives current `lobbies` array. Finds first public waiting lobby with space and calls `joinLobby`; falls back to `createLobby` with `isPublic: true`. |
+| `setClass(cls, lobbyId)` | Updates `localPlayerClass` locally, then `await conn.reducers.setClass(...)`. |
+| `setReady(lobbyId, isReady)` | `await conn.reducers.setReady(...)`. |
+| `startCountdown(lobbyId)` | `await conn.reducers.startCountdown(...)`. |
+| `leaveLobby(lobbyId)` | Calls `conn.reducers.leaveLobby(...)` (fire-and-forget), clears `currentLobbyId`. |
+| `clearError()` | Sets `gameState.error = null`. |
+
+All async actions `await` the reducer call so that errors propagate synchronously within the action before the calling component navigates to a new stage.
+
+---
+
+### `src/lib/MenuHud.svelte`
+
+Uses `useSpacetimeDB()` and `useTable(tables.lobby)` / `useTable(tables.lobbyPlayer)` to detect if the player is already in a lobby.
+
+**Key pattern — `alreadyInLobby` check:**
+
+When the component mounts, it checks whether the current identity already has a `LobbyPlayer` row. If so, it displays a "Reconnect to Lobby" button instead of the full join/host UI. This handles the case where a player navigated away from the lobby stage without leaving, or refreshed the page while still in a lobby.
+
+```typescript
+const conn = useSpacetimeDB();
+const [lobbies] = useTable(tables.lobby);
+const [lobbyPlayers] = useTable(tables.lobbyPlayer);
+
+const myEntry = $derived(
+  $lobbyPlayers.find(p => p.playerIdentity.toHexString() === $conn.identity?.toHexString())
+);
+const alreadyInLobby = $derived(!!myEntry);
+```
+
+**Loading state:** A local `loading = $state(false)` is set before and after each async action. Buttons are disabled while `loading` is true and a "Connecting..." message is shown. On error, the error from `gameState.error` is shown instead.
+
+**Mode switching:** A local `mode = $state<'main' | 'join_code'>('main')` toggles between the main menu buttons and the join-by-code input. `clearError()` is called when switching modes to avoid stale errors.
+
+**Navigation pattern:** After each async action, navigation only proceeds if there is no error:
+
+```typescript
+await gameActions.hostLobby(false);
+loading = false;
+if (!gameState.error) stageActions.setStage('lobby');
+```
+
+---
+
+### `src/lib/LobbyHud.svelte`
+
+**Subscriptions:**
+
+```typescript
+const conn = useSpacetimeDB();
+const [lobbies] = useTable(tables.lobby);
+const [lobbyPlayers] = useTable(tables.lobbyPlayer);
+const [sessions] = useTable(tables.gameSession);
+```
+
+**Derived state:**
+
+```typescript
+const myEntry = $derived($lobbyPlayers.find(p => p.playerIdentity.toHexString() === $conn.identity?.toHexString()));
+const currentLobby = $derived(myEntry ? $lobbies.find(l => l.id === myEntry.lobbyId) : null);
+const players = $derived(currentLobby ? $lobbyPlayers.filter(p => p.lobbyId === currentLobby.id) : []);
+const isHost = $derived(currentLobby?.hostIdentity.toHexString() === $conn.identity?.toHexString());
+const allReady = $derived(players.length >= 2 && players.every(p => p.isReady && p.classChoice));
+```
+
+All reactive reads use optional chaining (`currentLobby?.hostIdentity`, `currentLobby?.code`, etc.) to guard against the brief period during transitions when `currentLobby` may be `null` — a Svelte 5 reactive template safety requirement.
+
+**Countdown UI:**
+
+A local `countdownValue = $state(3)` ticks down via `setInterval` while `currentLobby.status === 'countdown'`. The `$effect` returns the cleanup function:
+
+```typescript
+$effect(() => {
+  if (currentLobby?.status === 'countdown') {
+    countdownValue = 3;
+    const interval = setInterval(() => {
+      countdownValue = Math.max(0, countdownValue - 1);
+    }, 1000);
+    return () => clearInterval(interval);
+  }
+});
+```
+
+Note: the cleanup reads `countdownValue` at schedule time, not as a reactive variable, so re-entrancy is not an issue. However, as a general rule, do not read `$derived` values inside a `$effect` cleanup function — capture the primitive value you need before scheduling the cleanup.
+
+**Game start watcher:**
+
+```typescript
+$effect(() => {
+  if (currentLobby?.status === 'in_progress') {
+    const session = $sessions.find(s => s.lobbyId === currentLobby.id);
+    if (session) {
+      gameState.currentSessionId = session.id;
+      stageActions.setStage('game');
     }
-  },
-  async joinById(lobbyId: bigint) {
-    if (!conn) return;
-    conn.reducers.joinLobby({
-      lobbyId,
-      playerName: gameState.localPlayerName,
-      classChoice: gameState.localPlayerClass ?? '',
-    });
-  },
-  async joinByCode(code: string) {
-    if (!conn) return;
-    conn.reducers.joinByCode({
-      code: code.toUpperCase(),
-      playerName: gameState.localPlayerName,
-      classChoice: gameState.localPlayerClass ?? '',
-    });
-  },
-  setClass(cls: PlayerClass, lobbyId: bigint) {
-    if (!conn) return;
-    gameState.localPlayerClass = cls;
-    conn.reducers.setClass({ lobbyId, classChoice: cls });
-  },
-  setReady(lobbyId: bigint, isReady: boolean) {
-    if (!conn) return;
-    conn.reducers.setReady({ lobbyId, isReady });
-  },
-  startCountdown(lobbyId: bigint) {
-    if (!conn) return;
-    conn.reducers.startCountdown({ lobbyId });
-  },
-  leaveLobby(lobbyId: bigint) {
-    if (!conn) return;
-    conn.reducers.leaveLobby({ lobbyId });
-    gameState.currentLobbyId = null;
-  },
-  clearError() {
-    gameState.error = null;
-  },
+  }
+});
+```
+
+This fires on every update to `currentLobby` or `sessions`, but `setStage` is a no-op if already on `'game'`.
+
+**Loading skeleton:** When `!currentLobby` (waiting for the row to appear after the reducer call), shows a "Connecting to lobby..." message with a Back button. Once the row arrives via subscription the full lobby UI replaces it.
+
+**Empty slots:** The remaining player slots (up to `maxPlayers = 4`) are rendered as "Waiting for player..." placeholders using `{#each { length: 4 - players.length } as _}`.
+
+---
+
+### `src/Root.svelte`
+
+**Connection setup (not main.ts):** The SpacetimeDB connection is bootstrapped in `Root.svelte` using `createSpacetimeDBProvider`. The `connectionBuilder` is constructed at module level (not inside a component effect), so it is created exactly once and does not trigger reconnects.
+
+```typescript
+const HOST = import.meta.env.VITE_SPACETIMEDB_HOST ?? 'ws://localhost:3000';
+const DB_NAME = import.meta.env.VITE_SPACETIMEDB_DB_NAME ?? 'justsurvive-6769';
+const TOKEN_KEY = `${HOST}/${DB_NAME}/auth_token`;
+```
+
+**`onConnect` callback:**
+
+```typescript
+const onConnect = (conn: DbConnection, identity: Identity, token: string) => {
+  localStorage.setItem(TOKEN_KEY, token);
+  log.info('Connected to SpacetimeDB with identity:', identity.toHexString());
+  gameActions.init(conn);
+  conn.subscriptionBuilder().subscribeToAllTables();
 };
 ```
 
-Wire `gameActions.init(conn)` in `main.ts` inside the `onConnect` callback.
+`subscribeToAllTables()` is used as a global subscription so that all table data is continuously live and `useTable` reads from a populated cache. No per-component SQL subscriptions are needed.
 
 ---
 
-### `src/lib/MenuHud.svelte` (full implementation)
+## Key Bugs Fixed and Patterns
 
-```svelte
-<script lang="ts">
-  import { fly } from 'svelte/transition';
-  import { stageActions } from '../stage.svelte.js';
-  import { gameActions, gameState } from '../game.svelte.js';
-  import { useSpacetimeDB } from 'spacetimedb/svelte';
-  import { tables } from '../module_bindings/index.js';
+### LCG Deterministic Code Generation
 
-  const { identity } = useSpacetimeDB();
+The naive `generateCode` function in the Phase 2 plan used `i % chars.length`, producing the same code every time. The actual implementation uses a proper LCG seeded with `ctx.timestamp.microsSinceUnixEpoch`, which is deterministic (required by SpacetimeDB) but varies per call.
 
-  let joinCode = $state('');
-  let playerName = $state('Player');
-  let mode = $state<'main' | 'join_code'>('main');
+### Idempotent `leave_lobby`
 
-  // Quickplay: find an open public lobby, or host one
-  async function quickplay() {
-    // Handled by LobbyHud watching for lobby row appearing with our identity
-    gameActions.setPlayerName(playerName);
-    // TODO Phase 2: query for public waiting lobby, join or create
-    // For now just host a public lobby
-    gameActions.hostLobby(true);
-    stageActions.setStage('lobby');
-  }
+The `leave_lobby` reducer tracks whether a player row was actually found before decrementing `playerCount`. Without this check, if `clientDisconnected` already removed the player and then the client called `leave_lobby` on reconnect, `playerCount` would decrement below the true value or underflow. The `found` flag prevents this.
 
-  function hostPrivate() {
-    gameActions.setPlayerName(playerName);
-    gameActions.hostLobby(false);
-    stageActions.setStage('lobby');
-  }
+### `subscribeToAllTables` vs Per-Component Subscriptions
 
-  function joinByCode() {
-    if (joinCode.length < 4) return;
-    gameActions.setPlayerName(playerName);
-    gameActions.joinByCode(joinCode);
-    stageActions.setStage('lobby');
-  }
-</script>
+Using `conn.subscriptionBuilder().subscribeToAllTables()` once in `onConnect` means `useTable(tables.x)` in any component always returns live data from the shared cache. Per-component SQL subscriptions were not needed and would have introduced subscription lifecycle complexity.
 
-<div transition:fly={{ y: 20, duration: 300 }}
-     style="position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1.5rem;">
-  <h1 style="font-size: 3rem; margin: 0;">Forest Run</h1>
+### Svelte 5 `$effect` Cleanup Captures
 
-  <input
-    type="text"
-    placeholder="Your name"
-    bind:value={playerName}
-    maxlength={16}
-    style="text-align: center; font-size: 1.2rem; padding: 0.4rem 1rem; border-radius: 8px;"
-  />
+When writing `$effect(() => { ... return () => cleanup })`, the cleanup function is a closure over the outer scope at the time the effect ran. Be careful: if the cleanup reads a `$derived` or `$state` value, it sees the _current_ reactive value at cleanup time, not at setup time. Always capture the value you need into a plain variable _before_ returning the cleanup if the value might have changed.
 
-  {#if mode === 'main'}
-    <button onclick={quickplay}>Quick Play</button>
-    <button onclick={hostPrivate}>Host Private Lobby</button>
-    <button onclick={() => mode = 'join_code'}>Join by Code</button>
-    <button onclick={() => stageActions.setStage('leaderboard')}>Leaderboard</button>
-    <button onclick={() => stageActions.setStage('settings')}>Settings</button>
-  {:else}
-    <input
-      type="text"
-      placeholder="Enter Code"
-      bind:value={joinCode}
-      maxlength={6}
-      style="text-align: center; text-transform: uppercase; font-size: 1.5rem; padding: 0.4rem 1rem; letter-spacing: 0.3rem; border-radius: 8px;"
-    />
-    <button onclick={joinByCode} disabled={joinCode.length < 4}>Join</button>
-    <button onclick={() => mode = 'main'}>Back</button>
-  {/if}
+### Optional Chaining in Reactive Templates
 
-  {#if gameState.error}
-    <p style="color: red;">{gameState.error}</p>
-  {/if}
-</div>
+In Svelte 5, reactive template expressions are evaluated eagerly. If `currentLobby` can be `null` during a reactive cycle (e.g. mid-transition), then `currentLobby.code` will throw. Use `currentLobby?.code` throughout LobbyHud to guard against this.
+
+### `useSpacetimeDB()` Returns a Store
+
+`useSpacetimeDB()` from `spacetimedb/svelte` returns a store. Access identity as `$conn.identity`, not `conn.identity`. The `identity` field is `undefined` until the connection handshake completes, so always use optional chaining: `$conn.identity?.toHexString()`.
+
+### Async Reducer Error Pattern
+
+All `gameActions` methods that call reducers are `async` and `await` the call. This ensures that when a component does:
+
+```typescript
+loading = true;
+await gameActions.hostLobby(false);
+loading = false;
+if (!gameState.error) stageActions.setStage('lobby');
 ```
 
----
-
-### `src/lib/LobbyHud.svelte` (full implementation)
-
-```svelte
-<script lang="ts">
-  import { fly } from 'svelte/transition';
-  import { stageActions, stageState } from '../stage.svelte.js';
-  import { gameActions, gameState } from '../game.svelte.js';
-  import { useSpacetimeDB, useTable } from 'spacetimedb/svelte';
-  import { tables } from '../module_bindings/index.js';
-
-  const { identity } = useSpacetimeDB();
-  const [lobbies] = useTable(tables.lobby);
-  const [lobbyPlayers] = useTable(tables.lobbyPlayer);
-  const [sessions] = useTable(tables.gameSession);
-
-  // Find our lobby by our identity in lobbyPlayer
-  const myEntry = $derived(lobbyPlayers.find(p => p.playerIdentity.toHexString() === identity?.toHexString()));
-  const currentLobby = $derived(myEntry ? lobbies.find(l => l.id === myEntry.lobbyId) : null);
-  const players = $derived(currentLobby ? lobbyPlayers.filter(p => p.lobbyId === currentLobby.id) : []);
-  const isHost = $derived(currentLobby?.hostIdentity.toHexString() === identity?.toHexString());
-  const allReady = $derived(players.length >= 2 && players.every(p => p.isReady && p.classChoice));
-
-  const CLASSES = ['spotter', 'gunner', 'tank', 'healer'] as const;
-
-  // Watch for session starting → transition to game
-  $effect(() => {
-    if (currentLobby?.status === 'in_progress') {
-      const session = sessions.find(s => s.lobbyId === currentLobby.id);
-      if (session) {
-        gameState.currentSessionId = session.id;
-        stageActions.setStage('game');
-      }
-    }
-  });
-
-  function copyCode() {
-    if (currentLobby) navigator.clipboard.writeText(currentLobby.code);
-  }
-</script>
-
-<div transition:fly={{ y: 20, duration: 300 }}
-     style="position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;">
-  <div style="background: rgba(0,0,0,0.7); padding: 2rem; border-radius: 12px; min-width: 400px;">
-
-    {#if !currentLobby}
-      <p>Connecting to lobby...</p>
-      <button onclick={() => stageActions.setStage('menu')}>Back</button>
-
-    {:else}
-      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
-        <h2 style="margin: 0;">Lobby</h2>
-        {#if currentLobby.isPublic}
-          <span style="background: #2a5; padding: 0.2rem 0.6rem; border-radius: 4px; font-size: 0.8rem;">PUBLIC</span>
-        {:else}
-          <button onclick={copyCode}>Code: {currentLobby.code} 📋</button>
-        {/if}
-      </div>
-
-      <!-- Player list -->
-      <div style="display: flex; flex-direction: column; gap: 0.5rem; margin-bottom: 1rem;">
-        {#each players as player (player.id)}
-          <div style="display: flex; align-items: center; gap: 1rem; padding: 0.5rem; background: rgba(255,255,255,0.1); border-radius: 8px;">
-            <span style="flex: 1;">{player.playerName}</span>
-            <span style="color: #aaa; font-size: 0.85rem;">{player.classChoice || '—'}</span>
-            <span style="color: {player.isReady ? '#4f4' : '#f44'};">{player.isReady ? '✓ Ready' : 'Not Ready'}</span>
-            {#if player.playerIdentity.toHexString() === currentLobby.hostIdentity.toHexString()}
-              <span title="Host">👑</span>
-            {/if}
-          </div>
-        {/each}
-        {#if players.length < 4}
-          {#each { length: 4 - players.length } as _}
-            <div style="padding: 0.5rem; background: rgba(255,255,255,0.05); border-radius: 8px; color: #555;">
-              Waiting for player...
-            </div>
-          {/each}
-        {/if}
-      </div>
-
-      <!-- Class selector -->
-      <div style="margin-bottom: 1rem;">
-        <p style="margin: 0 0 0.5rem; font-size: 0.85rem; color: #aaa;">Select class:</p>
-        <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
-          {#each CLASSES as cls}
-            <button
-              onclick={() => gameActions.setClass(cls, currentLobby.id)}
-              style="background: {myEntry?.classChoice === cls ? '#4a8' : 'rgba(255,255,255,0.1)'}; padding: 0.4rem 0.8rem; border-radius: 6px; text-transform: capitalize;"
-            >
-              {cls}
-            </button>
-          {/each}
-        </div>
-      </div>
-
-      <!-- Ready toggle -->
-      <div style="display: flex; gap: 1rem; margin-bottom: 1rem;">
-        <button
-          onclick={() => gameActions.setReady(currentLobby.id, !myEntry?.isReady)}
-          disabled={!myEntry?.classChoice}
-          style="flex: 1; background: {myEntry?.isReady ? '#4a8' : '#555'}; padding: 0.6rem; border-radius: 8px;"
-        >
-          {myEntry?.isReady ? '✓ Ready' : 'Ready Up'}
-        </button>
-      </div>
-
-      <!-- Host start button -->
-      {#if isHost}
-        <button
-          onclick={() => gameActions.startCountdown(currentLobby.id)}
-          disabled={!allReady}
-          style="width: 100%; padding: 0.8rem; font-size: 1.1rem; background: {allReady ? '#4a8' : '#333'}; border-radius: 8px; margin-bottom: 0.5rem;"
-        >
-          {players.length < 2 ? 'Need 2+ players' : !allReady ? 'Waiting for all players' : 'Start Game'}
-        </button>
-      {:else}
-        <p style="text-align: center; color: #aaa; font-size: 0.9rem;">Waiting for host to start...</p>
-      {/if}
-
-      {#if currentLobby.status === 'countdown'}
-        <p style="text-align: center; font-size: 1.5rem; color: #ff8;">Starting in 3...</p>
-      {/if}
-
-      <button onclick={() => { gameActions.leaveLobby(currentLobby.id); stageActions.setStage('menu'); }}
-              style="width: 100%; margin-top: 0.5rem; padding: 0.4rem; background: rgba(255,50,50,0.3); border-radius: 8px;">
-        Leave Lobby
-      </button>
-
-      {#if gameState.error}
-        <p style="color: red; margin-top: 0.5rem;">{gameState.error}</p>
-      {/if}
-    {/if}
-  </div>
-</div>
-```
+...the `gameState.error` check is guaranteed to reflect the result of that specific call, not a stale error from a previous one.
 
 ---
 
 ## Done When
 
-- [ ] Two separate browser sessions can host and join a lobby
-- [ ] Lobby code is displayed and copy button works
-- [ ] Public lobby appears in quickplay (basic version: host public = others can join by ID)
-- [ ] Class selector works; players can change class and it reflects for all
-- [ ] Ready toggle gates the start button
-- [ ] Start button disabled until ≥ 2 players all ready
-- [ ] Countdown fires, game_session row appears, both clients transition to `game` stage
-- [ ] Disconnecting a player removes them from the lobby; last player exits = lobby deleted
-- [ ] Host leaving transfers host role to next player
+- [x] Two separate browser sessions can host and join a lobby
+- [x] Lobby code is displayed and copy button works
+- [x] Quickplay finds an open public lobby to join, or creates a new one if none available
+- [x] Class selector works; players can change class and it reflects for all
+- [x] Ready toggle gates the start button
+- [x] Start button disabled until >= 2 players all ready
+- [x] Countdown fires, `game_session` row appears, both clients transition to `game` stage
+- [x] Disconnecting a player removes them from the lobby; last player exits = lobby deleted
+- [x] Host leaving transfers host role to next player
+- [x] `alreadyInLobby` reconnect path works on page refresh
