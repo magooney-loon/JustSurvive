@@ -53,8 +53,10 @@ npm run build
 # start local SpacetimeDB server
 spacetime start
 
-# publish module (local)
+# publish module (local) (opt: fresh db)
 npm run spacetime:publish:local
+
+npm run spacetime:publish:local:fresh
 
 # publish module (maincloud)
 npm run spacetime:publish

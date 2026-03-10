@@ -14,6 +14,8 @@
 		localStorage.setItem(TOKEN_KEY, token);
 		log.info('Connected to SpacetimeDB with identity:', identity.toHexString());
 		gameActions.init(conn);
+		// Global subscription so all table data is always live — useTable reads from this cache.
+		conn.subscriptionBuilder().subscribeToAllTables();
 	};
 
 	const onDisconnect = () => {

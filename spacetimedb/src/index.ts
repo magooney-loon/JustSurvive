@@ -243,12 +243,15 @@ export const leave_lobby = spacetimedb.reducer({
   const lobby = ctx.db.lobby.id.find(lobbyId);
   if (!lobby) return;
 
+  let found = false;
   for (const p of ctx.db.lobbyPlayer.lobby_player_lobby_id.filter(lobbyId)) {
     if (p.playerIdentity.isEqual(ctx.sender)) {
       ctx.db.lobbyPlayer.id.delete(p.id);
+      found = true;
       break;
     }
   }
+  if (!found) return; // already left — skip decrement
 
   const remaining = [...ctx.db.lobbyPlayer.lobby_player_lobby_id.filter(lobbyId)];
   if (remaining.length === 0) {

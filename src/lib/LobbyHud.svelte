@@ -19,23 +19,6 @@
 
 	const CLASSES = ['spotter', 'gunner', 'tank', 'healer'] as const;
 
-	// Plain (non-reactive) vars — updated by a tracking effect, read by unmount cleanup.
-	// Using plain let avoids making the cleanup effect re-run on every lobby update.
-	let _cleanupLobbyId: bigint | undefined;
-	let _cleanupStatus: string | undefined;
-	$effect(() => {
-		_cleanupLobbyId = currentLobby?.id;
-		_cleanupStatus = currentLobby?.status;
-	});
-	// No reactive reads here → cleanup fires only on unmount, not on lobby updates.
-	$effect(() => {
-		return () => {
-			if (_cleanupLobbyId !== undefined && _cleanupStatus === 'waiting') {
-				gameActions.leaveLobby(_cleanupLobbyId);
-			}
-		};
-	});
-
 	let countdownValue = $state(3);
 	$effect(() => {
 		if (currentLobby?.status === 'countdown') {
