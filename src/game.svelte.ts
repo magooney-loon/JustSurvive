@@ -15,6 +15,11 @@ export { gameState };
 
 let conn: DbConnection | null = null;
 
+function setError(e: unknown) {
+	const msg = e instanceof Error ? e.message : String(e);
+	gameState.error = msg.replace(/^SenderError:\s*/i, '');
+}
+
 export const gameActions = {
 	init(connection: DbConnection) {
 		conn = connection;
@@ -26,67 +31,93 @@ export const gameActions = {
 		if (!conn) return;
 		gameState.error = null;
 		try {
-			conn.reducers.createLobby({
+			await conn.reducers.createLobby({
 				playerName: gameState.localPlayerName,
 				classChoice: gameState.localPlayerClass ?? '',
 				isPublic,
 			});
 		} catch (e) {
-			gameState.error = String(e);
+			setError(e);
 		}
 	},
 	async joinById(lobbyId: bigint) {
 		if (!conn) return;
-		conn.reducers.joinLobby({
-			lobbyId,
-			playerName: gameState.localPlayerName,
-			classChoice: gameState.localPlayerClass ?? '',
-		});
+		gameState.error = null;
+		try {
+			await conn.reducers.joinLobby({
+				lobbyId,
+				playerName: gameState.localPlayerName,
+				classChoice: gameState.localPlayerClass ?? '',
+			});
+		} catch (e) {
+			setError(e);
+		}
 	},
 	async joinByCode(code: string) {
 		if (!conn) return;
-		conn.reducers.joinByCode({
-			code: code.toUpperCase(),
-			playerName: gameState.localPlayerName,
-			classChoice: gameState.localPlayerClass ?? '',
-		});
+		gameState.error = null;
+		try {
+			await conn.reducers.joinByCode({
+				code: code.toUpperCase(),
+				playerName: gameState.localPlayerName,
+				classChoice: gameState.localPlayerClass ?? '',
+			});
+		} catch (e) {
+			setError(e);
+		}
 	},
-	setClass(cls: PlayerClass, lobbyId: bigint) {
+	async setClass(cls: PlayerClass, lobbyId: bigint) {
 		if (!conn) return;
 		gameState.localPlayerClass = cls;
-		conn.reducers.setClass({ lobbyId, classChoice: cls });
+		try {
+			await conn.reducers.setClass({ lobbyId, classChoice: cls });
+		} catch (e) {
+			setError(e);
+		}
 	},
-	setReady(lobbyId: bigint, isReady: boolean) {
+	async setReady(lobbyId: bigint, isReady: boolean) {
 		if (!conn) return;
-		conn.reducers.setReady({ lobbyId, isReady });
+		try {
+			await conn.reducers.setReady({ lobbyId, isReady });
+		} catch (e) {
+			setError(e);
+		}
 	},
-	startCountdown(lobbyId: bigint) {
+	async startCountdown(lobbyId: bigint) {
 		if (!conn) return;
-		conn.reducers.startCountdown({ lobbyId });
+		try {
+			await conn.reducers.startCountdown({ lobbyId });
+		} catch (e) {
+			setError(e);
+		}
 	},
 	leaveLobby(lobbyId: bigint) {
 		if (!conn) return;
 		conn.reducers.leaveLobby({ lobbyId });
 		gameState.currentLobbyId = null;
 	},
-	quickplay(lobbies: readonly Lobby[]) {
+	async quickplay(lobbies: readonly Lobby[]) {
 		if (!conn) return;
 		gameState.error = null;
 		const available = lobbies.find(
 			l => l.isPublic && l.status === 'waiting' && l.playerCount < l.maxPlayers,
 		);
-		if (available) {
-			conn.reducers.joinLobby({
-				lobbyId: available.id,
-				playerName: gameState.localPlayerName,
-				classChoice: gameState.localPlayerClass ?? '',
-			});
-		} else {
-			conn.reducers.createLobby({
-				playerName: gameState.localPlayerName,
-				classChoice: gameState.localPlayerClass ?? '',
-				isPublic: true,
-			});
+		try {
+			if (available) {
+				await conn.reducers.joinLobby({
+					lobbyId: available.id,
+					playerName: gameState.localPlayerName,
+					classChoice: gameState.localPlayerClass ?? '',
+				});
+			} else {
+				await conn.reducers.createLobby({
+					playerName: gameState.localPlayerName,
+					classChoice: gameState.localPlayerClass ?? '',
+					isPublic: true,
+				});
+			}
+		} catch (e) {
+			setError(e);
 		}
 	},
 	clearError() {

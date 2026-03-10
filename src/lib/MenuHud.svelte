@@ -10,24 +10,31 @@
 	let joinCode = $state('');
 	let playerName = $state('Player');
 	let mode = $state<'main' | 'join_code'>('main');
+	let loading = $state(false);
 
-	function quickplay() {
+	async function quickplay() {
+		loading = true;
 		gameActions.setPlayerName(playerName);
-		gameActions.quickplay($lobbies);
-		stageActions.setStage('lobby');
+		await gameActions.quickplay($lobbies);
+		loading = false;
+		if (!gameState.error) stageActions.setStage('lobby');
 	}
 
-	function hostPrivate() {
+	async function hostPrivate() {
+		loading = true;
 		gameActions.setPlayerName(playerName);
-		gameActions.hostLobby(false);
-		stageActions.setStage('lobby');
+		await gameActions.hostLobby(false);
+		loading = false;
+		if (!gameState.error) stageActions.setStage('lobby');
 	}
 
-	function joinByCode() {
+	async function joinByCode() {
 		if (joinCode.length < 4) return;
+		loading = true;
 		gameActions.setPlayerName(playerName);
-		gameActions.joinByCode(joinCode);
-		stageActions.setStage('lobby');
+		await gameActions.joinByCode(joinCode);
+		loading = false;
+		if (!gameState.error) stageActions.setStage('lobby');
 	}
 </script>
 
@@ -46,11 +53,11 @@
 	/>
 
 	{#if mode === 'main'}
-		<button onclick={quickplay}>Quick Play</button>
-		<button onclick={hostPrivate}>Host Private Lobby</button>
-		<button onclick={() => (mode = 'join_code')}>Join by Code</button>
-		<button onclick={() => stageActions.setStage('leaderboard')}>Leaderboard</button>
-		<button onclick={() => stageActions.setStage('settings')}>Settings</button>
+		<button onclick={quickplay} disabled={loading}>Quick Play</button>
+		<button onclick={hostPrivate} disabled={loading}>Host Private Lobby</button>
+		<button onclick={() => { gameActions.clearError(); mode = 'join_code'; }} disabled={loading}>Join by Code</button>
+		<button onclick={() => stageActions.setStage('leaderboard')} disabled={loading}>Leaderboard</button>
+		<button onclick={() => stageActions.setStage('settings')} disabled={loading}>Settings</button>
 	{:else}
 		<input
 			type="text"
@@ -59,11 +66,13 @@
 			maxlength={6}
 			style="text-align: center; text-transform: uppercase; font-size: 1.5rem; padding: 0.4rem 1rem; letter-spacing: 0.3rem; border-radius: 8px;"
 		/>
-		<button onclick={joinByCode} disabled={joinCode.length < 4}>Join</button>
-		<button onclick={() => (mode = 'main')}>Back</button>
+		<button onclick={joinByCode} disabled={joinCode.length < 4 || loading}>Join</button>
+		<button onclick={() => { gameActions.clearError(); mode = 'main'; }} disabled={loading}>Back</button>
 	{/if}
 
-	{#if gameState.error}
-		<p style="color: red;">{gameState.error}</p>
+	{#if loading}
+		<p style="color: #aaa;">Connecting...</p>
+	{:else if gameState.error}
+		<p style="color: #f66;">{gameState.error}</p>
 	{/if}
 </div>

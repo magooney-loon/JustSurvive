@@ -19,11 +19,19 @@
 
 	const CLASSES = ['spotter', 'gunner', 'tank', 'healer'] as const;
 
-	// Leave lobby on component unmount (e.g. browser back, hard nav)
+	// Plain (non-reactive) vars — updated by a tracking effect, read by unmount cleanup.
+	// Using plain let avoids making the cleanup effect re-run on every lobby update.
+	let _cleanupLobbyId: bigint | undefined;
+	let _cleanupStatus: string | undefined;
+	$effect(() => {
+		_cleanupLobbyId = currentLobby?.id;
+		_cleanupStatus = currentLobby?.status;
+	});
+	// No reactive reads here → cleanup fires only on unmount, not on lobby updates.
 	$effect(() => {
 		return () => {
-			if (currentLobby && currentLobby.status === 'waiting') {
-				gameActions.leaveLobby(currentLobby.id);
+			if (_cleanupLobbyId !== undefined && _cleanupStatus === 'waiting') {
+				gameActions.leaveLobby(_cleanupLobbyId);
 			}
 		};
 	});
@@ -55,10 +63,10 @@
 		{:else}
 			<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
 				<h2 style="margin: 0;">Lobby</h2>
-				{#if currentLobby.isPublic}
+				{#if currentLobby?.isPublic}
 					<span style="background: #2a5; padding: 0.2rem 0.6rem; border-radius: 4px; font-size: 0.8rem;">PUBLIC</span>
 				{:else}
-					<button onclick={copyCode}>Code: {currentLobby.code} 📋</button>
+					<button onclick={copyCode}>Code: {currentLobby?.code} 📋</button>
 				{/if}
 			</div>
 
@@ -69,7 +77,7 @@
 						<span style="flex: 1;">{player.playerName}</span>
 						<span style="color: #aaa; font-size: 0.85rem;">{player.classChoice || '—'}</span>
 						<span style="color: {player.isReady ? '#4f4' : '#f44'};">{player.isReady ? '✓ Ready' : 'Not Ready'}</span>
-						{#if player.playerIdentity.toHexString() === currentLobby.hostIdentity.toHexString()}
+						{#if player.playerIdentity.toHexString() === currentLobby?.hostIdentity.toHexString()}
 							<span title="Host">👑</span>
 						{/if}
 					</div>
@@ -122,7 +130,7 @@
 				<p style="text-align: center; color: #aaa; font-size: 0.9rem;">Waiting for host to start...</p>
 			{/if}
 
-			{#if currentLobby.status === 'countdown'}
+			{#if currentLobby?.status === 'countdown'}
 				<p style="text-align: center; font-size: 1.5rem; color: #ff8;">Starting in 3...</p>
 			{/if}
 
