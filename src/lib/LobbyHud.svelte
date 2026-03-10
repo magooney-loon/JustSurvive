@@ -36,6 +36,17 @@
 		};
 	});
 
+	let countdownValue = $state(3);
+	$effect(() => {
+		if (currentLobby?.status === 'countdown') {
+			countdownValue = 3;
+			const interval = setInterval(() => {
+				countdownValue = Math.max(0, countdownValue - 1);
+			}, 1000);
+			return () => clearInterval(interval);
+		}
+	});
+
 	// Watch for session starting → transition to game
 	$effect(() => {
 		if (currentLobby?.status === 'in_progress') {
@@ -131,7 +142,7 @@
 			{/if}
 
 			{#if currentLobby?.status === 'countdown'}
-				<p style="text-align: center; font-size: 1.5rem; color: #ff8;">Starting in 3...</p>
+				<p style="text-align: center; font-size: 2rem; color: #ff8;">Starting in {countdownValue}...</p>
 			{/if}
 
 			<button onclick={() => { gameActions.leaveLobby(currentLobby.id); stageActions.setStage('menu'); }}

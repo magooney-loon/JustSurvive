@@ -2,10 +2,17 @@
 	import { fly } from 'svelte/transition';
 	import { stageActions } from '../stage.svelte.js';
 	import { gameActions, gameState } from '../game.svelte.js';
-	import { useTable } from 'spacetimedb/svelte';
+	import { useSpacetimeDB, useTable } from 'spacetimedb/svelte';
 	import { tables } from '../module_bindings/index.js';
 
+	const conn = useSpacetimeDB();
 	const [lobbies] = useTable(tables.lobby);
+	const [lobbyPlayers] = useTable(tables.lobbyPlayer);
+
+	const myEntry = $derived(
+		$lobbyPlayers.find(p => p.playerIdentity.toHexString() === $conn.identity?.toHexString())
+	);
+	const alreadyInLobby = $derived(!!myEntry);
 
 	let joinCode = $state('');
 	let playerName = $state('Player');
@@ -44,35 +51,49 @@
 >
 	<h1 style="font-size: 3rem; margin: 0;">Forest Run</h1>
 
-	<input
-		type="text"
-		placeholder="Your name"
-		bind:value={playerName}
-		maxlength={16}
-		style="text-align: center; font-size: 1.2rem; padding: 0.4rem 1rem; border-radius: 8px;"
-	/>
-
-	{#if mode === 'main'}
-		<button onclick={quickplay} disabled={loading}>Quick Play</button>
-		<button onclick={hostPrivate} disabled={loading}>Host Private Lobby</button>
-		<button onclick={() => { gameActions.clearError(); mode = 'join_code'; }} disabled={loading}>Join by Code</button>
-		<button onclick={() => stageActions.setStage('leaderboard')} disabled={loading}>Leaderboard</button>
-		<button onclick={() => stageActions.setStage('settings')} disabled={loading}>Settings</button>
+	{#if alreadyInLobby}
+		<input
+			type="text"
+			value={myEntry?.playerName}
+			disabled
+			style="text-align: center; font-size: 1.2rem; padding: 0.4rem 1rem; border-radius: 8px; opacity: 0.6; cursor: not-allowed;"
+		/>
+		<button onclick={() => stageActions.setStage('lobby')} style="background: #4a8; padding: 0.6rem 2rem; border-radius: 8px; font-size: 1.1rem;">
+			Reconnect to Lobby
+		</button>
+		<button onclick={() => stageActions.setStage('leaderboard')}>Leaderboard</button>
+		<button onclick={() => stageActions.setStage('settings')}>Settings</button>
 	{:else}
 		<input
 			type="text"
-			placeholder="Enter Code"
-			bind:value={joinCode}
-			maxlength={6}
-			style="text-align: center; text-transform: uppercase; font-size: 1.5rem; padding: 0.4rem 1rem; letter-spacing: 0.3rem; border-radius: 8px;"
+			placeholder="Your name"
+			bind:value={playerName}
+			maxlength={16}
+			style="text-align: center; font-size: 1.2rem; padding: 0.4rem 1rem; border-radius: 8px;"
 		/>
-		<button onclick={joinByCode} disabled={joinCode.length < 4 || loading}>Join</button>
-		<button onclick={() => { gameActions.clearError(); mode = 'main'; }} disabled={loading}>Back</button>
-	{/if}
 
-	{#if loading}
-		<p style="color: #aaa;">Connecting...</p>
-	{:else if gameState.error}
-		<p style="color: #f66;">{gameState.error}</p>
+		{#if mode === 'main'}
+			<button onclick={quickplay} disabled={loading}>Quick Play</button>
+			<button onclick={hostPrivate} disabled={loading}>Host Private Lobby</button>
+			<button onclick={() => { gameActions.clearError(); mode = 'join_code'; }} disabled={loading}>Join by Code</button>
+			<button onclick={() => stageActions.setStage('leaderboard')} disabled={loading}>Leaderboard</button>
+			<button onclick={() => stageActions.setStage('settings')} disabled={loading}>Settings</button>
+		{:else}
+			<input
+				type="text"
+				placeholder="Enter Code"
+				bind:value={joinCode}
+				maxlength={6}
+				style="text-align: center; text-transform: uppercase; font-size: 1.5rem; padding: 0.4rem 1rem; letter-spacing: 0.3rem; border-radius: 8px;"
+			/>
+			<button onclick={joinByCode} disabled={joinCode.length < 4 || loading}>Join</button>
+			<button onclick={() => { gameActions.clearError(); mode = 'main'; }} disabled={loading}>Back</button>
+		{/if}
+
+		{#if loading}
+			<p style="color: #aaa;">Connecting...</p>
+		{:else if gameState.error}
+			<p style="color: #f66;">{gameState.error}</p>
+		{/if}
 	{/if}
 </div>
