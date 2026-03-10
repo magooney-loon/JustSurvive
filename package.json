@@ -9,8 +9,9 @@
     "preview": "vite preview",
     "generate": "pnpm --dir spacetimedb install && cargo run -p gen-bindings -- --out-dir src/module_bindings --module-path spacetimedb && prettier --write src/module_bindings",
     "spacetime:generate": "spacetime generate --lang typescript --out-dir src/module_bindings --module-path spacetimedb",
-    "spacetime:publish:local": "spacetime publish --module-path spacetimedb --server local",
-    "spacetime:publish": "spacetime publish --module-path spacetimedb --server maincloud"
+    "spacetime:publish:local": "spacetime publish justsurvive-6769 --module-path spacetimedb --server local",
+    "spacetime:publish:local:fresh": "spacetime publish justsurvive-6769 --module-path spacetimedb --server local --delete-data --yes",
+    "spacetime:publish": "spacetime publish justsurvive-6769 --module-path spacetimedb --server maincloud"
   },
   "dependencies": {
     "@threlte/core": "^8.4.1",

@@ -104,11 +104,14 @@ export default spacetimedb;
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-function generateCode(): string {
+function generateCode(seed: bigint): string {
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  let s = seed;
   let code = '';
-  // Deterministic seed from repeated chars — improve with LCG if needed
-  for (let i = 0; i < 6; i++) code += chars[i % chars.length];
+  for (let i = 0; i < 6; i++) {
+    s = (s * 1664525n + 1013904223n) & 0xFFFFFFFFn;
+    code += chars[Number(s % BigInt(chars.length))];
+  }
   return code;
 }
 
@@ -134,7 +137,7 @@ export const create_lobby = spacetimedb.reducer({
   const lobby = ctx.db.lobby.insert({
     id: 0n,
     hostIdentity: ctx.sender,
-    code: generateCode(),
+    code: generateCode(ctx.timestamp.microsSinceUnixEpoch),
     isPublic,
     status: 'waiting',
     playerCount: 1n,

@@ -1,4 +1,5 @@
 import type { DbConnection } from './module_bindings/index.js';
+import type { Lobby } from './module_bindings/types.js';
 
 export type PlayerClass = 'spotter' | 'gunner' | 'tank' | 'healer';
 
@@ -67,6 +68,26 @@ export const gameActions = {
 		if (!conn) return;
 		conn.reducers.leaveLobby({ lobbyId });
 		gameState.currentLobbyId = null;
+	},
+	quickplay(lobbies: readonly Lobby[]) {
+		if (!conn) return;
+		gameState.error = null;
+		const available = lobbies.find(
+			l => l.isPublic && l.status === 'waiting' && l.playerCount < l.maxPlayers,
+		);
+		if (available) {
+			conn.reducers.joinLobby({
+				lobbyId: available.id,
+				playerName: gameState.localPlayerName,
+				classChoice: gameState.localPlayerClass ?? '',
+			});
+		} else {
+			conn.reducers.createLobby({
+				playerName: gameState.localPlayerName,
+				classChoice: gameState.localPlayerClass ?? '',
+				isPublic: true,
+			});
+		}
 	},
 	clearError() {
 		gameState.error = null;

@@ -19,6 +19,15 @@
 
 	const CLASSES = ['spotter', 'gunner', 'tank', 'healer'] as const;
 
+	// Leave lobby on component unmount (e.g. browser back, hard nav)
+	$effect(() => {
+		return () => {
+			if (currentLobby && currentLobby.status === 'waiting') {
+				gameActions.leaveLobby(currentLobby.id);
+			}
+		};
+	});
+
 	// Watch for session starting → transition to game
 	$effect(() => {
 		if (currentLobby?.status === 'in_progress') {
