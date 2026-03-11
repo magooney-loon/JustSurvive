@@ -10,9 +10,9 @@
 	const [lobbyPlayers] = useTable(tables.lobbyPlayer);
 
 	const myEntry = $derived(
-		$lobbyPlayers.find(p => p.playerIdentity.toHexString() === $conn.identity?.toHexString())
+		$lobbyPlayers.find((p) => p.playerIdentity.toHexString() === $conn.identity?.toHexString())
 	);
-	const myLobby = $derived(myEntry ? $lobbies.find(l => l.id === myEntry.lobbyId) : null);
+	const myLobby = $derived(myEntry ? $lobbies.find((l) => l.id === myEntry.lobbyId) : null);
 	// Only show reconnect for active games; redirect to lobby for waiting/countdown
 	const inActiveGame = $derived(myLobby?.status === 'in_progress');
 
@@ -70,7 +70,10 @@
 			disabled
 			style="text-align: center; font-size: 1.2rem; padding: 0.4rem 1rem; border-radius: 8px; opacity: 0.6; cursor: not-allowed;"
 		/>
-		<button onclick={() => stageActions.setStage('lobby')} style="background: #4a8; padding: 0.6rem 2rem; border-radius: 8px; font-size: 1.1rem;">
+		<button
+			onclick={() => stageActions.setStage('lobby')}
+			style="background: #4a8; padding: 0.6rem 2rem; border-radius: 8px; font-size: 1.1rem;"
+		>
 			Reconnect to Lobby
 		</button>
 		<button onclick={() => stageActions.setStage('leaderboard')}>Leaderboard</button>
@@ -87,8 +90,16 @@
 		{#if mode === 'main'}
 			<button onclick={quickplay} disabled={loading}>Quick Play</button>
 			<button onclick={hostPrivate} disabled={loading}>Host Private Lobby</button>
-			<button onclick={() => { gameActions.clearError(); mode = 'join_code'; }} disabled={loading}>Join by Code</button>
-			<button onclick={() => stageActions.setStage('leaderboard')} disabled={loading}>Leaderboard</button>
+			<button
+				onclick={() => {
+					gameActions.clearError();
+					mode = 'join_code';
+				}}
+				disabled={loading}>Join by Code</button
+			>
+			<button onclick={() => stageActions.setStage('leaderboard')} disabled={loading}
+				>Leaderboard</button
+			>
 			<button onclick={() => stageActions.setStage('settings')} disabled={loading}>Settings</button>
 		{:else}
 			<input
@@ -99,7 +110,13 @@
 				style="text-align: center; text-transform: uppercase; font-size: 1.5rem; padding: 0.4rem 1rem; letter-spacing: 0.3rem; border-radius: 8px;"
 			/>
 			<button onclick={joinByCode} disabled={joinCode.length < 4 || loading}>Join</button>
-			<button onclick={() => { gameActions.clearError(); mode = 'main'; }} disabled={loading}>Back</button>
+			<button
+				onclick={() => {
+					gameActions.clearError();
+					mode = 'main';
+				}}
+				disabled={loading}>Back</button
+			>
 		{/if}
 
 		{#if loading}
