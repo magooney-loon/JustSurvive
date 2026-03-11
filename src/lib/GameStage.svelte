@@ -44,29 +44,42 @@
 	);
 	const MAX_RENDER_DIST = 70; // world units
 	const NEAR_RENDER_DIST = 35; // world units
-	const nearEnemies = $derived(
-		$enemies.filter((e) => {
-			if (e.sessionId !== gameState.currentSessionId) return false;
-			// Allow dead enemies through - EnemyEntity handles death animation
-			if (!myState) return true;
-			const dx = Number(e.posX) / 1000 - localPos.x;
-			const dz = Number(e.posZ) / 1000 - localPos.z;
-			return dx * dx + dz * dz <= NEAR_RENDER_DIST * NEAR_RENDER_DIST;
-		})
-	);
-	const farEnemies = $derived(
-		$enemies.filter((e) => {
-			if (e.sessionId !== gameState.currentSessionId) return false;
-			// Far enemies use instanced mesh - only show alive ones
-			if (!e.isAlive) return false;
-			if (!myState) return false;
+	const NEAR_DIST_SQ = NEAR_RENDER_DIST * NEAR_RENDER_DIST;
+	const MAX_DIST_SQ = MAX_RENDER_DIST * MAX_RENDER_DIST;
+
+	// Single pass over $enemies — avoids two O(n) scans and duplicate BigInt conversions
+	const enemyGroups = $derived.by(() => {
+		const near: (typeof $enemies)[number][] = [];
+		const far: (typeof $enemies)[number][] = [];
+		for (const e of $enemies) {
+			if (e.sessionId !== gameState.currentSessionId) continue;
+			if (!myState) {
+				// No local player yet — show all as near (EnemyEntity handles death anim)
+				near.push(e);
+				continue;
+			}
 			const dx = Number(e.posX) / 1000 - localPos.x;
 			const dz = Number(e.posZ) / 1000 - localPos.z;
 			const d2 = dx * dx + dz * dz;
-			return d2 > NEAR_RENDER_DIST * NEAR_RENDER_DIST && d2 <= MAX_RENDER_DIST * MAX_RENDER_DIST;
-		})
+			if (d2 <= NEAR_DIST_SQ) {
+				near.push(e);
+			} else if (e.isAlive && d2 <= MAX_DIST_SQ) {
+				far.push(e);
+			}
+		}
+		return { near, far };
+	});
+
+	const livePools = $derived(
+		myState
+			? $acidPools.filter((p) => {
+					if (p.sessionId !== gameState.currentSessionId) return false;
+					const dx = Number(p.posX) / 1000 - localPos.x;
+					const dz = Number(p.posZ) / 1000 - localPos.z;
+					return dx * dx + dz * dz <= MAX_DIST_SQ;
+				})
+			: $acidPools.filter((p) => p.sessionId === gameState.currentSessionId)
 	);
-	const livePools = $derived($acidPools.filter((p) => p.sessionId === gameState.currentSessionId));
 	const alivePlayers = $derived(
 		$players.filter((p) => p.sessionId === gameState.currentSessionId && p.status === 'alive')
 	);
@@ -238,11 +251,11 @@
 {/each}
 
 <!-- Enemies (interpolated) -->
-{#each nearEnemies as enemy (enemy.id)}
+{#each enemyGroups.near as enemy (enemy.id)}
 	<EnemyEntity {enemy} />
 {/each}
-{#if farEnemies.length > 0}
-	<EnemyProxyInstances enemies={farEnemies} />
+{#if enemyGroups.far.length > 0}
+	<EnemyProxyInstances enemies={enemyGroups.far} />
 {/if}
 
 <!-- Acid pools -->

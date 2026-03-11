@@ -1,3 +1,26 @@
+<script module lang="ts">
+	import * as THREE from 'three';
+	// Shared geometries — created once, reused across all EnemyEntity instances
+	export const bruteBodyGeo = new THREE.BoxGeometry(0.7, 0.18, 0.32);
+	export const bruteSpikeGeo = new THREE.ConeGeometry(0.08, 0.26, 6);
+	export const fastCrestGeo = new THREE.ConeGeometry(0.06, 0.36, 6);
+	export const fastFinGeo = new THREE.ConeGeometry(0.05, 0.4, 6);
+	export const spitterBulbGeo = new THREE.SphereGeometry(0.18, 8, 6);
+	export const spitterSacGeo = new THREE.CylinderGeometry(0.08, 0.14, 0.5, 6);
+	export const basicHornGeo = new THREE.ConeGeometry(0.05, 0.2, 6);
+	export const markRingGeo = new THREE.TorusGeometry(0.4, 0.07, 6, 4);
+	export const markStemGeo = new THREE.CylinderGeometry(0.03, 0.03, 1, 4);
+	// Shared materials
+	export const bruteBodyMat = new THREE.MeshStandardMaterial({ color: '#4a1f1f' });
+	export const bruteSpikeMat = new THREE.MeshStandardMaterial({ color: '#5c2a2a' });
+	export const fastCrestMat = new THREE.MeshStandardMaterial({ color: '#f99' });
+	export const fastFinMat = new THREE.MeshStandardMaterial({ color: '#f77' });
+	export const spitterBulbMat = new THREE.MeshStandardMaterial({ color: '#2f7a2f' });
+	export const spitterSacMat = new THREE.MeshStandardMaterial({ color: '#2b6a2b' });
+	export const basicHornMat = new THREE.MeshStandardMaterial({ color: '#c77' });
+	export const markMat = new THREE.MeshBasicMaterial({ color: '#f84' });
+</script>
+
 <script lang="ts">
 	import { T, useTask } from '@threlte/core';
 	import { untrack } from 'svelte';
@@ -91,48 +114,21 @@
 			</T.Group>
 			{#if enemy.enemyType === 'brute'}
 				<!-- Brute spikes + wide shoulders -->
-				<T.Mesh position={[0, 1.35, -0.05]}>
-					<T.BoxGeometry args={[0.7, 0.18, 0.32]} />
-					<T.MeshStandardMaterial color="#4a1f1f" />
-				</T.Mesh>
-				<T.Mesh position={[-0.25, 1.55, -0.05]} rotation={[0, 0.2, 0]}>
-					<T.ConeGeometry args={[0.08, 0.26, 6]} />
-					<T.MeshStandardMaterial color="#5c2a2a" />
-				</T.Mesh>
-				<T.Mesh position={[0.25, 1.55, -0.05]} rotation={[0, -0.2, 0]}>
-					<T.ConeGeometry args={[0.08, 0.26, 6]} />
-					<T.MeshStandardMaterial color="#5c2a2a" />
-				</T.Mesh>
+				<T.Mesh position={[0, 1.35, -0.05]} geometry={bruteBodyGeo} material={bruteBodyMat} />
+				<T.Mesh position={[-0.25, 1.55, -0.05]} rotation={[0, 0.2, 0]} geometry={bruteSpikeGeo} material={bruteSpikeMat} />
+				<T.Mesh position={[0.25, 1.55, -0.05]} rotation={[0, -0.2, 0]} geometry={bruteSpikeGeo} material={bruteSpikeMat} />
 			{:else if enemy.enemyType === 'fast'}
 				<!-- Fast fins + lean head crest -->
-				<T.Mesh position={[0, 1.52, -0.02]} rotation={[0.2, 0, 0]}>
-					<T.ConeGeometry args={[0.06, 0.36, 6]} />
-					<T.MeshStandardMaterial color="#f99" />
-				</T.Mesh>
-				<T.Mesh position={[0, 1.15, 0.2]} rotation={[Math.PI / 2, 0, 0]}>
-					<T.ConeGeometry args={[0.05, 0.4, 6]} />
-					<T.MeshStandardMaterial color="#f77" />
-				</T.Mesh>
+				<T.Mesh position={[0, 1.52, -0.02]} rotation={[0.2, 0, 0]} geometry={fastCrestGeo} material={fastCrestMat} />
+				<T.Mesh position={[0, 1.15, 0.2]} rotation={[Math.PI / 2, 0, 0]} geometry={fastFinGeo} material={fastFinMat} />
 			{:else if enemy.enemyType === 'spitter'}
 				<!-- Spitter bulb + dorsal sac -->
-				<T.Mesh position={[0, 1.3, 0.22]}>
-					<T.SphereGeometry args={[0.18, 8, 6]} />
-					<T.MeshStandardMaterial color="#2f7a2f" />
-				</T.Mesh>
-				<T.Mesh position={[0, 1.0, 0.25]} rotation={[Math.PI / 2, 0, 0]}>
-					<T.CylinderGeometry args={[0.08, 0.14, 0.5, 6]} />
-					<T.MeshStandardMaterial color="#2b6a2b" />
-				</T.Mesh>
+				<T.Mesh position={[0, 1.3, 0.22]} geometry={spitterBulbGeo} material={spitterBulbMat} />
+				<T.Mesh position={[0, 1.0, 0.25]} rotation={[Math.PI / 2, 0, 0]} geometry={spitterSacGeo} material={spitterSacMat} />
 			{:else}
 				<!-- Basic: head horns -->
-				<T.Mesh position={[-0.14, 1.64, 0]} rotation={[0, 0, -0.3]}>
-					<T.ConeGeometry args={[0.05, 0.2, 6]} />
-					<T.MeshStandardMaterial color="#c77" />
-				</T.Mesh>
-				<T.Mesh position={[0.14, 1.64, 0]} rotation={[0, 0, 0.3]}>
-					<T.ConeGeometry args={[0.05, 0.2, 6]} />
-					<T.MeshStandardMaterial color="#c77" />
-				</T.Mesh>
+				<T.Mesh position={[-0.14, 1.64, 0]} rotation={[0, 0, -0.3]} geometry={basicHornGeo} material={basicHornMat} />
+				<T.Mesh position={[0.14, 1.64, 0]} rotation={[0, 0, 0.3]} geometry={basicHornGeo} material={basicHornMat} />
 			{/if}
 		</T.Group>
 
@@ -236,15 +232,9 @@
 
 		{#if enemy.isMarked && !dead}
 			<!-- Mark ring above enemy -->
-			<T.Mesh position={[0, 2.2, 0]} rotation={[Math.PI / 4, 0, 0]} scale={[pulse, pulse, pulse]}>
-				<T.TorusGeometry args={[0.4, 0.07, 6, 4]} />
-				<T.MeshBasicMaterial color="#f84" />
-			</T.Mesh>
+			<T.Mesh position={[0, 2.2, 0]} rotation={[Math.PI / 4, 0, 0]} scale={[pulse, pulse, pulse]} geometry={markRingGeo} material={markMat} />
 			<!-- Stem -->
-			<T.Mesh position={[0, 1.6, 0]}>
-				<T.CylinderGeometry args={[0.03, 0.03, 1, 4]} />
-				<T.MeshBasicMaterial color="#f84" />
-			</T.Mesh>
+			<T.Mesh position={[0, 1.6, 0]} geometry={markStemGeo} material={markMat} />
 		{/if}
 	</T.Group>
 {/if}

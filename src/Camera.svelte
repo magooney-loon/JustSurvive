@@ -26,6 +26,9 @@
 	};
 
 	const FOLLOW_OFFSET = { x: 0, y: 6, z: 12 };
+	const MOVE_THRESHOLD = 0.002; // skip update if target moved less than this
+
+	let prevFollowX = 0, prevFollowZ = 0, prevAimX = 0, prevAimZ = 0;
 
 	useTask(() => {
 		if (!controls || stageState.currentStage !== 'game') return;
@@ -34,6 +37,18 @@
 		const followZ = cameraFollow.active ? cameraFollow.z : localPos.z;
 		const aimX = cameraFollow.active ? cameraFollow.aimX : localAim.x;
 		const aimZ = cameraFollow.active ? cameraFollow.aimZ : localAim.z;
+
+		// Skip if nothing meaningful changed
+		if (
+			Math.abs(followX - prevFollowX) < MOVE_THRESHOLD &&
+			Math.abs(followZ - prevFollowZ) < MOVE_THRESHOLD &&
+			Math.abs(aimX - prevAimX) < MOVE_THRESHOLD &&
+			Math.abs(aimZ - prevAimZ) < MOVE_THRESHOLD
+		) return;
+
+		prevFollowX = followX; prevFollowZ = followZ;
+		prevAimX = aimX; prevAimZ = aimZ;
+
 		const aimAngle = Math.atan2(followX - aimX, followZ - aimZ);
 		const camAngle = -aimAngle;
 		const cos = Math.cos(camAngle);

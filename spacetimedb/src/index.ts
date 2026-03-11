@@ -856,29 +856,40 @@ export const enemy_tick = spacetimedb.reducer(
 			}
 		}
 		const BRACE_MAX_US = 5_000_000n;
-		for (let i = 0; i < players.length; i++) {
-			const p = players[i];
-			if (
-				p.isBracing &&
-				p.braceStartAt &&
-				now - p.braceStartAt.microsSinceUnixEpoch >= BRACE_MAX_US
-			) {
-				const cooldownUntil = ts(now + 1_000_000n);
-				const updated = {
-					...p,
-					isBracing: false,
-					braceStartAt: undefined,
-					braceCooldownUntil: cooldownUntil
-				};
-				ctx.db.playerState.id.update(updated);
-				players[i] = updated;
+		// Only iterate if at least one player is bracing
+		if (players.some((p) => p.isBracing)) {
+			for (let i = 0; i < players.length; i++) {
+				const p = players[i];
+				if (
+					p.isBracing &&
+					p.braceStartAt &&
+					now - p.braceStartAt.microsSinceUnixEpoch >= BRACE_MAX_US
+				) {
+					const cooldownUntil = ts(now + 1_000_000n);
+					const updated = {
+						...p,
+						isBracing: false,
+						braceStartAt: undefined,
+						braceCooldownUntil: cooldownUntil
+					};
+					ctx.db.playerState.id.update(updated);
+					players[i] = updated;
+				}
 			}
+		}
+
+		if (players.length === 0 || enemies.length === 0) {
+			const nextTick = ctx.timestamp.microsSinceUnixEpoch + TICK_MS * 1000n;
+			ctx.db.enemyTickJob.insert({
+				scheduledId: 0n,
+				scheduledAt: ScheduleAt.time(nextTick),
+				sessionId: arg.sessionId
+			});
+			return;
 		}
 
 		const targetCounts = new Map<bigint, number>();
 		for (const enemy of enemies) {
-			if (players.length === 0) break;
-
 			let chosen = players[0];
 			let chosenDist = BigInt(Number.MAX_SAFE_INTEGER);
 			let bestAny = players[0];

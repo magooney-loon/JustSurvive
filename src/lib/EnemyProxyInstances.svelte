@@ -12,9 +12,13 @@
 		brute: '#722',
 		spitter: '#2a6'
 	};
+
+	// Fixed limit — avoids InstancedMesh rebuild when enemy count changes.
+	// range controls how many are actually rendered.
+	const MAX_FAR_ENEMIES = 150;
 </script>
 
-<InstancedMesh limit={enemies.length} range={enemies.length}>
+<InstancedMesh limit={MAX_FAR_ENEMIES} range={enemies.length}>
 	<T.CapsuleGeometry args={[0.08, 0.35, 4, 6]} />
 	<T.MeshLambertMaterial />
 	{#each enemies as enemy (enemy.id)}
