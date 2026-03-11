@@ -21,6 +21,7 @@
 	import MarkOverlay from './MarkOverlay.svelte';
 	import DayNightSky from './DayNightSky.svelte';
 	import GameGround from './GameGround.svelte';
+	import HealBeam from './HealBeam.svelte';
 
 	const conn = useSpacetimeDB();
 	const [players] = useTable(tables.playerState);
@@ -261,4 +262,5 @@
 {/each}
 
 <!-- Mark / ping overlays -->
+<HealBeam />
 <MarkOverlay />

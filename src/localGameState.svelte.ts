@@ -39,6 +39,10 @@ export const abilityState = $state({
 	braceCooldownUntil: 0,      // ms timestamp (tank brace, 1s between activations)
 });
 
+// Heal beam — written by AbilityInput, read by HealBeam (3D scene)
+export const healBeam = $state({ active: false, toX: 0, toZ: 0, until: 0 });
+export const HEAL_BEAM_MS = 350;
+
 export function resetLocalState() {
 	input.forward = false;
 	input.back = false;

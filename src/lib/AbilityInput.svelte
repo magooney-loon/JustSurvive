@@ -2,7 +2,7 @@
 	import { useTable, useSpacetimeDB } from 'spacetimedb/svelte';
 	import { tables } from '../module_bindings/index.js';
 	import { gameState, gameActions } from '../game.svelte.js';
-	import { localPos, localAim, abilityState } from '../localGameState.svelte.js';
+	import { localPos, localAim, abilityState, healBeam, HEAL_BEAM_MS } from '../localGameState.svelte.js';
 
 	const conn = useSpacetimeDB();
 	const [players] = useTable(tables.playerState);
@@ -195,6 +195,11 @@
 				if (target) {
 					gameActions.healPlayer(sid, target.playerIdentity);
 					abilityState.healCooldownUntil = Date.now() + 2000;
+					// Trigger 3D heal beam
+					healBeam.active = true;
+					healBeam.toX = Number(target.posX) / 1000;
+					healBeam.toZ = Number(target.posZ) / 1000;
+					healBeam.until = Date.now() + HEAL_BEAM_MS;
 				}
 			} else if (e.button === 2) {
 				// RMB: revive nearest downed teammate
