@@ -27,6 +27,13 @@ export const cameraFollow = $state({
 
 export { input, localPos, localVelocity };
 
+// Shared ability state — written by AbilityInput, read by GameHud
+export const abilityState = $state({
+	markCooldownUntil: 0,       // ms timestamp (spotter mark, 5s)
+	suppressHits: 0,            // gunner suppress counter (resets on enemy change)
+	lastSuppressedEnemyId: null as bigint | null,
+});
+
 export function resetLocalState() {
 	input.forward = false;
 	input.back = false;
@@ -44,6 +51,9 @@ export function resetLocalState() {
 	cameraFollow.z = 0;
 	cameraFollow.aimX = 0;
 	cameraFollow.aimZ = 0;
+	abilityState.markCooldownUntil = 0;
+	abilityState.suppressHits = 0;
+	abilityState.lastSuppressedEnemyId = null;
 }
 
 const CLASS_SPEED: Record<string, { walk: number; sprint: number }> = {

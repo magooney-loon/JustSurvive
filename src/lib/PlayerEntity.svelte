@@ -106,6 +106,7 @@
 			{walkPhase}
 			{speed}
 			{shotPulse}
+			isBracing={player.isBracing}
 		/>
 	</T.Group>
 	<AimReticle x={aimX} z={aimZ} color={CLASS_COLORS[player.classChoice] ?? '#fff'} />

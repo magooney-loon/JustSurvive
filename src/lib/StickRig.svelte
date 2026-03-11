@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { T } from '@threlte/core';
+	import { T, useTask } from '@threlte/core';
 	import { AdditiveBlending, Object3D } from 'three';
 	export type StickRigProps = {
 		classChoice: string;
@@ -8,6 +8,7 @@
 		speed: number;
 		shotPulse: number;
 		isEnemy?: boolean;
+		isBracing?: boolean;
 	};
 
 	let {
@@ -16,7 +17,8 @@
 		walkPhase,
 		speed,
 		shotPulse,
-		isEnemy = false
+		isEnemy = false,
+		isBracing = false
 	}: StickRigProps = $props();
 
 	const limbR = $derived(classChoice === 'tank' ? 0.09 : classChoice === 'gunner' ? 0.075 : 0.065);
@@ -52,6 +54,18 @@
 	// Knee bends: leg bends at knee when it swings forward, small passive bend at rest
 	const kneeBendL = $derived(0.07 + Math.max(0, Math.sin(walkPhase)) * 0.95 * moveIntensity);
 	const kneeBendR = $derived(0.07 + Math.max(0, -Math.sin(walkPhase)) * 0.95 * moveIntensity);
+
+	// Tank shield: smooth lerp toward brace state
+	let braceT = $state(0);
+	useTask((dt) => {
+		const target = isBracing ? 1 : 0;
+		braceT += (target - braceT) * (1 - Math.pow(0.004, dt));
+	});
+	const shieldGlow = $derived(braceT * (0.85 + 0.15 * Math.sin(walkPhase * 2.5)));
+	const shieldPosX = $derived(-0.22 * (1 - braceT));
+	const shieldPosY = $derived(0.88 + 0.12 * braceT);
+	const shieldPosZ = $derived(-0.22 - 0.2 * braceT);
+	const shieldS = $derived(0.58 + 0.42 * braceT);
 
 	// Class visor/goggle color
 	const visorColor = $derived(
@@ -149,10 +163,7 @@
 		<T.MeshStandardMaterial color={plateTint} roughness={0.35} metalness={0.35} />
 	</T.Mesh>
 	<!-- Class emblem glow on chest -->
-	<T.Mesh
-		position={[0, 1.27 + breathe, -leanForward * 0.38 - 0.17]}
-		rotation={[0, Math.PI, 0]}
-	>
+	<T.Mesh position={[0, 1.27 + breathe, -leanForward * 0.38 - 0.17]} rotation={[0, Math.PI, 0]}>
 		<T.CircleGeometry args={[0.052, 8]} />
 		<T.MeshBasicMaterial
 			color={visorColor}
@@ -378,86 +389,110 @@
 			<T.MeshStandardMaterial color={plateTint} roughness={0.38} metalness={0.28} />
 		</T.Mesh>
 		{#if !isEnemy && classChoice === 'spotter'}
+			<!-- Flashlight housing -->
 			<T.Mesh position={[0, 0, -0.18]} rotation={[-Math.PI / 2, 0, 0]}>
 				<T.ConeGeometry args={[0.12, 0.3, 8]} />
 				<T.MeshStandardMaterial color="#bdbdbd" roughness={0.28} metalness={0.62} />
 			</T.Mesh>
+			<!-- Lens bezel ring -->
+			<T.Mesh position={[0, 0, -0.325]}>
+				<T.RingGeometry args={[0.09, 0.132, 14]} />
+				<T.MeshStandardMaterial color="#606060" roughness={0.15} metalness={0.88} />
+			</T.Mesh>
 			<T.SpotLight
 				position={[0, 0, -0.2]}
 				color="#fff2c6"
-				intensity={5.2 * lightPulse}
-				distance={18}
-				angle={0.2}
-				penumbra={0.2}
-				decay={2}
+				intensity={6.0 * lightPulse}
+				distance={20}
+				angle={0.22}
+				penumbra={0.35}
+				decay={1.8}
 				castShadow={false}
 				target={spotTarget}
 			/>
 			<T.Object3D bind:ref={spotTarget} position={[0, 0, -10]} />
-			<T.Mesh position={[0, 0, -0.34]}>
-				<T.SphereGeometry args={[0.05, 6, 4]} />
-				<T.MeshStandardMaterial
-					color="#ffe7a1"
-					emissive="#ffe7a1"
-					emissiveIntensity={2.4 * lightFlicker}
-				/>
+			<!-- Emissive filament -->
+			<T.Mesh position={[0, 0, -0.335]}>
+				<T.SphereGeometry args={[0.048, 8, 6]} />
+				<T.MeshStandardMaterial color="#ffeeaa" emissive="#ffeeaa" emissiveIntensity={3.2 * lightFlicker} />
 			</T.Mesh>
-			<T.Mesh
-				position={[0, 0, -6]}
-				rotation={[Math.PI / 2, 0.18, 0]}
-				scale={[beamWarp, 1, 1 / beamWarp]}
-			>
-				<T.MeshBasicMaterial
-					color="#fff6da"
-					transparent
-					opacity={0.009 * lightPulse}
-					side={2}
-					depthWrite={false}
-					blending={AdditiveBlending}
-				/>
-				<T.ConeGeometry args={[1.6, 12.5, 64, 4, true]} />
-			</T.Mesh>
-			<T.Mesh
-				position={[0, 0, -5.6]}
-				rotation={[Math.PI / 2, -0.12, 0.05]}
-				scale={[1 / beamWarp, 1, beamWarp]}
-			>
-				<T.MeshBasicMaterial
-					color="#fff9ef"
-					transparent
-					opacity={0.012 * lightPulse}
-					side={2}
-					depthWrite={false}
-					blending={AdditiveBlending}
-				/>
-				<T.ConeGeometry args={[0.7, 9.2, 64, 4, true]} />
-			</T.Mesh>
-			<T.Mesh position={[0, 0, -6.8]} rotation={[Math.PI / 2, 0.05, -0.04]} scale={[1.06, 1, 0.96]}>
-				<T.MeshBasicMaterial
-					color="#fff1c8"
-					transparent
-					opacity={0.006 * lightPulse}
-					side={2}
-					depthWrite={false}
-					blending={AdditiveBlending}
-				/>
-				<T.ConeGeometry args={[2.0, 13.5, 64, 4, true]} />
-			</T.Mesh>
-			<T.Mesh position={[0, 0, -6]} rotation={[Math.PI / 2, 0, 0]}>
-				<T.ConeGeometry args={[0.9, 9, 32, 2, true]} />
-				<T.MeshBasicMaterial color="#fff8cc" transparent opacity={0.12 * lightPulse} side={2} />
-			</T.Mesh>
-			<T.Mesh position={[0, 0, -15]} rotation={[-Math.PI / 2, 0, 0]}>
-				<T.CircleGeometry args={[0.28, 12]} />
-				<T.MeshBasicMaterial color="#fff6c8" transparent opacity={0.7 * lightPulse} />
-			</T.Mesh>
+			<!-- Near-source glow sphere (very transparent) -->
 			<T.Mesh position={[0, 0, -0.52]}>
-				<T.CircleGeometry args={[0.16, 12]} />
-				<T.MeshBasicMaterial color="#fff7d6" transparent opacity={0.5 * lightFlicker} />
+				<T.SphereGeometry args={[0.3, 8, 6]} />
+				<T.MeshBasicMaterial color="#fff8e0" transparent opacity={0.032 * lightFlicker} side={2} depthWrite={false} blending={AdditiveBlending} />
 			</T.Mesh>
-			<T.Mesh position={[0, 0, -0.58]}>
+			<!-- Lens aperture — center -->
+			<T.Mesh position={[0, 0, -0.34]}>
+				<T.CircleGeometry args={[0.1, 12]} />
+				<T.MeshBasicMaterial color="#fffcf4" transparent opacity={0.5 * lightFlicker} blending={AdditiveBlending} depthWrite={false} />
+			</T.Mesh>
+			<!-- Lens aperture — mid -->
+			<T.Mesh position={[0, 0, -0.36]}>
 				<T.CircleGeometry args={[0.28, 12]} />
-				<T.MeshBasicMaterial color="#fff0b8" transparent opacity={0.18 * lightFlicker} />
+				<T.MeshBasicMaterial color="#fff4cc" transparent opacity={0.12 * lightFlicker} blending={AdditiveBlending} depthWrite={false} />
+			</T.Mesh>
+			<!-- Lens aperture — outer corona -->
+			<T.Mesh position={[0, 0, -0.39]}>
+				<T.CircleGeometry args={[0.58, 12]} />
+				<T.MeshBasicMaterial color="#ffe890" transparent opacity={0.025 * lightFlicker} blending={AdditiveBlending} depthWrite={false} />
+			</T.Mesh>
+			<!-- Near-field scatter cone -->
+			<T.Mesh position={[0, 0, -1.5]} rotation={[Math.PI / 2, 0, 0]}>
+				<T.ConeGeometry args={[1.45, 3.0, 32, 2, true]} />
+				<T.MeshBasicMaterial color="#fff9e4" transparent opacity={0.016 * lightPulse} side={2} depthWrite={false} blending={AdditiveBlending} />
+			</T.Mesh>
+			<!-- Inner hot core -->
+			<T.Mesh position={[0, 0, -6.2]} rotation={[Math.PI / 2, 0, 0]}>
+				<T.ConeGeometry args={[0.48, 12.4, 32, 4, true]} />
+				<T.MeshBasicMaterial color="#fffefc" transparent opacity={0.02 * lightPulse} side={2} depthWrite={false} blending={AdditiveBlending} />
+			</T.Mesh>
+			<!-- Main beam -->
+			<T.Mesh position={[0, 0, -6]} rotation={[Math.PI / 2, beamWarp * 0.14, 0]} scale={[beamWarp, 1, 1 / beamWarp]}>
+				<T.ConeGeometry args={[1.55, 12.0, 48, 4, true]} />
+				<T.MeshBasicMaterial color="#fff8e8" transparent opacity={0.006 * lightPulse} side={2} depthWrite={false} blending={AdditiveBlending} />
+			</T.Mesh>
+			<!-- Outer haze -->
+			<T.Mesh position={[0, 0, -5.6]} rotation={[Math.PI / 2, -0.1, 0.06]} scale={[1 / beamWarp, 1, beamWarp]}>
+				<T.ConeGeometry args={[2.75, 11.2, 48, 3, true]} />
+				<T.MeshBasicMaterial color="#fff2c8" transparent opacity={0.0022 * lightPulse} side={2} depthWrite={false} blending={AdditiveBlending} />
+			</T.Mesh>
+			<!-- Atmospheric edge -->
+			<T.Mesh position={[0, 0, -6.6]} rotation={[Math.PI / 2, 0.06, -0.04]} scale={[beamWarp * 0.97, 1, 1 / (beamWarp * 0.97)]}>
+				<T.ConeGeometry args={[4.0, 13.2, 48, 3, true]} />
+				<T.MeshBasicMaterial color="#f0f4ff" transparent opacity={0.0009 * lightPulse} side={2} depthWrite={false} blending={AdditiveBlending} />
+			</T.Mesh>
+			<!-- Beam cross-sections (depth cue discs) -->
+			<T.Mesh position={[0, 0, -2.5]}>
+				<T.CircleGeometry args={[0.44, 16]} />
+				<T.MeshBasicMaterial color="#fff8e8" transparent opacity={0.012 * lightFlicker} side={2} blending={AdditiveBlending} depthWrite={false} />
+			</T.Mesh>
+			<T.Mesh position={[0, 0, -6]}>
+				<T.CircleGeometry args={[0.95, 16]} />
+				<T.MeshBasicMaterial color="#fff8e8" transparent opacity={0.006 * lightFlicker} side={2} blending={AdditiveBlending} depthWrite={false} />
+			</T.Mesh>
+			<T.Mesh position={[0, 0, -9.5]}>
+				<T.CircleGeometry args={[1.38, 16]} />
+				<T.MeshBasicMaterial color="#fff8e8" transparent opacity={0.003 * lightFlicker} side={2} blending={AdditiveBlending} depthWrite={false} />
+			</T.Mesh>
+			<!-- End pool — hot center -->
+			<T.Mesh position={[0, 0, -13]} rotation={[-Math.PI / 2, 0, 0]}>
+				<T.CircleGeometry args={[0.2, 14]} />
+				<T.MeshBasicMaterial color="#fff9e8" transparent opacity={0.9 * lightPulse} blending={AdditiveBlending} depthWrite={false} />
+			</T.Mesh>
+			<!-- End pool — inner ring -->
+			<T.Mesh position={[0, 0, -13.02]} rotation={[-Math.PI / 2, 0, 0]}>
+				<T.RingGeometry args={[0.2, 0.5, 14]} />
+				<T.MeshBasicMaterial color="#fff0b0" transparent opacity={0.42 * lightPulse} blending={AdditiveBlending} depthWrite={false} />
+			</T.Mesh>
+			<!-- End pool — mid ring -->
+			<T.Mesh position={[0, 0, -13.05]} rotation={[-Math.PI / 2, 0, 0]}>
+				<T.RingGeometry args={[0.5, 1.05, 14]} />
+				<T.MeshBasicMaterial color="#ffe890" transparent opacity={0.13 * lightPulse} blending={AdditiveBlending} depthWrite={false} />
+			</T.Mesh>
+			<!-- End pool — outer ring -->
+			<T.Mesh position={[0, 0, -13.1]} rotation={[-Math.PI / 2, 0, 0]}>
+				<T.RingGeometry args={[1.05, 2.1, 14]} />
+				<T.MeshBasicMaterial color="#ffd840" transparent opacity={0.032 * lightPulse} blending={AdditiveBlending} depthWrite={false} />
 			</T.Mesh>
 		{:else if !isEnemy && classChoice === 'gunner'}
 			{@const recoil = shotPulse * 0.18}
@@ -485,6 +520,71 @@
 			{/if}
 		{/if}
 	</T.Group>
+
+	<!-- TANK SHIELD (always present for tank, grows when bracing) -->
+	{#if classChoice === 'tank'}
+		<T.Group position={[shieldPosX, shieldPosY, shieldPosZ]} scale={[shieldS, shieldS, shieldS]}>
+			<!-- Hex plate body (cylinder flat = hex disc from above) -->
+			<T.Mesh>
+				<T.CylinderGeometry args={[0.44, 0.44, 0.065, 6]} />
+				<T.MeshStandardMaterial color="#162416" roughness={0.28} metalness={0.6} />
+			</T.Mesh>
+			<!-- Outer rim with emissive green glow -->
+			<T.Mesh>
+				<T.CylinderGeometry args={[0.47, 0.44, 0.02, 6]} />
+				<T.MeshStandardMaterial
+					color="#2a6e2a"
+					emissive="#44ff44"
+					emissiveIntensity={0.3 + shieldGlow * 2.2}
+					roughness={0.28}
+					metalness={0.7}
+				/>
+			</T.Mesh>
+			<!-- Cross detail on face (visible from above) -->
+			<T.Mesh position={[0, 0.04, 0]}>
+				<T.BoxGeometry args={[0.07, 0.01, 0.38]} />
+				<T.MeshBasicMaterial color="#55ee55" transparent opacity={0.28 + shieldGlow * 0.5} />
+			</T.Mesh>
+			<T.Mesh position={[0, 0.04, 0]}>
+				<T.BoxGeometry args={[0.38, 0.01, 0.07]} />
+				<T.MeshBasicMaterial color="#55ee55" transparent opacity={0.28 + shieldGlow * 0.5} />
+			</T.Mesh>
+			<!-- Center stud -->
+			<T.Mesh position={[0, 0.04, 0]}>
+				<T.CylinderGeometry args={[0.06, 0.06, 0.012, 6]} />
+				<T.MeshStandardMaterial
+					color="#55ee55"
+					emissive="#44ff44"
+					emissiveIntensity={0.5 + shieldGlow * 1.8}
+					roughness={0.3}
+					metalness={0.6}
+				/>
+			</T.Mesh>
+			<!-- Brace active: energy disc + outer ring -->
+			{#if braceT > 0.05}
+				<T.Mesh position={[0, 0.038, 0]}>
+					<T.CylinderGeometry args={[0.43, 0.43, 0.001, 16]} />
+					<T.MeshBasicMaterial
+						color="#44ff44"
+						transparent
+						opacity={shieldGlow * 0.15}
+						blending={AdditiveBlending}
+						depthWrite={false}
+					/>
+				</T.Mesh>
+				<T.Mesh position={[0, 0.04, 0]} rotation={[Math.PI / 2, 0, 0]}>
+					<T.RingGeometry args={[0.44, 0.62, 14]} />
+					<T.MeshBasicMaterial
+						color="#88ff88"
+						transparent
+						opacity={shieldGlow * 0.65}
+						blending={AdditiveBlending}
+						depthWrite={false}
+					/>
+				</T.Mesh>
+			{/if}
+		</T.Group>
+	{/if}
 
 	{#if !isEnemy}
 		<!-- Facing nub -->

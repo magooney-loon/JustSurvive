@@ -2,7 +2,7 @@
 	import { useTable, useSpacetimeDB } from 'spacetimedb/svelte';
 	import { tables } from '../module_bindings/index.js';
 	import { gameState, gameActions } from '../game.svelte.js';
-	import { localPos, localAim } from '../localGameState.svelte.js';
+	import { localPos, localAim, abilityState } from '../localGameState.svelte.js';
 
 	const conn = useSpacetimeDB();
 	const [players] = useTable(tables.playerState);
@@ -16,7 +16,6 @@
 		)
 	);
 
-	// Enemy nearest to aim point within range
 	function nearestEnemyToAim(rangeFP: number) {
 		const ax = BigInt(Math.round(localAim.x * 1000));
 		const az = BigInt(Math.round(localAim.z * 1000));
@@ -36,7 +35,6 @@
 		return best;
 	}
 
-	// Downed player nearest to local player within range (proximity ability)
 	function nearestDowned(rangeFP: number) {
 		const ox = BigInt(Math.round(localPos.x * 1000));
 		const oz = BigInt(Math.round(localPos.z * 1000));
@@ -57,7 +55,6 @@
 		return best;
 	}
 
-	// Enemy nearest to player (for melee/bash — you hit what's close to you)
 	function nearestEnemyToPlayer(rangeFP: number) {
 		const ox = BigInt(Math.round(localPos.x * 1000));
 		const oz = BigInt(Math.round(localPos.z * 1000));
@@ -77,104 +74,84 @@
 		return best;
 	}
 
-	// Gunner suppression tracking
-	let lastSuppressedEnemyId: bigint | null = null;
-	let suppressHits = 0;
-
-	function onKeyDown(e: KeyboardEvent) {
-		if (!myState || myState.status !== 'alive') return;
-		const sid = gameState.currentSessionId;
-		if (!sid) return;
-
-		switch (e.code) {
-			case 'KeyG': {
-				if (myState.classChoice !== 'spotter') break;
-				// Ping at aim position, not player position
-				gameActions.pingLocation(
-					sid,
-					BigInt(Math.round(localAim.x * 1000)),
-					BigInt(Math.round(localAim.z * 1000))
-				);
-				break;
-			}
-			case 'KeyE': {
-				if (myState.classChoice !== 'tank') break;
-				const enemy = nearestEnemyToPlayer(5_000); // 5 unit bash range
-				gameActions.shieldBash(sid, enemy?.id);
-				break;
-			}
-			case 'Space': {
-				e.preventDefault();
-				if (myState.classChoice !== 'tank') break;
-				gameActions.braceStart(sid);
-				break;
-			}
-			case 'KeyR': {
-				if (myState.classChoice !== 'healer') break;
-				const target = nearestDowned(3_000); // 3 unit revive range
-				if (target) gameActions.reviveStart(sid, target.playerIdentity);
-				break;
-			}
-		}
-	}
-
-	function onKeyUp(e: KeyboardEvent) {
-		if (!myState) return;
-		const sid = gameState.currentSessionId;
-		if (!sid) return;
-		if (e.code === 'Space' && myState.classChoice === 'tank') {
-			gameActions.braceEnd(sid);
-		}
-	}
-
 	function onMouseDown(e: MouseEvent) {
 		if (!myState || myState.status !== 'alive') return;
 		const sid = gameState.currentSessionId;
 		if (!sid) return;
 
+		// ── SPOTTER ─────────────────────────────────────────────────────────
 		if (myState.classChoice === 'spotter') {
-			if (e.button === 2) {
+			if (e.button === 0) {
+				// LMB: mark nearest enemy at aim
+				const enemy = nearestEnemyToAim(15_000);
+				if (enemy) {
+					gameActions.markEnemy(sid, enemy.id);
+					abilityState.markCooldownUntil = Date.now() + 5000;
+				}
+			} else if (e.button === 2) {
 				// RMB: ping location
 				gameActions.pingLocation(
 					sid,
 					BigInt(Math.round(localAim.x * 1000)),
 					BigInt(Math.round(localAim.z * 1000))
 				);
-				return;
 			}
-			if (e.button !== 0) return;
-			// LMB: mark nearest enemy to aim
-			const enemy = nearestEnemyToAim(15_000);
-			if (enemy) gameActions.markEnemy(sid, enemy.id);
 			return;
 		}
 
-		if (e.button !== 0) return;
-		if (myState.classChoice === 'gunner' || myState.classChoice === 'healer') {
+		// ── GUNNER ──────────────────────────────────────────────────────────
+		if (myState.classChoice === 'gunner') {
+			if (e.button !== 0) return;
 			const enemy = nearestEnemyToAim(10_000);
 			if (!enemy) return;
-			// Track suppression: suppress every 3rd hit on same enemy
-			if (enemy.id === lastSuppressedEnemyId) {
-				suppressHits++;
+			if (enemy.id === abilityState.lastSuppressedEnemyId) {
+				abilityState.suppressHits++;
 			} else {
-				lastSuppressedEnemyId = enemy.id;
-				suppressHits = 1;
+				abilityState.lastSuppressedEnemyId = enemy.id;
+				abilityState.suppressHits = 1;
 			}
-			const suppress = myState.classChoice === 'gunner' && suppressHits % 3 === 0;
+			const suppress = abilityState.suppressHits % 3 === 0;
 			gameActions.attackEnemy(sid, enemy.id, suppress);
+			return;
+		}
+
+		// ── TANK ────────────────────────────────────────────────────────────
+		if (myState.classChoice === 'tank') {
+			if (e.button === 0) {
+				// LMB: shield bash
+				const enemy = nearestEnemyToPlayer(5_000);
+				gameActions.shieldBash(sid, enemy?.id);
+			} else if (e.button === 2) {
+				// RMB hold: start brace
+				gameActions.braceStart(sid);
+			}
+			return;
+		}
+
+		// ── HEALER ──────────────────────────────────────────────────────────
+		if (myState.classChoice === 'healer') {
+			if (e.button === 0) {
+				// LMB: attack/heal shot
+				const enemy = nearestEnemyToAim(10_000);
+				if (enemy) gameActions.attackEnemy(sid, enemy.id, false);
+			} else if (e.button === 2) {
+				// RMB: revive nearest downed teammate
+				const target = nearestDowned(3_000);
+				if (target) gameActions.reviveStart(sid, target.playerIdentity);
+			}
+			return;
 		}
 	}
 
-	function onContextMenu(e: MouseEvent) {
-		if (myState?.classChoice === 'spotter') {
-			e.preventDefault();
+	function onMouseUp(e: MouseEvent) {
+		if (!myState) return;
+		const sid = gameState.currentSessionId;
+		if (!sid) return;
+		// RMB release: end tank brace
+		if (e.button === 2 && myState.classChoice === 'tank') {
+			gameActions.braceEnd(sid);
 		}
 	}
 </script>
 
-<svelte:window
-	onkeydown={onKeyDown}
-	onkeyup={onKeyUp}
-	onmousedown={onMouseDown}
-	oncontextmenu={onContextMenu}
-/>
+<svelte:window onmousedown={onMouseDown} onmouseup={onMouseUp} />

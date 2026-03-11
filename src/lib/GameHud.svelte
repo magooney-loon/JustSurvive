@@ -4,6 +4,7 @@
 	import { tables } from '../module_bindings/index.js';
 	import { gameState } from '../game.svelte.js';
 	import { stageActions } from '../stage.svelte.js';
+	import { abilityState } from '../localGameState.svelte.js';
 	import ReviveChannelHud from './ReviveChannelHud.svelte';
 
 	const conn = useSpacetimeDB();
@@ -44,9 +45,59 @@
 		return () => clearInterval(interval);
 	});
 
+	// Tick for cooldown display
+	let now = $state(Date.now());
+	$effect(() => {
+		const id = setInterval(() => { now = Date.now(); }, 80);
+		return () => clearInterval(id);
+	});
+
 	function hpPercent(hp: bigint, max: bigint) {
 		return max > 0n ? Number(hp * 100n / max) : 0;
 	}
+
+	function cdFrac(untilMicros: bigint | undefined | null, totalMs: number): number {
+		if (!untilMicros) return 0;
+		const remaining = Number(untilMicros / 1000n) - now;
+		return remaining > 0 ? Math.min(1, remaining / totalMs) : 0;
+	}
+
+	// Per-class ability slot definitions
+	type AbilitySlot = {
+		label: string;
+		input: string;
+		color: string;
+		// 0=ready, >0=fraction of CD remaining, -1=active (toggle)
+		cdFrac: number;
+		active?: boolean;
+	};
+
+	const abilities = $derived((): [AbilitySlot, AbilitySlot] => {
+		const cls = myState?.classChoice ?? '';
+		if (cls === 'spotter') return [
+			{ label: 'Mark', input: 'LMB', color: '#22d4ff',
+			  cdFrac: Math.max(0, (abilityState.markCooldownUntil - now) / 5000) },
+			{ label: 'Ping', input: 'RMB', color: '#22d4ff',
+			  cdFrac: cdFrac(myState?.pingCooldownUntil?.microsSinceUnixEpoch, 10000) },
+		];
+		if (cls === 'gunner') return [
+			{ label: `Fire${abilityState.suppressHits % 3 > 0 ? ` ${abilityState.suppressHits % 3}/3` : ' ★'}`, input: 'LMB', color: '#ff8822', cdFrac: 0 },
+			{ label: '—', input: '', color: '#555', cdFrac: 0 },
+		];
+		if (cls === 'tank') return [
+			{ label: 'Bash', input: 'LMB', color: '#66ff44', cdFrac: 0 },
+			{ label: 'Brace', input: 'RMB', color: '#66ff44', cdFrac: 0, active: myState?.isBracing },
+		];
+		if (cls === 'healer') return [
+			{ label: 'Heal', input: 'LMB', color: '#ff88cc', cdFrac: 0 },
+			{ label: 'Revive', input: 'RMB', color: '#ff88cc',
+			  cdFrac: cdFrac(myState?.reviveCooldownUntil?.microsSinceUnixEpoch, 15000) },
+		];
+		return [
+			{ label: '—', input: '', color: '#555', cdFrac: 0 },
+			{ label: '—', input: '', color: '#555', cdFrac: 0 },
+		];
+	});
 </script>
 
 <div transition:fly={{ x: -20, duration: 300 }}>
@@ -58,6 +109,64 @@
 			<span style="margin-left: 0.5rem; color: #ff8;">Day {Number(session.cycleNumber) + 1}</span>
 		{/if}
 	</div>
+
+	<!-- Ability bar — bottom center -->
+	{#if myState && myState.status === 'alive'}
+		{@const slots = abilities()}
+		<div style="
+			position: absolute; bottom: 2rem; left: 50%; transform: translateX(-50%);
+			display: flex; gap: 0.5rem; pointer-events: none;
+		">
+			{#each slots as slot}
+				<div style="
+					position: relative; width: 68px; height: 68px;
+					background: rgba(0,0,0,0.75);
+					border: 1.5px solid {slot.active ? slot.color : 'rgba(255,255,255,0.15)'};
+					border-radius: 8px; overflow: hidden;
+					box-shadow: {slot.active ? `0 0 10px ${slot.color}66` : 'none'};
+					transition: border-color 0.15s, box-shadow 0.15s;
+				">
+					<!-- Cooldown overlay (fills from bottom) -->
+					{#if slot.cdFrac > 0}
+						<div style="
+							position: absolute; bottom: 0; left: 0; right: 0;
+							height: {slot.cdFrac * 100}%;
+							background: rgba(0,0,0,0.65);
+							transition: height 0.08s linear;
+						"></div>
+					{/if}
+					<!-- Active pulse overlay -->
+					{#if slot.active}
+						<div style="
+							position: absolute; inset: 0;
+							background: {slot.color}18;
+							animation: abilityPulse 0.9s ease-in-out infinite alternate;
+						"></div>
+					{/if}
+					<!-- Content -->
+					<div style="
+						position: relative; height: 100%;
+						display: flex; flex-direction: column;
+						align-items: center; justify-content: center; gap: 2px;
+					">
+						<span style="font-size: 0.75rem; font-weight: 600; color: {slot.cdFrac > 0 ? '#888' : slot.color}; text-align: center; line-height: 1.1;">
+							{slot.label}
+						</span>
+						{#if slot.input}
+							<span style="font-size: 0.6rem; color: rgba(255,255,255,0.4); background: rgba(255,255,255,0.08); padding: 1px 4px; border-radius: 3px;">
+								{slot.input}
+							</span>
+						{/if}
+						{#if slot.cdFrac > 0}
+							<span style="font-size: 0.65rem; color: #aaa;">
+								{(slot.cdFrac * (slot.input === 'RMB' && myState?.classChoice === 'healer' ? 15 : slot.input === 'RMB' ? 10 : 5)).toFixed(1)}s
+							</span>
+						{/if}
+					</div>
+				</div>
+			{/each}
+		</div>
+	{/if}
 
 	<!-- Local player HP & stamina -->
 	{#if myState}
