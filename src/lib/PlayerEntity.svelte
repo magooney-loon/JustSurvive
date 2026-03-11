@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { T, useTask } from '@threlte/core';
 	import type { PlayerState } from '../module_bindings/types.js';
+	import AimReticle from './AimReticle.svelte';
 
 	type Props = { player: PlayerState };
 	let { player }: Props = $props();
@@ -15,10 +16,22 @@
 
 	const CLASS_COLORS: Record<string, string> = {
 		spotter: '#4af',
-		gunner:  '#f84',
-		tank:    '#8a4',
-		healer:  '#f4a',
+		gunner: '#f84',
+		tank: '#8a4',
+		healer: '#f4a'
 	};
+
+	const CLASS_RANGE: Record<string, number> = {
+		spotter: 15,
+		gunner: 10,
+		healer: 10,
+		tank: 5
+	};
+
+	const aimRange = $derived(CLASS_RANGE[player.classChoice] ?? 10);
+	const facing = $derived(Number(player.facingAngle) / 1000);
+	const aimX = $derived(displayX + -Math.sin(facing) * aimRange);
+	const aimZ = $derived(displayZ + -Math.cos(facing) * aimRange);
 
 	useTask((dt) => {
 		const LERP = 1 - Math.pow(0.001, dt);
@@ -29,11 +42,14 @@
 </script>
 
 {#if player.status !== 'eliminated'}
-	<T.Group position={[displayX, displayY, displayZ]} rotation={[0, Number(player.facingAngle) / 1000, 0]}>
+	<T.Group
+		position={[displayX, displayY, displayZ]}
+		rotation={[0, Number(player.facingAngle) / 1000, 0]}
+	>
 		<T.Mesh>
 			<T.CapsuleGeometry args={[0.4, 1.2]} />
 			<T.MeshStandardMaterial
-				color={player.status === 'downed' ? '#555' : CLASS_COLORS[player.classChoice] ?? '#fff'}
+				color={player.status === 'downed' ? '#555' : (CLASS_COLORS[player.classChoice] ?? '#fff')}
 				opacity={player.status === 'downed' ? 0.5 : 1}
 				transparent={player.status === 'downed'}
 			/>
@@ -49,10 +65,11 @@
 				<T.ConeGeometry args={[3, 15, 12, 1, true]} />
 				<T.MeshBasicMaterial color="#ffff88" transparent opacity={0.12} side={2} />
 			</T.Mesh>
-			<T.Mesh position={[0, 0.3, -0.5]} rotation={[-Math.PI / 2, 0, 0]}>
+			<T.Mesh position={[0, 0.3, -15]} rotation={[-Math.PI / 2, 0, 0]}>
 				<T.CircleGeometry args={[0.15, 8]} />
 				<T.MeshBasicMaterial color="#ffffcc" />
 			</T.Mesh>
 		{/if}
 	</T.Group>
+	<AimReticle x={aimX} z={aimZ} color={CLASS_COLORS[player.classChoice] ?? '#fff'} />
 {/if}

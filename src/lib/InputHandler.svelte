@@ -2,11 +2,16 @@
 	import { input } from '../localGameState.svelte.js';
 
 	const keyMap: Record<string, keyof typeof input> = {
-		'KeyW': 'forward', 'ArrowUp': 'forward',
-		'KeyS': 'back',    'ArrowDown': 'back',
-		'KeyA': 'left',    'ArrowLeft': 'left',
-		'KeyD': 'right',   'ArrowRight': 'right',
-		'ShiftLeft': 'sprint', 'ShiftRight': 'sprint',
+		KeyW: 'forward',
+		ArrowUp: 'forward',
+		KeyS: 'back',
+		ArrowDown: 'back',
+		KeyA: 'left',
+		ArrowLeft: 'left',
+		KeyD: 'right',
+		ArrowRight: 'right',
+		ShiftLeft: 'sprint',
+		ShiftRight: 'sprint'
 	};
 
 	function onKeyDown(e: KeyboardEvent) {

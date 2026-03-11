@@ -4,13 +4,20 @@
 	import { useSpacetimeDB, useTable } from 'spacetimedb/svelte';
 	import { tables } from '../module_bindings/index.js';
 	import { gameState, gameActions } from '../game.svelte.js';
-	import { localPos, input, updateLocalMovement, resetLocalState, localAim } from '../localGameState.svelte.js';
+	import {
+		localPos,
+		input,
+		updateLocalMovement,
+		resetLocalState,
+		localAim
+	} from '../localGameState.svelte.js';
 	import { onMount } from 'svelte';
 	import PlayerEntity from './PlayerEntity.svelte';
 	import EnemyEntity from './EnemyEntity.svelte';
 	import AcidPoolEntity from './AcidPoolEntity.svelte';
 	import MarkOverlay from './MarkOverlay.svelte';
 	import DayNightSky from './DayNightSky.svelte';
+	import AimReticle from './AimReticle.svelte';
 
 	const conn = useSpacetimeDB();
 	const [players] = useTable(tables.playerState);
@@ -18,54 +25,90 @@
 	const [sessions] = useTable(tables.gameSession);
 	const [acidPools] = useTable(tables.acidPool);
 
-	const session = $derived($sessions.find(s => s.id === gameState.currentSessionId));
-	const myState = $derived($players.find(
-		p => p.playerIdentity.toHexString() === $conn.identity?.toHexString() &&
-		     p.sessionId === gameState.currentSessionId
-	));
-	const otherPlayers = $derived($players.filter(
-		p => p.playerIdentity.toHexString() !== $conn.identity?.toHexString() &&
-		     p.sessionId === gameState.currentSessionId
-	));
-	const liveEnemies = $derived($enemies.filter(
-		e => e.sessionId === gameState.currentSessionId && e.isAlive
-	));
-	const livePools = $derived($acidPools.filter(
-		p => p.sessionId === gameState.currentSessionId
-	));
+	const session = $derived($sessions.find((s) => s.id === gameState.currentSessionId));
+	const myState = $derived(
+		$players.find(
+			(p) =>
+				p.playerIdentity.toHexString() === $conn.identity?.toHexString() &&
+				p.sessionId === gameState.currentSessionId
+		)
+	);
+	const otherPlayers = $derived(
+		$players.filter(
+			(p) =>
+				p.playerIdentity.toHexString() !== $conn.identity?.toHexString() &&
+				p.sessionId === gameState.currentSessionId
+		)
+	);
+	const liveEnemies = $derived(
+		$enemies.filter((e) => e.sessionId === gameState.currentSessionId && e.isAlive)
+	);
+	const livePools = $derived($acidPools.filter((p) => p.sessionId === gameState.currentSessionId));
 
 	const CLASS_COLORS: Record<string, string> = {
 		spotter: '#4af',
-		gunner:  '#f84',
-		tank:    '#8a4',
-		healer:  '#f4a',
+		gunner: '#f84',
+		tank: '#8a4',
+		healer: '#f4a'
+	};
+	const CLASS_RANGE: Record<string, number> = {
+		spotter: 15,
+		gunner: 10,
+		healer: 10,
+		tank: 5
 	};
 
-	onMount(() => { resetLocalState(); });
+	onMount(() => {
+		resetLocalState();
+	});
 
 	// Mouse → ground plane raycasting
 	const { camera, renderer } = useThrelte();
-	const raycaster = new THREE.Raycaster();
-	const groundPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
-	const aimTarget = new THREE.Vector3();
 	const mouse = new THREE.Vector2();
+	const cameraDir = new THREE.Vector3();
+	const playerScreen = new THREE.Vector3();
+	const cameraRight = new THREE.Vector3();
+	const worldUp = new THREE.Vector3(0, 1, 0);
+	let hasMouse = false;
+	const lastAimDir = new THREE.Vector2(0, -1);
+	const targetAimDir = new THREE.Vector2(0, -1);
 
 	function onMouseMove(e: MouseEvent) {
 		const canvas = renderer.domElement;
 		const rect = canvas.getBoundingClientRect();
-		mouse.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
-		mouse.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
-		raycaster.setFromCamera(mouse, camera.current);
-		if (raycaster.ray.intersectPlane(groundPlane, aimTarget)) {
-			localAim.x = aimTarget.x;
-			localAim.z = aimTarget.z;
+		const px = e.clientX - rect.left;
+		const py = e.clientY - rect.top;
+		mouse.x = (px / rect.width) * 2 - 1;
+		mouse.y = -(py / rect.height) * 2 + 1;
+		hasMouse = true;
+		if (camera.current) {
+			playerScreen.set(localPos.x, localPos.y + 1, localPos.z).project(camera.current);
+			const dx = mouse.x - playerScreen.x;
+			const dy = mouse.y - playerScreen.y;
+			const len = Math.hypot(dx, dy);
+			if (len < 0.02) return;
+
+			camera.current.getWorldDirection(cameraDir);
+			cameraDir.y = 0;
+			const fLen = Math.hypot(cameraDir.x, cameraDir.z);
+			if (fLen === 0) return;
+			cameraDir.x /= fLen;
+			cameraDir.z /= fLen;
+			cameraRight.crossVectors(cameraDir, worldUp).normalize();
+
+			// Use screen offset as yaw around the player; ignore vertical for stability
+			const dirX = cameraRight.x * dx + cameraDir.x;
+			const dirZ = cameraRight.z * dx + cameraDir.z;
+			const dLen = Math.hypot(dirX, dirZ);
+			if (dLen < 0.001) return;
+			targetAimDir.set(dirX / dLen, dirZ / dLen);
+
+			// aim direction only; actual reticle position set each frame
 		}
 	}
 
 	// Angle to rotate player group so its -Z faces the aim point
-	const aimAngle = $derived(
-		Math.atan2(localPos.x - localAim.x, localPos.z - localAim.z)
-	);
+	const aimAngle = $derived(Math.atan2(localPos.x - localAim.x, localPos.z - localAim.z));
 
 	let sendTimer = 0;
 	const SEND_INTERVAL = 1 / 15;
@@ -73,8 +116,33 @@
 	useTask((dt) => {
 		if (!myState || myState.status !== 'alive') return;
 
+		if (hasMouse) {
+			const LERP = 1 - Math.pow(0.001, dt);
+			lastAimDir.x += (targetAimDir.x - lastAimDir.x) * LERP;
+			lastAimDir.y += (targetAimDir.y - lastAimDir.y) * LERP;
+			const len = Math.hypot(lastAimDir.x, lastAimDir.y);
+			if (len > 0.0001) {
+				lastAimDir.x /= len;
+				lastAimDir.y /= len;
+			}
+			const range = CLASS_RANGE[myState?.classChoice ?? 'gunner'] ?? 10;
+			localAim.x = localPos.x + lastAimDir.x * range;
+			localAim.z = localPos.z + lastAimDir.y * range;
+		}
+
 		const hasStamina = myState.stamina > 0n;
-		updateLocalMovement(dt, myState.classChoice, hasStamina);
+		let camYaw = 0;
+		if (camera.current) {
+			camera.current.getWorldDirection(cameraDir);
+			cameraDir.y = 0;
+			const len = Math.hypot(cameraDir.x, cameraDir.z);
+			if (len > 0) {
+				cameraDir.x /= len;
+				cameraDir.z /= len;
+				camYaw = Math.atan2(cameraDir.x, cameraDir.z);
+			}
+		}
+		updateLocalMovement(dt, myState.classChoice, hasStamina, camYaw);
 
 		sendTimer += dt;
 		if (sendTimer >= SEND_INTERVAL) {
@@ -87,13 +155,13 @@
 				posY: BigInt(Math.round(localPos.y * 1000)),
 				posZ: pz,
 				isSprinting: input.sprint && hasStamina,
-				facingAngle: BigInt(Math.round(aimAngle * 1000)),
+				facingAngle: BigInt(Math.round(aimAngle * 1000))
 			});
 		}
 	});
 </script>
 
-<svelte:window onmousemove={onMouseMove} />
+wdddddddddddddddddddddddddd<svelte:window onmousemove={onMouseMove} />
 
 <DayNightSky phase={session?.dayPhase ?? 'sunset'} />
 
@@ -121,13 +189,18 @@
 				<T.ConeGeometry args={[3, 15, 12, 1, true]} />
 				<T.MeshBasicMaterial color="#ffff88" transparent opacity={0.12} side={2} />
 			</T.Mesh>
-			<!-- Small bright disc at torch end -->
-			<T.Mesh position={[0, 0.3, -0.5]} rotation={[-Math.PI / 2, 0, 0]}>
+			<!-- Bright disc at max range tip -->
+			<T.Mesh position={[0, 0.3, -15]} rotation={[-Math.PI / 2, 0, 0]}>
 				<T.CircleGeometry args={[0.15, 8]} />
 				<T.MeshBasicMaterial color="#ffffcc" />
 			</T.Mesh>
 		{/if}
 	</T.Group>
+{/if}
+
+<!-- Local aim reticle -->
+{#if myState}
+	<AimReticle x={localAim.x} z={localAim.z} color={CLASS_COLORS[myState.classChoice] ?? '#4a8'} />
 {/if}
 
 <!-- Remote players (server position, interpolated) -->

@@ -4,7 +4,7 @@
 	import { CameraControls, type CameraControlsRef } from '@threlte/extras';
 	import { cameraActions, stageState } from './stage.svelte.js';
 	import { log } from './settings.svelte.js';
-	import { localPos } from './localGameState.svelte.js';
+	import { localAim, localPos } from './localGameState.svelte.js';
 	import type { PerspectiveCamera } from 'three';
 
 	let controls = $state<CameraControlsRef>();
@@ -29,11 +29,17 @@
 
 	useTask(() => {
 		if (!controls || stageState.currentStage !== 'game') return;
+		const aimAngle = Math.atan2(localPos.x - localAim.x, localPos.z - localAim.z);
+		const camAngle = -aimAngle;
+		const cos = Math.cos(camAngle);
+		const sin = Math.sin(camAngle);
+		const offsetX = FOLLOW_OFFSET.x * cos - FOLLOW_OFFSET.z * sin;
+		const offsetZ = FOLLOW_OFFSET.x * sin + FOLLOW_OFFSET.z * cos;
 		controls.setTarget(localPos.x, localPos.y + 1, localPos.z, false);
 		controls.setPosition(
-			localPos.x + FOLLOW_OFFSET.x,
+			localPos.x + offsetX,
 			localPos.y + FOLLOW_OFFSET.y,
-			localPos.z + FOLLOW_OFFSET.z,
+			localPos.z + offsetZ,
 			false
 		);
 	});
@@ -43,7 +49,7 @@
 	position={[0, 0, 10]}
 	fov={60}
 	near={0.001}
-	far={144}
+	far={1200}
 	makeDefault
 	oncreate={handleCameraCreate}
 >
