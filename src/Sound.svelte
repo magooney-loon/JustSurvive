@@ -19,29 +19,59 @@
 		spotterMark: 0,
 		spotterPing: 0,
 		tankBash: 0,
-		tankBrace: 0,
+		tankBrace: 0
 	});
 
 	export const soundActions = {
-		playSwoosh() { soundTriggers.swoosh++; },
-		playClick() { soundTriggers.click++; },
-		playAnimSound(action: string) { soundTriggers.currentAnimSound = action; },
-		stopAnimSounds() { soundTriggers.currentAnimSound = ''; },
-		playPlayerDead() { soundTriggers.playerDead++; },
-		playPlayerDown() { soundTriggers.playerDown++; },
-		playNewCycle() { soundTriggers.newCycle++; },
-		playSpreeKilling() { soundTriggers.spreeKilling++; },
-		playSpreeeDominating() { soundTriggers.spreeDominating++; },
-		playSpreeGodlike() { soundTriggers.spreeGodlike++; },
-		playSpreeHumiliation() { soundTriggers.spreeHumiliation++; },
+		playSwoosh() {
+			soundTriggers.swoosh++;
+		},
+		playClick() {
+			soundTriggers.click++;
+		},
+		playPlayerDead() {
+			soundTriggers.playerDead++;
+		},
+		playPlayerDown() {
+			soundTriggers.playerDown++;
+		},
+		playNewCycle() {
+			soundTriggers.newCycle++;
+		},
+		playSpreeKilling() {
+			soundTriggers.spreeKilling++;
+		},
+		playSpreeeDominating() {
+			soundTriggers.spreeDominating++;
+		},
+		playSpreeGodlike() {
+			soundTriggers.spreeGodlike++;
+		},
+		playSpreeHumiliation() {
+			soundTriggers.spreeHumiliation++;
+		},
 		// Positional ability sounds
-		playGunnerShot() { soundTriggers.gunnerShot++; },
-		playHealerHeal() { soundTriggers.healerHeal++; },
-		playHealerRevive() { soundTriggers.healerRevive++; },
-		playSpotterMark() { soundTriggers.spotterMark++; },
-		playSpotterPing() { soundTriggers.spotterPing++; },
-		playTankBash() { soundTriggers.tankBash++; },
-		playTankBrace() { soundTriggers.tankBrace++; },
+		playGunnerShot() {
+			soundTriggers.gunnerShot++;
+		},
+		playHealerHeal() {
+			soundTriggers.healerHeal++;
+		},
+		playHealerRevive() {
+			soundTriggers.healerRevive++;
+		},
+		playSpotterMark() {
+			soundTriggers.spotterMark++;
+		},
+		playSpotterPing() {
+			soundTriggers.spotterPing++;
+		},
+		playTankBash() {
+			soundTriggers.tankBash++;
+		},
+		playTankBrace() {
+			soundTriggers.tankBrace++;
+		}
 	};
 </script>
 
@@ -145,7 +175,13 @@
 
 	$effect(() => {
 		const vol = settingsState.audio.effectsVolume;
-		for (const a of [newCycleAudio, spreeKillingAudio, spreeDominatingAudio, spreeGodlikeAudio, spreeHumiliationAudio]) {
+		for (const a of [
+			newCycleAudio,
+			spreeKillingAudio,
+			spreeDominatingAudio,
+			spreeGodlikeAudio,
+			spreeHumiliationAudio
+		]) {
 			if (a) a.setVolume(vol);
 		}
 	});
@@ -170,11 +206,26 @@
 			playOneShot(playerDownAudio);
 	});
 
-	$effect(() => { if (soundTriggers.newCycle > 0 && settingsState.audio.effectsEnabled) playOneShot(newCycleAudio); });
-	$effect(() => { if (soundTriggers.spreeKilling > 0 && settingsState.audio.effectsEnabled) playOneShot(spreeKillingAudio); });
-	$effect(() => { if (soundTriggers.spreeDominating > 0 && settingsState.audio.effectsEnabled) playOneShot(spreeDominatingAudio); });
-	$effect(() => { if (soundTriggers.spreeGodlike > 0 && settingsState.audio.effectsEnabled) playOneShot(spreeGodlikeAudio); });
-	$effect(() => { if (soundTriggers.spreeHumiliation > 0 && settingsState.audio.effectsEnabled) playOneShot(spreeHumiliationAudio); });
+	$effect(() => {
+		if (soundTriggers.newCycle > 0 && settingsState.audio.effectsEnabled)
+			playOneShot(newCycleAudio);
+	});
+	$effect(() => {
+		if (soundTriggers.spreeKilling > 0 && settingsState.audio.effectsEnabled)
+			playOneShot(spreeKillingAudio);
+	});
+	$effect(() => {
+		if (soundTriggers.spreeDominating > 0 && settingsState.audio.effectsEnabled)
+			playOneShot(spreeDominatingAudio);
+	});
+	$effect(() => {
+		if (soundTriggers.spreeGodlike > 0 && settingsState.audio.effectsEnabled)
+			playOneShot(spreeGodlikeAudio);
+	});
+	$effect(() => {
+		if (soundTriggers.spreeHumiliation > 0 && settingsState.audio.effectsEnabled)
+			playOneShot(spreeHumiliationAudio);
+	});
 
 	// ─── Animation sounds — single effect handles stop-then-play atomically ──
 
@@ -277,12 +328,38 @@
 <!-- Global SFX: New Cycle -->
 <Audio
 	src={NEW_CYCLE_URL}
-	oncreate={(a) => { newCycleAudio = a; }}
+	oncreate={(a) => {
+		newCycleAudio = a;
+	}}
 	userData={{ hideInTree: true, selectable: false }}
 />
 
 <!-- Global SFX: Spree sounds -->
-<Audio src={SPREE_KILLING_URL} oncreate={(a) => { spreeKillingAudio = a; }} userData={{ hideInTree: true, selectable: false }} />
-<Audio src={SPREE_DOMINATING_URL} oncreate={(a) => { spreeDominatingAudio = a; }} userData={{ hideInTree: true, selectable: false }} />
-<Audio src={SPREE_GODLIKE_URL} oncreate={(a) => { spreeGodlikeAudio = a; }} userData={{ hideInTree: true, selectable: false }} />
-<Audio src={SPREE_HUMILIATION_URL} oncreate={(a) => { spreeHumiliationAudio = a; }} userData={{ hideInTree: true, selectable: false }} />
+<Audio
+	src={SPREE_KILLING_URL}
+	oncreate={(a) => {
+		spreeKillingAudio = a;
+	}}
+	userData={{ hideInTree: true, selectable: false }}
+/>
+<Audio
+	src={SPREE_DOMINATING_URL}
+	oncreate={(a) => {
+		spreeDominatingAudio = a;
+	}}
+	userData={{ hideInTree: true, selectable: false }}
+/>
+<Audio
+	src={SPREE_GODLIKE_URL}
+	oncreate={(a) => {
+		spreeGodlikeAudio = a;
+	}}
+	userData={{ hideInTree: true, selectable: false }}
+/>
+<Audio
+	src={SPREE_HUMILIATION_URL}
+	oncreate={(a) => {
+		spreeHumiliationAudio = a;
+	}}
+	userData={{ hideInTree: true, selectable: false }}
+/>
