@@ -24,8 +24,10 @@
 		night: 'Night', deep_night: 'Deep Night',
 	};
 
+	let sessionWasActive = $state(false);
 	$effect(() => {
-		if (session?.status === 'finished') {
+		if (session?.status === 'active') sessionWasActive = true;
+		if (session?.status === 'finished' && sessionWasActive) {
 			stageActions.setStage('game_over');
 		}
 	});

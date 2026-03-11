@@ -12,6 +12,19 @@ const localVelocity = $state({ x: 0, z: 0 });
 
 export { input, localPos, localVelocity };
 
+export function resetLocalState() {
+	input.forward = false;
+	input.back = false;
+	input.left = false;
+	input.right = false;
+	input.sprint = false;
+	localPos.x = 0;
+	localPos.y = 0;
+	localPos.z = 0;
+	localVelocity.x = 0;
+	localVelocity.z = 0;
+}
+
 const CLASS_SPEED: Record<string, { walk: number; sprint: number }> = {
 	spotter: { walk: 5, sprint: 9 },
 	gunner:  { walk: 4.5, sprint: 7.5 },

@@ -1,27 +1,17 @@
 <script lang="ts">
 	import { fly } from 'svelte/transition';
-	import { useSpacetimeDB, useTable } from 'spacetimedb/svelte';
+	import { useTable } from 'spacetimedb/svelte';
 	import { tables } from '../module_bindings/index.js';
 	import { gameState, gameActions } from '../game.svelte.js';
 	import { stageActions } from '../stage.svelte.js';
 
-	const conn = useSpacetimeDB();
-	const [lobbies] = useTable(tables.lobby);
 	const [players] = useTable(tables.playerState);
 
-	const lobby = $derived($lobbies.find(l => l.id === gameState.currentLobbyId));
-	const isHost = $derived(lobby?.hostIdentity.toHexString() === $conn.identity?.toHexString());
 	const sessionPlayers = $derived(
 		$players
 			.filter(p => p.sessionId === gameState.currentSessionId)
 			.sort((a, b) => Number(b.score - a.score))
 	);
-
-	async function playAgain() {
-		if (!gameState.currentLobbyId) return;
-		await gameActions.resetLobby(gameState.currentLobbyId);
-		stageActions.setStage('lobby');
-	}
 
 	function goToMenu() {
 		if (gameState.currentLobbyId) gameActions.leaveLobby(gameState.currentLobbyId);
@@ -50,21 +40,10 @@
 			{/each}
 		</div>
 
-		<div style="display: flex; flex-direction: column; gap: 0.5rem;">
-			{#if isHost}
-				<button onclick={playAgain}
-				        style="padding: 0.6rem 1.5rem; background: #2a5; border: none; border-radius: 8px;
-				               color: #fff; font-size: 1rem; cursor: pointer;">
-					Play Again
-				</button>
-			{:else}
-				<p style="color: #aaa; font-size: 0.85rem;">Waiting for host to start again...</p>
-			{/if}
-			<button onclick={goToMenu}
-			        style="padding: 0.5rem 1.5rem; background: rgba(255,255,255,0.1); border: none;
-			               border-radius: 8px; color: #ccc; font-size: 0.9rem; cursor: pointer;">
-				Main Menu
-			</button>
-		</div>
+		<button onclick={goToMenu}
+		        style="padding: 0.6rem 2rem; background: #2a5; border: none; border-radius: 8px;
+		               color: #fff; font-size: 1rem; cursor: pointer;">
+			Back to Menu
+		</button>
 	</div>
 </div>

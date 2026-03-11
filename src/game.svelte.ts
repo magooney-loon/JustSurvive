@@ -97,6 +97,7 @@ export const gameActions = {
 		gameState.leavingLobby = true;
 		conn.reducers.leaveLobby({ lobbyId });
 		gameState.currentLobbyId = null;
+		gameState.currentSessionId = null;
 	},
 	async quickplay(lobbies: readonly Lobby[]) {
 		if (!conn) return;
@@ -125,14 +126,6 @@ export const gameActions = {
 	movePlayer(args: { sessionId: bigint; posX: bigint; posY: bigint; posZ: bigint; isSprinting: boolean }) {
 		if (!conn) return;
 		conn.reducers.movePlayer(args);
-	},
-	async resetLobby(lobbyId: bigint) {
-		if (!conn) return;
-		try {
-			await conn.reducers.resetLobby({ lobbyId });
-		} catch (e) {
-			setError(e);
-		}
 	},
 	clearError() {
 		gameState.error = null;

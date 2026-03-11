@@ -30,10 +30,10 @@
 		}
 	});
 
-	// Watch for session starting → transition to game
+	// Watch for session starting → transition to game (only pick the active session)
 	$effect(() => {
 		if (currentLobby?.status === 'in_progress') {
-			const session = $sessions.find(s => s.lobbyId === currentLobby.id);
+			const session = $sessions.find(s => s.lobbyId === currentLobby.id && s.status === 'active');
 			if (session) {
 				gameState.currentSessionId = session.id;
 				stageActions.setStage('game');

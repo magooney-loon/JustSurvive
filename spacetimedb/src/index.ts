@@ -224,8 +224,21 @@ function end_session(ctx: any, sessionId: bigint) {
   const session = ctx.db.gameSession.id.find(sessionId);
   if (!session) return;
   ctx.db.gameSession.id.update({ ...session, status: 'finished', endedAt: ctx.timestamp });
+
+  // Delete enemies immediately — not needed for game over screen
+  for (const e of ctx.db.enemy.enemy_session_id.filter(sessionId)) {
+    ctx.db.enemy.id.delete(e.id);
+  }
+  // Note: PlayerState rows are kept until next game starts (game over screen needs them)
+
+  // Reset lobby so players can start a new game immediately
   const lobby = ctx.db.lobby.id.find(session.lobbyId);
-  if (lobby) ctx.db.lobby.id.update({ ...lobby, status: 'game_over' });
+  if (lobby) {
+    ctx.db.lobby.id.update({ ...lobby, status: 'waiting' });
+    for (const p of ctx.db.lobbyPlayer.lobby_player_lobby_id.filter(lobby.id)) {
+      ctx.db.lobbyPlayer.id.update({ ...p, isReady: false });
+    }
+  }
 }
 
 // ─── Reducers ─────────────────────────────────────────────────────────────────
@@ -368,21 +381,6 @@ export const leave_lobby = spacetimedb.reducer({
   ctx.db.lobby.id.update({ ...lobby, playerCount: newCount, hostIdentity: newHost });
 });
 
-export const reset_lobby = spacetimedb.reducer({
-  lobbyId: t.u64(),
-}, (ctx, { lobbyId }) => {
-  const lobby = ctx.db.lobby.id.find(lobbyId);
-  if (!lobby) throw new SenderError('Lobby not found');
-  if (!lobby.hostIdentity.isEqual(ctx.sender)) throw new SenderError('Only host can reset');
-  if (lobby.status !== 'game_over') throw new SenderError('Game not over yet');
-
-  ctx.db.lobby.id.update({ ...lobby, status: 'waiting' });
-
-  for (const p of ctx.db.lobbyPlayer.lobby_player_lobby_id.filter(lobbyId)) {
-    ctx.db.lobbyPlayer.id.update({ ...p, isReady: false });
-  }
-});
-
 export const start_countdown = spacetimedb.reducer({
   lobbyId: t.u64(),
 }, (ctx, { lobbyId }) => {
@@ -412,6 +410,14 @@ export const fire_start_game = spacetimedb.reducer({
 }, (ctx, { arg }) => {
   const lobby = ctx.db.lobby.id.find(arg.lobbyId);
   if (!lobby || lobby.status !== 'countdown') return;
+
+  // Clean up previous session(s) for this lobby
+  for (const oldSession of ctx.db.gameSession.game_session_lobby_id.filter(arg.lobbyId)) {
+    for (const p of ctx.db.playerState.player_state_session_id.filter(oldSession.id)) {
+      ctx.db.playerState.id.delete(p.id);
+    }
+    ctx.db.gameSession.id.delete(oldSession.id);
+  }
 
   const session = ctx.db.gameSession.insert({
     id: 0n,
@@ -540,7 +546,7 @@ export const enemy_tick = spacetimedb.reducer({
     const dz = nearest.posZ - enemy.posZ;
 
     if (nearestDist <= MELEE_RANGE * MELEE_RANGE && !enemy.isDazed) {
-      const damage = enemy.enemyType === 'brute' ? 30n : 15n;
+      const damage = enemy.enemyType === 'brute' ? 3n : 1n;
       apply_player_damage(ctx, arg.sessionId, nearest, damage);
     } else if (!enemy.isDazed) {
       const speed = (ENEMY_BASE_SPEED[enemy.enemyType] ?? 3000n) * enemy.speedMultiplier / 100n;

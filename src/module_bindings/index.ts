@@ -39,7 +39,6 @@ import JoinByCodeReducer from "./join_by_code_reducer";
 import JoinLobbyReducer from "./join_lobby_reducer";
 import LeaveLobbyReducer from "./leave_lobby_reducer";
 import MovePlayerReducer from "./move_player_reducer";
-import ResetLobbyReducer from "./reset_lobby_reducer";
 import SetClassReducer from "./set_class_reducer";
 import SetReadyReducer from "./set_ready_reducer";
 import StartCountdownReducer from "./start_countdown_reducer";
@@ -145,7 +144,6 @@ const reducersSchema = __reducers(
   __reducerSchema("join_lobby", JoinLobbyReducer),
   __reducerSchema("leave_lobby", LeaveLobbyReducer),
   __reducerSchema("move_player", MovePlayerReducer),
-  __reducerSchema("reset_lobby", ResetLobbyReducer),
   __reducerSchema("set_class", SetClassReducer),
   __reducerSchema("set_ready", SetReadyReducer),
   __reducerSchema("start_countdown", StartCountdownReducer),

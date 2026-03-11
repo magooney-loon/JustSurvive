@@ -3,7 +3,8 @@
 	import { useSpacetimeDB, useTable } from 'spacetimedb/svelte';
 	import { tables } from '../module_bindings/index.js';
 	import { gameState, gameActions } from '../game.svelte.js';
-	import { localPos, input, updateLocalMovement } from '../localGameState.svelte.js';
+	import { localPos, input, updateLocalMovement, resetLocalState } from '../localGameState.svelte.js';
+	import { onMount } from 'svelte';
 	import PlayerEntity from './PlayerEntity.svelte';
 	import EnemyEntity from './EnemyEntity.svelte';
 	import DayNightSky from './DayNightSky.svelte';
@@ -32,6 +33,8 @@
 		tank:    '#8a4',
 		healer:  '#f4a',
 	};
+
+	onMount(() => { resetLocalState(); });
 
 	let sendTimer = 0;
 	const SEND_INTERVAL = 1 / 15;
