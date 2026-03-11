@@ -41,8 +41,15 @@
 				p.sessionId === gameState.currentSessionId
 		)
 	);
+	const MAX_RENDER_DIST = 70; // world units
 	const visibleEnemies = $derived(
-		$enemies.filter((e) => e.sessionId === gameState.currentSessionId)
+		$enemies.filter((e) => {
+			if (e.sessionId !== gameState.currentSessionId) return false;
+			if (!myState) return true;
+			const dx = Number(e.posX) / 1000 - localPos.x;
+			const dz = Number(e.posZ) / 1000 - localPos.z;
+			return dx * dx + dz * dz <= MAX_RENDER_DIST * MAX_RENDER_DIST;
+		})
 	);
 	const livePools = $derived($acidPools.filter((p) => p.sessionId === gameState.currentSessionId));
 	const alivePlayers = $derived(

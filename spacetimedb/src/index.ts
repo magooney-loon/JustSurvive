@@ -701,6 +701,14 @@ export const fire_start_game = spacetimedb.reducer(
 			scheduledAt: ScheduleAt.time(now + 100_000n),
 			sessionId: session.id
 		});
+		const INITIAL_SPAWN_JOBS = 10;
+		for (let i = 0; i < INITIAL_SPAWN_JOBS; i++) {
+			ctx.db.enemySpawnJob.insert({
+				scheduledId: 0n,
+				scheduledAt: ScheduleAt.time(now + 300_000n + BigInt(i) * 150_000n),
+				sessionId: session.id
+			});
+		}
 		ctx.db.enemySpawnJob.insert({
 			scheduledId: 0n,
 			scheduledAt: ScheduleAt.time(now + 5_000_000n),
@@ -808,6 +816,7 @@ const ENEMY_BASE_SPEED: Record<string, bigint> = {
 	brute: 2100n,
 	spitter: 1700n
 };
+const ENEMY_CAP = 50;
 const MELEE_RANGE = 2000n;
 const SPITTER_RANGE_SQ = 144_000_000n; // 12 world units squared
 const TICK_MS = 100n;
@@ -1030,6 +1039,23 @@ export const spawn_enemy = spacetimedb.reducer(
 		const session = ctx.db.gameSession.id.find(arg.sessionId);
 		if (!session || session.status !== 'active') return;
 
+		const currentEnemies = [...ctx.db.enemy.enemy_session_id.filter(arg.sessionId)].filter(
+			(e) => e.isAlive
+		);
+		const baseInterval = 6_000_000n;
+		const minInterval = 1_500_000n;
+		const interval = baseInterval - session.cycleNumber * 600_000n;
+		const nextInterval = interval < minInterval ? minInterval : interval;
+		if (currentEnemies.length >= ENEMY_CAP) {
+			const nextSpawn = ctx.timestamp.microsSinceUnixEpoch + nextInterval;
+			ctx.db.enemySpawnJob.insert({
+				scheduledId: 0n,
+				scheduledAt: ScheduleAt.time(nextSpawn),
+				sessionId: arg.sessionId
+			});
+			return;
+		}
+
 		const seed = Number(ctx.timestamp.microsSinceUnixEpoch % 100n);
 		let cumWeight = 0;
 		let enemyType = 'basic';
@@ -1047,8 +1073,11 @@ export const spawn_enemy = spacetimedb.reducer(
 		if (players.length === 0) return;
 
 		const avgZ = players.reduce((s, p) => s + p.posZ, 0n) / BigInt(players.length);
-		const spawnX = (ctx.timestamp.microsSinceUnixEpoch % 30_000n) - 15_000n;
-		const spawnZ = avgZ - 30_000n;
+		const seedBase = ctx.timestamp.microsSinceUnixEpoch + session.mapSeed;
+		const spreadX = (seedBase % 60_000n) - 30_000n;
+		const spreadZ = ((seedBase / 97n) % 40_000n) - 20_000n;
+		const spawnX = spreadX;
+		const spawnZ = avgZ - 30_000n + spreadZ;
 
 		const baseMultiplier = 100n + session.cycleNumber * 5n;
 
@@ -1068,11 +1097,7 @@ export const spawn_enemy = spacetimedb.reducer(
 			markedUntil: undefined
 		});
 
-		const baseInterval = 6_000_000n;
-		const minInterval = 1_500_000n;
-		const interval = baseInterval - session.cycleNumber * 600_000n;
-		const nextSpawn =
-			ctx.timestamp.microsSinceUnixEpoch + (interval < minInterval ? minInterval : interval);
+		const nextSpawn = ctx.timestamp.microsSinceUnixEpoch + nextInterval;
 		ctx.db.enemySpawnJob.insert({
 			scheduledId: 0n,
 			scheduledAt: ScheduleAt.time(nextSpawn),
