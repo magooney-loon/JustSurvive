@@ -38,7 +38,7 @@
 		<StarsComponent
 			count={starCounts.stars1}
 			radius={20}
-			depth={30}
+			depth={20}
 			factor={1.45}
 			fade={true}
 			lightness={0.4}
@@ -54,7 +54,7 @@
 		<StarsComponent
 			count={starCounts.stars2}
 			radius={10}
-			depth={30}
+			depth={20}
 			factor={1.9}
 			fade={true}
 			lightness={0.4}
