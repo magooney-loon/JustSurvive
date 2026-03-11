@@ -866,7 +866,7 @@ export const enemy_tick = spacetimedb.reducer(
 			// Spitter: ranged acid spit instead of melee
 			if (enemy.enemyType === 'spitter') {
 				if (nearestDist <= SPITTER_RANGE_SQ && !enemy.isDazed) {
-					const poolExpiry = ctx.timestamp.microsSinceUnixEpoch + 8_000_000n;
+					const poolExpiry = ctx.timestamp.microsSinceUnixEpoch + 10_000_000n;
 					ctx.db.acidPool.insert({
 						id: 0n,
 						sessionId: arg.sessionId,

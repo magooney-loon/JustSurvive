@@ -7,6 +7,7 @@
 		walkPhase: number;
 		speed: number;
 		shotPulse: number;
+		phase?: string;
 		isEnemy?: boolean;
 		isBracing?: boolean;
 	};
@@ -17,6 +18,7 @@
 		walkPhase,
 		speed,
 		shotPulse,
+		phase = 'sunset',
 		isEnemy = false,
 		isBracing = false
 	}: StickRigProps = $props();
@@ -42,6 +44,8 @@
 	const plateTint = $derived(classChoice === 'gunner' ? '#2b2620' : '#2f271f');
 	const lightFlicker = $derived(0.95 + 0.05 * Math.sin(walkPhase * 3.0 + 0.2));
 	const lightPulse = $derived(0.96 + 0.04 * Math.sin(walkPhase * 1.4 - 0.2));
+	const spotlightBoost = $derived(phase === 'deep_night' ? 2.2 : phase === 'night' ? 1.6 : 1);
+	const beamBoost = $derived(phase === 'deep_night' ? 1.9 : phase === 'night' ? 1.4 : 1);
 	const enemyGlow = $derived(isEnemy ? 0.18 : 1);
 	let spotTarget = $state<Object3D | undefined>(undefined);
 
@@ -400,7 +404,7 @@
 			<T.SpotLight
 				position={[0, 0, -0.2]}
 				color="#fff2c6"
-				intensity={6.0 * lightPulse}
+				intensity={6.0 * lightPulse * spotlightBoost}
 				distance={20}
 				angle={0.22}
 				penumbra={0.35}
@@ -424,7 +428,7 @@
 				<T.MeshBasicMaterial
 					color="#fff8e0"
 					transparent
-					opacity={0.02 * lightFlicker}
+					opacity={0.02 * lightFlicker * beamBoost}
 					side={2}
 					depthWrite={false}
 					blending={AdditiveBlending}
@@ -469,7 +473,7 @@
 				<T.MeshBasicMaterial
 					color="#fff8e8"
 					transparent
-					opacity={0.006 * lightPulse}
+					opacity={0.006 * lightPulse * beamBoost}
 					side={2}
 					depthWrite={false}
 					blending={AdditiveBlending}
@@ -481,7 +485,7 @@
 				<T.MeshBasicMaterial
 					color="#fffefc"
 					transparent
-					opacity={0.014 * lightPulse}
+					opacity={0.014 * lightPulse * beamBoost}
 					side={2}
 					depthWrite={false}
 					blending={AdditiveBlending}

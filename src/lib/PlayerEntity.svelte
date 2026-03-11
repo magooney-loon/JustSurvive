@@ -9,6 +9,7 @@
 	type Props = {
 		player: PlayerState;
 		isLocal?: boolean;
+		phase?: string;
 		overridePos?: Vec3;
 		overrideFacing?: number;
 		overrideAim?: Vec2;
@@ -17,6 +18,7 @@
 	let {
 		player,
 		isLocal = false,
+		phase = 'sunset',
 		overridePos,
 		overrideFacing,
 		overrideAim,
@@ -106,6 +108,7 @@
 			{walkPhase}
 			{speed}
 			{shotPulse}
+			{phase}
 			isBracing={player.isBracing}
 		/>
 	</T.Group>

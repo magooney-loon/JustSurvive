@@ -48,6 +48,7 @@
 	const alivePlayers = $derived(
 		$players.filter((p) => p.sessionId === gameState.currentSessionId && p.status === 'alive')
 	);
+	const phase = $derived(session?.dayPhase ?? 'sunset');
 
 	const CLASS_RANGE: Record<string, number> = {
 		spotter: 15,
@@ -188,7 +189,7 @@
 
 <svelte:window onmousemove={onMouseMove} onmousedown={onMouseDownSpectate} />
 
-<DayNightSky phase={session?.dayPhase ?? 'sunset'} />
+<DayNightSky {phase} />
 
 <!-- Ground plane -->
 <T.Mesh position={[0, -0.5, 0]} rotation={[-Math.PI / 2, 0, 0]}>
@@ -201,6 +202,7 @@
 	<PlayerEntity
 		player={myState}
 		isLocal={true}
+		{phase}
 		overridePos={{ x: localPos.x, y: localPos.y, z: localPos.z }}
 		overrideFacing={aimAngle}
 		overrideAim={{ x: localAim.x, z: localAim.z }}
@@ -210,7 +212,7 @@
 
 <!-- Remote players (server position, interpolated) -->
 {#each otherPlayers as player (player.id)}
-	<PlayerEntity {player} />
+	<PlayerEntity {player} {phase} />
 {/each}
 
 <!-- Enemies (interpolated) -->
