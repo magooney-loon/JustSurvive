@@ -83,7 +83,7 @@
 	<T.Group userData={{ hideInTree: true, selectable: false }}>
 		<StarsComponent
 			count={starCounts.stars1}
-			radius={10}
+			radius={50}
 			depth={30}
 			factor={1.45}
 			fade={true}
@@ -99,7 +99,7 @@
 	<T.Group userData={{ hideInTree: true, selectable: false }}>
 		<StarsComponent
 			count={starCounts.stars2}
-			radius={10}
+			radius={50}
 			depth={30}
 			factor={1.9}
 			fade={true}
@@ -112,10 +112,10 @@
 	</T.Group>
 
 	<!-- Nebula model — place at /public/models/skybox/skybox_nebula-transformed.glb -->
-	<T.Group position={[0, 20, -27]} scale={0.45} userData={{ hideInTree: true, selectable: false }}>
+	<T.Group position={[0, 0, 0]} scale={0.9} userData={{ hideInTree: true, selectable: false }}>
 		<GLTF
 			{dracoLoader}
-			scale={0.5}
+			scale={2.5}
 			url="{import.meta.env.BASE_URL}models/skybox/skybox_nebula-transformed.glb"
 			onload={handleNebulaLoad}
 		/>
