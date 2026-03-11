@@ -2,7 +2,7 @@
 	import { useTable, useSpacetimeDB } from 'spacetimedb/svelte';
 	import { tables } from '../module_bindings/index.js';
 	import { gameState, gameActions } from '../game.svelte.js';
-	import { localPos } from '../localGameState.svelte.js';
+	import { localPos, localAim } from '../localGameState.svelte.js';
 
 	const conn = useSpacetimeDB();
 	const [players] = useTable(tables.playerState);
@@ -13,28 +13,28 @@
 		     p.sessionId === gameState.currentSessionId
 	));
 
-	// Nearest live enemy within given range (fixed-point units)
-	function nearestEnemy(rangeFP: number) {
-		const ox = BigInt(Math.round(localPos.x * 1000));
-		const oz = BigInt(Math.round(localPos.z * 1000));
-		const rangeN = BigInt(rangeFP);
+	// Enemy nearest to aim point within range
+	function nearestEnemyToAim(rangeFP: number) {
+		const ax = BigInt(Math.round(localAim.x * 1000));
+		const az = BigInt(Math.round(localAim.z * 1000));
+		const rangeSq = BigInt(rangeFP) * BigInt(rangeFP);
 		let best: any = null;
 		let bestDist = BigInt(Number.MAX_SAFE_INTEGER);
 		for (const e of $enemies) {
 			if (!e.isAlive || e.sessionId !== gameState.currentSessionId) continue;
-			const dx = e.posX - ox;
-			const dz = e.posZ - oz;
+			const dx = e.posX - ax;
+			const dz = e.posZ - az;
 			const d = dx * dx + dz * dz;
-			if (d < rangeN * rangeN && d < bestDist) { best = e; bestDist = d; }
+			if (d < rangeSq && d < bestDist) { best = e; bestDist = d; }
 		}
 		return best;
 	}
 
-	// Nearest downed player within given range (fixed-point units)
+	// Downed player nearest to local player within range (proximity ability)
 	function nearestDowned(rangeFP: number) {
 		const ox = BigInt(Math.round(localPos.x * 1000));
 		const oz = BigInt(Math.round(localPos.z * 1000));
-		const rangeN = BigInt(rangeFP);
+		const rangeSq = BigInt(rangeFP) * BigInt(rangeFP);
 		let best: any = null;
 		let bestDist = BigInt(Number.MAX_SAFE_INTEGER);
 		for (const p of $players) {
@@ -43,7 +43,24 @@
 			const dx = p.posX - ox;
 			const dz = p.posZ - oz;
 			const d = dx * dx + dz * dz;
-			if (d < rangeN * rangeN && d < bestDist) { best = p; bestDist = d; }
+			if (d < rangeSq && d < bestDist) { best = p; bestDist = d; }
+		}
+		return best;
+	}
+
+	// Enemy nearest to player (for melee/bash — you hit what's close to you)
+	function nearestEnemyToPlayer(rangeFP: number) {
+		const ox = BigInt(Math.round(localPos.x * 1000));
+		const oz = BigInt(Math.round(localPos.z * 1000));
+		const rangeSq = BigInt(rangeFP) * BigInt(rangeFP);
+		let best: any = null;
+		let bestDist = BigInt(Number.MAX_SAFE_INTEGER);
+		for (const e of $enemies) {
+			if (!e.isAlive || e.sessionId !== gameState.currentSessionId) continue;
+			const dx = e.posX - ox;
+			const dz = e.posZ - oz;
+			const d = dx * dx + dz * dz;
+			if (d < rangeSq && d < bestDist) { best = e; bestDist = d; }
 		}
 		return best;
 	}
@@ -60,21 +77,22 @@
 		switch (e.code) {
 			case 'KeyF': {
 				if (myState.classChoice !== 'spotter') break;
-				const enemy = nearestEnemy(15_000); // 15 unit flashlight range
+				const enemy = nearestEnemyToAim(15_000); // 15 unit flashlight range
 				if (enemy) gameActions.markEnemy(sid, enemy.id);
 				break;
 			}
 			case 'KeyG': {
 				if (myState.classChoice !== 'spotter') break;
+				// Ping at aim position, not player position
 				gameActions.pingLocation(sid,
-					BigInt(Math.round(localPos.x * 1000)),
-					BigInt(Math.round(localPos.z * 1000))
+					BigInt(Math.round(localAim.x * 1000)),
+					BigInt(Math.round(localAim.z * 1000))
 				);
 				break;
 			}
 			case 'KeyE': {
 				if (myState.classChoice !== 'tank') break;
-				const enemy = nearestEnemy(5_000); // 5 unit bash range
+				const enemy = nearestEnemyToPlayer(5_000); // 5 unit bash range
 				gameActions.shieldBash(sid, enemy?.id);
 				break;
 			}
@@ -108,7 +126,7 @@
 		if (!sid || e.button !== 0) return;
 		if (myState.classChoice !== 'gunner' && myState.classChoice !== 'healer') return;
 
-		const enemy = nearestEnemy(10_000); // 10 unit attack range
+		const enemy = nearestEnemyToAim(10_000); // 10 unit attack range from aim point
 		if (!enemy) return;
 
 		// Track suppression: suppress every 3rd hit on same enemy

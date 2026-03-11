@@ -78,6 +78,7 @@ const PlayerState = table({
   posZ: t.i64(),
   status: t.string(),
   score: t.u64(),
+  facingAngle: t.i64(),          // milliradians * 1000, e.g. PI = 3142
   // Phase 4
   isBracing: t.bool(),
   speedBoostUntil: t.timestamp().optional(),
@@ -542,6 +543,7 @@ export const fire_start_game = spacetimedb.reducer({
       posZ: 0n,
       status: 'alive',
       score: 0n,
+      facingAngle: 0n,
       isBracing: false,
       speedBoostUntil: undefined,
       reviveCooldownUntil: undefined,
@@ -578,7 +580,8 @@ export const move_player = spacetimedb.reducer({
   posY: t.i64(),
   posZ: t.i64(),
   isSprinting: t.bool(),
-}, (ctx, { sessionId, posX, posY, posZ, isSprinting }) => {
+  facingAngle: t.i64(),
+}, (ctx, { sessionId, posX, posY, posZ, isSprinting, facingAngle }) => {
   let ps: any;
   for (const p of ctx.db.playerState.player_state_session_id.filter(sessionId)) {
     if (p.playerIdentity.isEqual(ctx.sender)) { ps = p; break; }
@@ -596,7 +599,7 @@ export const move_player = spacetimedb.reducer({
 
   const distDelta = posZ < ps.posZ ? ps.posZ - posZ : 0n;
   const newScore = ps.score + distDelta / 1000n;
-  const updatedPs = { ...ps, posX, posY, posZ, stamina: newStamina, score: newScore };
+  const updatedPs = { ...ps, posX, posY, posZ, stamina: newStamina, score: newScore, facingAngle };
 
   // Check acid pool overlap
   const now = ctx.timestamp.microsSinceUnixEpoch;

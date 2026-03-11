@@ -136,6 +136,7 @@ export const PlayerState = __t.object("PlayerState", {
   posZ: __t.i64(),
   status: __t.string(),
   score: __t.u64(),
+  facingAngle: __t.i64(),
   isBracing: __t.bool(),
   speedBoostUntil: __t.option(__t.timestamp()),
   reviveCooldownUntil: __t.option(__t.timestamp()),

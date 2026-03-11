@@ -9,6 +9,7 @@ export type InputState = {
 const input = $state<InputState>({ forward: false, back: false, left: false, right: false, sprint: false });
 const localPos = $state({ x: 0, y: 0, z: 0 });
 const localVelocity = $state({ x: 0, z: 0 });
+export const localAim = $state({ x: 0, z: 0 });
 
 export { input, localPos, localVelocity };
 

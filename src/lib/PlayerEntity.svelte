@@ -29,7 +29,7 @@
 </script>
 
 {#if player.status !== 'eliminated'}
-	<T.Group position={[displayX, displayY, displayZ]}>
+	<T.Group position={[displayX, displayY, displayZ]} rotation={[0, Number(player.facingAngle) / 1000, 0]}>
 		<T.Mesh>
 			<T.CapsuleGeometry args={[0.4, 1.2]} />
 			<T.MeshStandardMaterial
@@ -38,5 +38,21 @@
 				transparent={player.status === 'downed'}
 			/>
 		</T.Mesh>
+		<!-- Facing nub -->
+		<T.Mesh position={[0, 0, -0.45]}>
+			<T.SphereGeometry args={[0.12, 6, 4]} />
+			<T.MeshBasicMaterial color={CLASS_COLORS[player.classChoice] ?? '#fff'} />
+		</T.Mesh>
+		<!-- Spotter flashlight cone -->
+		{#if player.classChoice === 'spotter'}
+			<T.Mesh position={[0, 0.3, -7.5]} rotation={[-Math.PI / 2, 0, 0]}>
+				<T.ConeGeometry args={[3, 15, 12, 1, true]} />
+				<T.MeshBasicMaterial color="#ffff88" transparent opacity={0.12} side={2} />
+			</T.Mesh>
+			<T.Mesh position={[0, 0.3, -0.5]} rotation={[-Math.PI / 2, 0, 0]}>
+				<T.CircleGeometry args={[0.15, 8]} />
+				<T.MeshBasicMaterial color="#ffffcc" />
+			</T.Mesh>
+		{/if}
 	</T.Group>
 {/if}

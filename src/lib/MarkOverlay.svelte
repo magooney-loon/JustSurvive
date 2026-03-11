@@ -11,7 +11,7 @@
 	const activeMarks = $derived(
 		$marks.filter(m =>
 			m.sessionId === gameState.currentSessionId &&
-			Number(m.expiresAt.microsSinceUnixEpoch) > Date.now() * 1000
+			m.expiresAt.microsSinceUnixEpoch > BigInt(Date.now()) * 1000n
 		)
 	);
 

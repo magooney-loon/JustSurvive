@@ -24,6 +24,7 @@ export default __t.row({
   posZ: __t.i64().name("pos_z"),
   status: __t.string(),
   score: __t.u64(),
+  facingAngle: __t.i64().name("facing_angle"),
   isBracing: __t.bool().name("is_bracing"),
   speedBoostUntil: __t.option(__t.timestamp()).name("speed_boost_until"),
   reviveCooldownUntil: __t.option(__t.timestamp()).name("revive_cooldown_until"),

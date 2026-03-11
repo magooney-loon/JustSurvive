@@ -16,4 +16,5 @@ export default {
   posY: __t.i64(),
   posZ: __t.i64(),
   isSprinting: __t.bool(),
+  facingAngle: __t.i64(),
 };
