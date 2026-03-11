@@ -803,13 +803,13 @@ export const move_player = spacetimedb.reducer(
 );
 
 const ENEMY_BASE_SPEED: Record<string, bigint> = {
-	basic: 3000n,
-	fast: 5000n,
-	brute: 2000n,
-	spitter: 1500n
+	basic: 3200n,
+	fast: 5200n,
+	brute: 2100n,
+	spitter: 1700n
 };
 const MELEE_RANGE = 2000n;
-const SPITTER_RANGE_SQ = 64_000_000n; // 8 world units squared
+const SPITTER_RANGE_SQ = 144_000_000n; // 12 world units squared
 const TICK_MS = 100n;
 const MAX_ENEMIES_PER_PLAYER = 3;
 const TARGET_JITTER = 0.08; // +-8% distance jitter
@@ -1068,9 +1068,9 @@ export const spawn_enemy = spacetimedb.reducer(
 			markedUntil: undefined
 		});
 
-		const baseInterval = 8_000_000n;
-		const minInterval = 2_000_000n;
-		const interval = baseInterval - session.cycleNumber * 500_000n;
+		const baseInterval = 6_000_000n;
+		const minInterval = 1_500_000n;
+		const interval = baseInterval - session.cycleNumber * 600_000n;
 		const nextSpawn =
 			ctx.timestamp.microsSinceUnixEpoch + (interval < minInterval ? minInterval : interval);
 		ctx.db.enemySpawnJob.insert({
