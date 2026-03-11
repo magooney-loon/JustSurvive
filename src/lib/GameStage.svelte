@@ -103,7 +103,7 @@
 	const aimAngle = $derived(Math.atan2(localPos.x - localAim.x, localPos.z - localAim.z));
 
 	let sendTimer = 0;
-	const SEND_INTERVAL = 1 / 15;
+	const SEND_INTERVAL = 1 / 45;
 
 	useTask((dt) => {
 		if (!myState || myState.status !== 'alive') return;

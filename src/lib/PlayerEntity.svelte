@@ -102,12 +102,9 @@
 	{@const isSprinting = speed > 6}
 	{@const holdAim = player.classChoice === 'spotter' || player.classChoice === 'gunner'}
 	{@const sway = Math.sin(walkPhase * 0.5) * 0.12 * moveIntensity}
-	{@const armBop = isSprinting ? Math.sin(walkPhase) * 0.15 * moveIntensity : 0}
-	{@const leftArmRotX = holdAim ? armBop : -swing}
-	{@const rightArmRotX = holdAim ? -armBop : swing}
-	{@const leftArmYaw = holdAim ? 0 : 0}
-	{@const rightArmYaw = holdAim ? 0 : 0}
-	{@const armForwardZ = holdAim ? -0.12 : 0}
+
+	{@const armForwardZ = holdAim ? -0.35 : 0}
+	{@const handBop = isSprinting ? Math.sin(walkPhase * 1.6) * 0.12 * moveIntensity : 0}
 	<T.Group
 		position={[displayX, displayY + bob, displayZ]}
 		rotation={[sway * 0.05, facing, sway * 0.08]}
@@ -122,7 +119,7 @@
 			<T.SphereGeometry args={[0.18, 8, 6]} />
 			<T.MeshStandardMaterial color="#d9c5a7" />
 		</T.Mesh>
-		<!-- Legs with knees -->
+		<!-- Legs with knees and feet -->
 		<T.Group position={[-0.12, 0.75, 0]} rotation={[swing, 0, 0]}>
 			<T.Mesh position={[0, -0.2, 0]}>
 				<T.CylinderGeometry args={[limbR, limbR, 0.4, 6]} />
@@ -135,6 +132,10 @@
 			<T.Mesh position={[0, -0.65, 0]}>
 				<T.CylinderGeometry args={[limbR, limbR, 0.5, 6]} />
 				<T.MeshStandardMaterial color="#3a2f25" />
+			</T.Mesh>
+			<T.Mesh position={[0, -0.95, -0.1]}>
+				<T.BoxGeometry args={[limbR * 3, limbR * 1.2, limbR * 4]} />
+				<T.MeshStandardMaterial color="#222" />
 			</T.Mesh>
 		</T.Group>
 		<T.Group position={[0.12, 0.75, 0]} rotation={[-swing, 0, 0]}>
@@ -150,23 +151,19 @@
 				<T.CylinderGeometry args={[limbR, limbR, 0.5, 6]} />
 				<T.MeshStandardMaterial color="#3a2f25" />
 			</T.Mesh>
+			<T.Mesh position={[0, -0.95, -0.1]}>
+				<T.BoxGeometry args={[limbR * 3, limbR * 1.2, limbR * 4]} />
+				<T.MeshStandardMaterial color="#222" />
+			</T.Mesh>
 		</T.Group>
-		<!-- Arms with elbows -->
-		<T.Group position={[-0.25, 1.25, armForwardZ]} rotation={[leftArmRotX, leftArmYaw, 0]}>
-			<T.Mesh position={[0, -0.18, 0]}>
-				<T.CylinderGeometry args={[limbR * 0.9, limbR * 0.9, 0.36, 6]} />
-				<T.MeshStandardMaterial color="#3a2f25" />
-			</T.Mesh>
-			<T.Mesh position={[0, -0.36, 0]}>
-				<T.SphereGeometry args={[limbR * 0.9, 6, 4]} />
-				<T.MeshStandardMaterial color="#3a2f25" />
-			</T.Mesh>
-			<T.Mesh position={[0, -0.58, 0]}>
-				<T.CylinderGeometry args={[limbR * 0.9, limbR * 0.9, 0.44, 6]} />
-				<T.MeshStandardMaterial color="#3a2f25" />
+		<!-- Floating hands only -->
+		<T.Group position={[-0.22, 1.05 + handBop, armForwardZ]} rotation={[handBop * 0.6, 0, 0]}>
+			<T.Mesh position={[0, 0, -0.35]}>
+				<T.SphereGeometry args={[limbR * 1.1, 6, 4]} />
+				<T.MeshStandardMaterial color="#d9c5a7" />
 			</T.Mesh>
 			<!-- Left hand attachment -->
-			<T.Group position={[0, -0.78, -0.1]}>
+			<T.Group position={[0, 0, -0.45]}>
 				{#if player.classChoice === 'gunner'}
 					{@const recoil = shotPulse * 0.18}
 					<T.Mesh position={[0, 0, -0.25 - recoil]} rotation={[Math.PI / 2, 0, 0]}>
@@ -182,21 +179,13 @@
 				{/if}
 			</T.Group>
 		</T.Group>
-		<T.Group position={[0.25, 1.25, armForwardZ]} rotation={[rightArmRotX, rightArmYaw, 0]}>
-			<T.Mesh position={[0, -0.18, 0]}>
-				<T.CylinderGeometry args={[limbR * 0.9, limbR * 0.9, 0.36, 6]} />
-				<T.MeshStandardMaterial color="#3a2f25" />
-			</T.Mesh>
-			<T.Mesh position={[0, -0.36, 0]}>
-				<T.SphereGeometry args={[limbR * 0.9, 6, 4]} />
-				<T.MeshStandardMaterial color="#3a2f25" />
-			</T.Mesh>
-			<T.Mesh position={[0, -0.58, 0]}>
-				<T.CylinderGeometry args={[limbR * 0.9, limbR * 0.9, 0.44, 6]} />
-				<T.MeshStandardMaterial color="#3a2f25" />
+		<T.Group position={[0.22, 1.05 + handBop, armForwardZ]} rotation={[handBop * 0.6, 0, 0]}>
+			<T.Mesh position={[0, 0, -0.35]}>
+				<T.SphereGeometry args={[limbR * 1.1, 6, 4]} />
+				<T.MeshStandardMaterial color="#d9c5a7" />
 			</T.Mesh>
 			<!-- Right hand attachment -->
-			<T.Group position={[0, -0.78, -0.1]}>
+			<T.Group position={[0, 0, -0.45]}>
 				{#if player.classChoice === 'spotter'}
 					<T.Mesh position={[0, 0, -0.18]} rotation={[-Math.PI / 2, 0, 0]}>
 						<T.ConeGeometry args={[0.12, 0.3, 8]} />
