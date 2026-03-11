@@ -67,8 +67,9 @@
 		label: string;
 		input: string;
 		color: string;
-		// 0=ready, >0=fraction of CD remaining, -1=active (toggle)
+		// 0=ready, >0=fraction of CD remaining
 		cdFrac: number;
+		cdMs?: number; // total cooldown duration in ms (for seconds display)
 		active?: boolean;
 	};
 
@@ -76,22 +77,24 @@
 		const cls = myState?.classChoice ?? '';
 		if (cls === 'spotter') return [
 			{ label: 'Mark', input: 'LMB', color: '#22d4ff',
-			  cdFrac: Math.max(0, (abilityState.markCooldownUntil - now) / 5000) },
+			  cdFrac: Math.max(0, (abilityState.markCooldownUntil - now) / 5000), cdMs: 5000 },
 			{ label: 'Ping', input: 'RMB', color: '#22d4ff',
-			  cdFrac: cdFrac(myState?.pingCooldownUntil?.microsSinceUnixEpoch, 10000) },
+			  cdFrac: cdFrac(myState?.pingCooldownUntil?.microsSinceUnixEpoch, 10000), cdMs: 10000 },
 		];
 		if (cls === 'gunner') return [
 			{ label: `Fire${abilityState.suppressHits % 3 > 0 ? ` ${abilityState.suppressHits % 3}/3` : ' ★'}`, input: 'LMB', color: '#ff8822', cdFrac: 0 },
 			{ label: '—', input: '', color: '#555', cdFrac: 0 },
 		];
 		if (cls === 'tank') return [
-			{ label: 'Bash', input: 'LMB', color: '#66ff44', cdFrac: 0 },
+			{ label: 'Bash', input: 'LMB', color: '#66ff44',
+			  cdFrac: Math.max(0, (abilityState.bashCooldownUntil - now) / 1500), cdMs: 1500 },
 			{ label: 'Brace', input: 'RMB', color: '#66ff44', cdFrac: 0, active: myState?.isBracing },
 		];
 		if (cls === 'healer') return [
-			{ label: 'Heal', input: 'LMB', color: '#ff88cc', cdFrac: 0 },
+			{ label: 'Heal', input: 'LMB', color: '#ff88cc',
+			  cdFrac: Math.max(0, (abilityState.healCooldownUntil - now) / 2000), cdMs: 2000 },
 			{ label: 'Revive', input: 'RMB', color: '#ff88cc',
-			  cdFrac: cdFrac(myState?.reviveCooldownUntil?.microsSinceUnixEpoch, 15000) },
+			  cdFrac: cdFrac(myState?.reviveCooldownUntil?.microsSinceUnixEpoch, 15000), cdMs: 15000 },
 		];
 		return [
 			{ label: '—', input: '', color: '#555', cdFrac: 0 },
@@ -159,7 +162,7 @@
 						{/if}
 						{#if slot.cdFrac > 0}
 							<span style="font-size: 0.65rem; color: #aaa;">
-								{(slot.cdFrac * (slot.input === 'RMB' && myState?.classChoice === 'healer' ? 15 : slot.input === 'RMB' ? 10 : 5)).toFixed(1)}s
+								{(slot.cdFrac * (slot.cdMs ?? 5000) / 1000).toFixed(1)}s
 							</span>
 						{/if}
 					</div>

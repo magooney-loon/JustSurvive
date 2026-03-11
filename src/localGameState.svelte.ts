@@ -32,6 +32,8 @@ export const abilityState = $state({
 	markCooldownUntil: 0,       // ms timestamp (spotter mark, 5s)
 	suppressHits: 0,            // gunner suppress counter (resets on enemy change)
 	lastSuppressedEnemyId: null as bigint | null,
+	bashCooldownUntil: 0,       // ms timestamp (tank bash, 1.5s)
+	healCooldownUntil: 0,       // ms timestamp (healer heal shot, 2s)
 });
 
 export function resetLocalState() {
@@ -54,6 +56,8 @@ export function resetLocalState() {
 	abilityState.markCooldownUntil = 0;
 	abilityState.suppressHits = 0;
 	abilityState.lastSuppressedEnemyId = null;
+	abilityState.bashCooldownUntil = 0;
+	abilityState.healCooldownUntil = 0;
 }
 
 const CLASS_SPEED: Record<string, { walk: number; sprint: number }> = {
@@ -67,8 +71,14 @@ export function updateLocalMovement(
 	dt: number,
 	playerClass: string,
 	hasStamina: boolean,
-	cameraYaw: number
+	cameraYaw: number,
+	isBracing: boolean = false
 ) {
+	if (isBracing) {
+		localVelocity.x = 0;
+		localVelocity.z = 0;
+		return;
+	}
 	const speeds = CLASS_SPEED[playerClass] ?? CLASS_SPEED.gunner;
 	const isSprinting = input.sprint && hasStamina;
 	const speed = isSprinting ? speeds.sprint : speeds.walk;

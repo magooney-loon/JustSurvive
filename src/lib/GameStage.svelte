@@ -167,7 +167,7 @@
 				camYaw = Math.atan2(cameraDir.x, cameraDir.z);
 			}
 		}
-		updateLocalMovement(dt, myState.classChoice, hasStamina, camYaw);
+		updateLocalMovement(dt, myState.classChoice, hasStamina, camYaw, myState.isBracing);
 
 		sendTimer += dt;
 		if (sendTimer >= SEND_INTERVAL) {

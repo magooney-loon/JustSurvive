@@ -33,4 +33,5 @@ export default __t.row({
   speedBoostUntil: __t.option(__t.timestamp()).name("speed_boost_until"),
   reviveCooldownUntil: __t.option(__t.timestamp()).name("revive_cooldown_until"),
   pingCooldownUntil: __t.option(__t.timestamp()).name("ping_cooldown_until"),
+  bashCooldownUntil: __t.option(__t.timestamp()).name("bash_cooldown_until"),
 });

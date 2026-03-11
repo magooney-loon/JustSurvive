@@ -140,6 +140,10 @@ export const gameActions = {
 		if (!conn) return;
 		try { await conn.reducers.attackEnemy({ sessionId, enemyId, suppress }); } catch {}
 	},
+	async healPlayer(sessionId: bigint, targetIdentity: Identity) {
+		if (!conn) return;
+		try { await conn.reducers.healPlayer({ sessionId, targetIdentity }); } catch {}
+	},
 	async shieldBash(sessionId: bigint, enemyId?: bigint) {
 		if (!conn) return;
 		try { await conn.reducers.shieldBash({ sessionId, enemyId }); } catch {}

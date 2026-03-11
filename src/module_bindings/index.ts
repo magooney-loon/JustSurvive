@@ -39,6 +39,7 @@ import BraceEndReducer from "./brace_end_reducer";
 import BraceStartReducer from "./brace_start_reducer";
 import ClearDebrisReducer from "./clear_debris_reducer";
 import CreateLobbyReducer from "./create_lobby_reducer";
+import HealPlayerReducer from "./heal_player_reducer";
 import JoinByCodeReducer from "./join_by_code_reducer";
 import JoinLobbyReducer from "./join_lobby_reducer";
 import LeaveLobbyReducer from "./leave_lobby_reducer";
@@ -197,6 +198,7 @@ const reducersSchema = __reducers(
   __reducerSchema("brace_start", BraceStartReducer),
   __reducerSchema("clear_debris", ClearDebrisReducer),
   __reducerSchema("create_lobby", CreateLobbyReducer),
+  __reducerSchema("heal_player", HealPlayerReducer),
   __reducerSchema("join_by_code", JoinByCodeReducer),
   __reducerSchema("join_lobby", JoinLobbyReducer),
   __reducerSchema("leave_lobby", LeaveLobbyReducer),

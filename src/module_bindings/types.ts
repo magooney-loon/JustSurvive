@@ -144,6 +144,7 @@ export const PlayerState = __t.object("PlayerState", {
   speedBoostUntil: __t.option(__t.timestamp()),
   reviveCooldownUntil: __t.option(__t.timestamp()),
   pingCooldownUntil: __t.option(__t.timestamp()),
+  bashCooldownUntil: __t.option(__t.timestamp()),
 });
 export type PlayerState = __Infer<typeof PlayerState>;
 

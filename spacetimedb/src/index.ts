@@ -123,7 +123,8 @@ const PlayerState = table(
 		isBracing: t.bool(),
 		speedBoostUntil: t.timestamp().optional(),
 		reviveCooldownUntil: t.timestamp().optional(),
-		pingCooldownUntil: t.timestamp().optional()
+		pingCooldownUntil: t.timestamp().optional(),
+		bashCooldownUntil: t.timestamp().optional()
 	}
 );
 
@@ -678,7 +679,8 @@ export const fire_start_game = spacetimedb.reducer(
 				isBracing: false,
 				speedBoostUntil: undefined,
 				reviveCooldownUntil: undefined,
-				pingCooldownUntil: undefined
+				pingCooldownUntil: undefined,
+				bashCooldownUntil: undefined
 			});
 		}
 
@@ -1153,6 +1155,40 @@ export const attack_enemy = spacetimedb.reducer(
 	}
 );
 
+const HEAL_AMOUNT = 30n;
+const HEAL_RANGE_SQ = 100_000_000n; // 10 units
+
+export const heal_player = spacetimedb.reducer(
+	{
+		sessionId: t.u64(),
+		targetIdentity: t.identity()
+	},
+	(ctx, { sessionId, targetIdentity }) => {
+		let healer: any;
+		for (const p of ctx.db.playerState.player_state_session_id.filter(sessionId)) {
+			if (p.playerIdentity.isEqual(ctx.sender)) { healer = p; break; }
+		}
+		if (!healer || healer.classChoice !== 'healer') throw new SenderError('Not a Healer');
+		if (healer.status !== 'alive') return;
+
+		let target: any;
+		for (const p of ctx.db.playerState.player_state_session_id.filter(sessionId)) {
+			if (p.playerIdentity.isEqual(targetIdentity)) { target = p; break; }
+		}
+		if (!target || target.status !== 'alive') return;
+		if (target.playerIdentity.isEqual(ctx.sender)) return;
+
+		const dx = target.posX - healer.posX;
+		const dz = target.posZ - healer.posZ;
+		if (dx * dx + dz * dz > HEAL_RANGE_SQ) return;
+
+		const newHp = target.hp + HEAL_AMOUNT > target.maxHp ? target.maxHp : target.hp + HEAL_AMOUNT;
+		const shotAt = ctx.timestamp;
+		ctx.db.playerState.id.update({ ...target, hp: newHp });
+		ctx.db.playerState.id.update({ ...healer, lastShotAt: shotAt });
+	}
+);
+
 export const shield_bash = spacetimedb.reducer(
 	{
 		sessionId: t.u64(),
@@ -1168,6 +1204,16 @@ export const shield_bash = spacetimedb.reducer(
 		}
 		if (!ps || ps.classChoice !== 'tank') throw new SenderError('Not a Tank');
 		if (ps.status !== 'alive') return;
+
+		if (
+			ps.bashCooldownUntil &&
+			ctx.timestamp.microsSinceUnixEpoch < ps.bashCooldownUntil.microsSinceUnixEpoch
+		) return;
+
+		const BASH_COOLDOWN_US = 1_500_000n;
+		const bashCooldown = ts(ctx.timestamp.microsSinceUnixEpoch + BASH_COOLDOWN_US);
+		ctx.db.playerState.id.update({ ...ps, bashCooldownUntil: bashCooldown });
+		ps = { ...ps, bashCooldownUntil: bashCooldown };
 
 		if (enemyId !== undefined) {
 			const enemy = ctx.db.enemy.id.find(enemyId);

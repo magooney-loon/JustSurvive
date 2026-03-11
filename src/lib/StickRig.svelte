@@ -523,7 +523,7 @@
 
 	<!-- TANK SHIELD (always present for tank, grows when bracing) -->
 	{#if classChoice === 'tank'}
-		<T.Group position={[shieldPosX, shieldPosY, shieldPosZ]} scale={[shieldS, shieldS, shieldS]}>
+		<T.Group position={[shieldPosX, shieldPosY, shieldPosZ]} rotation={[Math.PI / 2, 0, 0]} scale={[shieldS, shieldS, shieldS]}>
 			<!-- Hex plate body (cylinder flat = hex disc from above) -->
 			<T.Mesh>
 				<T.CylinderGeometry args={[0.44, 0.44, 0.065, 6]} />
@@ -572,7 +572,7 @@
 						depthWrite={false}
 					/>
 				</T.Mesh>
-				<T.Mesh position={[0, 0.04, 0]} rotation={[Math.PI / 2, 0, 0]}>
+				<T.Mesh position={[0, 0.04, 0]} rotation={[-Math.PI / 2, 0, 0]}>
 					<T.RingGeometry args={[0.44, 0.62, 14]} />
 					<T.MeshBasicMaterial
 						color="#88ff88"
