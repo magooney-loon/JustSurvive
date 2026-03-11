@@ -15,7 +15,7 @@
 	const currentLobby = $derived(myEntry ? $lobbies.find(l => l.id === myEntry.lobbyId) : null);
 	const players = $derived(currentLobby ? $lobbyPlayers.filter(p => p.lobbyId === currentLobby.id) : []);
 	const isHost = $derived(currentLobby?.hostIdentity.toHexString() === $conn.identity?.toHexString());
-	const allReady = $derived(players.length >= 2 && players.every(p => p.isReady && p.classChoice));
+	const allReady = $derived(players.length >= 1 && players.every(p => p.isReady && p.classChoice));
 
 	const CLASSES = ['spotter', 'gunner', 'tank', 'healer'] as const;
 
@@ -126,7 +126,7 @@
 					disabled={!allReady}
 					style="width: 100%; padding: 0.75rem; font-size: 1rem; font-weight: 600; border-radius: 0.5rem; border: 1px solid rgba(255,255,255,{allReady ? '0.5' : '0.12'}); background: {allReady ? 'rgba(74,170,136,0.35)' : 'rgba(255,255,255,0.05)'}; color: {allReady ? 'white' : 'rgba(255,255,255,0.3)'}; cursor: {allReady ? 'pointer' : 'not-allowed'}; margin-bottom: 0.5rem; transition: background 0.15s;"
 				>
-					{players.length < 2 ? 'Need 2+ players' : !allReady ? 'Waiting for all players' : 'Start Game'}
+					{!allReady ? 'Waiting for all players' : 'Start Game'}
 				</button>
 			{:else}
 				<p style="text-align: center; color: rgba(255,255,255,0.45); font-size: 0.875rem; margin: 0 0 0.5rem;">Waiting for host to start...</p>

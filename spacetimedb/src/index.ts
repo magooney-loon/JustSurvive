@@ -618,7 +618,7 @@ export const start_countdown = spacetimedb.reducer(
 		if (lobby.status !== 'waiting') throw new SenderError('Already starting');
 
 		const players = [...ctx.db.lobbyPlayer.lobby_player_lobby_id.filter(lobbyId)];
-		if (players.length < 2) throw new SenderError('Need at least 2 players');
+		if (players.length < 1) throw new SenderError('Need at least 1 player');
 		if (!players.every((p) => p.isReady && p.classChoice)) {
 			throw new SenderError('All players must be ready with a class selected');
 		}

@@ -11,6 +11,8 @@
 
 	const conn = useSpacetimeDB();
 	const [players] = useTable(tables.playerState);
+	const [sessions] = useTable(tables.gameSession);
+	const [enemies] = useTable(tables.enemy);
 
 	const myState = $derived(
 		$players.find(
@@ -36,6 +38,46 @@
 		if (audio.isPlaying) audio.stop();
 		audio.play();
 	};
+
+	// ─── New cycle sound ──────────────────────────────────────────────────────
+	let prevCycleNumber: bigint | undefined = undefined;
+	$effect(() => {
+		const session = $sessions.find(s => s.id === gameState.currentSessionId && s.status === 'active');
+		if (!session) return;
+		if (prevCycleNumber !== undefined && session.cycleNumber > prevCycleNumber) {
+			soundActions.playNewCycle();
+		}
+		prevCycleNumber = session.cycleNumber;
+	});
+
+	// ─── Per-enemy-type kill spree tracking ───────────────────────────────────
+	const killCounts = new Map<string, number>();
+	const countedKills = new Set<bigint>();
+	let prevKillSessionId: bigint | null | undefined = undefined;
+
+	const SPREE_ACTIONS: Record<string, () => void> = {
+		basic: () => soundActions.playSpreeKilling(),
+		fast: () => soundActions.playSpreeeDominating(),
+		brute: () => soundActions.playSpreeGodlike(),
+		spitter: () => soundActions.playSpreeHumiliation(),
+	};
+
+	$effect(() => {
+		const sessionId = gameState.currentSessionId;
+		if (sessionId !== prevKillSessionId) {
+			killCounts.clear();
+			countedKills.clear();
+			prevKillSessionId = sessionId;
+		}
+		if (!sessionId) return;
+		for (const e of $enemies) {
+			if (e.sessionId !== sessionId || e.isAlive || countedKills.has(e.id)) continue;
+			countedKills.add(e.id);
+			const count = (killCounts.get(e.enemyType) ?? 0) + 1;
+			killCounts.set(e.enemyType, count);
+			if (count % 10 === 0) SPREE_ACTIONS[e.enemyType]?.();
+		}
+	});
 
 	// ─── Keep volumes synced ──────────────────────────────────────────────────
 	$effect(() => {

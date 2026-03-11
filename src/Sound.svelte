@@ -7,6 +7,11 @@
 		// Global game SFX (non-positional)
 		playerDead: 0,
 		playerDown: 0,
+		newCycle: 0,
+		spreeKilling: 0,
+		spreeDominating: 0,
+		spreeGodlike: 0,
+		spreeHumiliation: 0,
 		// Positional ability SFX — handled by GameSounds.svelte
 		gunnerShot: 0,
 		healerHeal: 0,
@@ -24,6 +29,11 @@
 		stopAnimSounds() { soundTriggers.currentAnimSound = ''; },
 		playPlayerDead() { soundTriggers.playerDead++; },
 		playPlayerDown() { soundTriggers.playerDown++; },
+		playNewCycle() { soundTriggers.newCycle++; },
+		playSpreeKilling() { soundTriggers.spreeKilling++; },
+		playSpreeeDominating() { soundTriggers.spreeDominating++; },
+		playSpreeGodlike() { soundTriggers.spreeGodlike++; },
+		playSpreeHumiliation() { soundTriggers.spreeHumiliation++; },
 		// Positional ability sounds
 		playGunnerShot() { soundTriggers.gunnerShot++; },
 		playHealerHeal() { soundTriggers.healerHeal++; },
@@ -48,6 +58,11 @@
 	const SWOOSH_URL = `${base}sounds/swoosh.mp3`;
 	const PLAYER_DEAD_URL = `${base}sounds/player_dead.mp3`;
 	const PLAYER_DOWN_URL = `${base}sounds/player_down.mp3`;
+	const NEW_CYCLE_URL = `${base}sounds/new_cycle.mp3`;
+	const SPREE_KILLING_URL = `${base}sounds/spree_killing.mp3`;
+	const SPREE_DOMINATING_URL = `${base}sounds/spree_dominating.mp3`;
+	const SPREE_GODLIKE_URL = `${base}sounds/spree_godlike.mp3`;
+	const SPREE_HUMILIATION_URL = `${base}sounds/spree_humiliation.mp3`;
 
 	// $state.raw — prevents Svelte 5 from wrapping class instances in a Proxy
 	let ostAudio = $state.raw<ThreeAudio>();
@@ -61,6 +76,11 @@
 	let animHeadShakeAudio = $state.raw<ThreeAudio>();
 	let playerDeadAudio = $state.raw<ThreeAudio>();
 	let playerDownAudio = $state.raw<ThreeAudio>();
+	let newCycleAudio = $state.raw<ThreeAudio>();
+	let spreeKillingAudio = $state.raw<ThreeAudio>();
+	let spreeDominatingAudio = $state.raw<ThreeAudio>();
+	let spreeGodlikeAudio = $state.raw<ThreeAudio>();
+	let spreeHumiliationAudio = $state.raw<ThreeAudio>();
 
 	// ─── Playback helpers ─────────────────────────────────────────────────────
 
@@ -123,6 +143,13 @@
 		playerDownAudio.setVolume(settingsState.audio.effectsVolume);
 	});
 
+	$effect(() => {
+		const vol = settingsState.audio.effectsVolume;
+		for (const a of [newCycleAudio, spreeKillingAudio, spreeDominatingAudio, spreeGodlikeAudio, spreeHumiliationAudio]) {
+			if (a) a.setVolume(vol);
+		}
+	});
+
 	// ─── One-shot SFX ────────────────────────────────────────────────────────
 
 	$effect(() => {
@@ -142,6 +169,12 @@
 		if (soundTriggers.playerDown > 0 && settingsState.audio.effectsEnabled)
 			playOneShot(playerDownAudio);
 	});
+
+	$effect(() => { if (soundTriggers.newCycle > 0 && settingsState.audio.effectsEnabled) playOneShot(newCycleAudio); });
+	$effect(() => { if (soundTriggers.spreeKilling > 0 && settingsState.audio.effectsEnabled) playOneShot(spreeKillingAudio); });
+	$effect(() => { if (soundTriggers.spreeDominating > 0 && settingsState.audio.effectsEnabled) playOneShot(spreeDominatingAudio); });
+	$effect(() => { if (soundTriggers.spreeGodlike > 0 && settingsState.audio.effectsEnabled) playOneShot(spreeGodlikeAudio); });
+	$effect(() => { if (soundTriggers.spreeHumiliation > 0 && settingsState.audio.effectsEnabled) playOneShot(spreeHumiliationAudio); });
 
 	// ─── Animation sounds — single effect handles stop-then-play atomically ──
 
@@ -240,3 +273,16 @@
 	}}
 	userData={{ hideInTree: true, selectable: false }}
 />
+
+<!-- Global SFX: New Cycle -->
+<Audio
+	src={NEW_CYCLE_URL}
+	oncreate={(a) => { newCycleAudio = a; }}
+	userData={{ hideInTree: true, selectable: false }}
+/>
+
+<!-- Global SFX: Spree sounds -->
+<Audio src={SPREE_KILLING_URL} oncreate={(a) => { spreeKillingAudio = a; }} userData={{ hideInTree: true, selectable: false }} />
+<Audio src={SPREE_DOMINATING_URL} oncreate={(a) => { spreeDominatingAudio = a; }} userData={{ hideInTree: true, selectable: false }} />
+<Audio src={SPREE_GODLIKE_URL} oncreate={(a) => { spreeGodlikeAudio = a; }} userData={{ hideInTree: true, selectable: false }} />
+<Audio src={SPREE_HUMILIATION_URL} oncreate={(a) => { spreeHumiliationAudio = a; }} userData={{ hideInTree: true, selectable: false }} />
