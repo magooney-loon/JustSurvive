@@ -104,6 +104,13 @@ export function updateLocalMovement(
 		forward /= len;
 	}
 
+	// Slow down backwards (0.65x) and strafing (0.75x); forward stays at 1x
+	// forward > 0 = moving forward, forward < 0 = moving back
+	// Blend: backwardness = max(0, -forward), strafe = |right| when not fully forward
+	const backwardness = Math.max(0, -forward);       // 0..1
+	const strafeness = Math.abs(right) * (1 - Math.abs(forward)); // 0..1, peaks at pure strafe
+	const dirMultiplier = 1 - backwardness * 0.35 - strafeness * 0.25;
+
 	// Move relative to camera facing (local forward is -Z)
 	const sin = Math.sin(cameraYaw);
 	const cos = Math.cos(cameraYaw);
@@ -114,10 +121,11 @@ export function updateLocalMovement(
 	const worldX = right * rightX + forward * forwardX;
 	const worldZ = right * rightZ + forward * forwardZ;
 
-	localPos.x += worldX * speed * dt;
-	localPos.z += worldZ * speed * dt;
-	localVelocity.x = worldX * speed;
-	localVelocity.z = worldZ * speed;
+	const effectiveSpeed = speed * dirMultiplier;
+	localPos.x += worldX * effectiveSpeed * dt;
+	localPos.z += worldZ * effectiveSpeed * dt;
+	localVelocity.x = worldX * effectiveSpeed;
+	localVelocity.z = worldZ * effectiveSpeed;
 
 	// Clamp to arena boundary
 	const rSq = localPos.x * localPos.x + localPos.z * localPos.z;

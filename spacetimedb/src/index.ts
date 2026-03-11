@@ -780,6 +780,27 @@ export const move_player = spacetimedb.reducer(
 			}
 		}
 
+		// ─── Position validation ──────────────────────────────────────────────
+		// Reject out-of-arena positions
+		const ARENA_RADIUS_SRV = 50_000n;
+		if (posX * posX + posZ * posZ > ARENA_RADIUS_SRV * ARENA_RADIUS_SRV) return;
+
+		// Reject positions implying faster-than-possible movement (anti-cheat)
+		if (dtMicros > 0n && ps.lastMoveAt) {
+			const CLASS_WALK:   Record<string, bigint> = { spotter: 5000n, gunner: 4500n, tank: 2500n, healer: 5000n };
+			const CLASS_SPRINT: Record<string, bigint> = { spotter: 9000n, gunner: 7500n, tank: 3500n, healer: 8500n };
+			const baseSpeed = isSprinting && ps.stamina > 0n
+				? (CLASS_SPRINT[ps.classChoice] ?? 7500n)
+				: (CLASS_WALK[ps.classChoice] ?? 4500n);
+			const hasSpeedBoost = ps.speedBoostUntil && ps.speedBoostUntil.microsSinceUnixEpoch > now;
+			const maxSpeed = hasSpeedBoost ? (baseSpeed * 3n) / 2n : baseSpeed;
+			// 1.5x tolerance for network jitter and timing imprecision
+			const maxDist = (maxSpeed * dtMicros * 3n) / (2n * 1_000_000n);
+			const dx = posX - ps.posX;
+			const dz = posZ - ps.posZ;
+			if (dx * dx + dz * dz > maxDist * maxDist) return;
+		}
+
 		const distDelta = posZ < ps.posZ ? ps.posZ - posZ : 0n;
 		const newScore = ps.score + distDelta / 1000n;
 		const updatedPs = {
