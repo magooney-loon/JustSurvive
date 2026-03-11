@@ -354,17 +354,38 @@ function end_session(ctx: any, sessionId: bigint) {
 
   ctx.db.gameSession.id.update({ ...session, status: 'finished', endedAt: ctx.timestamp });
 
+  // Delete enemies immediately — not needed for game over screen
+  for (const e of ctx.db.enemy.enemy_session_id.filter(sessionId)) {
+    ctx.db.enemy.id.delete(e.id);
+  }
+  // PlayerState rows are kept until next game starts (game over screen needs them to show scores)
+
+  // Reset lobby to 'waiting' and clear isReady so players can start again
   const lobby = ctx.db.lobby.id.find(session.lobbyId);
-  if (lobby) ctx.db.lobby.id.update({ ...lobby, status: 'game_over' });
+  if (lobby) {
+    ctx.db.lobby.id.update({ ...lobby, status: 'waiting' });
+    for (const p of ctx.db.lobbyPlayer.lobby_player_lobby_id.filter(lobby.id)) {
+      ctx.db.lobbyPlayer.id.update({ ...p, isReady: false });
+    }
+  }
 }
 ```
 
-**Update `fire_start_game`** to kick off the game loop after creating player states:
+**Update `fire_start_game`** to clean up previous session data and kick off the game loop:
 
 ```typescript
-// After inserting all player_state rows, schedule the recurring jobs:
+// At the top of fire_start_game, BEFORE inserting the new session:
+// Cleans up PlayerState and GameSession rows from any previous game in this lobby.
+// (Enemy rows are already deleted by end_session; PlayerState rows survive until here
+//  so the game over screen can display final scores.)
+for (const oldSession of ctx.db.gameSession.game_session_lobby_id.filter(arg.lobbyId)) {
+  for (const p of ctx.db.playerState.player_state_session_id.filter(oldSession.id)) {
+    ctx.db.playerState.id.delete(p.id);
+  }
+  ctx.db.gameSession.id.delete(oldSession.id);
+}
 
-// Enemy tick starts immediately
+// After inserting all player_state rows, schedule the recurring jobs:
 const now = ctx.timestamp.microsSinceUnixEpoch;
 ctx.db.enemyTickJob.insert({
   scheduledId: 0n,
@@ -408,6 +429,14 @@ const localPos = $state({ x: 0, y: 0, z: 0 });
 const localVelocity = $state({ x: 0, z: 0 });
 
 export { input, localPos, localVelocity };
+
+// Call this when GameStage mounts to reset position/input between games
+export function resetLocalState() {
+  input.forward = false; input.back = false; input.left = false;
+  input.right = false; input.sprint = false;
+  localPos.x = 0; localPos.y = 0; localPos.z = 0;
+  localVelocity.x = 0; localVelocity.z = 0;
+}
 
 // Class speed config
 const CLASS_SPEED: Record<string, { walk: number; sprint: number }> = {
@@ -788,7 +817,12 @@ useTask(() => {
 - Enemy spawn uses `avgZ - 30_000n` (forward/-Z direction) — camera sits at `pz+12` looking toward -Z, so spawning at `+Z` puts enemies behind the camera
 - Local player color in `GameStage.svelte` uses `CLASS_COLORS[myState.classChoice]`, same map as `PlayerEntity.svelte`
 - Types `PlayerState` and `Enemy` imported from `module_bindings/types.js` (not `index.js`)
-- `displayX/Y/Z` in entity components initialized to `0` (not from prop) to avoid Svelte 5 `state_referenced_locally` warning
+- `displayX/Z` in `EnemyEntity` initialized with `untrack(() => Number(enemy.posX) / 1000)` — avoids Svelte 5 `state_referenced_locally` warning AND prevents teleport-on-spawn
+- `GameHud` uses `sessionWasActive` flag: only navigates to `game_over` once `session.status` transitions from `'active'` → `'finished'` within the same mount, preventing immediate game-over on second game
+- `LobbyHud` game-start watcher filters `s.status === 'active'` — prevents picking up a stale finished session with the same `lobbyId`
+- `end_session` resets lobby to `'waiting'`, clears `isReady`, deletes `Enemy` rows. **Does NOT delete `PlayerState`** — game over screen needs them for score display
+- `fire_start_game` deletes all previous sessions' `PlayerState` and `GameSession` rows before inserting new ones — ensures clean slate on each new game
+- `resetLocalState()` is exported from `localGameState.svelte.ts` and called in `GameStage.svelte` `onMount` — resets client-side position/velocity/input between games
 
 ## Done When
 
@@ -800,3 +834,4 @@ useTask(() => {
 - [x] All players downed → session ends, all clients see `game_over` stage
 - [x] Day/night phase advances every 60s, sky color changes
 - [x] Stamina drains on sprint, recharges on walk
+- [x] Second game starts clean — positions, scores, enemies, and HP all reset

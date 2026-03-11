@@ -737,7 +737,9 @@ const [sessions] = useTable(tables.gameSession);
 
 $effect(() => {
   if (currentLobby?.status === 'in_progress') {
-    const session = $sessions.find(s => s.lobbyId === currentLobby.id);
+    // ⚠️ Filter by status === 'active' — the lobby may have a previous finished session
+    // with the same lobbyId. Picking it up would set currentSessionId to stale data.
+    const session = $sessions.find(s => s.lobbyId === currentLobby.id && s.status === 'active');
     if (session) {
       gameState.currentSessionId = session.id;
       stageActions.setStage('game');
@@ -1029,6 +1031,15 @@ export const fire_start_game = spacetimedb.reducer({
 }, (ctx, { arg }) => {
   const lobby = ctx.db.lobby.id.find(arg.lobbyId);
   if (!lobby || lobby.status !== 'countdown') return;
+
+  // Clean up previous session(s) for this lobby (PlayerState rows kept until now for game over screen)
+  for (const oldSession of ctx.db.gameSession.game_session_lobby_id.filter(arg.lobbyId)) {
+    for (const p of ctx.db.playerState.player_state_session_id.filter(oldSession.id)) {
+      ctx.db.playerState.id.delete(p.id);
+    }
+    ctx.db.gameSession.id.delete(oldSession.id);
+  }
+
   const session = ctx.db.gameSession.insert({
     id: 0n, lobbyId: arg.lobbyId, status: 'active',
     startedAt: ctx.timestamp, endedAt: undefined,
