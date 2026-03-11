@@ -947,24 +947,11 @@ export const enemy_tick = spacetimedb.reducer(
 					const moveAmount = (speed * TICK_MS) / 1000n;
 					const magnitude = bigintSqrt(chosenDist);
 					if (magnitude > 0n) {
-						const tSec = Number(now % 10_000_000n) / 1_000_000;
-						const phase = Number(enemy.id % 1000n) / 1000;
-						const wobble =
-							Math.sin(tSec * 3.6 + phase * 6.28) + 0.5 * Math.sin(tSec * 7.2 + phase * 12.56);
-						const flankBoost = chosenDist > 100_000_000n ? 1.4 : 0.6;
-						const wobbleScale = BigInt(Math.round(wobble * Number(moveAmount) * 0.35 * flankBoost));
-						const perpX = -dz;
-						const perpZ = dx;
+						// Spitter always moves straight toward player
 						ctx.db.enemy.id.update({
 							...enemy,
-							posX:
-								enemy.posX +
-								(dx * moveAmount) / magnitude +
-								(perpX * wobbleScale) / (magnitude > 0n ? magnitude : 1n),
-							posZ:
-								enemy.posZ +
-								(dz * moveAmount) / magnitude +
-								(perpZ * wobbleScale) / (magnitude > 0n ? magnitude : 1n)
+							posX: enemy.posX + (dx * moveAmount) / magnitude,
+							posZ: enemy.posZ + (dz * moveAmount) / magnitude
 						});
 					}
 				} else if (
@@ -1005,25 +992,41 @@ export const enemy_tick = spacetimedb.reducer(
 				const moveAmount = (speed * TICK_MS) / 1000n;
 				const magnitude = bigintSqrt(chosenDist);
 				if (magnitude > 0n) {
-					const tSec = Number(now % 10_000_000n) / 1_000_000;
-					const phase = Number(enemy.id % 1000n) / 1000;
-					const wobble =
-						Math.sin(tSec * 3.6 + phase * 6.28) + 0.5 * Math.sin(tSec * 7.2 + phase * 12.56);
-					const flankBoost = chosenDist > 100_000_000n ? 1.4 : 0.6;
-					const wobbleScale = BigInt(Math.round(wobble * Number(moveAmount) * 0.35 * flankBoost));
+					// Close range: always charge straight in
+					const STRAFE_MIN_DIST_SQ = 36_000_000n; // ~6000 units (3x melee range)
 					const perpX = -dz;
 					const perpZ = dx;
-					ctx.db.enemy.id.update({
-						...enemy,
-						posX:
-							enemy.posX +
-							(dx * moveAmount) / magnitude +
-							(perpX * wobbleScale) / (magnitude > 0n ? magnitude : 1n),
-						posZ:
-							enemy.posZ +
-							(dz * moveAmount) / magnitude +
-							(perpZ * wobbleScale) / (magnitude > 0n ? magnitude : 1n)
-					});
+					let strafeBias = 0;
+					if (chosenDist > STRAFE_MIN_DIST_SQ) {
+						// Phase-based strafing: 2.5s periods, unique per enemy (no oscillation)
+						const STRAFE_PERIOD_US = 2_500_000n;
+						const strafePhase = Number((now / STRAFE_PERIOD_US + enemy.id * 7n) % 12n);
+						// fast: 6/12 phases strafe (~50%), basic: 4/12 (~33%), brute: never
+						if (enemy.enemyType === 'fast') {
+							if (strafePhase < 3) strafeBias = -1;
+							else if (strafePhase < 6) strafeBias = 1;
+						} else if (enemy.enemyType === 'basic') {
+							if (strafePhase < 2) strafeBias = -1;
+							else if (strafePhase < 4) strafeBias = 1;
+						}
+					}
+					if (strafeBias !== 0) {
+						// Diagonal strafe: 55% forward + 55% lateral
+						const fwd = BigInt(Math.round(Number(moveAmount) * 0.55));
+						const side = BigInt(Math.round(strafeBias * Number(moveAmount) * 0.55));
+						ctx.db.enemy.id.update({
+							...enemy,
+							posX: enemy.posX + (dx * fwd) / magnitude + (perpX * side) / magnitude,
+							posZ: enemy.posZ + (dz * fwd) / magnitude + (perpZ * side) / magnitude
+						});
+					} else {
+						// Direct charge
+						ctx.db.enemy.id.update({
+							...enemy,
+							posX: enemy.posX + (dx * moveAmount) / magnitude,
+							posZ: enemy.posZ + (dz * moveAmount) / magnitude
+						});
+					}
 				}
 			} else {
 				if (
