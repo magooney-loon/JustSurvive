@@ -41,8 +41,8 @@
 				p.sessionId === gameState.currentSessionId
 		)
 	);
-	const liveEnemies = $derived(
-		$enemies.filter((e) => e.sessionId === gameState.currentSessionId && e.isAlive)
+	const visibleEnemies = $derived(
+		$enemies.filter((e) => e.sessionId === gameState.currentSessionId)
 	);
 	const livePools = $derived($acidPools.filter((p) => p.sessionId === gameState.currentSessionId));
 	const alivePlayers = $derived(
@@ -216,7 +216,7 @@
 {/each}
 
 <!-- Enemies (interpolated) -->
-{#each liveEnemies as enemy (enemy.id)}
+{#each visibleEnemies as enemy (enemy.id)}
 	<EnemyEntity {enemy} />
 {/each}
 
