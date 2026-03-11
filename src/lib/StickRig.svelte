@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { T } from '@threlte/core';
+	import { AdditiveBlending } from 'three';
 	export type StickRigProps = {
 		classChoice: string;
 		color: string;
@@ -29,6 +30,9 @@
 	const idleShift = $derived(Math.sin(walkPhase * 0.5) * 0.02 * (1 - moveIntensity));
 	const boneTint = $derived(classChoice === 'spotter' ? '#d7ccb6' : '#d2c3a5');
 	const plateTint = $derived(classChoice === 'gunner' ? '#2b2620' : '#2f271f');
+	const lightFlicker = $derived(0.95 + 0.05 * Math.sin(walkPhase * 3.0 + 0.2));
+	const lightPulse = $derived(0.96 + 0.04 * Math.sin(walkPhase * 1.4 - 0.2));
+	const beamWarp = $derived(1 + 0.03 * Math.sin(walkPhase * 1.7 + 0.3));
 
 	const leftArmRotX = $derived(holdAim ? armPitch : -swing);
 	const rightArmRotX = $derived(holdAim ? -armPitch : swing);
@@ -234,6 +238,22 @@
 			<T.BoxGeometry args={[limbR * 2.0, limbR * 0.5, limbR * 1.2]} />
 			<T.MeshStandardMaterial color={plateTint} />
 		</T.Mesh>
+		{#if classChoice === 'spotter'}
+			<T.Group position={[0.02, 0.02, -0.55]} rotation={[0.1, 0.2, 0]}>
+				<T.Mesh>
+					<T.BoxGeometry args={[0.18, 0.1, 0.22]} />
+					<T.MeshStandardMaterial color="#2b2b2b" />
+				</T.Mesh>
+				<T.Mesh position={[0, 0.03, 0.02]}>
+					<T.BoxGeometry args={[0.14, 0.02, 0.12]} />
+					<T.MeshStandardMaterial color="#1f6f9a" emissive="#1f6f9a" emissiveIntensity={1.8} />
+				</T.Mesh>
+				<T.Mesh position={[0.06, -0.02, -0.02]}>
+					<T.CylinderGeometry args={[0.02, 0.02, 0.08, 6]} />
+					<T.MeshStandardMaterial color="#4a4a4a" />
+				</T.Mesh>
+			</T.Group>
+		{/if}
 		{#if classChoice === 'gunner'}
 			{@const recoil = shotPulse * 0.18}
 			<T.Mesh position={[0, 0, -0.6 - recoil]} rotation={[Math.PI / 2, 0, 0]}>
@@ -266,13 +286,80 @@
 				<T.ConeGeometry args={[0.12, 0.3, 8]} />
 				<T.MeshStandardMaterial color="#bdbdbd" />
 			</T.Mesh>
-			<T.Mesh position={[0, 0, -7.6]} rotation={[Math.PI / 2, 0, 0]}>
-				<T.ConeGeometry args={[3, 15, 12, 1, true]} />
-				<T.MeshBasicMaterial color="#ffff88" transparent opacity={0.12} side={2} />
+			<T.SpotLight
+				position={[0, 0, -0.2]}
+				color="#fff2c6"
+				intensity={5.2 * lightPulse}
+				distance={18}
+				angle={0.2}
+				penumbra={0.2}
+				decay={2}
+				castShadow={false}
+			/>
+			<T.Mesh position={[0, 0, -0.34]}>
+				<T.SphereGeometry args={[0.05, 6, 4]} />
+				<T.MeshStandardMaterial
+					color="#ffe7a1"
+					emissive="#ffe7a1"
+					emissiveIntensity={2.4 * lightFlicker}
+				/>
+			</T.Mesh>
+			<T.Mesh
+				position={[0, 0, -6]}
+				rotation={[Math.PI / 2, 0.18, 0]}
+				scale={[beamWarp, 1, 1 / beamWarp]}
+			>
+				<T.MeshBasicMaterial
+					color="#fff6da"
+					transparent
+					opacity={0.009 * lightPulse}
+					side={2}
+					depthWrite={false}
+					blending={AdditiveBlending}
+				/>
+				<T.ConeGeometry args={[1.6, 12.5, 64, 4, true]} />
+			</T.Mesh>
+			<T.Mesh
+				position={[0, 0, -5.6]}
+				rotation={[Math.PI / 2, -0.12, 0.05]}
+				scale={[1 / beamWarp, 1, beamWarp]}
+			>
+				<T.MeshBasicMaterial
+					color="#fff9ef"
+					transparent
+					opacity={0.012 * lightPulse}
+					side={2}
+					depthWrite={false}
+					blending={AdditiveBlending}
+				/>
+				<T.ConeGeometry args={[0.7, 9.2, 64, 4, true]} />
+			</T.Mesh>
+			<T.Mesh position={[0, 0, -6.8]} rotation={[Math.PI / 2, 0.05, -0.04]} scale={[1.06, 1, 0.96]}>
+				<T.MeshBasicMaterial
+					color="#fff1c8"
+					transparent
+					opacity={0.006 * lightPulse}
+					side={2}
+					depthWrite={false}
+					blending={AdditiveBlending}
+				/>
+				<T.ConeGeometry args={[2.0, 13.5, 64, 4, true]} />
+			</T.Mesh>
+			<T.Mesh position={[0, 0, -6]} rotation={[Math.PI / 2, 0, 0]}>
+				<T.ConeGeometry args={[0.9, 9, 32, 2, true]} />
+				<T.MeshBasicMaterial color="#fff8cc" transparent opacity={0.12 * lightPulse} side={2} />
 			</T.Mesh>
 			<T.Mesh position={[0, 0, -15]} rotation={[-Math.PI / 2, 0, 0]}>
-				<T.CircleGeometry args={[0.18, 8]} />
-				<T.MeshBasicMaterial color="#ffffcc" />
+				<T.CircleGeometry args={[0.28, 12]} />
+				<T.MeshBasicMaterial color="#fff6c8" transparent opacity={0.7 * lightPulse} />
+			</T.Mesh>
+			<T.Mesh position={[0, 0, -0.52]}>
+				<T.CircleGeometry args={[0.16, 12]} />
+				<T.MeshBasicMaterial color="#fff7d6" transparent opacity={0.5 * lightFlicker} />
+			</T.Mesh>
+			<T.Mesh position={[0, 0, -0.58]}>
+				<T.CircleGeometry args={[0.28, 12]} />
+				<T.MeshBasicMaterial color="#fff0b8" transparent opacity={0.18 * lightFlicker} />
 			</T.Mesh>
 		{:else if classChoice === 'gunner'}
 			{@const recoil = shotPulse * 0.18}
