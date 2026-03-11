@@ -15,8 +15,7 @@ export default __t.row({
   sessionId: __t.u64().name("session_id"),
   sourceIdentity: __t.identity().name("source_identity"),
   targetType: __t.string().name("target_type"),
-  targetEnemyId: __t.option(__t.u64()).name("target_enemy_id"),
-  posX: __t.option(__t.i64()).name("pos_x"),
-  posZ: __t.option(__t.i64()).name("pos_z"),
+  posX: __t.i64().name("pos_x"),
+  posZ: __t.i64().name("pos_z"),
   expiresAt: __t.timestamp().name("expires_at"),
 });

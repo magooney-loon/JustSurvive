@@ -1,41 +1,38 @@
 <script lang="ts">
-	import { T } from '@threlte/core';
-	import { HTML } from '@threlte/extras';
+	import { T, useTask } from '@threlte/core';
 	import { useTable } from 'spacetimedb/svelte';
 	import { tables } from '../module_bindings/index.js';
 	import { gameState } from '../game.svelte.js';
 
 	const [marks] = useTable(tables.mark);
-	const [enemies] = useTable(tables.enemy);
 
-	const activeMarks = $derived(
+	const activePings = $derived(
 		$marks.filter(m =>
 			m.sessionId === gameState.currentSessionId &&
+			m.targetType === 'location' &&
 			m.expiresAt.microsSinceUnixEpoch > BigInt(Date.now()) * 1000n
 		)
 	);
 
-	function getEnemyPos(enemyId: bigint) {
-		const e = $enemies.find(e => e.id === enemyId);
-		return e ? { x: Number(e.posX) / 1000, z: Number(e.posZ) / 1000 } : null;
-	}
+	let pulse = $state(1);
+	let t = 0;
+	useTask((dt) => {
+		t += dt;
+		pulse = 0.85 + Math.sin(t * 6) * 0.15;
+	});
 </script>
 
-{#each activeMarks as mark (mark.id)}
-	{#if mark.targetType === 'enemy' && mark.targetEnemyId !== undefined}
-		{@const pos = getEnemyPos(mark.targetEnemyId)}
-		{#if pos}
-			<T.Group position={[pos.x, 3, pos.z]}>
-				<HTML center>
-					<div style="color: #f84; font-size: 1.2rem; font-weight: bold; text-shadow: 0 0 4px #000;">⚠</div>
-				</HTML>
-			</T.Group>
-		{/if}
-	{:else if mark.targetType === 'location' && mark.posX !== undefined}
-		<T.Group position={[Number(mark.posX) / 1000, 2, Number(mark.posZ) / 1000]}>
-			<HTML center>
-				<div style="color: #4af; font-size: 1rem; text-shadow: 0 0 4px #000;">📍</div>
-			</HTML>
+{#each activePings as mark (mark.id)}
+	{#if mark.posX !== undefined && mark.posZ !== undefined}
+		<T.Group position={[Number(mark.posX) / 1000, 0.05, Number(mark.posZ) / 1000]}>
+			<T.Mesh rotation={[-Math.PI / 2, 0, 0]} scale={[pulse, pulse, 1]}>
+				<T.RingGeometry args={[0.5, 0.65, 16]} />
+				<T.MeshBasicMaterial color="#4af" />
+			</T.Mesh>
+			<T.Mesh rotation={[-Math.PI / 2, 0, 0]} scale={[pulse * 1.4, pulse * 1.4, 1]}>
+				<T.RingGeometry args={[0.5, 0.58, 16]} />
+				<T.MeshBasicMaterial color="#4af" transparent opacity={0.4} />
+			</T.Mesh>
 		</T.Group>
 	{/if}
 {/each}

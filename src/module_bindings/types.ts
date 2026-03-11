@@ -115,9 +115,8 @@ export const Mark = __t.object("Mark", {
   sessionId: __t.u64(),
   sourceIdentity: __t.identity(),
   targetType: __t.string(),
-  targetEnemyId: __t.option(__t.u64()),
-  posX: __t.option(__t.i64()),
-  posZ: __t.option(__t.i64()),
+  posX: __t.i64(),
+  posZ: __t.i64(),
   expiresAt: __t.timestamp(),
 });
 export type Mark = __Infer<typeof Mark>;

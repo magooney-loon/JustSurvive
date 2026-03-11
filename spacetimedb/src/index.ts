@@ -171,9 +171,8 @@ const Mark = table({
   sessionId: t.u64(),
   sourceIdentity: t.identity(),
   targetType: t.string(),        // 'enemy' | 'location'
-  targetEnemyId: t.u64().optional(),
-  posX: t.i64().optional(),
-  posZ: t.i64().optional(),
+  posX: t.i64(),
+  posZ: t.i64(),
   expiresAt: t.timestamp(),
 });
 
@@ -266,7 +265,7 @@ function classMaxStamina(cls: string): bigint {
 }
 
 // Shorthand to create a Timestamp-compatible value from raw microseconds
-function ts(micros: bigint): any { return { microsSinceUnixEpoch: micros }; }
+function ts(micros: bigint): any { return { __timestamp_micros_since_unix_epoch__: micros }; }
 
 function bigintSqrt(n: bigint): bigint {
   if (n < 0n) return 0n;
@@ -844,16 +843,7 @@ export const mark_enemy = spacetimedb.reducer({
   if (!enemy || !enemy.isAlive) return;
 
   const expiresAt = ctx.timestamp.microsSinceUnixEpoch + 5_000_000n;
-  ctx.db.mark.insert({
-    id: 0n,
-    sessionId,
-    sourceIdentity: ctx.sender,
-    targetType: 'enemy',
-    targetEnemyId: enemyId,
-    posX: undefined,
-    posZ: undefined,
-    expiresAt: ts(expiresAt),
-  });
+  // Mark info lives directly on the enemy row — no separate mark insert needed
   ctx.db.enemy.id.update({ ...enemy, isMarked: true, markedUntil: ts(expiresAt) });
 });
 
@@ -878,7 +868,6 @@ export const ping_location = spacetimedb.reducer({
     sessionId,
     sourceIdentity: ctx.sender,
     targetType: 'location',
-    targetEnemyId: undefined,
     posX,
     posZ,
     expiresAt: ts(expiresAt),
@@ -916,9 +905,6 @@ export const attack_enemy = spacetimedb.reducer({
   if (newHp <= 0n) {
     ctx.db.enemy.id.update({ ...enemy, hp: 0n, isAlive: false });
     ctx.db.playerState.id.update({ ...ps, score: ps.score + 10n });
-    for (const m of ctx.db.mark.mark_session_id.filter(sessionId)) {
-      if (m.targetEnemyId === enemyId) ctx.db.mark.id.delete(m.id);
-    }
   } else {
     let updatedEnemy = { ...enemy, hp: newHp };
     if (suppress && ps.classChoice === 'gunner') {

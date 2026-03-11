@@ -8,10 +8,13 @@
 	const [players] = useTable(tables.playerState);
 	const [enemies] = useTable(tables.enemy);
 
-	const myState = $derived($players.find(
-		p => p.playerIdentity.toHexString() === $conn.identity?.toHexString() &&
-		     p.sessionId === gameState.currentSessionId
-	));
+	const myState = $derived(
+		$players.find(
+			(p) =>
+				p.playerIdentity.toHexString() === $conn.identity?.toHexString() &&
+				p.sessionId === gameState.currentSessionId
+		)
+	);
 
 	// Enemy nearest to aim point within range
 	function nearestEnemyToAim(rangeFP: number) {
@@ -25,7 +28,10 @@
 			const dx = e.posX - ax;
 			const dz = e.posZ - az;
 			const d = dx * dx + dz * dz;
-			if (d < rangeSq && d < bestDist) { best = e; bestDist = d; }
+			if (d < rangeSq && d < bestDist) {
+				best = e;
+				bestDist = d;
+			}
 		}
 		return best;
 	}
@@ -43,7 +49,10 @@
 			const dx = p.posX - ox;
 			const dz = p.posZ - oz;
 			const d = dx * dx + dz * dz;
-			if (d < rangeSq && d < bestDist) { best = p; bestDist = d; }
+			if (d < rangeSq && d < bestDist) {
+				best = p;
+				bestDist = d;
+			}
 		}
 		return best;
 	}
@@ -60,7 +69,10 @@
 			const dx = e.posX - ox;
 			const dz = e.posZ - oz;
 			const d = dx * dx + dz * dz;
-			if (d < rangeSq && d < bestDist) { best = e; bestDist = d; }
+			if (d < rangeSq && d < bestDist) {
+				best = e;
+				bestDist = d;
+			}
 		}
 		return best;
 	}
@@ -75,16 +87,11 @@
 		if (!sid) return;
 
 		switch (e.code) {
-			case 'KeyF': {
-				if (myState.classChoice !== 'spotter') break;
-				const enemy = nearestEnemyToAim(15_000); // 15 unit flashlight range
-				if (enemy) gameActions.markEnemy(sid, enemy.id);
-				break;
-			}
 			case 'KeyG': {
 				if (myState.classChoice !== 'spotter') break;
 				// Ping at aim position, not player position
-				gameActions.pingLocation(sid,
+				gameActions.pingLocation(
+					sid,
 					BigInt(Math.round(localAim.x * 1000)),
 					BigInt(Math.round(localAim.z * 1000))
 				);
@@ -124,20 +131,24 @@
 		if (!myState || myState.status !== 'alive') return;
 		const sid = gameState.currentSessionId;
 		if (!sid || e.button !== 0) return;
-		if (myState.classChoice !== 'gunner' && myState.classChoice !== 'healer') return;
 
-		const enemy = nearestEnemyToAim(10_000); // 10 unit attack range from aim point
-		if (!enemy) return;
-
-		// Track suppression: suppress every 3rd hit on same enemy
-		if (enemy.id === lastSuppressedEnemyId) {
-			suppressHits++;
-		} else {
-			lastSuppressedEnemyId = enemy.id;
-			suppressHits = 1;
+		if (myState.classChoice === 'spotter') {
+			// LMB: mark nearest enemy to aim
+			const enemy = nearestEnemyToAim(15_000);
+			if (enemy) gameActions.markEnemy(sid, enemy.id);
+		} else if (myState.classChoice === 'gunner' || myState.classChoice === 'healer') {
+			const enemy = nearestEnemyToAim(10_000);
+			if (!enemy) return;
+			// Track suppression: suppress every 3rd hit on same enemy
+			if (enemy.id === lastSuppressedEnemyId) {
+				suppressHits++;
+			} else {
+				lastSuppressedEnemyId = enemy.id;
+				suppressHits = 1;
+			}
+			const suppress = myState.classChoice === 'gunner' && suppressHits % 3 === 0;
+			gameActions.attackEnemy(sid, enemy.id, suppress);
 		}
-		const suppress = myState.classChoice === 'gunner' && suppressHits % 3 === 0;
-		gameActions.attackEnemy(sid, enemy.id, suppress);
 	}
 </script>
 

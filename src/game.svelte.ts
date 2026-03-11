@@ -128,9 +128,9 @@ export const gameActions = {
 		if (!conn) return;
 		conn.reducers.movePlayer(args);
 	},
-	async markEnemy(sessionId: bigint, enemyId: bigint) {
+	markEnemy(sessionId: bigint, enemyId: bigint) {
 		if (!conn) return;
-		try { await conn.reducers.markEnemy({ sessionId, enemyId }); } catch {}
+		conn.reducers.markEnemy({ sessionId, enemyId });
 	},
 	async pingLocation(sessionId: bigint, posX: bigint, posZ: bigint) {
 		if (!conn) return;
