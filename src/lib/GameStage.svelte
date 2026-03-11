@@ -17,7 +17,6 @@
 	import AcidPoolEntity from './AcidPoolEntity.svelte';
 	import MarkOverlay from './MarkOverlay.svelte';
 	import DayNightSky from './DayNightSky.svelte';
-	import AimReticle from './AimReticle.svelte';
 
 	const conn = useSpacetimeDB();
 	const [players] = useTable(tables.playerState);
@@ -45,12 +44,6 @@
 	);
 	const livePools = $derived($acidPools.filter((p) => p.sessionId === gameState.currentSessionId));
 
-	const CLASS_COLORS: Record<string, string> = {
-		spotter: '#4af',
-		gunner: '#f84',
-		tank: '#8a4',
-		healer: '#f4a'
-	};
 	const CLASS_RANGE: Record<string, number> = {
 		spotter: 15,
 		gunner: 10,
@@ -62,7 +55,7 @@
 		resetLocalState();
 	});
 
-	// Mouse → ground plane raycasting
+	// Mouse → screen-space aim direction
 	const { camera, renderer } = useThrelte();
 	const mouse = new THREE.Vector2();
 	const cameraDir = new THREE.Vector3();
@@ -102,8 +95,6 @@
 			const dLen = Math.hypot(dirX, dirZ);
 			if (dLen < 0.001) return;
 			targetAimDir.set(dirX / dLen, dirZ / dLen);
-
-			// aim direction only; actual reticle position set each frame
 		}
 	}
 
@@ -161,7 +152,7 @@
 	});
 </script>
 
-wdddddddddddddddddddddddddd<svelte:window onmousemove={onMouseMove} />
+<svelte:window onmousemove={onMouseMove} />
 
 <DayNightSky phase={session?.dayPhase ?? 'sunset'} />
 
@@ -173,34 +164,13 @@ wdddddddddddddddddddddddddd<svelte:window onmousemove={onMouseMove} />
 
 <!-- Local player (predicted position, rotated toward aim) -->
 {#if myState}
-	<T.Group position={[localPos.x, localPos.y, localPos.z]} rotation={[0, aimAngle, 0]}>
-		<T.Mesh>
-			<T.CapsuleGeometry args={[0.4, 1.2]} />
-			<T.MeshStandardMaterial color={CLASS_COLORS[myState.classChoice] ?? '#4a8'} />
-		</T.Mesh>
-		<!-- Facing nub -->
-		<T.Mesh position={[0, 0, -0.45]}>
-			<T.SphereGeometry args={[0.12, 6, 4]} />
-			<T.MeshBasicMaterial color={CLASS_COLORS[myState.classChoice] ?? '#4a8'} />
-		</T.Mesh>
-		<!-- Spotter flashlight cone -->
-		{#if myState.classChoice === 'spotter'}
-			<T.Mesh position={[0, 0.3, -7.5]} rotation={[-Math.PI / 2, 0, 0]}>
-				<T.ConeGeometry args={[3, 15, 12, 1, true]} />
-				<T.MeshBasicMaterial color="#ffff88" transparent opacity={0.12} side={2} />
-			</T.Mesh>
-			<!-- Bright disc at max range tip -->
-			<T.Mesh position={[0, 0.3, -15]} rotation={[-Math.PI / 2, 0, 0]}>
-				<T.CircleGeometry args={[0.15, 8]} />
-				<T.MeshBasicMaterial color="#ffffcc" />
-			</T.Mesh>
-		{/if}
-	</T.Group>
-{/if}
-
-<!-- Local aim reticle -->
-{#if myState}
-	<AimReticle x={localAim.x} z={localAim.z} color={CLASS_COLORS[myState.classChoice] ?? '#4a8'} />
+	<PlayerEntity
+		player={myState}
+		isLocal={true}
+		overridePos={{ x: localPos.x, y: localPos.y, z: localPos.z }}
+		overrideFacing={aimAngle}
+		overrideAim={{ x: localAim.x, z: localAim.z }}
+	/>
 {/if}
 
 <!-- Remote players (server position, interpolated) -->

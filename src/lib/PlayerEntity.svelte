@@ -3,8 +3,16 @@
 	import type { PlayerState } from '../module_bindings/types.js';
 	import AimReticle from './AimReticle.svelte';
 
-	type Props = { player: PlayerState };
-	let { player }: Props = $props();
+	type Vec3 = { x: number; y: number; z: number };
+	type Vec2 = { x: number; z: number };
+	type Props = {
+		player: PlayerState;
+		isLocal?: boolean;
+		overridePos?: Vec3;
+		overrideFacing?: number;
+		overrideAim?: Vec2;
+	};
+	let { player, isLocal = false, overridePos, overrideFacing, overrideAim }: Props = $props();
 
 	let displayX = $state(0);
 	let displayY = $state(0);
@@ -29,11 +37,17 @@
 	};
 
 	const aimRange = $derived(CLASS_RANGE[player.classChoice] ?? 10);
-	const facing = $derived(Number(player.facingAngle) / 1000);
-	const aimX = $derived(displayX + -Math.sin(facing) * aimRange);
-	const aimZ = $derived(displayZ + -Math.cos(facing) * aimRange);
+	const facing = $derived(overrideFacing ?? Number(player.facingAngle) / 1000);
+	const aimX = $derived(overrideAim?.x ?? displayX + -Math.sin(facing) * aimRange);
+	const aimZ = $derived(overrideAim?.z ?? displayZ + -Math.cos(facing) * aimRange);
 
 	useTask((dt) => {
+		if (isLocal && overridePos) {
+			displayX = overridePos.x;
+			displayY = overridePos.y;
+			displayZ = overridePos.z;
+			return;
+		}
 		const LERP = 1 - Math.pow(0.001, dt);
 		displayX += (targetX - displayX) * LERP;
 		displayY += (targetY - displayY) * LERP;
@@ -42,10 +56,7 @@
 </script>
 
 {#if player.status !== 'eliminated'}
-	<T.Group
-		position={[displayX, displayY, displayZ]}
-		rotation={[0, Number(player.facingAngle) / 1000, 0]}
-	>
+	<T.Group position={[displayX, displayY, displayZ]} rotation={[0, facing, 0]}>
 		<T.Mesh>
 			<T.CapsuleGeometry args={[0.4, 1.2]} />
 			<T.MeshStandardMaterial
