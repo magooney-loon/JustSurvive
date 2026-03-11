@@ -161,7 +161,8 @@ const Enemy = table(
 		isMarked: t.bool(),
 		markedUntil: t.timestamp().optional(),
 		lastSpitAt: t.timestamp().optional(),
-		diedAt: t.timestamp().optional()
+		diedAt: t.timestamp().optional(),
+		spawnedAt: t.timestamp().optional()
 	}
 );
 
@@ -824,6 +825,7 @@ const SPITTER_RANGE_SQ = 144_000_000n; // 12 world units squared
 const TICK_MS = 100n;
 const MAX_ENEMIES_PER_PLAYER = 3;
 const TARGET_JITTER = 0.08; // +-8% distance jitter
+const ENEMY_SPEED_PER_SEC = 2n; // +2% speed per second alive (capped at +50%)
 
 export const enemy_tick = spacetimedb.reducer(
 	{
@@ -937,7 +939,11 @@ export const enemy_tick = spacetimedb.reducer(
 					});
 					ctx.db.enemy.id.update({ ...enemy, lastSpitAt: ts(now) });
 				} else if (!enemy.isDazed) {
-					const speed = (ENEMY_BASE_SPEED['spitter'] * enemy.speedMultiplier) / 100n;
+					const ageSec = enemy.spawnedAt
+						? Number(now - enemy.spawnedAt.microsSinceUnixEpoch) / 1_000_000
+						: 0;
+					const timeBonus = BigInt(Math.min(50, Math.floor(ageSec * Number(ENEMY_SPEED_PER_SEC))));
+					const speed = (ENEMY_BASE_SPEED['spitter'] * (enemy.speedMultiplier + timeBonus)) / 100n;
 					const moveAmount = (speed * TICK_MS) / 1000n;
 					const magnitude = bigintSqrt(chosenDist);
 					if (magnitude > 0n) {
@@ -989,7 +995,13 @@ export const enemy_tick = spacetimedb.reducer(
 				const damage = enemy.enemyType === 'brute' ? 3n : 1n;
 				apply_player_damage(ctx, arg.sessionId, chosen, damage);
 			} else if (!enemy.isDazed) {
-				const speed = ((ENEMY_BASE_SPEED[enemy.enemyType] ?? 3000n) * enemy.speedMultiplier) / 100n;
+				const ageSec = enemy.spawnedAt
+					? Number(now - enemy.spawnedAt.microsSinceUnixEpoch) / 1_000_000
+					: 0;
+				const timeBonus = BigInt(Math.min(50, Math.floor(ageSec * Number(ENEMY_SPEED_PER_SEC))));
+				const speed =
+					((ENEMY_BASE_SPEED[enemy.enemyType] ?? 3000n) * (enemy.speedMultiplier + timeBonus)) /
+					100n;
 				const moveAmount = (speed * TICK_MS) / 1000n;
 				const magnitude = bigintSqrt(chosenDist);
 				if (magnitude > 0n) {
@@ -1123,7 +1135,8 @@ export const spawn_enemy = spacetimedb.reducer(
 			isMarked: false,
 			markedUntil: undefined,
 			lastSpitAt: undefined,
-			diedAt: undefined
+			diedAt: undefined,
+			spawnedAt: ts(ctx.timestamp.microsSinceUnixEpoch)
 		});
 
 		const nextSpawn = ctx.timestamp.microsSinceUnixEpoch + nextInterval;

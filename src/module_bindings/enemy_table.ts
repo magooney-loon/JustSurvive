@@ -26,4 +26,5 @@ export default __t.row({
   markedUntil: __t.option(__t.timestamp()).name("marked_until"),
   lastSpitAt: __t.option(__t.timestamp()).name("last_spit_at"),
   diedAt: __t.option(__t.timestamp()).name("died_at"),
+  spawnedAt: __t.option(__t.timestamp()).name("spawned_at"),
 });
