@@ -159,7 +159,8 @@ const Enemy = table(
 		isAlive: t.bool(),
 		// Phase 4
 		isMarked: t.bool(),
-		markedUntil: t.timestamp().optional()
+		markedUntil: t.timestamp().optional(),
+		lastSpitAt: t.timestamp().optional()
 	}
 );
 
@@ -909,9 +910,14 @@ export const enemy_tick = spacetimedb.reducer(
 			const dx = chosen.posX - enemy.posX;
 			const dz = chosen.posZ - enemy.posZ;
 
-			// Spitter: ranged acid spit instead of melee
+			// Spitter: ranged acid spit instead of melee (7s cooldown)
 			if (enemy.enemyType === 'spitter') {
-				if (chosenDist <= SPITTER_RANGE_SQ && !enemy.isDazed) {
+				const SPIT_COOLDOWN_US = 7_000_000n;
+				const canSpit =
+					!enemy.lastSpitAt ||
+					ctx.timestamp.microsSinceUnixEpoch >=
+						enemy.lastSpitAt.microsSinceUnixEpoch + SPIT_COOLDOWN_US;
+				if (chosenDist <= SPITTER_RANGE_SQ && !enemy.isDazed && canSpit) {
 					const poolExpiry = ctx.timestamp.microsSinceUnixEpoch + 10_000_000n;
 					ctx.db.acidPool.insert({
 						id: 0n,
@@ -921,6 +927,7 @@ export const enemy_tick = spacetimedb.reducer(
 						radius: 2000n,
 						expiresAt: ts(poolExpiry)
 					});
+					ctx.db.enemy.id.update({ ...enemy, lastSpitAt: ts(now) });
 				} else if (!enemy.isDazed) {
 					const speed = (ENEMY_BASE_SPEED['spitter'] * enemy.speedMultiplier) / 100n;
 					const moveAmount = (speed * TICK_MS) / 1000n;
@@ -1094,7 +1101,8 @@ export const spawn_enemy = spacetimedb.reducer(
 			dazedUntil: undefined,
 			isAlive: true,
 			isMarked: false,
-			markedUntil: undefined
+			markedUntil: undefined,
+			lastSpitAt: undefined
 		});
 
 		const nextSpawn = ctx.timestamp.microsSinceUnixEpoch + nextInterval;
@@ -1201,7 +1209,7 @@ export const mark_enemy = spacetimedb.reducer(
 			ctx.timestamp.microsSinceUnixEpoch < enemy.markedUntil.microsSinceUnixEpoch;
 		ctx.db.enemy.id.update({ ...enemy, isMarked: true, markedUntil: ts(expiresAt) });
 
-		const cooldownUntil = ts(ctx.timestamp.microsSinceUnixEpoch + 5_000_000n);
+		const cooldownUntil = ts(ctx.timestamp.microsSinceUnixEpoch + 1_500_000n);
 		const scoreAdd = alreadyMarked ? 0n : 10n;
 		ctx.db.playerState.id.update({
 			...ps,
