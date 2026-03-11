@@ -3,22 +3,35 @@
 	export const soundTriggers = $state({
 		swoosh: 0,
 		click: 0,
-		currentAnimSound: '' as string
+		currentAnimSound: '' as string,
+		// Global game SFX (non-positional)
+		playerDead: 0,
+		playerDown: 0,
+		// Positional ability SFX — handled by GameSounds.svelte
+		gunnerShot: 0,
+		healerHeal: 0,
+		healerRevive: 0,
+		spotterMark: 0,
+		spotterPing: 0,
+		tankBash: 0,
+		tankBrace: 0,
 	});
 
 	export const soundActions = {
-		playSwoosh() {
-			soundTriggers.swoosh++;
-		},
-		playClick() {
-			soundTriggers.click++;
-		},
-		playAnimSound(action: string) {
-			soundTriggers.currentAnimSound = action;
-		},
-		stopAnimSounds() {
-			soundTriggers.currentAnimSound = '';
-		}
+		playSwoosh() { soundTriggers.swoosh++; },
+		playClick() { soundTriggers.click++; },
+		playAnimSound(action: string) { soundTriggers.currentAnimSound = action; },
+		stopAnimSounds() { soundTriggers.currentAnimSound = ''; },
+		playPlayerDead() { soundTriggers.playerDead++; },
+		playPlayerDown() { soundTriggers.playerDown++; },
+		// Positional ability sounds
+		playGunnerShot() { soundTriggers.gunnerShot++; },
+		playHealerHeal() { soundTriggers.healerHeal++; },
+		playHealerRevive() { soundTriggers.healerRevive++; },
+		playSpotterMark() { soundTriggers.spotterMark++; },
+		playSpotterPing() { soundTriggers.spotterPing++; },
+		playTankBash() { soundTriggers.tankBash++; },
+		playTankBrace() { soundTriggers.tankBrace++; },
 	};
 </script>
 
@@ -33,11 +46,8 @@
 	const AMBIENCE_URL = `${base}sounds/ambience.ogg`;
 	const CLICK_URL = `${base}sounds/click.mp3`;
 	const SWOOSH_URL = `${base}sounds/swoosh.mp3`;
-	const ANIM_IDLE_URL = `${base}sounds/anim_idle.mp3`;
-	const ANIM_WALK_URL = `${base}sounds/anim_walk.mp3`;
-	const ANIM_RUN_URL = `${base}sounds/anim_run.mp3`;
-	const ANIM_AGREE_URL = `${base}sounds/anim_agree.ogg`;
-	const ANIM_HEAD_SHAKE_URL = `${base}sounds/anim_headshake.ogg`;
+	const PLAYER_DEAD_URL = `${base}sounds/player_dead.mp3`;
+	const PLAYER_DOWN_URL = `${base}sounds/player_down.mp3`;
 
 	// $state.raw — prevents Svelte 5 from wrapping class instances in a Proxy
 	let ostAudio = $state.raw<ThreeAudio>();
@@ -49,6 +59,8 @@
 	let animRunAudio = $state.raw<ThreeAudio>();
 	let animAgreeAudio = $state.raw<ThreeAudio>();
 	let animHeadShakeAudio = $state.raw<ThreeAudio>();
+	let playerDeadAudio = $state.raw<ThreeAudio>();
+	let playerDownAudio = $state.raw<ThreeAudio>();
 
 	// ─── Playback helpers ─────────────────────────────────────────────────────
 
@@ -101,6 +113,16 @@
 		swooshAudio.setVolume(settingsState.audio.effectsVolume);
 	});
 
+	$effect(() => {
+		if (!playerDeadAudio) return;
+		playerDeadAudio.setVolume(settingsState.audio.effectsVolume);
+	});
+
+	$effect(() => {
+		if (!playerDownAudio) return;
+		playerDownAudio.setVolume(settingsState.audio.effectsVolume);
+	});
+
 	// ─── One-shot SFX ────────────────────────────────────────────────────────
 
 	$effect(() => {
@@ -111,10 +133,26 @@
 		if (soundTriggers.swoosh > 0 && settingsState.audio.effectsEnabled) playPolyphonic(swooshAudio);
 	});
 
+	$effect(() => {
+		if (soundTriggers.playerDead > 0 && settingsState.audio.effectsEnabled)
+			playOneShot(playerDeadAudio);
+	});
+
+	$effect(() => {
+		if (soundTriggers.playerDown > 0 && settingsState.audio.effectsEnabled)
+			playOneShot(playerDownAudio);
+	});
+
 	// ─── Animation sounds — single effect handles stop-then-play atomically ──
 
 	$effect(() => {
-		const animAudios = [animIdleAudio, animWalkAudio, animRunAudio, animAgreeAudio, animHeadShakeAudio];
+		const animAudios = [
+			animIdleAudio,
+			animWalkAudio,
+			animRunAudio,
+			animAgreeAudio,
+			animHeadShakeAudio
+		];
 		const vol = settingsState.audio.effectsVolume;
 
 		// Keep volumes in sync
@@ -183,51 +221,22 @@
 	userData={{ hideInTree: true, selectable: false }}
 />
 
-<!-- SFX 3–7: Character animation sounds — drop files in /public/sounds/ -->
+<!-- Global SFX: Player Dead -->
 <Audio
-	src={ANIM_IDLE_URL}
-	loop
+	src={PLAYER_DEAD_URL}
 	oncreate={(a) => {
-		animIdleAudio = a;
-		log.info('Audio loaded: Anim Idle SFX');
+		playerDeadAudio = a;
+		log.info('Audio loaded: Player Dead SFX');
 	}}
 	userData={{ hideInTree: true, selectable: false }}
 />
 
+<!-- Global SFX: Player Down -->
 <Audio
-	src={ANIM_WALK_URL}
-	loop
+	src={PLAYER_DOWN_URL}
 	oncreate={(a) => {
-		animWalkAudio = a;
-		log.info('Audio loaded: Anim Walk SFX');
-	}}
-	userData={{ hideInTree: true, selectable: false }}
-/>
-
-<Audio
-	src={ANIM_RUN_URL}
-	loop
-	oncreate={(a) => {
-		animRunAudio = a;
-		log.info('Audio loaded: Anim Run SFX');
-	}}
-	userData={{ hideInTree: true, selectable: false }}
-/>
-
-<Audio
-	src={ANIM_AGREE_URL}
-	oncreate={(a) => {
-		animAgreeAudio = a;
-		log.info('Audio loaded: Anim Agree SFX');
-	}}
-	userData={{ hideInTree: true, selectable: false }}
-/>
-
-<Audio
-	src={ANIM_HEAD_SHAKE_URL}
-	oncreate={(a) => {
-		animHeadShakeAudio = a;
-		log.info('Audio loaded: Anim Head Shake SFX');
+		playerDownAudio = a;
+		log.info('Audio loaded: Player Down SFX');
 	}}
 	userData={{ hideInTree: true, selectable: false }}
 />

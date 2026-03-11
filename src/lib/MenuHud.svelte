@@ -4,6 +4,7 @@
 	import { gameActions, gameState } from '../game.svelte.js';
 	import { useSpacetimeDB, useTable } from 'spacetimedb/svelte';
 	import { tables } from '../module_bindings/index.js';
+	import { soundActions } from '../Sound.svelte';
 
 	const conn = useSpacetimeDB();
 	const [lobbies] = useTable(tables.lobby);
@@ -71,17 +72,17 @@
 				style="text-align: center; font-size: 1rem; padding: 0.5rem 1rem; border-radius: 0.5rem; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: rgba(255,255,255,0.5); cursor: not-allowed;"
 			/>
 			<button
-				onclick={() => stageActions.setStage('lobby')}
+				onclick={() => { soundActions.playClick(); stageActions.setStage('lobby'); }}
 				style="padding: 0.6rem; background: rgba(74,170,136,0.3); color: white; border: 1px solid rgba(74,170,136,0.5); border-radius: 0.5rem; cursor: pointer; font-size: 1rem;"
 			>
 				Reconnect to Lobby
 			</button>
 			<button
-				onclick={() => stageActions.setStage('leaderboard')}
+				onclick={() => { soundActions.playClick(); stageActions.setStage('leaderboard'); }}
 				style="padding: 0.6rem; background: rgba(255,255,255,0.1); color: white; border: 1px solid rgba(255,255,255,0.2); border-radius: 0.5rem; cursor: pointer;"
 			>Leaderboard</button>
 			<button
-				onclick={() => stageActions.setStage('settings')}
+				onclick={() => { soundActions.playClick(); stageActions.setStage('settings'); }}
 				style="padding: 0.6rem; background: rgba(255,255,255,0.1); color: white; border: 1px solid rgba(255,255,255,0.2); border-radius: 0.5rem; cursor: pointer;"
 			>Settings</button>
 		{:else}
@@ -95,28 +96,28 @@
 
 			{#if mode === 'main'}
 				<button
-					onclick={quickplay}
+					onclick={() => { soundActions.playClick(); quickplay(); }}
 					disabled={loading}
 					style="padding: 0.65rem; background: rgba(74,170,136,0.25); color: white; border: 1px solid rgba(74,170,136,0.45); border-radius: 0.5rem; cursor: pointer; font-size: 1rem; font-weight: 600;"
 				>Quick Play</button>
 				<button
-					onclick={hostPrivate}
+					onclick={() => { soundActions.playClick(); hostPrivate(); }}
 					disabled={loading}
 					style="padding: 0.65rem; background: rgba(255,255,255,0.1); color: white; border: 1px solid rgba(255,255,255,0.2); border-radius: 0.5rem; cursor: pointer;"
 				>Host Private Lobby</button>
 				<button
-					onclick={() => { gameActions.clearError(); mode = 'join_code'; }}
+					onclick={() => { soundActions.playClick(); gameActions.clearError(); mode = 'join_code'; }}
 					disabled={loading}
 					style="padding: 0.65rem; background: rgba(255,255,255,0.1); color: white; border: 1px solid rgba(255,255,255,0.2); border-radius: 0.5rem; cursor: pointer;"
 				>Join by Code</button>
 				<div style="display: flex; gap: 0.5rem;">
 					<button
-						onclick={() => stageActions.setStage('leaderboard')}
+						onclick={() => { soundActions.playClick(); stageActions.setStage('leaderboard'); }}
 						disabled={loading}
 						style="flex: 1; padding: 0.5rem; background: rgba(255,255,255,0.07); color: white; border: 1px solid rgba(255,255,255,0.15); border-radius: 0.5rem; cursor: pointer; font-size: 0.875rem;"
 					>Leaderboard</button>
 					<button
-						onclick={() => stageActions.setStage('settings')}
+						onclick={() => { soundActions.playClick(); stageActions.setStage('settings'); }}
 						disabled={loading}
 						style="flex: 1; padding: 0.5rem; background: rgba(255,255,255,0.07); color: white; border: 1px solid rgba(255,255,255,0.15); border-radius: 0.5rem; cursor: pointer; font-size: 0.875rem;"
 					>Settings</button>
@@ -130,12 +131,12 @@
 					style="text-align: center; text-transform: uppercase; font-size: 1.75rem; padding: 0.5rem 1rem; letter-spacing: 0.4em; border-radius: 0.5rem; background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.25); color: white; outline: none;"
 				/>
 				<button
-					onclick={joinByCode}
+					onclick={() => { soundActions.playClick(); joinByCode(); }}
 					disabled={joinCode.length < 4 || loading}
 					style="padding: 0.65rem; background: rgba(74,170,136,0.25); color: white; border: 1px solid rgba(74,170,136,0.45); border-radius: 0.5rem; cursor: pointer; font-size: 1rem; font-weight: 600;"
 				>Join</button>
 				<button
-					onclick={() => { gameActions.clearError(); mode = 'main'; }}
+					onclick={() => { soundActions.playClick(); gameActions.clearError(); mode = 'main'; }}
 					disabled={loading}
 					style="padding: 0.5rem; background: rgba(255,255,255,0.07); color: white; border: 1px solid rgba(255,255,255,0.15); border-radius: 0.5rem; cursor: pointer;"
 				>Back</button>

@@ -23,9 +23,12 @@
 
 <script lang="ts">
 	import { T, useTask } from '@threlte/core';
+	import { PositionalAudio } from '@threlte/extras';
+	import { PositionalAudio as ThreePosAudio } from 'three';
 	import { untrack } from 'svelte';
 	import type { Enemy } from '../module_bindings/types.js';
 	import StickRig from './StickRig.svelte';
+	import { settingsState } from '../settings.svelte.js';
 
 	type Props = { enemy: Enemy };
 	let { enemy }: Props = $props();
@@ -85,6 +88,14 @@
 	);
 	const DEAD_PERSIST_MS = 4000;
 	const dead = $derived(deathAt !== null);
+
+	let killedAudio = $state.raw<ThreePosAudio | undefined>(undefined);
+	$effect(() => {
+		if (dead && killedAudio?.buffer && settingsState.audio.effectsEnabled) {
+			if (killedAudio.isPlaying) killedAudio.stop();
+			killedAudio.play();
+		}
+	});
 	const downedTilt = $derived(dead ? -Math.PI / 2 : 0);
 	const downedYOffset = $derived(dead ? -0.35 : 0);
 	const splatAge = $derived(dead ? nowMs - (deathAt ?? nowMs) : 0);
@@ -95,6 +106,14 @@
 
 {#if !expired}
 	<T.Group position={[displayX, 0, displayZ]} rotation={[0, facing, 0]}>
+		<!-- Enemy death sound — positional, plays once on kill -->
+		<PositionalAudio
+			src={`${import.meta.env.BASE_URL}sounds/enemy_killed.mp3`}
+			refDistance={5}
+			maxDistance={30}
+			rolloffFactor={2}
+			oncreate={(a) => { killedAudio = a; }}
+		/>
 		<T.Group position={[0, downedYOffset, 0]} rotation={[downedTilt, 0, 0]}>
 			<T.Group
 				scale={[

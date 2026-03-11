@@ -22,6 +22,7 @@
 	import DayNightSky from './DayNightSky.svelte';
 	import GameGround from './GameGround.svelte';
 	import HealBeam from './HealBeam.svelte';
+	import GameSounds from './GameSounds.svelte';
 
 	const conn = useSpacetimeDB();
 	const [players] = useTable(tables.playerState);
@@ -263,4 +264,5 @@
 
 <!-- Mark / ping overlays -->
 <HealBeam />
+<GameSounds />
 <MarkOverlay />

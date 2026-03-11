@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { fly } from 'svelte/transition';
 	import { stageActions } from '../stage.svelte.js';
+	import { soundActions } from '../Sound.svelte';
 </script>
 
 <div
@@ -11,7 +12,7 @@
 		<h2 style="margin: 0 0 1.5rem; font-size: 1.5rem; font-weight: 600;">Leaderboard</h2>
 		<p style="color: rgba(255,255,255,0.4); font-size: 0.875rem; text-align: center; margin: 0 0 1.5rem;">Coming in a future phase.</p>
 		<button
-			onclick={() => stageActions.setStage('menu')}
+			onclick={() => { soundActions.playClick(); stageActions.setStage('menu'); }}
 			style="width: 100%; padding: 0.6rem; background: rgba(255,255,255,0.15); color: white; border: 1px solid rgba(255,255,255,0.3); border-radius: 0.5rem; cursor: pointer;"
 		>
 			Back

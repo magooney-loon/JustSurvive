@@ -3,6 +3,7 @@
 	import { stageActions } from '../stage.svelte.js';
 	import { settingsState, graphicsActions, audioActions } from '../settings.svelte.js';
 	import type { QualityLevel } from '../settings.svelte.js';
+	import { soundActions } from '../Sound.svelte';
 </script>
 
 <!-- Example: Settings overlay -->
@@ -23,7 +24,7 @@
 			<div style="display: flex; gap: 0.5rem;">
 				{#each ['low', 'mid', 'high'] as QualityLevel[] as level}
 					<button
-						onclick={() => graphicsActions.setQuality(level)}
+						onclick={() => { soundActions.playClick(); graphicsActions.setQuality(level); }}
 						style="flex: 1; padding: 0.4rem; border-radius: 0.375rem; border: 1px solid rgba(255,255,255,{settingsState
 							.graphics.quality === level
 							? '0.6'
@@ -119,7 +120,7 @@
 		</div>
 
 		<button
-			onclick={() => stageActions.goBack()}
+			onclick={() => { soundActions.playClick(); stageActions.goBack(); }}
 			style="width: 100%; padding: 0.6rem; background: rgba(255,255,255,0.15); color: white; border: 1px solid rgba(255,255,255,0.3); border-radius: 0.5rem; cursor: pointer;"
 		>
 			Back

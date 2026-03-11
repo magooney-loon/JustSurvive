@@ -4,6 +4,7 @@
 	import { gameActions, gameState } from '../game.svelte.js';
 	import { useSpacetimeDB, useTable } from 'spacetimedb/svelte';
 	import { tables } from '../module_bindings/index.js';
+	import { soundActions } from '../Sound.svelte';
 
 	const conn = useSpacetimeDB();
 	const [lobbies] = useTable(tables.lobby);
@@ -53,7 +54,7 @@
 		{#if !currentLobby}
 			<p style="color: rgba(255,255,255,0.6); margin: 0 0 1rem;">Connecting to lobby...</p>
 			<button
-				onclick={() => stageActions.setStage('menu')}
+				onclick={() => { soundActions.playClick(); stageActions.setStage('menu'); }}
 				style="padding: 0.5rem 1.5rem; background: rgba(255,255,255,0.1); color: white; border: 1px solid rgba(255,255,255,0.2); border-radius: 0.5rem; cursor: pointer;"
 			>Back</button>
 
@@ -65,7 +66,7 @@
 					<span style="background: rgba(42,170,85,0.25); border: 1px solid rgba(42,170,85,0.4); padding: 0.2rem 0.7rem; border-radius: 999px; font-size: 0.75rem; color: #4f4; font-weight: 600; letter-spacing: 0.05em;">PUBLIC</span>
 				{:else}
 					<button
-						onclick={copyCode}
+						onclick={() => { soundActions.playClick(); copyCode(); }}
 						style="background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.2); color: rgba(255,255,255,0.8); padding: 0.3rem 0.8rem; border-radius: 0.375rem; cursor: pointer; font-family: monospace; letter-spacing: 0.15em; font-size: 0.9rem;"
 					>
 						{currentLobby?.code} 📋
@@ -100,7 +101,7 @@
 				<div style="display: flex; gap: 0.4rem; flex-wrap: wrap;">
 					{#each CLASSES as cls}
 						<button
-							onclick={() => gameActions.setClass(cls, currentLobby.id)}
+							onclick={() => { soundActions.playClick(); gameActions.setClass(cls, currentLobby.id); }}
 							style="flex: 1; padding: 0.45rem 0.6rem; border-radius: 0.375rem; border: 1px solid rgba(255,255,255,{myEntry?.classChoice === cls ? '0.5' : '0.15'}); background: {myEntry?.classChoice === cls ? 'rgba(255,255,255,0.2)' : 'rgba(255,255,255,0.06)'}; color: white; cursor: pointer; text-transform: capitalize; font-size: 0.875rem; transition: background 0.15s, border-color 0.15s;"
 						>
 							{cls}
@@ -111,7 +112,7 @@
 
 			<!-- Ready toggle -->
 			<button
-				onclick={() => gameActions.setReady(currentLobby.id, !myEntry?.isReady)}
+				onclick={() => { soundActions.playClick(); gameActions.setReady(currentLobby.id, !myEntry?.isReady); }}
 				disabled={!myEntry?.classChoice || currentLobby?.status !== 'waiting'}
 				style="width: 100%; padding: 0.65rem; margin-bottom: 0.75rem; border-radius: 0.5rem; border: 1px solid rgba(255,255,255,{myEntry?.isReady ? '0.45' : '0.2'}); background: {myEntry?.isReady ? 'rgba(74,170,136,0.3)' : 'rgba(255,255,255,0.1)'}; color: white; cursor: pointer; font-weight: 600; font-size: 0.95rem; transition: background 0.15s;"
 			>
@@ -121,7 +122,7 @@
 			<!-- Host start button -->
 			{#if isHost}
 				<button
-					onclick={() => gameActions.startCountdown(currentLobby.id)}
+					onclick={() => { soundActions.playClick(); gameActions.startCountdown(currentLobby.id); }}
 					disabled={!allReady}
 					style="width: 100%; padding: 0.75rem; font-size: 1rem; font-weight: 600; border-radius: 0.5rem; border: 1px solid rgba(255,255,255,{allReady ? '0.5' : '0.12'}); background: {allReady ? 'rgba(74,170,136,0.35)' : 'rgba(255,255,255,0.05)'}; color: {allReady ? 'white' : 'rgba(255,255,255,0.3)'}; cursor: {allReady ? 'pointer' : 'not-allowed'}; margin-bottom: 0.5rem; transition: background 0.15s;"
 				>
@@ -136,7 +137,7 @@
 			{/if}
 
 			<button
-				onclick={() => { gameActions.leaveLobby(currentLobby.id); stageActions.setStage('menu'); }}
+				onclick={() => { soundActions.playClick(); gameActions.leaveLobby(currentLobby.id); stageActions.setStage('menu'); }}
 				disabled={currentLobby?.status !== 'waiting'}
 				style="width: 100%; margin-top: 0.25rem; padding: 0.5rem; background: rgba(220,50,50,0.15); border: 1px solid rgba(220,50,50,0.3); border-radius: 0.5rem; color: rgba(255,120,120,0.9); cursor: pointer; font-size: 0.875rem;"
 			>

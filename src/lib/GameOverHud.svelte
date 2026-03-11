@@ -4,6 +4,7 @@
 	import { tables } from '../module_bindings/index.js';
 	import { gameState, gameActions } from '../game.svelte.js';
 	import { stageActions } from '../stage.svelte.js';
+	import { soundActions } from '../Sound.svelte';
 
 	const [players] = useTable(tables.playerState);
 
@@ -47,7 +48,7 @@
 		</div>
 
 		<button
-			onclick={goToMenu}
+			onclick={() => { soundActions.playClick(); goToMenu(); }}
 			style="width: 100%; padding: 0.7rem; background: rgba(255,255,255,0.15); color: white; border: 1px solid rgba(255,255,255,0.3); border-radius: 0.5rem; cursor: pointer; font-size: 1rem; font-weight: 600;"
 		>
 			Back to Menu

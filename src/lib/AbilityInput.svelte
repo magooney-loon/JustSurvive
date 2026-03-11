@@ -3,6 +3,7 @@
 	import { tables } from '../module_bindings/index.js';
 	import { gameState, gameActions } from '../game.svelte.js';
 	import { localPos, localAim, abilityState, healBeam, HEAL_BEAM_MS } from '../localGameState.svelte.js';
+	import { soundActions } from '../Sound.svelte';
 
 	const conn = useSpacetimeDB();
 	const [players] = useTable(tables.playerState);
@@ -166,6 +167,7 @@
 			}
 			const suppress = abilityState.suppressHits % 3 === 0;
 			gameActions.attackEnemy(sid, enemy.id, suppress);
+			soundActions.playGunnerShot();
 			return;
 		}
 
@@ -204,7 +206,7 @@
 			} else if (e.button === 2) {
 				// RMB: revive nearest downed teammate
 				const target = nearestDowned(3_000);
-				if (target) gameActions.reviveStart(sid, target.playerIdentity);
+				if (target) { gameActions.reviveStart(sid, target.playerIdentity); soundActions.playHealerRevive(); }
 			}
 			return;
 		}
