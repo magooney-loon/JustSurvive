@@ -786,7 +786,10 @@ export const move_player = spacetimedb.reducer(
 
 		// Check acid pool overlap
 		for (const pool of ctx.db.acidPool.acid_pool_session_id.filter(sessionId)) {
-			if (pool.expiresAt.microsSinceUnixEpoch < now) continue;
+			if (pool.expiresAt.microsSinceUnixEpoch < now) {
+				ctx.db.acidPool.id.delete(pool.id);
+				continue;
+			}
 			const dxp = posX - pool.posX;
 			const dzp = posZ - pool.posZ;
 			if (dxp * dxp + dzp * dzp < pool.radius * pool.radius) {
@@ -808,6 +811,8 @@ const ENEMY_BASE_SPEED: Record<string, bigint> = {
 const MELEE_RANGE = 2000n;
 const SPITTER_RANGE_SQ = 64_000_000n; // 8 world units squared
 const TICK_MS = 100n;
+const MAX_ENEMIES_PER_PLAYER = 3;
+const TARGET_JITTER = 0.08; // +-8% distance jitter
 
 export const enemy_tick = spacetimedb.reducer(
 	{
@@ -825,6 +830,11 @@ export const enemy_tick = spacetimedb.reducer(
 			(e) => e.isAlive
 		);
 		const now = ctx.timestamp.microsSinceUnixEpoch;
+		for (const m of ctx.db.mark.mark_session_id.filter(arg.sessionId)) {
+			if (m.expiresAt.microsSinceUnixEpoch < now) {
+				ctx.db.mark.id.delete(m.id);
+			}
+		}
 		const BRACE_MAX_US = 5_000_000n;
 		for (let i = 0; i < players.length; i++) {
 			const p = players[i];
@@ -845,27 +855,54 @@ export const enemy_tick = spacetimedb.reducer(
 			}
 		}
 
+		const targetCounts = new Map<bigint, number>();
 		for (const enemy of enemies) {
 			if (players.length === 0) break;
 
-			let nearest = players[0];
-			let nearestDist = BigInt(Number.MAX_SAFE_INTEGER);
+			let chosen = players[0];
+			let chosenDist = BigInt(Number.MAX_SAFE_INTEGER);
+			let bestAny = players[0];
+			let bestAnyDist = BigInt(Number.MAX_SAFE_INTEGER);
+			let bestAnyScore = Number.POSITIVE_INFINITY;
+			let bestCap = players[0];
+			let bestCapDist = BigInt(Number.MAX_SAFE_INTEGER);
+			let bestCapScore = Number.POSITIVE_INFINITY;
 			for (const p of players) {
 				const dx = p.posX - enemy.posX;
 				const dz = p.posZ - enemy.posZ;
 				const dist = dx * dx + dz * dz;
-				if (dist < nearestDist) {
-					nearest = p;
-					nearestDist = dist;
+				const baseScore = Number(dist);
+				const jitterSeed = (now + enemy.id + p.id) % 1000n;
+				const jitter = (Number(jitterSeed) / 1000 - 0.5) * TARGET_JITTER;
+				const score = baseScore * (1 + jitter);
+				if (score < bestAnyScore) {
+					bestAnyScore = score;
+					bestAny = p;
+					bestAnyDist = dist;
+				}
+				const count = targetCounts.get(p.id) ?? 0;
+				if (count < MAX_ENEMIES_PER_PLAYER && score < bestCapScore) {
+					bestCapScore = score;
+					bestCap = p;
+					bestCapDist = dist;
 				}
 			}
 
-			const dx = nearest.posX - enemy.posX;
-			const dz = nearest.posZ - enemy.posZ;
+			if (bestCapScore < Number.POSITIVE_INFINITY) {
+				chosen = bestCap;
+				chosenDist = bestCapDist;
+			} else {
+				chosen = bestAny;
+				chosenDist = bestAnyDist;
+			}
+			targetCounts.set(chosen.id, (targetCounts.get(chosen.id) ?? 0) + 1);
+
+			const dx = chosen.posX - enemy.posX;
+			const dz = chosen.posZ - enemy.posZ;
 
 			// Spitter: ranged acid spit instead of melee
 			if (enemy.enemyType === 'spitter') {
-				if (nearestDist <= SPITTER_RANGE_SQ && !enemy.isDazed) {
+				if (chosenDist <= SPITTER_RANGE_SQ && !enemy.isDazed) {
 					const poolExpiry = ctx.timestamp.microsSinceUnixEpoch + 10_000_000n;
 					ctx.db.acidPool.insert({
 						id: 0n,
@@ -878,12 +915,23 @@ export const enemy_tick = spacetimedb.reducer(
 				} else if (!enemy.isDazed) {
 					const speed = (ENEMY_BASE_SPEED['spitter'] * enemy.speedMultiplier) / 100n;
 					const moveAmount = (speed * TICK_MS) / 1000n;
-					const magnitude = bigintSqrt(nearestDist);
+					const magnitude = bigintSqrt(chosenDist);
 					if (magnitude > 0n) {
+						const wobbleSeed = (now + enemy.id) % 1000n;
+						const wobble = Number(wobbleSeed) / 1000 - 0.5;
+						const wobbleScale = BigInt(Math.round(wobble * Number(moveAmount) * 0.25));
+						const perpX = -dz;
+						const perpZ = dx;
 						ctx.db.enemy.id.update({
 							...enemy,
-							posX: enemy.posX + (dx * moveAmount) / magnitude,
-							posZ: enemy.posZ + (dz * moveAmount) / magnitude
+							posX:
+								enemy.posX +
+								(dx * moveAmount) / magnitude +
+								(perpX * wobbleScale) / (magnitude > 0n ? magnitude : 1n),
+							posZ:
+								enemy.posZ +
+								(dz * moveAmount) / magnitude +
+								(perpZ * wobbleScale) / (magnitude > 0n ? magnitude : 1n)
 						});
 					}
 				} else if (
@@ -896,8 +944,8 @@ export const enemy_tick = spacetimedb.reducer(
 			}
 
 			// Tank brace: bounce enemy back instead of dealing damage
-			if (nearestDist <= MELEE_RANGE * MELEE_RANGE && nearest.isBracing && !enemy.isDazed) {
-				const magnitude = bigintSqrt(nearestDist);
+			if (chosenDist <= MELEE_RANGE * MELEE_RANGE && chosen.isBracing && !enemy.isDazed) {
+				const magnitude = bigintSqrt(chosenDist);
 				const knockback = 4000n;
 				const newX =
 					magnitude > 0n ? enemy.posX - (dx * knockback) / magnitude : enemy.posX - knockback;
@@ -905,23 +953,34 @@ export const enemy_tick = spacetimedb.reducer(
 					magnitude > 0n ? enemy.posZ - (dz * knockback) / magnitude : enemy.posZ - knockback;
 				const dazedUntil = ts(ctx.timestamp.microsSinceUnixEpoch + 1_500_000n);
 				ctx.db.enemy.id.update({ ...enemy, posX: newX, posZ: newZ, isDazed: true, dazedUntil });
-				ctx.db.playerState.id.update({ ...nearest, score: nearest.score + 5n });
+				ctx.db.playerState.id.update({ ...chosen, score: chosen.score + 5n });
 				continue;
 			}
 
 			// Normal: melee damage or move toward player
-			if (nearestDist <= MELEE_RANGE * MELEE_RANGE && !enemy.isDazed) {
+			if (chosenDist <= MELEE_RANGE * MELEE_RANGE && !enemy.isDazed) {
 				const damage = enemy.enemyType === 'brute' ? 3n : 1n;
-				apply_player_damage(ctx, arg.sessionId, nearest, damage);
+				apply_player_damage(ctx, arg.sessionId, chosen, damage);
 			} else if (!enemy.isDazed) {
 				const speed = ((ENEMY_BASE_SPEED[enemy.enemyType] ?? 3000n) * enemy.speedMultiplier) / 100n;
 				const moveAmount = (speed * TICK_MS) / 1000n;
-				const magnitude = bigintSqrt(nearestDist);
+				const magnitude = bigintSqrt(chosenDist);
 				if (magnitude > 0n) {
+					const wobbleSeed = (now + enemy.id) % 1000n;
+					const wobble = Number(wobbleSeed) / 1000 - 0.5;
+					const wobbleScale = BigInt(Math.round(wobble * Number(moveAmount) * 0.25));
+					const perpX = -dz;
+					const perpZ = dx;
 					ctx.db.enemy.id.update({
 						...enemy,
-						posX: enemy.posX + (dx * moveAmount) / magnitude,
-						posZ: enemy.posZ + (dz * moveAmount) / magnitude
+						posX:
+							enemy.posX +
+							(dx * moveAmount) / magnitude +
+							(perpX * wobbleScale) / (magnitude > 0n ? magnitude : 1n),
+						posZ:
+							enemy.posZ +
+							(dz * moveAmount) / magnitude +
+							(perpZ * wobbleScale) / (magnitude > 0n ? magnitude : 1n)
 					});
 				}
 			} else {

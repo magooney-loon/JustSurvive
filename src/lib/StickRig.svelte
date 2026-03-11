@@ -586,12 +586,4 @@
 			{/if}
 		</T.Group>
 	{/if}
-
-	{#if !isEnemy}
-		<!-- Facing nub -->
-		<T.Mesh position={[0, 0.1, -0.35]}>
-			<T.SphereGeometry args={[0.08, 6, 4]} />
-			<T.MeshBasicMaterial {color} />
-		</T.Mesh>
-	{/if}
 </T.Group>

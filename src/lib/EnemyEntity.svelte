@@ -70,7 +70,7 @@
 	const expired = $derived(dead && splatAge >= DEAD_PERSIST_MS);
 </script>
 
-s{#if !expired}
+{#if !expired}
 	<T.Group position={[displayX, 0, displayZ]} rotation={[0, facing, 0]}>
 		<T.Group position={[0, downedYOffset, 0]} rotation={[downedTilt, 0, 0]}>
 			<T.Group
@@ -234,7 +234,7 @@ s{#if !expired}
 			</T.Mesh>
 		{/if}
 
-		{#if enemy.isMarked}
+		{#if enemy.isMarked && !dead}
 			<!-- Mark ring above enemy -->
 			<T.Mesh position={[0, 2.2, 0]} rotation={[Math.PI / 4, 0, 0]} scale={[pulse, pulse, pulse]}>
 				<T.TorusGeometry args={[0.4, 0.07, 6, 4]} />
