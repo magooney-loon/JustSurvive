@@ -121,8 +121,12 @@ const PlayerState = table(
 		facingAngle: t.i64(), // milliradians * 1000, e.g. PI = 3142
 		// Phase 4
 		isBracing: t.bool(),
+		braceStartAt: t.timestamp().optional(),
+		braceCooldownUntil: t.timestamp().optional(),
 		speedBoostUntil: t.timestamp().optional(),
 		reviveCooldownUntil: t.timestamp().optional(),
+		healCooldownUntil: t.timestamp().optional(),
+		markCooldownUntil: t.timestamp().optional(),
 		pingCooldownUntil: t.timestamp().optional(),
 		bashCooldownUntil: t.timestamp().optional()
 	}
@@ -677,8 +681,12 @@ export const fire_start_game = spacetimedb.reducer(
 				score: 0n,
 				facingAngle: 0n,
 				isBracing: false,
+				braceStartAt: undefined,
+				braceCooldownUntil: undefined,
 				speedBoostUntil: undefined,
 				reviveCooldownUntil: undefined,
+				healCooldownUntil: undefined,
+				markCooldownUntil: undefined,
 				pingCooldownUntil: undefined,
 				bashCooldownUntil: undefined
 			});
@@ -726,6 +734,7 @@ export const move_player = spacetimedb.reducer(
 			}
 		}
 		if (!ps || ps.status !== 'alive') return;
+		if (ps.isBracing) return;
 
 		const SPRINT_DRAIN = 3n;
 		const BASE_REGEN_PER_SEC = 2n;
@@ -815,6 +824,26 @@ export const enemy_tick = spacetimedb.reducer(
 		const enemies = [...ctx.db.enemy.enemy_session_id.filter(arg.sessionId)].filter(
 			(e) => e.isAlive
 		);
+		const now = ctx.timestamp.microsSinceUnixEpoch;
+		const BRACE_MAX_US = 5_000_000n;
+		for (let i = 0; i < players.length; i++) {
+			const p = players[i];
+			if (
+				p.isBracing &&
+				p.braceStartAt &&
+				now - p.braceStartAt.microsSinceUnixEpoch >= BRACE_MAX_US
+			) {
+				const cooldownUntil = ts(now + 1_000_000n);
+				const updated = {
+					...p,
+					isBracing: false,
+					braceStartAt: undefined,
+					braceCooldownUntil: cooldownUntil
+				};
+				ctx.db.playerState.id.update(updated);
+				players[i] = updated;
+			}
+		}
 
 		for (const enemy of enemies) {
 			if (players.length === 0) break;
@@ -876,6 +905,7 @@ export const enemy_tick = spacetimedb.reducer(
 					magnitude > 0n ? enemy.posZ - (dz * knockback) / magnitude : enemy.posZ - knockback;
 				const dazedUntil = ts(ctx.timestamp.microsSinceUnixEpoch + 1_500_000n);
 				ctx.db.enemy.id.update({ ...enemy, posX: newX, posZ: newZ, isDazed: true, dazedUntil });
+				ctx.db.playerState.id.update({ ...nearest, score: nearest.score + 5n });
 				continue;
 			}
 
@@ -1060,13 +1090,34 @@ export const mark_enemy = spacetimedb.reducer(
 		}
 		if (!ps || ps.classChoice !== 'spotter') throw new SenderError('Not a Spotter');
 		if (ps.status !== 'alive') return;
+		if (
+			ps.markCooldownUntil &&
+			ctx.timestamp.microsSinceUnixEpoch < ps.markCooldownUntil.microsSinceUnixEpoch
+		) {
+			throw new SenderError('Mark on cooldown');
+		}
 
 		const enemy = ctx.db.enemy.id.find(enemyId);
 		if (!enemy || !enemy.isAlive) return;
+		const dx = enemy.posX - ps.posX;
+		const dz = enemy.posZ - ps.posZ;
+		if (dx * dx + dz * dz > 225_000_000n) return; // 15 units
 
 		const expiresAt = ctx.timestamp.microsSinceUnixEpoch + 5_000_000n;
 		// Mark info lives directly on the enemy row — no separate mark insert needed
+		const alreadyMarked =
+			enemy.isMarked &&
+			enemy.markedUntil &&
+			ctx.timestamp.microsSinceUnixEpoch < enemy.markedUntil.microsSinceUnixEpoch;
 		ctx.db.enemy.id.update({ ...enemy, isMarked: true, markedUntil: ts(expiresAt) });
+
+		const cooldownUntil = ts(ctx.timestamp.microsSinceUnixEpoch + 5_000_000n);
+		const scoreAdd = alreadyMarked ? 0n : 10n;
+		ctx.db.playerState.id.update({
+			...ps,
+			score: ps.score + scoreAdd,
+			markCooldownUntil: cooldownUntil
+		});
 	}
 );
 
@@ -1105,7 +1156,11 @@ export const ping_location = spacetimedb.reducer(
 		});
 
 		const cooldownUntil = ts(ctx.timestamp.microsSinceUnixEpoch + 10_000_000n);
-		ctx.db.playerState.id.update({ ...ps, pingCooldownUntil: cooldownUntil });
+		ctx.db.playerState.id.update({
+			...ps,
+			score: ps.score + 5n,
+			pingCooldownUntil: cooldownUntil
+		});
 	}
 );
 
@@ -1135,6 +1190,9 @@ export const attack_enemy = spacetimedb.reducer(
 
 		const enemy = ctx.db.enemy.id.find(enemyId);
 		if (!enemy || !enemy.isAlive) return;
+		const dx = enemy.posX - ps.posX;
+		const dz = enemy.posZ - ps.posZ;
+		if (dx * dx + dz * dz > 100_000_000n) return; // 10 units
 
 		const dmg = WEAPON_DAMAGE[ps.classChoice] ?? 15n;
 		const newHp = enemy.hp > dmg ? enemy.hp - dmg : 0n;
@@ -1142,7 +1200,7 @@ export const attack_enemy = spacetimedb.reducer(
 		const shotAt = ctx.timestamp;
 		if (newHp <= 0n) {
 			ctx.db.enemy.id.update({ ...enemy, hp: 0n, isAlive: false });
-			ctx.db.playerState.id.update({ ...ps, score: ps.score + 10n, lastShotAt: shotAt });
+			ctx.db.playerState.id.update({ ...ps, score: ps.score + 1n, lastShotAt: shotAt });
 		} else {
 			let updatedEnemy = { ...enemy, hp: newHp };
 			if (suppress && ps.classChoice === 'gunner') {
@@ -1166,14 +1224,26 @@ export const heal_player = spacetimedb.reducer(
 	(ctx, { sessionId, targetIdentity }) => {
 		let healer: any;
 		for (const p of ctx.db.playerState.player_state_session_id.filter(sessionId)) {
-			if (p.playerIdentity.isEqual(ctx.sender)) { healer = p; break; }
+			if (p.playerIdentity.isEqual(ctx.sender)) {
+				healer = p;
+				break;
+			}
 		}
 		if (!healer || healer.classChoice !== 'healer') throw new SenderError('Not a Healer');
 		if (healer.status !== 'alive') return;
+		if (
+			healer.healCooldownUntil &&
+			ctx.timestamp.microsSinceUnixEpoch < healer.healCooldownUntil.microsSinceUnixEpoch
+		) {
+			throw new SenderError('Heal on cooldown');
+		}
 
 		let target: any;
 		for (const p of ctx.db.playerState.player_state_session_id.filter(sessionId)) {
-			if (p.playerIdentity.isEqual(targetIdentity)) { target = p; break; }
+			if (p.playerIdentity.isEqual(targetIdentity)) {
+				target = p;
+				break;
+			}
 		}
 		if (!target || target.status !== 'alive') return;
 		if (target.playerIdentity.isEqual(ctx.sender)) return;
@@ -1185,7 +1255,16 @@ export const heal_player = spacetimedb.reducer(
 		const newHp = target.hp + HEAL_AMOUNT > target.maxHp ? target.maxHp : target.hp + HEAL_AMOUNT;
 		const shotAt = ctx.timestamp;
 		ctx.db.playerState.id.update({ ...target, hp: newHp });
-		ctx.db.playerState.id.update({ ...healer, lastShotAt: shotAt });
+
+		const cooldownUntil = ts(ctx.timestamp.microsSinceUnixEpoch + 2_000_000n);
+		const healed = newHp > target.hp;
+		const scoreAdd = healed ? 5n : 0n;
+		ctx.db.playerState.id.update({
+			...healer,
+			lastShotAt: shotAt,
+			score: healer.score + scoreAdd,
+			healCooldownUntil: cooldownUntil
+		});
 	}
 );
 
@@ -1208,7 +1287,8 @@ export const shield_bash = spacetimedb.reducer(
 		if (
 			ps.bashCooldownUntil &&
 			ctx.timestamp.microsSinceUnixEpoch < ps.bashCooldownUntil.microsSinceUnixEpoch
-		) return;
+		)
+			return;
 
 		const BASH_COOLDOWN_US = 1_500_000n;
 		const bashCooldown = ts(ctx.timestamp.microsSinceUnixEpoch + BASH_COOLDOWN_US);
@@ -1218,6 +1298,9 @@ export const shield_bash = spacetimedb.reducer(
 		if (enemyId !== undefined) {
 			const enemy = ctx.db.enemy.id.find(enemyId);
 			if (!enemy || !enemy.isAlive) return;
+			const dx0 = enemy.posX - ps.posX;
+			const dz0 = enemy.posZ - ps.posZ;
+			if (dx0 * dx0 + dz0 * dz0 > 25_000_000n) return; // 5 units
 
 			const dx = enemy.posX - ps.posX;
 			const dz = enemy.posZ - ps.posZ;
@@ -1227,6 +1310,7 @@ export const shield_bash = spacetimedb.reducer(
 			const newZ = mag > 0n ? enemy.posZ + (dz * knockback) / mag : enemy.posZ + knockback;
 			const dazedUntil = ts(ctx.timestamp.microsSinceUnixEpoch + 1_500_000n);
 			ctx.db.enemy.id.update({ ...enemy, posX: newX, posZ: newZ, isDazed: true, dazedUntil });
+			ctx.db.playerState.id.update({ ...ps, score: ps.score + 5n });
 		}
 	}
 );
@@ -1262,7 +1346,15 @@ export const brace_start = spacetimedb.reducer(
 			}
 		}
 		if (!ps || ps.classChoice !== 'tank') return;
-		ctx.db.playerState.id.update({ ...ps, isBracing: true });
+		if (ps.status !== 'alive') return;
+		if (
+			ps.braceCooldownUntil &&
+			ctx.timestamp.microsSinceUnixEpoch < ps.braceCooldownUntil.microsSinceUnixEpoch
+		) {
+			return;
+		}
+		if (ps.isBracing) return;
+		ctx.db.playerState.id.update({ ...ps, isBracing: true, braceStartAt: ctx.timestamp });
 	}
 );
 
@@ -1278,8 +1370,15 @@ export const brace_end = spacetimedb.reducer(
 				break;
 			}
 		}
-		if (!ps) return;
-		ctx.db.playerState.id.update({ ...ps, isBracing: false });
+		if (!ps || ps.classChoice !== 'tank') return;
+		if (ps.status !== 'alive') return;
+		const cooldownUntil = ts(ctx.timestamp.microsSinceUnixEpoch + 1_000_000n);
+		ctx.db.playerState.id.update({
+			...ps,
+			isBracing: false,
+			braceStartAt: undefined,
+			braceCooldownUntil: cooldownUntil
+		});
 	}
 );
 
@@ -1373,7 +1472,11 @@ export const complete_revive = spacetimedb.reducer(
 		ctx.db.playerState.id.update({ ...target, hp: 50n, status: 'alive', speedBoostUntil });
 
 		const cooldownUntil = ts(ctx.timestamp.microsSinceUnixEpoch + REVIVE_COOLDOWN_US);
-		ctx.db.playerState.id.update({ ...healer, reviveCooldownUntil: cooldownUntil });
+		ctx.db.playerState.id.update({
+			...healer,
+			reviveCooldownUntil: cooldownUntil,
+			score: healer.score + 20n
+		});
 
 		ctx.db.reviveChannel.id.delete(channel.id);
 	}

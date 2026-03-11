@@ -30,8 +30,12 @@ export default __t.row({
   score: __t.u64(),
   facingAngle: __t.i64().name("facing_angle"),
   isBracing: __t.bool().name("is_bracing"),
+  braceStartAt: __t.option(__t.timestamp()).name("brace_start_at"),
+  braceCooldownUntil: __t.option(__t.timestamp()).name("brace_cooldown_until"),
   speedBoostUntil: __t.option(__t.timestamp()).name("speed_boost_until"),
   reviveCooldownUntil: __t.option(__t.timestamp()).name("revive_cooldown_until"),
+  healCooldownUntil: __t.option(__t.timestamp()).name("heal_cooldown_until"),
+  markCooldownUntil: __t.option(__t.timestamp()).name("mark_cooldown_until"),
   pingCooldownUntil: __t.option(__t.timestamp()).name("ping_cooldown_until"),
   bashCooldownUntil: __t.option(__t.timestamp()).name("bash_cooldown_until"),
 });

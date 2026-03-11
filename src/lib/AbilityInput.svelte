@@ -8,6 +8,25 @@
 	const [players] = useTable(tables.playerState);
 	const [enemies] = useTable(tables.enemy);
 
+	let braceTimer: ReturnType<typeof setTimeout> | null = null;
+	const BRACE_MAX_MS = 5000;
+
+	function endBrace() {
+		if (braceTimer !== null) {
+			clearTimeout(braceTimer);
+			braceTimer = null;
+		}
+		const sid = gameState.currentSessionId;
+		if (sid) gameActions.braceEnd(sid);
+		abilityState.braceCooldownUntil = Date.now() + 1000;
+	}
+	function startBraceTimer() {
+		if (braceTimer !== null) {
+			clearTimeout(braceTimer);
+		}
+		braceTimer = setTimeout(endBrace, BRACE_MAX_MS);
+	}
+
 	const myState = $derived(
 		$players.find(
 			(p) =>
@@ -42,7 +61,8 @@
 		let best: any = null;
 		let bestDist = BigInt(Number.MAX_SAFE_INTEGER);
 		for (const p of $players) {
-			if (p.status !== 'alive' || p.hp === 0n || p.sessionId !== gameState.currentSessionId) continue;
+			if (p.status !== 'alive' || p.hp === 0n || p.sessionId !== gameState.currentSessionId)
+				continue;
 			if (p.playerIdentity.toHexString() === $conn.identity?.toHexString()) continue;
 			const dx = p.posX - ox;
 			const dz = p.posZ - oz;
@@ -147,6 +167,7 @@
 				// RMB hold: start brace (1s cooldown between activations)
 				if (abilityState.braceCooldownUntil > Date.now()) return;
 				gameActions.braceStart(sid);
+				startBraceTimer();
 			}
 			return;
 		}
@@ -176,8 +197,7 @@
 		if (!sid) return;
 		// RMB release: end tank brace, start cooldown
 		if (e.button === 2 && myState.classChoice === 'tank') {
-			gameActions.braceEnd(sid);
-			abilityState.braceCooldownUntil = Date.now() + 1000;
+			endBrace();
 		}
 	}
 </script>

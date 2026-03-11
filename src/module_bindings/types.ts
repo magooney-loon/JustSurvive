@@ -141,8 +141,12 @@ export const PlayerState = __t.object("PlayerState", {
   score: __t.u64(),
   facingAngle: __t.i64(),
   isBracing: __t.bool(),
+  braceStartAt: __t.option(__t.timestamp()),
+  braceCooldownUntil: __t.option(__t.timestamp()),
   speedBoostUntil: __t.option(__t.timestamp()),
   reviveCooldownUntil: __t.option(__t.timestamp()),
+  healCooldownUntil: __t.option(__t.timestamp()),
+  markCooldownUntil: __t.option(__t.timestamp()),
   pingCooldownUntil: __t.option(__t.timestamp()),
   bashCooldownUntil: __t.option(__t.timestamp()),
 });
