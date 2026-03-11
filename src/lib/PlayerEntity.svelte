@@ -72,7 +72,7 @@
 		</T.Mesh>
 		<!-- Spotter flashlight cone -->
 		{#if player.classChoice === 'spotter'}
-			<T.Mesh position={[0, 0.3, -7.5]} rotation={[-Math.PI / 2, 0, 0]}>
+			<T.Mesh position={[0, 0.3, -7.5]} rotation={[Math.PI / 2, 0, 0]}>
 				<T.ConeGeometry args={[3, 15, 12, 1, true]} />
 				<T.MeshBasicMaterial color="#ffff88" transparent opacity={0.12} side={2} />
 			</T.Mesh>
@@ -80,6 +80,26 @@
 				<T.CircleGeometry args={[0.15, 8]} />
 				<T.MeshBasicMaterial color="#ffffcc" />
 			</T.Mesh>
+		{/if}
+		{#if player.classChoice === 'gunner'}
+			<T.Group position={[0, 0.6, -0.25]}>
+				<T.Mesh position={[-0.35, 0, -0.2]} rotation={[0.2, 0, 0.1]}>
+					<T.CylinderGeometry args={[0.06, 0.07, 0.5, 6]} />
+					<T.MeshStandardMaterial color="#2b2b2b" />
+				</T.Mesh>
+				<T.Mesh position={[0.35, 0, -0.2]} rotation={[0.2, 0, -0.1]}>
+					<T.CylinderGeometry args={[0.06, 0.07, 0.5, 6]} />
+					<T.MeshStandardMaterial color="#2b2b2b" />
+				</T.Mesh>
+				<T.Mesh position={[-0.35, 0.05, -0.55]}>
+					<T.BoxGeometry args={[0.14, 0.1, 0.28]} />
+					<T.MeshStandardMaterial color="#1a1a1a" />
+				</T.Mesh>
+				<T.Mesh position={[0.35, 0.05, -0.55]}>
+					<T.BoxGeometry args={[0.14, 0.1, 0.28]} />
+					<T.MeshStandardMaterial color="#1a1a1a" />
+				</T.Mesh>
+			</T.Group>
 		{/if}
 	</T.Group>
 	<AimReticle x={aimX} z={aimZ} color={CLASS_COLORS[player.classChoice] ?? '#fff'} />
