@@ -88,7 +88,8 @@
 		if (cls === 'tank') return [
 			{ label: 'Bash', input: 'LMB', color: '#66ff44',
 			  cdFrac: Math.max(0, (abilityState.bashCooldownUntil - now) / 1500), cdMs: 1500 },
-			{ label: 'Brace', input: 'RMB', color: '#66ff44', cdFrac: 0, active: myState?.isBracing },
+			{ label: 'Brace', input: 'RMB', color: '#66ff44',
+			  cdFrac: Math.max(0, (abilityState.braceCooldownUntil - now) / 1000), cdMs: 1000, active: myState?.isBracing },
 		];
 		if (cls === 'healer') return [
 			{ label: 'Heal', input: 'LMB', color: '#ff88cc',

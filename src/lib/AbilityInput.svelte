@@ -42,7 +42,7 @@
 		let best: any = null;
 		let bestDist = BigInt(Number.MAX_SAFE_INTEGER);
 		for (const p of $players) {
-			if (p.status !== 'alive' || p.sessionId !== gameState.currentSessionId) continue;
+			if (p.status !== 'alive' || p.hp === 0n || p.sessionId !== gameState.currentSessionId) continue;
 			if (p.playerIdentity.toHexString() === $conn.identity?.toHexString()) continue;
 			const dx = p.posX - ox;
 			const dz = p.posZ - oz;
@@ -144,7 +144,8 @@
 				gameActions.shieldBash(sid, enemy?.id);
 				abilityState.bashCooldownUntil = Date.now() + 1500;
 			} else if (e.button === 2) {
-				// RMB hold: start brace
+				// RMB hold: start brace (1s cooldown between activations)
+				if (abilityState.braceCooldownUntil > Date.now()) return;
 				gameActions.braceStart(sid);
 			}
 			return;
@@ -173,9 +174,10 @@
 		if (!myState) return;
 		const sid = gameState.currentSessionId;
 		if (!sid) return;
-		// RMB release: end tank brace
+		// RMB release: end tank brace, start cooldown
 		if (e.button === 2 && myState.classChoice === 'tank') {
 			gameActions.braceEnd(sid);
+			abilityState.braceCooldownUntil = Date.now() + 1000;
 		}
 	}
 </script>

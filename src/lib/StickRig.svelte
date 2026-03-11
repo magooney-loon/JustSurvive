@@ -64,7 +64,7 @@
 	const shieldGlow = $derived(braceT * (0.85 + 0.15 * Math.sin(walkPhase * 2.5)));
 	const shieldPosX = $derived(-0.22 * (1 - braceT));
 	const shieldPosY = $derived(0.88 + 0.12 * braceT);
-	const shieldPosZ = $derived(-0.22 - 0.2 * braceT);
+	const shieldPosZ = $derived(-0.42 - 0.18 * braceT);
 	const shieldS = $derived(0.58 + 0.42 * braceT);
 
 	// Class visor/goggle color
@@ -523,7 +523,7 @@
 
 	<!-- TANK SHIELD (always present for tank, grows when bracing) -->
 	{#if classChoice === 'tank'}
-		<T.Group position={[shieldPosX, shieldPosY, shieldPosZ]} rotation={[Math.PI / 2, 0, 0]} scale={[shieldS, shieldS, shieldS]}>
+		<T.Group position={[shieldPosX, shieldPosY, shieldPosZ]} rotation={[-Math.PI / 2, 0, 0]} scale={[shieldS, shieldS, shieldS]}>
 			<!-- Hex plate body (cylinder flat = hex disc from above) -->
 			<T.Mesh>
 				<T.CylinderGeometry args={[0.44, 0.44, 0.065, 6]} />

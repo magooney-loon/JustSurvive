@@ -34,6 +34,7 @@ export const abilityState = $state({
 	lastSuppressedEnemyId: null as bigint | null,
 	bashCooldownUntil: 0,       // ms timestamp (tank bash, 1.5s)
 	healCooldownUntil: 0,       // ms timestamp (healer heal shot, 2s)
+	braceCooldownUntil: 0,      // ms timestamp (tank brace, 1s between activations)
 });
 
 export function resetLocalState() {
@@ -58,6 +59,7 @@ export function resetLocalState() {
 	abilityState.lastSuppressedEnemyId = null;
 	abilityState.bashCooldownUntil = 0;
 	abilityState.healCooldownUntil = 0;
+	abilityState.braceCooldownUntil = 0;
 }
 
 const CLASS_SPEED: Record<string, { walk: number; sprint: number }> = {
