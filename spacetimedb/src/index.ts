@@ -701,17 +701,17 @@ export const fire_start_game = spacetimedb.reducer(
 			scheduledAt: ScheduleAt.time(now + 100_000n),
 			sessionId: session.id
 		});
-		const INITIAL_SPAWN_JOBS = 10;
+		const INITIAL_SPAWN_JOBS = 2;
 		for (let i = 0; i < INITIAL_SPAWN_JOBS; i++) {
 			ctx.db.enemySpawnJob.insert({
 				scheduledId: 0n,
-				scheduledAt: ScheduleAt.time(now + 300_000n + BigInt(i) * 150_000n),
+				scheduledAt: ScheduleAt.time(now + 2_000_000n + BigInt(i) * 2_000_000n),
 				sessionId: session.id
 			});
 		}
 		ctx.db.enemySpawnJob.insert({
 			scheduledId: 0n,
-			scheduledAt: ScheduleAt.time(now + 5_000_000n),
+			scheduledAt: ScheduleAt.time(now + 10_000_000n),
 			sessionId: session.id
 		});
 		ctx.db.dayPhaseJob.insert({
@@ -816,7 +816,7 @@ const ENEMY_BASE_SPEED: Record<string, bigint> = {
 	brute: 2100n,
 	spitter: 1700n
 };
-const ENEMY_CAP = 50;
+const ENEMY_CAP = 16;
 const MELEE_RANGE = 2000n;
 const SPITTER_RANGE_SQ = 144_000_000n; // 12 world units squared
 const TICK_MS = 100n;

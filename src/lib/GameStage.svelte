@@ -16,6 +16,7 @@
 	import { onMount } from 'svelte';
 	import PlayerEntity from './PlayerEntity.svelte';
 	import EnemyEntity from './EnemyEntity.svelte';
+	import EnemyProxyInstances from './EnemyProxyInstances.svelte';
 	import AcidPoolEntity from './AcidPoolEntity.svelte';
 	import MarkOverlay from './MarkOverlay.svelte';
 	import DayNightSky from './DayNightSky.svelte';
@@ -42,13 +43,24 @@
 		)
 	);
 	const MAX_RENDER_DIST = 70; // world units
-	const visibleEnemies = $derived(
+	const NEAR_RENDER_DIST = 35; // world units
+	const nearEnemies = $derived(
 		$enemies.filter((e) => {
 			if (e.sessionId !== gameState.currentSessionId) return false;
 			if (!myState) return true;
 			const dx = Number(e.posX) / 1000 - localPos.x;
 			const dz = Number(e.posZ) / 1000 - localPos.z;
-			return dx * dx + dz * dz <= MAX_RENDER_DIST * MAX_RENDER_DIST;
+			return dx * dx + dz * dz <= NEAR_RENDER_DIST * NEAR_RENDER_DIST;
+		})
+	);
+	const farEnemies = $derived(
+		$enemies.filter((e) => {
+			if (e.sessionId !== gameState.currentSessionId) return false;
+			if (!myState) return false;
+			const dx = Number(e.posX) / 1000 - localPos.x;
+			const dz = Number(e.posZ) / 1000 - localPos.z;
+			const d2 = dx * dx + dz * dz;
+			return d2 > NEAR_RENDER_DIST * NEAR_RENDER_DIST && d2 <= MAX_RENDER_DIST * MAX_RENDER_DIST;
 		})
 	);
 	const livePools = $derived($acidPools.filter((p) => p.sessionId === gameState.currentSessionId));
@@ -223,9 +235,12 @@
 {/each}
 
 <!-- Enemies (interpolated) -->
-{#each visibleEnemies as enemy (enemy.id)}
+{#each nearEnemies as enemy (enemy.id)}
 	<EnemyEntity {enemy} />
 {/each}
+{#if farEnemies.length > 0}
+	<EnemyProxyInstances enemies={farEnemies} />
+{/if}
 
 <!-- Acid pools -->
 {#each livePools as pool (pool.id)}
