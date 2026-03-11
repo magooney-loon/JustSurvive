@@ -8,7 +8,6 @@
 	import PlayerEntity from './PlayerEntity.svelte';
 	import EnemyEntity from './EnemyEntity.svelte';
 	import AcidPoolEntity from './AcidPoolEntity.svelte';
-	import ItemPickupEntity from './ItemPickupEntity.svelte';
 	import MarkOverlay from './MarkOverlay.svelte';
 	import DayNightSky from './DayNightSky.svelte';
 
@@ -17,7 +16,6 @@
 	const [enemies] = useTable(tables.enemy);
 	const [sessions] = useTable(tables.gameSession);
 	const [acidPools] = useTable(tables.acidPool);
-	const [items] = useTable(tables.itemSpawn);
 
 	const session = $derived($sessions.find(s => s.id === gameState.currentSessionId));
 	const myState = $derived($players.find(
@@ -33,9 +31,6 @@
 	));
 	const livePools = $derived($acidPools.filter(
 		p => p.sessionId === gameState.currentSessionId
-	));
-	const liveItems = $derived($items.filter(
-		i => i.sessionId === gameState.currentSessionId
 	));
 
 	const CLASS_COLORS: Record<string, string> = {
@@ -68,14 +63,6 @@
 				posZ: pz,
 				isSprinting: input.sprint && hasStamina,
 			});
-			// Auto-pickup items within 1.5 units
-			for (const item of liveItems) {
-				const dx = Number(item.posX - px) / 1000;
-				const dz = Number(item.posZ - pz) / 1000;
-				if (dx * dx + dz * dz < 2.25) {
-					gameActions.pickupItem(gameState.currentSessionId!, item.id);
-				}
-			}
 		}
 	});
 </script>
@@ -111,11 +98,6 @@
 <!-- Acid pools -->
 {#each livePools as pool (pool.id)}
 	<AcidPoolEntity {pool} />
-{/each}
-
-<!-- Item pickups -->
-{#each liveItems as item (item.id)}
-	<ItemPickupEntity {item} />
 {/each}
 
 <!-- Mark / ping overlays -->

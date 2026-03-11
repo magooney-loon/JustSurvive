@@ -80,22 +80,6 @@ export const GameSession = __t.object("GameSession", {
 });
 export type GameSession = __Infer<typeof GameSession>;
 
-export const ItemSpawn = __t.object("ItemSpawn", {
-  id: __t.u64(),
-  sessionId: __t.u64(),
-  itemType: __t.string(),
-  posX: __t.i64(),
-  posZ: __t.i64(),
-});
-export type ItemSpawn = __Infer<typeof ItemSpawn>;
-
-export const ItemSpawnJob = __t.object("ItemSpawnJob", {
-  scheduledId: __t.u64(),
-  scheduledAt: __t.scheduleAt(),
-  sessionId: __t.u64(),
-});
-export type ItemSpawnJob = __Infer<typeof ItemSpawnJob>;
-
 export const Lobby = __t.object("Lobby", {
   id: __t.u64(),
   hostIdentity: __t.identity(),
@@ -153,12 +137,9 @@ export const PlayerState = __t.object("PlayerState", {
   status: __t.string(),
   score: __t.u64(),
   isBracing: __t.bool(),
-  armorBonus: __t.u64(),
   speedBoostUntil: __t.option(__t.timestamp()),
-  staminaBoostUntil: __t.option(__t.timestamp()),
   reviveCooldownUntil: __t.option(__t.timestamp()),
   pingCooldownUntil: __t.option(__t.timestamp()),
-  hasFlare: __t.bool(),
 });
 export type PlayerState = __Infer<typeof PlayerState>;
 

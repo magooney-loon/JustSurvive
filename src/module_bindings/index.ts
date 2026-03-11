@@ -44,7 +44,6 @@ import JoinLobbyReducer from "./join_lobby_reducer";
 import LeaveLobbyReducer from "./leave_lobby_reducer";
 import MarkEnemyReducer from "./mark_enemy_reducer";
 import MovePlayerReducer from "./move_player_reducer";
-import PickupItemReducer from "./pickup_item_reducer";
 import PingLocationReducer from "./ping_location_reducer";
 import ReviveStartReducer from "./revive_start_reducer";
 import SetClassReducer from "./set_class_reducer";
@@ -58,7 +57,6 @@ import StartCountdownReducer from "./start_countdown_reducer";
 import AcidPoolRow from "./acid_pool_table";
 import EnemyRow from "./enemy_table";
 import GameSessionRow from "./game_session_table";
-import ItemSpawnRow from "./item_spawn_table";
 import LobbyRow from "./lobby_table";
 import LobbyPlayerRow from "./lobby_player_table";
 import MarkRow from "./mark_table";
@@ -111,20 +109,6 @@ const tablesSchema = __schema({
       { name: 'game_session_id_key', constraint: 'unique', columns: ['id'] },
     ],
   }, GameSessionRow),
-  itemSpawn: __table({
-    name: 'item_spawn',
-    indexes: [
-      { name: 'id', algorithm: 'btree', columns: [
-        'id',
-      ] },
-      { name: 'item_spawn_session_id', algorithm: 'btree', columns: [
-        'sessionId',
-      ] },
-    ],
-    constraints: [
-      { name: 'item_spawn_id_key', constraint: 'unique', columns: ['id'] },
-    ],
-  }, ItemSpawnRow),
   lobby: __table({
     name: 'lobby',
     indexes: [
@@ -218,7 +202,6 @@ const reducersSchema = __reducers(
   __reducerSchema("leave_lobby", LeaveLobbyReducer),
   __reducerSchema("mark_enemy", MarkEnemyReducer),
   __reducerSchema("move_player", MovePlayerReducer),
-  __reducerSchema("pickup_item", PickupItemReducer),
   __reducerSchema("ping_location", PingLocationReducer),
   __reducerSchema("revive_start", ReviveStartReducer),
   __reducerSchema("set_class", SetClassReducer),

@@ -80,12 +80,9 @@ const PlayerState = table({
   score: t.u64(),
   // Phase 4
   isBracing: t.bool(),
-  armorBonus: t.u64(),
   speedBoostUntil: t.timestamp().optional(),
-  staminaBoostUntil: t.timestamp().optional(),
   reviveCooldownUntil: t.timestamp().optional(),
   pingCooldownUntil: t.timestamp().optional(),
-  hasFlare: t.bool(),
 });
 
 const Enemy = table({
@@ -194,28 +191,6 @@ const AcidPool = table({
   expiresAt: t.timestamp(),
 });
 
-const ItemSpawn = table({
-  name: 'item_spawn',
-  public: true,
-  indexes: [
-    { name: 'item_spawn_session_id', accessor: 'item_spawn_session_id', algorithm: 'btree', columns: ['sessionId'] },
-  ],
-}, {
-  id: t.u64().primaryKey().autoInc(),
-  sessionId: t.u64(),
-  itemType: t.string(),          // 'energy_drink'|'stamina_boost'|'medkit'|'armor_plate'|'flare'
-  posX: t.i64(),
-  posZ: t.i64(),
-});
-
-const ItemSpawnJob = table({
-  name: 'item_spawn_job',
-  scheduled: (): any => spawn_item,
-}, {
-  scheduledId: t.u64().primaryKey().autoInc(),
-  scheduledAt: t.scheduleAt(),
-  sessionId: t.u64(),
-});
 
 const ReviveChannel = table({
   name: 'revive_channel',
@@ -260,8 +235,6 @@ const spacetimedb = schema({
   eliminateJob: EliminateJob,
   mark: Mark,
   acidPool: AcidPool,
-  itemSpawn: ItemSpawn,
-  itemSpawnJob: ItemSpawnJob,
   reviveChannel: ReviveChannel,
   reviveCompleteJob: ReviveCompleteJob,
 });
@@ -348,9 +321,6 @@ function end_session(ctx: any, sessionId: bigint) {
   }
   for (const p of ctx.db.acidPool.acid_pool_session_id.filter(sessionId)) {
     ctx.db.acidPool.id.delete(p.id);
-  }
-  for (const item of ctx.db.itemSpawn.item_spawn_session_id.filter(sessionId)) {
-    ctx.db.itemSpawn.id.delete(item.id);
   }
   for (const c of ctx.db.reviveChannel.revive_channel_session_id.filter(sessionId)) {
     ctx.db.reviveChannel.id.delete(c.id);
@@ -573,12 +543,9 @@ export const fire_start_game = spacetimedb.reducer({
       status: 'alive',
       score: 0n,
       isBracing: false,
-      armorBonus: 0n,
       speedBoostUntil: undefined,
-      staminaBoostUntil: undefined,
       reviveCooldownUntil: undefined,
       pingCooldownUntil: undefined,
-      hasFlare: false,
     });
   }
 
@@ -599,11 +566,6 @@ export const fire_start_game = spacetimedb.reducer({
   ctx.db.dayPhaseJob.insert({
     scheduledId: 0n,
     scheduledAt: ScheduleAt.time(now + 60_000_000n),
-    sessionId: session.id,
-  });
-  ctx.db.itemSpawnJob.insert({
-    scheduledId: 0n,
-    scheduledAt: ScheduleAt.time(now + 15_000_000n),
     sessionId: session.id,
   });
 });
@@ -1101,73 +1063,6 @@ export const complete_revive = spacetimedb.reducer({
   ctx.db.reviveChannel.id.delete(channel.id);
 });
 
-export const spawn_item = spacetimedb.reducer({
-  arg: ItemSpawnJob.rowType,
-}, (ctx, { arg }) => {
-  const session = ctx.db.gameSession.id.find(arg.sessionId);
-  if (!session || session.status !== 'active') return;
-
-  const ITEMS = ['energy_drink', 'stamina_boost', 'medkit', 'armor_plate', 'flare'];
-  const seed = Number(ctx.timestamp.microsSinceUnixEpoch % BigInt(ITEMS.length));
-  const itemType = ITEMS[seed];
-
-  const players = [...ctx.db.playerState.player_state_session_id.filter(arg.sessionId)]
-    .filter(p => p.status === 'alive');
-  if (players.length === 0) return;
-
-  const avgZ = players.reduce((s, p) => s + p.posZ, 0n) / BigInt(players.length);
-  const spawnX = (ctx.timestamp.microsSinceUnixEpoch % 20_000n) - 10_000n;
-  const spawnZ = avgZ - 15_000n;
-
-  ctx.db.itemSpawn.insert({ id: 0n, sessionId: arg.sessionId, itemType, posX: spawnX, posZ: spawnZ });
-
-  const nextSpawn = ctx.timestamp.microsSinceUnixEpoch + 12_000_000n;
-  ctx.db.itemSpawnJob.insert({
-    scheduledId: 0n,
-    scheduledAt: ScheduleAt.time(nextSpawn),
-    sessionId: arg.sessionId,
-  });
-});
-
-export const pickup_item = spacetimedb.reducer({
-  sessionId: t.u64(),
-  itemId: t.u64(),
-}, (ctx, { sessionId, itemId }) => {
-  const item = ctx.db.itemSpawn.id.find(itemId);
-  if (!item || item.sessionId !== sessionId) return;
-
-  let ps: any;
-  for (const p of ctx.db.playerState.player_state_session_id.filter(sessionId)) {
-    if (p.playerIdentity.isEqual(ctx.sender)) { ps = p; break; }
-  }
-  if (!ps || ps.status !== 'alive') return;
-
-  const dx = ps.posX - item.posX;
-  const dz = ps.posZ - item.posZ;
-  if (dx * dx + dz * dz > 2_250_000n) return; // 1.5 units
-
-  let updatedPs = { ...ps };
-  const now = ctx.timestamp.microsSinceUnixEpoch;
-
-  if (item.itemType === 'energy_drink') {
-    updatedPs.speedBoostUntil = ts(now + 10_000_000n);
-  } else if (item.itemType === 'stamina_boost') {
-    updatedPs.stamina = ps.maxStamina + ps.maxStamina / 4n;
-    updatedPs.staminaBoostUntil = ts(now + 30_000_000n);
-  } else if (item.itemType === 'medkit') {
-    const effectiveMax = ps.maxHp + ps.armorBonus;
-    updatedPs.hp = ps.hp + 50n > effectiveMax ? effectiveMax : ps.hp + 50n;
-  } else if (item.itemType === 'armor_plate') {
-    const newArmor = ps.armorBonus + 25n > 50n ? 50n : ps.armorBonus + 25n;
-    updatedPs.armorBonus = newArmor;
-    updatedPs.maxHp = ps.maxHp - ps.armorBonus + newArmor;
-  } else if (item.itemType === 'flare') {
-    updatedPs.hasFlare = true;
-  }
-
-  ctx.db.playerState.id.update(updatedPs);
-  ctx.db.itemSpawn.id.delete(itemId);
-});
 
 // ─── Lifecycle ─────────────────────────────────────────────────────────────────
 

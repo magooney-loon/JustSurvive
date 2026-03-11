@@ -156,10 +156,6 @@ export const gameActions = {
 		if (!conn) return;
 		try { await conn.reducers.reviveStart({ sessionId, targetIdentity }); } catch {}
 	},
-	async pickupItem(sessionId: bigint, itemId: bigint) {
-		if (!conn) return;
-		try { await conn.reducers.pickupItem({ sessionId, itemId }); } catch {}
-	},
 	clearError() {
 		gameState.error = null;
 	},
