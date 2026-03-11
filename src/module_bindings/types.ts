@@ -10,6 +10,50 @@ import {
   type Infer as __Infer,
 } from "spacetimedb";
 
+export const DayPhaseJob = __t.object("DayPhaseJob", {
+  scheduledId: __t.u64(),
+  scheduledAt: __t.scheduleAt(),
+  sessionId: __t.u64(),
+});
+export type DayPhaseJob = __Infer<typeof DayPhaseJob>;
+
+export const EliminateJob = __t.object("EliminateJob", {
+  scheduledId: __t.u64(),
+  scheduledAt: __t.scheduleAt(),
+  sessionId: __t.u64(),
+  targetIdentity: __t.identity(),
+});
+export type EliminateJob = __Infer<typeof EliminateJob>;
+
+export const Enemy = __t.object("Enemy", {
+  id: __t.u64(),
+  sessionId: __t.u64(),
+  enemyType: __t.string(),
+  hp: __t.u64(),
+  maxHp: __t.u64(),
+  posX: __t.i64(),
+  posZ: __t.i64(),
+  speedMultiplier: __t.u64(),
+  isDazed: __t.bool(),
+  dazedUntil: __t.option(__t.timestamp()),
+  isAlive: __t.bool(),
+});
+export type Enemy = __Infer<typeof Enemy>;
+
+export const EnemySpawnJob = __t.object("EnemySpawnJob", {
+  scheduledId: __t.u64(),
+  scheduledAt: __t.scheduleAt(),
+  sessionId: __t.u64(),
+});
+export type EnemySpawnJob = __Infer<typeof EnemySpawnJob>;
+
+export const EnemyTickJob = __t.object("EnemyTickJob", {
+  scheduledId: __t.u64(),
+  scheduledAt: __t.scheduleAt(),
+  sessionId: __t.u64(),
+});
+export type EnemyTickJob = __Infer<typeof EnemyTickJob>;
+
 export const GameSession = __t.object("GameSession", {
   id: __t.u64(),
   lobbyId: __t.u64(),

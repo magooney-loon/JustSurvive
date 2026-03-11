@@ -122,6 +122,10 @@ export const gameActions = {
 			setError(e);
 		}
 	},
+	movePlayer(args: { sessionId: bigint; posX: bigint; posY: bigint; posZ: bigint; isSprinting: boolean }) {
+		if (!conn) return;
+		conn.reducers.movePlayer(args);
+	},
 	clearError() {
 		gameState.error = null;
 	},

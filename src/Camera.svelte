@@ -1,9 +1,10 @@
 <script lang="ts">
-	import { T } from '@threlte/core';
+	import { T, useTask } from '@threlte/core';
 	import { AudioListener } from '@threlte/extras';
 	import { CameraControls, type CameraControlsRef } from '@threlte/extras';
-	import { cameraActions } from './stage.svelte.js';
+	import { cameraActions, stageState } from './stage.svelte.js';
 	import { log } from './settings.svelte.js';
+	import { localPos } from './localGameState.svelte.js';
 	import type { PerspectiveCamera } from 'three';
 
 	let controls = $state<CameraControlsRef>();
@@ -23,6 +24,19 @@
 			controls = undefined;
 		};
 	};
+
+	const FOLLOW_OFFSET = { x: 0, y: 6, z: 12 };
+
+	useTask(() => {
+		if (!controls || stageState.currentStage !== 'game') return;
+		controls.setTarget(localPos.x, localPos.y + 1, localPos.z, false);
+		controls.setPosition(
+			localPos.x + FOLLOW_OFFSET.x,
+			localPos.y + FOLLOW_OFFSET.y,
+			localPos.z + FOLLOW_OFFSET.z,
+			false
+		);
+	});
 </script>
 
 <T.PerspectiveCamera

@@ -1,11 +1,85 @@
 <script lang="ts">
-	import { T } from '@threlte/core';
+	import { T, useTask } from '@threlte/core';
+	import { useSpacetimeDB, useTable } from 'spacetimedb/svelte';
+	import { tables } from '../module_bindings/index.js';
+	import { gameState, gameActions } from '../game.svelte.js';
+	import { localPos, input, updateLocalMovement } from '../localGameState.svelte.js';
+	import PlayerEntity from './PlayerEntity.svelte';
+	import EnemyEntity from './EnemyEntity.svelte';
+	import DayNightSky from './DayNightSky.svelte';
+
+	const conn = useSpacetimeDB();
+	const [players] = useTable(tables.playerState);
+	const [enemies] = useTable(tables.enemy);
+	const [sessions] = useTable(tables.gameSession);
+
+	const session = $derived($sessions.find(s => s.id === gameState.currentSessionId));
+	const myState = $derived($players.find(
+		p => p.playerIdentity.toHexString() === $conn.identity?.toHexString() &&
+		     p.sessionId === gameState.currentSessionId
+	));
+	const otherPlayers = $derived($players.filter(
+		p => p.playerIdentity.toHexString() !== $conn.identity?.toHexString() &&
+		     p.sessionId === gameState.currentSessionId
+	));
+	const liveEnemies = $derived($enemies.filter(
+		e => e.sessionId === gameState.currentSessionId && e.isAlive
+	));
+
+	const CLASS_COLORS: Record<string, string> = {
+		spotter: '#4af',
+		gunner:  '#f84',
+		tank:    '#8a4',
+		healer:  '#f4a',
+	};
+
+	let sendTimer = 0;
+	const SEND_INTERVAL = 1 / 15;
+
+	useTask((dt) => {
+		if (!myState || myState.status !== 'alive') return;
+
+		const hasStamina = myState.stamina > 0n;
+		updateLocalMovement(dt, myState.classChoice, hasStamina);
+
+		sendTimer += dt;
+		if (sendTimer >= SEND_INTERVAL) {
+			sendTimer = 0;
+			gameActions.movePlayer({
+				sessionId: gameState.currentSessionId!,
+				posX: BigInt(Math.round(localPos.x * 1000)),
+				posY: BigInt(Math.round(localPos.y * 1000)),
+				posZ: BigInt(Math.round(localPos.z * 1000)),
+				isSprinting: input.sprint && hasStamina,
+			});
+		}
+	});
 </script>
 
-<!-- Placeholder: same as MenuStage. Replaced entirely in Phase 3. -->
-<T.AmbientLight intensity={0.4} />
-<T.DirectionalLight position={[10, 20, 10]} intensity={0.8} />
-<T.Mesh position={[0, -0.5, 0]}>
-	<T.PlaneGeometry args={[200, 200]} />
+<DayNightSky phase={session?.dayPhase ?? 'sunset'} />
+
+<!-- Ground plane -->
+<T.Mesh position={[0, -0.5, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+	<T.PlaneGeometry args={[500, 500]} />
 	<T.MeshStandardMaterial color="#1a3a10" />
 </T.Mesh>
+
+<!-- Local player (predicted position) -->
+{#if myState}
+	<T.Group position={[localPos.x, localPos.y, localPos.z]}>
+		<T.Mesh>
+			<T.CapsuleGeometry args={[0.4, 1.2]} />
+			<T.MeshStandardMaterial color={CLASS_COLORS[myState.classChoice] ?? '#4a8'} />
+		</T.Mesh>
+	</T.Group>
+{/if}
+
+<!-- Remote players (server position, interpolated) -->
+{#each otherPlayers as player (player.id)}
+	<PlayerEntity {player} />
+{/each}
+
+<!-- Enemies (interpolated) -->
+{#each liveEnemies as enemy (enemy.id)}
+	<EnemyEntity {enemy} />
+{/each}

@@ -38,6 +38,7 @@ import CreateLobbyReducer from "./create_lobby_reducer";
 import JoinByCodeReducer from "./join_by_code_reducer";
 import JoinLobbyReducer from "./join_lobby_reducer";
 import LeaveLobbyReducer from "./leave_lobby_reducer";
+import MovePlayerReducer from "./move_player_reducer";
 import SetClassReducer from "./set_class_reducer";
 import SetReadyReducer from "./set_ready_reducer";
 import StartCountdownReducer from "./start_countdown_reducer";
@@ -45,6 +46,7 @@ import StartCountdownReducer from "./start_countdown_reducer";
 // Import all procedure arg schemas
 
 // Import all table schema definitions
+import EnemyRow from "./enemy_table";
 import GameSessionRow from "./game_session_table";
 import LobbyRow from "./lobby_table";
 import LobbyPlayerRow from "./lobby_player_table";
@@ -54,6 +56,20 @@ import PlayerStateRow from "./player_state_table";
 
 /** The schema information for all tables in this module. This is defined the same was as the tables would have been defined in the server. */
 const tablesSchema = __schema({
+  enemy: __table({
+    name: 'enemy',
+    indexes: [
+      { name: 'id', algorithm: 'btree', columns: [
+        'id',
+      ] },
+      { name: 'enemy_session_id', algorithm: 'btree', columns: [
+        'sessionId',
+      ] },
+    ],
+    constraints: [
+      { name: 'enemy_id_key', constraint: 'unique', columns: ['id'] },
+    ],
+  }, EnemyRow),
   gameSession: __table({
     name: 'game_session',
     indexes: [
@@ -127,6 +143,7 @@ const reducersSchema = __reducers(
   __reducerSchema("join_by_code", JoinByCodeReducer),
   __reducerSchema("join_lobby", JoinLobbyReducer),
   __reducerSchema("leave_lobby", LeaveLobbyReducer),
+  __reducerSchema("move_player", MovePlayerReducer),
   __reducerSchema("set_class", SetClassReducer),
   __reducerSchema("set_ready", SetReadyReducer),
   __reducerSchema("start_countdown", StartCountdownReducer),

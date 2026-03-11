@@ -9,6 +9,8 @@
 	import Loader from './Loader.svelte';
 	import * as THREE from 'three';
 	import { settingsState, generalActions } from './settings.svelte.js';
+	import { stageState } from './stage.svelte.js';
+	import InputHandler from './lib/InputHandler.svelte';
 
 	function handleKeydown(e: KeyboardEvent) {
 		// Ctrl+H — toggle HUD visibility
@@ -71,4 +73,7 @@
 
 	<SceneHud />
 	<Loader />
+	{#if stageState.currentStage === 'game'}
+		<InputHandler />
+	{/if}
 </div>

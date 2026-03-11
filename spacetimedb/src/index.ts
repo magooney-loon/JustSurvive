@@ -80,6 +80,26 @@ const PlayerState = table({
   score: t.u64(),
 });
 
+const Enemy = table({
+  name: 'enemy',
+  public: true,
+  indexes: [
+    { name: 'enemy_session_id', accessor: 'enemy_session_id', algorithm: 'btree', columns: ['sessionId'] },
+  ],
+}, {
+  id: t.u64().primaryKey().autoInc(),
+  sessionId: t.u64(),
+  enemyType: t.string(),        // 'basic' | 'fast' | 'brute' | 'spitter'
+  hp: t.u64(),
+  maxHp: t.u64(),
+  posX: t.i64(),
+  posZ: t.i64(),
+  speedMultiplier: t.u64(),     // fixed-point: 100 = 1.0x, 110 = 1.1x
+  isDazed: t.bool(),
+  dazedUntil: t.timestamp().optional(),
+  isAlive: t.bool(),
+});
+
 // LobbyCountdown is defined before fire_start_game but references it lazily
 const LobbyCountdown = table({
   name: 'lobby_countdown',
@@ -90,6 +110,50 @@ const LobbyCountdown = table({
   lobbyId: t.u64(),
 });
 
+// Scheduled: enemy tick (movement + damage)
+const EnemyTickJob = table({
+  name: 'enemy_tick_job',
+  scheduled: (): any => enemy_tick,
+}, {
+  scheduledId: t.u64().primaryKey().autoInc(),
+  scheduledAt: t.scheduleAt(),
+  sessionId: t.u64(),
+});
+
+// Scheduled: spawn a new enemy
+const EnemySpawnJob = table({
+  name: 'enemy_spawn_job',
+  scheduled: (): any => spawn_enemy,
+}, {
+  scheduledId: t.u64().primaryKey().autoInc(),
+  scheduledAt: t.scheduleAt(),
+  sessionId: t.u64(),
+});
+
+// Scheduled: advance day/night phase
+const DayPhaseJob = table({
+  name: 'day_phase_job',
+  scheduled: (): any => advance_day_phase,
+}, {
+  scheduledId: t.u64().primaryKey().autoInc(),
+  scheduledAt: t.scheduleAt(),
+  sessionId: t.u64(),
+});
+
+// Scheduled: eliminate a downed player after 30s
+const EliminateJob = table({
+  name: 'eliminate_job',
+  scheduled: (): any => eliminate_downed,
+  indexes: [
+    { name: 'eliminate_job_session', accessor: 'eliminate_job_session', algorithm: 'btree', columns: ['sessionId'] },
+  ],
+}, {
+  scheduledId: t.u64().primaryKey().autoInc(),
+  scheduledAt: t.scheduleAt(),
+  sessionId: t.u64(),
+  targetIdentity: t.identity(),
+});
+
 // ─── Schema ───────────────────────────────────────────────────────────────────
 
 const spacetimedb = schema({
@@ -97,7 +161,12 @@ const spacetimedb = schema({
   lobbyPlayer: LobbyPlayer,
   gameSession: GameSession,
   playerState: PlayerState,
+  enemy: Enemy,
   lobbyCountdown: LobbyCountdown,
+  enemyTickJob: EnemyTickJob,
+  enemySpawnJob: EnemySpawnJob,
+  dayPhaseJob: DayPhaseJob,
+  eliminateJob: EliminateJob,
 });
 
 export default spacetimedb;
@@ -123,6 +192,40 @@ function classMaxStamina(cls: string): bigint {
   if (cls === 'spotter') return 150n;
   if (cls === 'tank') return 200n;
   return 80n;
+}
+
+// Integer square root (Newton's method) — deterministic distance calcs
+function bigintSqrt(n: bigint): bigint {
+  if (n < 0n) return 0n;
+  if (n < 2n) return n;
+  let x = n;
+  let y = (x + 1n) / 2n;
+  while (y < x) { x = y; y = (x + n / x) / 2n; }
+  return x;
+}
+
+function apply_player_damage(ctx: any, sessionId: bigint, ps: any, damage: bigint) {
+  const newHp = ps.hp > damage ? ps.hp - damage : 0n;
+  if (newHp <= 0n && ps.status === 'alive') {
+    ctx.db.playerState.id.update({ ...ps, hp: 0n, status: 'downed' });
+    const eliminateAt = ctx.timestamp.microsSinceUnixEpoch + 30_000_000n;
+    ctx.db.eliminateJob.insert({
+      scheduledId: 0n,
+      scheduledAt: ScheduleAt.time(eliminateAt),
+      sessionId,
+      targetIdentity: ps.playerIdentity,
+    });
+  } else {
+    ctx.db.playerState.id.update({ ...ps, hp: newHp });
+  }
+}
+
+function end_session(ctx: any, sessionId: bigint) {
+  const session = ctx.db.gameSession.id.find(sessionId);
+  if (!session) return;
+  ctx.db.gameSession.id.update({ ...session, status: 'finished', endedAt: ctx.timestamp });
+  const lobby = ctx.db.lobby.id.find(session.lobbyId);
+  if (lobby) ctx.db.lobby.id.update({ ...lobby, status: 'game_over' });
 }
 
 // ─── Reducers ─────────────────────────────────────────────────────────────────
@@ -251,7 +354,7 @@ export const leave_lobby = spacetimedb.reducer({
       break;
     }
   }
-  if (!found) return; // already left — skip decrement
+  if (!found) return;
 
   const remaining = [...ctx.db.lobbyPlayer.lobby_player_lobby_id.filter(lobbyId)];
   if (remaining.length === 0) {
@@ -327,6 +430,235 @@ export const fire_start_game = spacetimedb.reducer({
   }
 
   ctx.db.lobby.id.update({ ...lobby, status: 'in_progress' });
+
+  // Schedule game loop jobs
+  const now = ctx.timestamp.microsSinceUnixEpoch;
+
+  // Enemy tick starts immediately
+  ctx.db.enemyTickJob.insert({
+    scheduledId: 0n,
+    scheduledAt: ScheduleAt.time(now + 100_000n),
+    sessionId: session.id,
+  });
+
+  // First enemy spawn after 5 seconds
+  ctx.db.enemySpawnJob.insert({
+    scheduledId: 0n,
+    scheduledAt: ScheduleAt.time(now + 5_000_000n),
+    sessionId: session.id,
+  });
+
+  // First phase advance after 60 seconds
+  ctx.db.dayPhaseJob.insert({
+    scheduledId: 0n,
+    scheduledAt: ScheduleAt.time(now + 60_000_000n),
+    sessionId: session.id,
+  });
+});
+
+// ─── Phase 3 Reducers ─────────────────────────────────────────────────────────
+
+export const move_player = spacetimedb.reducer({
+  sessionId: t.u64(),
+  posX: t.i64(),
+  posY: t.i64(),
+  posZ: t.i64(),
+  isSprinting: t.bool(),
+}, (ctx, { sessionId, posX, posY, posZ, isSprinting }) => {
+  let ps: any;
+  for (const p of ctx.db.playerState.player_state_session_id.filter(sessionId)) {
+    if (p.playerIdentity.isEqual(ctx.sender)) { ps = p; break; }
+  }
+  if (!ps || ps.status !== 'alive') return;
+
+  const SPRINT_DRAIN = 3n;
+  const WALK_REGEN = 2n;
+  let newStamina = ps.stamina;
+  if (isSprinting && ps.stamina > 0n) {
+    newStamina = ps.stamina > SPRINT_DRAIN ? ps.stamina - SPRINT_DRAIN : 0n;
+  } else if (!isSprinting && ps.stamina < ps.maxStamina) {
+    newStamina = ps.stamina + WALK_REGEN > ps.maxStamina ? ps.maxStamina : ps.stamina + WALK_REGEN;
+  }
+
+  const distDelta = posZ < ps.posZ ? ps.posZ - posZ : 0n;
+  const newScore = ps.score + distDelta / 1000n;
+
+  ctx.db.playerState.id.update({ ...ps, posX, posY, posZ, stamina: newStamina, score: newScore });
+});
+
+// Fixed-point speed: moveAmount = speed * TICK_MS(100n) / 1000n = speed/10
+// speed = desiredUnitsPerSec * 1000n (e.g. 3 units/sec = 3000n)
+const ENEMY_BASE_SPEED: Record<string, bigint> = {
+  basic: 3000n,    // 3 units/sec
+  fast: 5000n,     // 5 units/sec (near sprint speed)
+  brute: 2000n,    // 2 units/sec (slow tank)
+  spitter: 1500n,  // 1.5 units/sec (ranged, slow)
+};
+const MELEE_RANGE = 2000n;
+const TICK_MS = 100n;
+
+export const enemy_tick = spacetimedb.reducer({
+  arg: EnemyTickJob.rowType,
+}, (ctx, { arg }) => {
+  const session = ctx.db.gameSession.id.find(arg.sessionId);
+  if (!session || session.status !== 'active') return;
+
+  const players = [...ctx.db.playerState.player_state_session_id.filter(arg.sessionId)]
+    .filter(p => p.status === 'alive');
+
+  const enemies = [...ctx.db.enemy.enemy_session_id.filter(arg.sessionId)]
+    .filter(e => e.isAlive);
+
+  for (const enemy of enemies) {
+    if (players.length === 0) break;
+
+    let nearest = players[0];
+    let nearestDist = BigInt(Number.MAX_SAFE_INTEGER);
+    for (const p of players) {
+      const dx = p.posX - enemy.posX;
+      const dz = p.posZ - enemy.posZ;
+      const dist = dx * dx + dz * dz;
+      if (dist < nearestDist) { nearest = p; nearestDist = dist; }
+    }
+
+    const dx = nearest.posX - enemy.posX;
+    const dz = nearest.posZ - enemy.posZ;
+
+    if (nearestDist <= MELEE_RANGE * MELEE_RANGE && !enemy.isDazed) {
+      const damage = enemy.enemyType === 'brute' ? 30n : 15n;
+      apply_player_damage(ctx, arg.sessionId, nearest, damage);
+    } else if (!enemy.isDazed) {
+      const speed = (ENEMY_BASE_SPEED[enemy.enemyType] ?? 3000n) * enemy.speedMultiplier / 100n;
+      const moveAmount = speed * TICK_MS / 1000n;
+      const magnitude = bigintSqrt(dx * dx + dz * dz);
+      if (magnitude > 0n) {
+        const newX = enemy.posX + dx * moveAmount / magnitude;
+        const newZ = enemy.posZ + dz * moveAmount / magnitude;
+        ctx.db.enemy.id.update({ ...enemy, posX: newX, posZ: newZ });
+      }
+    } else {
+      if (enemy.dazedUntil && ctx.timestamp.microsSinceUnixEpoch >= enemy.dazedUntil.microsSinceUnixEpoch) {
+        ctx.db.enemy.id.update({ ...enemy, isDazed: false, dazedUntil: undefined });
+      }
+    }
+  }
+
+  const nextTick = ctx.timestamp.microsSinceUnixEpoch + TICK_MS * 1000n;
+  ctx.db.enemyTickJob.insert({
+    scheduledId: 0n,
+    scheduledAt: ScheduleAt.time(nextTick),
+    sessionId: arg.sessionId,
+  });
+});
+
+const ENEMY_WEIGHTS = [
+  { type: 'basic', weight: 60 },
+  { type: 'fast', weight: 25 },
+  { type: 'brute', weight: 10 },
+  { type: 'spitter', weight: 5 },
+];
+
+const ENEMY_HP: Record<string, bigint> = {
+  basic: 50n,
+  fast: 25n,
+  brute: 150n,
+  spitter: 60n,
+};
+
+export const spawn_enemy = spacetimedb.reducer({
+  arg: EnemySpawnJob.rowType,
+}, (ctx, { arg }) => {
+  const session = ctx.db.gameSession.id.find(arg.sessionId);
+  if (!session || session.status !== 'active') return;
+
+  const seed = Number(ctx.timestamp.microsSinceUnixEpoch % 100n);
+  let cumWeight = 0;
+  let enemyType = 'basic';
+  for (const { type, weight } of ENEMY_WEIGHTS) {
+    cumWeight += weight;
+    if (seed < cumWeight) { enemyType = type; break; }
+  }
+
+  const players = [...ctx.db.playerState.player_state_session_id.filter(arg.sessionId)]
+    .filter(p => p.status === 'alive');
+  if (players.length === 0) return;
+
+  const avgZ = players.reduce((s, p) => s + p.posZ, 0n) / BigInt(players.length);
+  const spawnX = (ctx.timestamp.microsSinceUnixEpoch % 30_000n) - 15_000n;
+  const spawnZ = avgZ - 30_000n; // 30 units ahead of players (-Z = forward direction)
+
+  const baseMultiplier = 100n + session.cycleNumber * 5n;
+
+  ctx.db.enemy.insert({
+    id: 0n,
+    sessionId: arg.sessionId,
+    enemyType,
+    hp: ENEMY_HP[enemyType] ?? 50n,
+    maxHp: ENEMY_HP[enemyType] ?? 50n,
+    posX: spawnX,
+    posZ: spawnZ,
+    speedMultiplier: baseMultiplier,
+    isDazed: false,
+    dazedUntil: undefined,
+    isAlive: true,
+  });
+
+  const baseInterval = 8_000_000n;
+  const minInterval = 2_000_000n;
+  const interval = baseInterval - session.cycleNumber * 500_000n;
+  const nextSpawn = ctx.timestamp.microsSinceUnixEpoch + (interval < minInterval ? minInterval : interval);
+  ctx.db.enemySpawnJob.insert({
+    scheduledId: 0n,
+    scheduledAt: ScheduleAt.time(nextSpawn),
+    sessionId: arg.sessionId,
+  });
+});
+
+const DAY_PHASES = ['sunset', 'dusk', 'twilight', 'night', 'deep_night'];
+
+export const advance_day_phase = spacetimedb.reducer({
+  arg: DayPhaseJob.rowType,
+}, (ctx, { arg }) => {
+  const session = ctx.db.gameSession.id.find(arg.sessionId);
+  if (!session || session.status !== 'active') return;
+
+  const currentIdx = DAY_PHASES.indexOf(session.dayPhase);
+  const nextIdx = (currentIdx + 1) % DAY_PHASES.length;
+  const nextPhase = DAY_PHASES[nextIdx];
+  const newCycle = nextIdx === 0 ? session.cycleNumber + 1n : session.cycleNumber;
+
+  ctx.db.gameSession.id.update({
+    ...session,
+    dayPhase: nextPhase,
+    cycleNumber: newCycle,
+    phaseStartedAt: ctx.timestamp,
+  });
+
+  const nextAdvance = ctx.timestamp.microsSinceUnixEpoch + 60_000_000n;
+  ctx.db.dayPhaseJob.insert({
+    scheduledId: 0n,
+    scheduledAt: ScheduleAt.time(nextAdvance),
+    sessionId: arg.sessionId,
+  });
+});
+
+export const eliminate_downed = spacetimedb.reducer({
+  arg: EliminateJob.rowType,
+}, (ctx, { arg }) => {
+  let ps: any;
+  for (const p of ctx.db.playerState.player_state_session_id.filter(arg.sessionId)) {
+    if (p.playerIdentity.isEqual(arg.targetIdentity)) { ps = p; break; }
+  }
+  if (!ps || ps.status !== 'downed') return;
+
+  ctx.db.playerState.id.update({ ...ps, status: 'eliminated' });
+
+  const remaining = [...ctx.db.playerState.player_state_session_id.filter(arg.sessionId)]
+    .filter(p => p.status === 'alive' || p.status === 'downed');
+
+  if (remaining.length === 0) {
+    end_session(ctx, arg.sessionId);
+  }
 });
 
 // ─── Lifecycle ─────────────────────────────────────────────────────────────────

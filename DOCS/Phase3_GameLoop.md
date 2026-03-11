@@ -1,5 +1,7 @@
 # Phase 3 — Core Game Loop
 
+**Status: COMPLETE**
+
 **Goal:** The game runs. Players move through a 3D forest, enemies spawn and chase, the day/night cycle advances, players can die and be eliminated. No class abilities yet — just the survival core.
 
 ---
@@ -778,13 +780,23 @@ useTask(() => {
 
 ---
 
+## Implementation Notes
+
+- Single-file backend: all tables, schema, reducers in `spacetimedb/src/index.ts`
+- All scheduled tables use `(): any =>` return type on `scheduled` to avoid circular TypeScript inference
+- `move_player` types `ps` as `any` (not `typeof PlayerState.rowType`) — RowBuilder type mismatch
+- Enemy spawn uses `avgZ - 30_000n` (forward/-Z direction) — camera sits at `pz+12` looking toward -Z, so spawning at `+Z` puts enemies behind the camera
+- Local player color in `GameStage.svelte` uses `CLASS_COLORS[myState.classChoice]`, same map as `PlayerEntity.svelte`
+- Types `PlayerState` and `Enemy` imported from `module_bindings/types.js` (not `index.js`)
+- `displayX/Y/Z` in entity components initialized to `0` (not from prop) to avoid Svelte 5 `state_referenced_locally` warning
+
 ## Done When
 
-- [ ] Players move through the 3D space, camera follows local player
-- [ ] Remote player positions update and interpolate smoothly
-- [ ] Enemies spawn and visually move toward players
-- [ ] Enemy melee deals damage; HP bars update in HUD
-- [ ] Running out of HP triggers downed state, 30s timer starts
-- [ ] All players downed → session ends, all clients see `game_over` stage
-- [ ] Day/night phase advances every 60s, sky color changes
-- [ ] Stamina drains on sprint, recharges on walk
+- [x] Players move through the 3D space, camera follows local player
+- [x] Remote player positions update and interpolate smoothly
+- [x] Enemies spawn and visually move toward players
+- [x] Enemy melee deals damage; HP bars update in HUD
+- [x] Running out of HP triggers downed state, 30s timer starts
+- [x] All players downed → session ends, all clients see `game_over` stage
+- [x] Day/night phase advances every 60s, sky color changes
+- [x] Stamina drains on sprint, recharges on walk
