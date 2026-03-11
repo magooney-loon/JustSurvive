@@ -47,7 +47,7 @@
 	const nearEnemies = $derived(
 		$enemies.filter((e) => {
 			if (e.sessionId !== gameState.currentSessionId) return false;
-			if (!e.isAlive) return false;
+			// Allow dead enemies through - EnemyEntity handles death animation
 			if (!myState) return true;
 			const dx = Number(e.posX) / 1000 - localPos.x;
 			const dz = Number(e.posZ) / 1000 - localPos.z;
@@ -57,6 +57,7 @@
 	const farEnemies = $derived(
 		$enemies.filter((e) => {
 			if (e.sessionId !== gameState.currentSessionId) return false;
+			// Far enemies use instanced mesh - only show alive ones
 			if (!e.isAlive) return false;
 			if (!myState) return false;
 			const dx = Number(e.posX) / 1000 - localPos.x;
