@@ -160,7 +160,8 @@ const Enemy = table(
 		// Phase 4
 		isMarked: t.bool(),
 		markedUntil: t.timestamp().optional(),
-		lastSpitAt: t.timestamp().optional()
+		lastSpitAt: t.timestamp().optional(),
+		diedAt: t.timestamp().optional()
 	}
 );
 
@@ -845,6 +846,13 @@ export const enemy_tick = spacetimedb.reducer(
 				ctx.db.mark.id.delete(m.id);
 			}
 		}
+		// Clean up dead enemies after 5 seconds
+		const DEAD_CLEANUP_MS = 5_000_000n; // 5 seconds
+		for (const e of ctx.db.enemy.enemy_session_id.filter(arg.sessionId)) {
+			if (!e.isAlive && e.diedAt && now - e.diedAt.microsSinceUnixEpoch >= DEAD_CLEANUP_MS) {
+				ctx.db.enemy.id.delete(e.id);
+			}
+		}
 		const BRACE_MAX_US = 5_000_000n;
 		for (let i = 0; i < players.length; i++) {
 			const p = players[i];
@@ -1114,7 +1122,8 @@ export const spawn_enemy = spacetimedb.reducer(
 			isAlive: true,
 			isMarked: false,
 			markedUntil: undefined,
-			lastSpitAt: undefined
+			lastSpitAt: undefined,
+			diedAt: undefined
 		});
 
 		const nextSpawn = ctx.timestamp.microsSinceUnixEpoch + nextInterval;
@@ -1309,7 +1318,12 @@ export const attack_enemy = spacetimedb.reducer(
 
 		const shotAt = ctx.timestamp;
 		if (newHp <= 0n) {
-			ctx.db.enemy.id.update({ ...enemy, hp: 0n, isAlive: false });
+			ctx.db.enemy.id.update({
+				...enemy,
+				hp: 0n,
+				isAlive: false,
+				diedAt: ts(ctx.timestamp.microsSinceUnixEpoch)
+			});
 			ctx.db.playerState.id.update({ ...ps, score: ps.score + 1n, lastShotAt: shotAt });
 		} else {
 			let updatedEnemy = { ...enemy, hp: newHp };

@@ -50,6 +50,7 @@ export const Enemy = __t.object("Enemy", {
   isMarked: __t.bool(),
   markedUntil: __t.option(__t.timestamp()),
   lastSpitAt: __t.option(__t.timestamp()),
+  diedAt: __t.option(__t.timestamp()),
 });
 export type Enemy = __Infer<typeof Enemy>;
 

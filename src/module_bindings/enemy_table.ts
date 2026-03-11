@@ -25,4 +25,5 @@ export default __t.row({
   isMarked: __t.bool().name("is_marked"),
   markedUntil: __t.option(__t.timestamp()).name("marked_until"),
   lastSpitAt: __t.option(__t.timestamp()).name("last_spit_at"),
+  diedAt: __t.option(__t.timestamp()).name("died_at"),
 });
