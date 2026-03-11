@@ -27,12 +27,15 @@
 </script>
 
 {#if myChannel}
-	<div style="position: absolute; bottom: 6rem; left: 50%; transform: translateX(-50%);
-	            background: rgba(0,0,0,0.7); padding: 0.5rem 1.5rem; border-radius: 8px; text-align: center;">
-		<div style="font-size: 0.85rem; color: #f4a; margin-bottom: 0.3rem;">REVIVING...</div>
-		<div style="background: #333; border-radius: 4px; height: 8px; width: 160px;">
-			<div style="background: #f4a; border-radius: 4px; height: 100%; width: {elapsed * 100}%;
-			            transition: width 0.05s;"></div>
+	<div style="
+		position: absolute; bottom: 9rem; left: 50%; transform: translateX(-50%);
+		background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15);
+		padding: 0.65rem 1.75rem; border-radius: 0.75rem; text-align: center;
+		backdrop-filter: blur(6px);
+	">
+		<div style="font-size: 0.8rem; color: #f4a; margin-bottom: 0.4rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase;">Reviving...</div>
+		<div style="background: rgba(0,0,0,0.4); border-radius: 4px; height: 8px; width: 180px; overflow: hidden;">
+			<div style="background: #f4a; border-radius: 4px; height: 100%; width: {elapsed * 100}%; transition: width 0.05s;"></div>
 		</div>
 	</div>
 {/if}

@@ -34,7 +34,6 @@
 		}
 	});
 
-	// Countdown timer for downed state
 	let downedSecondsLeft = $state(30);
 	$effect(() => {
 		if (myState?.status !== 'downed') return;
@@ -45,7 +44,6 @@
 		return () => clearInterval(interval);
 	});
 
-	// Tick for cooldown display
 	let now = $state(Date.now());
 	$effect(() => {
 		const id = setInterval(() => { now = Date.now(); }, 80);
@@ -62,14 +60,12 @@
 		return remaining > 0 ? Math.min(1, remaining / totalMs) : 0;
 	}
 
-	// Per-class ability slot definitions
 	type AbilitySlot = {
 		label: string;
 		input: string;
 		color: string;
-		// 0=ready, >0=fraction of CD remaining
 		cdFrac: number;
-		cdMs?: number; // total cooldown duration in ms (for seconds display)
+		cdMs?: number;
 		active?: boolean;
 	};
 
@@ -105,12 +101,17 @@
 </script>
 
 <div transition:fly={{ x: -20, duration: 300 }}>
-	<!-- Day phase indicator -->
-	<div style="position: absolute; top: 1rem; left: 50%; transform: translateX(-50%);
-	            background: rgba(0,0,0,0.6); padding: 0.4rem 1rem; border-radius: 20px; color: #fff;">
+	<!-- Day phase indicator — top center -->
+	<div style="
+		position: absolute; top: 1.25rem; left: 50%; transform: translateX(-50%);
+		background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15);
+		padding: 0.4rem 1.25rem; border-radius: 999px; color: white;
+		font-size: 0.9rem; font-weight: 500; white-space: nowrap;
+		backdrop-filter: blur(6px);
+	">
 		{DAY_PHASE_LABELS[session?.dayPhase ?? 'sunset'] ?? ''}
 		{#if session?.cycleNumber && session.cycleNumber > 0n}
-			<span style="margin-left: 0.5rem; color: #ff8;">Day {Number(session.cycleNumber) + 1}</span>
+			<span style="margin-left: 0.6rem; color: #ffd060; font-weight: 600;">Day {Number(session.cycleNumber) + 1}</span>
 		{/if}
 	</div>
 
@@ -118,24 +119,25 @@
 	{#if myState && myState.status === 'alive'}
 		{@const slots = abilities()}
 		<div style="
-			position: absolute; bottom: 2rem; left: 50%; transform: translateX(-50%);
-			display: flex; gap: 0.5rem; pointer-events: none;
+			position: absolute; bottom: 2.5rem; left: 50%; transform: translateX(-50%);
+			display: flex; gap: 0.75rem; pointer-events: none;
 		">
 			{#each slots as slot}
 				<div style="
-					position: relative; width: 68px; height: 68px;
-					background: rgba(0,0,0,0.75);
-					border: 1.5px solid {slot.active ? slot.color : 'rgba(255,255,255,0.15)'};
-					border-radius: 8px; overflow: hidden;
-					box-shadow: {slot.active ? `0 0 10px ${slot.color}66` : 'none'};
+					position: relative; width: 90px; height: 90px;
+					background: rgba(255,255,255,0.07);
+					border: 1.5px solid {slot.active ? slot.color : 'rgba(255,255,255,0.18)'};
+					border-radius: 0.625rem; overflow: hidden;
+					box-shadow: {slot.active ? `0 0 14px ${slot.color}55` : 'none'};
 					transition: border-color 0.15s, box-shadow 0.15s;
+					backdrop-filter: blur(6px);
 				">
 					<!-- Cooldown overlay (fills from bottom) -->
 					{#if slot.cdFrac > 0}
 						<div style="
 							position: absolute; bottom: 0; left: 0; right: 0;
 							height: {slot.cdFrac * 100}%;
-							background: rgba(0,0,0,0.65);
+							background: rgba(0,0,0,0.6);
 							transition: height 0.08s linear;
 						"></div>
 					{/if}
@@ -151,18 +153,18 @@
 					<div style="
 						position: relative; height: 100%;
 						display: flex; flex-direction: column;
-						align-items: center; justify-content: center; gap: 2px;
+						align-items: center; justify-content: center; gap: 3px;
 					">
-						<span style="font-size: 0.75rem; font-weight: 600; color: {slot.cdFrac > 0 ? '#888' : slot.color}; text-align: center; line-height: 1.1;">
+						<span style="font-size: 0.875rem; font-weight: 600; color: {slot.cdFrac > 0 ? '#888' : slot.color}; text-align: center; line-height: 1.1;">
 							{slot.label}
 						</span>
 						{#if slot.input}
-							<span style="font-size: 0.6rem; color: rgba(255,255,255,0.4); background: rgba(255,255,255,0.08); padding: 1px 4px; border-radius: 3px;">
+							<span style="font-size: 0.7rem; color: rgba(255,255,255,0.45); background: rgba(255,255,255,0.1); padding: 1px 5px; border-radius: 3px;">
 								{slot.input}
 							</span>
 						{/if}
 						{#if slot.cdFrac > 0}
-							<span style="font-size: 0.65rem; color: #aaa;">
+							<span style="font-size: 0.75rem; color: #aaa; font-weight: 500;">
 								{(slot.cdFrac * (slot.cdMs ?? 5000) / 1000).toFixed(1)}s
 							</span>
 						{/if}
@@ -172,43 +174,63 @@
 		</div>
 	{/if}
 
-	<!-- Local player HP & stamina -->
+	<!-- Local player HP & stamina — bottom left -->
 	{#if myState}
-		<div style="position: absolute; bottom: 2rem; left: 2rem; width: 200px;">
-			<div style="margin-bottom: 0.3rem;">
-				<div style="font-size: 0.75rem; color: #aaa; margin-bottom: 2px;">HP</div>
-				<div style="background: #333; border-radius: 4px; height: 12px;">
-					<div style="background: #e44; border-radius: 4px; height: 100%; width: {hpPercent(myState.hp, myState.maxHp)}%;
-					            transition: width 0.2s;"></div>
+		<div style="
+			position: absolute; bottom: 2.5rem; left: 2rem; width: 240px;
+			background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.12);
+			border-radius: 0.75rem; padding: 0.875rem 1rem;
+			backdrop-filter: blur(6px);
+		">
+			<!-- HP bar -->
+			<div style="margin-bottom: 0.6rem;">
+				<div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 4px;">
+					<span style="font-size: 0.8rem; color: rgba(255,255,255,0.55); font-weight: 500; text-transform: uppercase; letter-spacing: 0.06em;">HP</span>
+					<span style="font-size: 0.8rem; color: rgba(255,255,255,0.7); font-weight: 600;">{Number(myState.hp)} / {Number(myState.maxHp)}</span>
+				</div>
+				<div style="background: rgba(0,0,0,0.4); border-radius: 4px; height: 10px; overflow: hidden;">
+					<div style="background: #e44; border-radius: 4px; height: 100%; width: {hpPercent(myState.hp, myState.maxHp)}%; transition: width 0.2s;"></div>
 				</div>
 			</div>
-			<div>
-				<div style="font-size: 0.75rem; color: #aaa; margin-bottom: 2px;">Stamina</div>
-				<div style="background: #333; border-radius: 4px; height: 8px;">
-					<div style="background: #4af; border-radius: 4px; height: 100%; width: {hpPercent(myState.stamina, myState.maxStamina)}%;
-					            transition: width 0.1s;"></div>
+			<!-- Stamina bar -->
+			<div style="margin-bottom: 0.6rem;">
+				<div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 4px;">
+					<span style="font-size: 0.8rem; color: rgba(255,255,255,0.55); font-weight: 500; text-transform: uppercase; letter-spacing: 0.06em;">Stamina</span>
+				</div>
+				<div style="background: rgba(0,0,0,0.4); border-radius: 4px; height: 7px; overflow: hidden;">
+					<div style="background: #4af; border-radius: 4px; height: 100%; width: {hpPercent(myState.stamina, myState.maxStamina)}%; transition: width 0.1s;"></div>
 				</div>
 			</div>
-			<div style="margin-top: 0.4rem; font-size: 0.85rem; color: #ff8;">
-				Score: {Number(myState.score).toLocaleString()}
+			<!-- Score -->
+			<div style="font-size: 1rem; font-weight: 700; color: #ffd060;">
+				{Number(myState.score).toLocaleString()} pts
 			</div>
 		</div>
 	{/if}
 
-	<!-- Teammate status -->
-	<div style="position: absolute; top: 1rem; right: 1rem; display: flex; flex-direction: column; gap: 0.4rem;">
+	<!-- Teammate status — top right -->
+	<div style="position: absolute; top: 1.25rem; right: 1.25rem; display: flex; flex-direction: column; gap: 0.4rem;">
 		{#each teammates as p (p.id)}
-			<div style="background: rgba(0,0,0,0.6); padding: 0.4rem 0.8rem; border-radius: 8px; font-size: 0.8rem;
-			            color: {p.status === 'downed' ? '#f44' : p.status === 'eliminated' ? '#444' : '#ccc'};">
-				<span style="text-transform: capitalize;">{p.classChoice}</span>
-				{#if p.status === 'downed'}
-					<span style="color: #f44; margin-left: 0.4rem;">DOWNED</span>
-				{:else if p.status === 'eliminated'}
-					<span style="color: #444; margin-left: 0.4rem;">OUT</span>
-				{:else}
-					<span style="display: inline-block; width: 60px; height: 6px; background: #333; border-radius: 3px; margin-left: 0.4rem; vertical-align: middle;">
-						<span style="display: block; height: 100%; background: #e44; border-radius: 3px; width: {hpPercent(p.hp, p.maxHp)}%;"></span>
-					</span>
+			<div style="
+				background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.12);
+				padding: 0.5rem 0.75rem; border-radius: 0.5rem; font-size: 0.85rem;
+				color: {p.status === 'downed' ? '#f66' : p.status === 'eliminated' ? 'rgba(255,255,255,0.25)' : 'rgba(255,255,255,0.85)'};
+				backdrop-filter: blur(6px); min-width: 160px;
+			">
+				<div style="display: flex; align-items: center; gap: 0.5rem;">
+					<span style="text-transform: capitalize; font-weight: 500; flex: 1;">{p.classChoice}</span>
+					{#if p.status === 'downed'}
+						<span style="color: #f66; font-size: 0.75rem; font-weight: 700;">DOWNED</span>
+					{:else if p.status === 'eliminated'}
+						<span style="color: rgba(255,255,255,0.25); font-size: 0.75rem;">OUT</span>
+					{:else}
+						<span style="font-size: 0.75rem; color: rgba(255,255,255,0.5); font-weight: 500;">{Number(p.hp)}/{Number(p.maxHp)}</span>
+					{/if}
+				</div>
+				{#if p.status !== 'downed' && p.status !== 'eliminated'}
+					<div style="background: rgba(0,0,0,0.35); border-radius: 3px; height: 5px; margin-top: 0.35rem; overflow: hidden;">
+						<div style="height: 100%; background: #e44; border-radius: 3px; width: {hpPercent(p.hp, p.maxHp)}%; transition: width 0.2s;"></div>
+					</div>
 				{/if}
 			</div>
 		{/each}
@@ -217,10 +239,10 @@
 	<!-- Downed state overlay -->
 	{#if myState?.status === 'downed'}
 		<div style="position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
-		            background: rgba(0,0,0,0.5); pointer-events: none;">
-			<div style="text-align: center; color: #f44;">
-				<h2 style="font-size: 2rem; margin: 0;">YOU'RE DOWN</h2>
-				<p>Waiting for Healer... {downedSecondsLeft}s</p>
+		            background: rgba(0,0,0,0.55); pointer-events: none; backdrop-filter: blur(3px);">
+			<div style="text-align: center; color: white;">
+				<h2 style="font-size: 2.5rem; margin: 0 0 0.5rem; color: #f66; font-weight: 800; letter-spacing: 0.05em;">YOU'RE DOWN</h2>
+				<p style="font-size: 1.1rem; color: rgba(255,255,255,0.6); margin: 0;">Waiting for Healer... {downedSecondsLeft}s</p>
 			</div>
 		</div>
 	{/if}

@@ -201,19 +201,6 @@
 					depthWrite={false}
 				/>
 			</T.Mesh>
-			<!-- Quick burst -->
-			<T.Mesh
-				position={[0, 0.35, 0]}
-				scale={[0.4 + (1 - splatT) * 0.8, 0.4 + (1 - splatT) * 0.8, 0.4 + (1 - splatT) * 0.8]}
-			>
-				<T.SphereGeometry args={[0.2, 8, 6]} />
-				<T.MeshBasicMaterial
-					color="#7a1a1a"
-					transparent
-					opacity={0.45 * splatT}
-					depthWrite={false}
-				/>
-			</T.Mesh>
 			<!-- Shock ring -->
 			<T.Mesh
 				position={[0, -0.48, 0]}

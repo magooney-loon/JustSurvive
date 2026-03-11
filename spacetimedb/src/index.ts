@@ -1124,8 +1124,17 @@ export const spawn_enemy = spacetimedb.reducer(
 		const SPAWN_DISTANCE = 35_000n; // 35 units from player
 		const spread = Number((seedBase / 360n) % 10_000n) - 5000; // +-5 units random
 		const dist = Number(SPAWN_DISTANCE) + spread;
-		const spawnX = targetPlayer.posX + BigInt(Math.round(Math.sin(angleRad) * dist));
-		const spawnZ = targetPlayer.posZ + BigInt(Math.round(Math.cos(angleRad) * dist));
+		let spawnX = targetPlayer.posX + BigInt(Math.round(Math.sin(angleRad) * dist));
+		let spawnZ = targetPlayer.posZ + BigInt(Math.round(Math.cos(angleRad) * dist));
+
+		// Clamp spawn to within arena boundary (50 units = 50_000 in backend coords)
+		const ARENA_RADIUS_UNITS = 50_000n;
+		const spawnRSq = spawnX * spawnX + spawnZ * spawnZ;
+		if (spawnRSq > ARENA_RADIUS_UNITS * ARENA_RADIUS_UNITS) {
+			const spawnR = bigintSqrt(spawnRSq);
+			spawnX = (spawnX * ARENA_RADIUS_UNITS) / spawnR;
+			spawnZ = (spawnZ * ARENA_RADIUS_UNITS) / spawnR;
+		}
 
 		const baseMultiplier = 100n + session.cycleNumber * 5n;
 		const hpBonus = session.cycleNumber * ENEMY_HP_CYCLE_BONUS;
