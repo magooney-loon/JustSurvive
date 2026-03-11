@@ -917,9 +917,12 @@ export const enemy_tick = spacetimedb.reducer(
 					const moveAmount = (speed * TICK_MS) / 1000n;
 					const magnitude = bigintSqrt(chosenDist);
 					if (magnitude > 0n) {
-						const wobbleSeed = (now + enemy.id) % 1000n;
-						const wobble = Number(wobbleSeed) / 1000 - 0.5;
-						const wobbleScale = BigInt(Math.round(wobble * Number(moveAmount) * 0.25));
+						const tSec = Number(now % 10_000_000n) / 1_000_000;
+						const phase = Number(enemy.id % 1000n) / 1000;
+						const wobble =
+							Math.sin(tSec * 3.6 + phase * 6.28) + 0.5 * Math.sin(tSec * 7.2 + phase * 12.56);
+						const flankBoost = chosenDist > 100_000_000n ? 1.4 : 0.6;
+						const wobbleScale = BigInt(Math.round(wobble * Number(moveAmount) * 0.35 * flankBoost));
 						const perpX = -dz;
 						const perpZ = dx;
 						ctx.db.enemy.id.update({
@@ -966,9 +969,12 @@ export const enemy_tick = spacetimedb.reducer(
 				const moveAmount = (speed * TICK_MS) / 1000n;
 				const magnitude = bigintSqrt(chosenDist);
 				if (magnitude > 0n) {
-					const wobbleSeed = (now + enemy.id) % 1000n;
-					const wobble = Number(wobbleSeed) / 1000 - 0.5;
-					const wobbleScale = BigInt(Math.round(wobble * Number(moveAmount) * 0.25));
+					const tSec = Number(now % 10_000_000n) / 1_000_000;
+					const phase = Number(enemy.id % 1000n) / 1000;
+					const wobble =
+						Math.sin(tSec * 3.6 + phase * 6.28) + 0.5 * Math.sin(tSec * 7.2 + phase * 12.56);
+					const flankBoost = chosenDist > 100_000_000n ? 1.4 : 0.6;
+					const wobbleScale = BigInt(Math.round(wobble * Number(moveAmount) * 0.35 * flankBoost));
 					const perpX = -dz;
 					const perpZ = dx;
 					ctx.db.enemy.id.update({
