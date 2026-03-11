@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { T, useTask, useThrelte } from '@threlte/core';
+	import { useTask, useThrelte } from '@threlte/core';
 	import * as THREE from 'three';
 	import { useSpacetimeDB, useTable } from 'spacetimedb/svelte';
 	import { tables } from '../module_bindings/index.js';
@@ -20,6 +20,7 @@
 	import AcidPoolEntity from './AcidPoolEntity.svelte';
 	import MarkOverlay from './MarkOverlay.svelte';
 	import DayNightSky from './DayNightSky.svelte';
+	import GameGround from './GameGround.svelte';
 
 	const conn = useSpacetimeDB();
 	const [players] = useTable(tables.playerState);
@@ -226,11 +227,7 @@
 
 <DayNightSky {phase} />
 
-<!-- Ground plane -->
-<T.Mesh position={[0, -0.5, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-	<T.PlaneGeometry args={[120, 120]} />
-	<T.MeshStandardMaterial color="#1a3a10" />
-</T.Mesh>
+<GameGround />
 
 <!-- Local player (predicted position, rotated toward aim) -->
 {#if myState}

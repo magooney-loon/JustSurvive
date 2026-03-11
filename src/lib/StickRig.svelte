@@ -26,24 +26,24 @@
 	const limbR = $derived(classChoice === 'tank' ? 0.09 : classChoice === 'gunner' ? 0.075 : 0.065);
 
 	const moveIntensity = $derived(Math.min(speed / 6, 1));
-	const swing = $derived(Math.sin(walkPhase) * 1.1 * moveIntensity);
-	const bob = $derived(Math.abs(Math.sin(walkPhase)) * 0.07 * moveIntensity);
-	const sway = $derived(Math.sin(walkPhase * 0.5) * 0.18 * moveIntensity);
-	const hipShift = $derived(Math.sin(walkPhase) * 0.06 * moveIntensity);
-	const torsoTwist = $derived(Math.sin(walkPhase) * 0.18 * moveIntensity);
-	const headTilt = $derived(Math.sin(walkPhase * 0.5) * 0.12 * moveIntensity);
-	const footRoll = $derived(Math.sin(walkPhase + Math.PI / 2) * 0.3 * moveIntensity);
+	// sin computed once per frame, reused across all animation values
+	const sinWalk = $derived(Math.sin(walkPhase));
+	const sinHalf = $derived(Math.sin(walkPhase * 0.5));
+	const swing = $derived(sinWalk * 1.1 * moveIntensity);
+	const bob = $derived(Math.abs(sinWalk) * 0.07 * moveIntensity);
+	const sway = $derived(sinHalf * 0.18 * moveIntensity);
+	const hipShift = $derived(sinWalk * 0.06 * moveIntensity);
+	const torsoTwist = $derived(sinWalk * 0.18 * moveIntensity);
+	const headTilt = $derived(sinHalf * 0.12 * moveIntensity);
+	const footRoll = $derived(Math.cos(walkPhase) * 0.3 * moveIntensity);
 	const isSprinting = $derived(speed > 6);
 	const holdAim = $derived(!isEnemy && (classChoice === 'spotter' || classChoice === 'gunner'));
-	const armBop = $derived(isSprinting ? Math.sin(walkPhase) * 0.2 * moveIntensity : 0);
+	const armBop = $derived(isSprinting ? sinWalk * 0.2 * moveIntensity : 0);
 	const armPitch = $derived(holdAim ? armBop : 0);
 	const armForwardZ = $derived(holdAim ? -0.35 : 0);
 	const leanForward = $derived((isSprinting ? 0.22 : 0.08) * moveIntensity);
-	const idleShift = $derived(Math.sin(walkPhase * 0.5) * 0.02 * (1 - moveIntensity));
 	const boneTint = $derived(classChoice === 'spotter' ? '#d7ccb6' : '#d2c3a5');
 	const plateTint = $derived(classChoice === 'gunner' ? '#2b2620' : '#2f271f');
-	const lightFlicker = $derived(0.95 + 0.05 * Math.sin(walkPhase * 3.0 + 0.2));
-	const lightPulse = $derived(0.96 + 0.04 * Math.sin(walkPhase * 1.4 - 0.2));
 	const spotlightBoost = $derived(phase === 'deep_night' ? 2.2 : phase === 'night' ? 1.6 : 1);
 	const beamBoost = $derived(phase === 'deep_night' ? 1.9 : phase === 'night' ? 1.4 : 1);
 	const enemyGlow = $derived(isEnemy ? 0.18 : 1);
@@ -52,12 +52,9 @@
 	const leftArmRotX = $derived(holdAim ? armPitch : -swing * 0.8);
 	const rightArmRotX = $derived(holdAim ? -armPitch : swing * 0.8);
 
-	// Breathing (slower when moving)
-	const breathe = $derived(Math.sin(walkPhase * 0.35) * 0.013 * (1 - moveIntensity * 0.75));
-
 	// Knee bends: leg bends at knee when it swings forward, small passive bend at rest
-	const kneeBendL = $derived(0.07 + Math.max(0, Math.sin(walkPhase)) * 0.95 * moveIntensity);
-	const kneeBendR = $derived(0.07 + Math.max(0, -Math.sin(walkPhase)) * 0.95 * moveIntensity);
+	const kneeBendL = $derived(0.07 + Math.max(0, sinWalk) * 0.95 * moveIntensity);
+	const kneeBendR = $derived(0.07 + Math.max(0, -sinWalk) * 0.95 * moveIntensity);
 
 	// Tank shield: smooth lerp toward brace state
 	let braceT = $state(0);
@@ -65,14 +62,14 @@
 		const target = isBracing ? 1 : 0;
 		braceT += (target - braceT) * (1 - Math.pow(0.004, dt));
 	});
-	const shieldGlow = $derived(braceT * (0.85 + 0.15 * Math.sin(walkPhase * 2.5)));
+	const shieldGlow = $derived(braceT * 0.85);
 	const shieldGlowVis = $derived(shieldGlow * enemyGlow);
 	const shieldPosX = $derived(-0.22 * (1 - braceT));
 	const shieldPosY = $derived(0.88 + 0.12 * braceT);
 	const shieldPosZ = $derived(-0.42 - 0.18 * braceT);
 	const shieldS = $derived(0.58 + 0.42 * braceT);
 
-	// Class visor/goggle color
+	// Class visor/goggle color — constant glow (no per-frame oscillation)
 	const visorColor = $derived(
 		classChoice === 'spotter'
 			? '#22d4ff'
@@ -82,8 +79,8 @@
 					? '#66ff44'
 					: '#ff88cc'
 	);
-	const visorGlow = $derived((0.72 + 0.28 * Math.sin(walkPhase * 0.5 + 0.3)) * enemyGlow);
-	const emblemGlow = $derived((0.5 + 0.3 * Math.sin(walkPhase * 0.38)) * enemyGlow);
+	const visorGlow = $derived(0.75 * enemyGlow);
+	const emblemGlow = $derived(0.55 * enemyGlow);
 </script>
 
 <T.Group position={[hipShift, bob, 0]} rotation={[sway * 0.08, torsoTwist, sway * 0.12]}>
@@ -111,7 +108,7 @@
 		<T.SphereGeometry args={[0.12, 8, 6]} />
 		<T.MeshStandardMaterial {color} roughness={0.88} />
 	</T.Mesh>
-	<T.Mesh position={[idleShift, 0.78, 0]}>
+	<T.Mesh position={[0, 0.78, 0]}>
 		<T.CapsuleGeometry args={[0.16, 0.22, 6, 10]} />
 		<T.MeshStandardMaterial {color} roughness={0.88} />
 	</T.Mesh>
@@ -129,54 +126,54 @@
 	</T.Mesh>
 
 	<!-- SHOULDERS -->
-	<T.Mesh position={[0, 1.35 + breathe, 0]}>
+	<T.Mesh position={[0, 1.35, 0]}>
 		<T.SphereGeometry args={[0.1, 8, 6]} />
 		<T.MeshStandardMaterial {color} roughness={0.88} />
 	</T.Mesh>
-	<T.Mesh position={[-0.28, 1.34 + breathe, -0.02]}>
+	<T.Mesh position={[-0.28, 1.34, -0.02]}>
 		<T.CapsuleGeometry args={[0.068, 0.22, 4, 8]} />
 		<T.MeshStandardMaterial color={plateTint} roughness={0.35} metalness={0.35} />
 	</T.Mesh>
-	<T.Mesh position={[0.28, 1.34 + breathe, -0.02]}>
+	<T.Mesh position={[0.28, 1.34, -0.02]}>
 		<T.CapsuleGeometry args={[0.068, 0.22, 4, 8]} />
 		<T.MeshStandardMaterial color={plateTint} roughness={0.35} metalness={0.35} />
 	</T.Mesh>
-	<T.Mesh position={[-0.36, 1.32 + breathe, 0.02]} rotation={[0, 0, 0.3]}>
+	<T.Mesh position={[-0.36, 1.32, 0.02]} rotation={[0, 0, 0.3]}>
 		<T.BoxGeometry args={[0.15, 0.09, 0.17]} />
 		<T.MeshStandardMaterial color={plateTint} roughness={0.35} metalness={0.35} />
 	</T.Mesh>
-	<T.Mesh position={[0.36, 1.32 + breathe, 0.02]} rotation={[0, 0, -0.3]}>
+	<T.Mesh position={[0.36, 1.32, 0.02]} rotation={[0, 0, -0.3]}>
 		<T.BoxGeometry args={[0.15, 0.09, 0.17]} />
 		<T.MeshStandardMaterial color={plateTint} roughness={0.35} metalness={0.35} />
 	</T.Mesh>
 
 	<!-- RIBCAGE / CHEST (breathes) -->
-	<T.Mesh position={[0, 1.25 + breathe * 1.5, -leanForward * 0.4]}>
+	<T.Mesh position={[0, 1.25, -leanForward * 0.4]}>
 		<T.CapsuleGeometry args={[0.18, 0.3, 6, 10]} />
 		<T.MeshStandardMaterial {color} roughness={0.88} />
 	</T.Mesh>
-	<T.Mesh position={[-0.27, 1.25 + breathe, -leanForward * 0.35]}>
+	<T.Mesh position={[-0.27, 1.25, -leanForward * 0.35]}>
 		<T.CapsuleGeometry args={[0.062, 0.25, 4, 8]} />
 		<T.MeshStandardMaterial color={plateTint} roughness={0.35} metalness={0.35} />
 	</T.Mesh>
-	<T.Mesh position={[0.27, 1.25 + breathe, -leanForward * 0.35]}>
+	<T.Mesh position={[0.27, 1.25, -leanForward * 0.35]}>
 		<T.CapsuleGeometry args={[0.062, 0.25, 4, 8]} />
 		<T.MeshStandardMaterial color={plateTint} roughness={0.35} metalness={0.35} />
 	</T.Mesh>
 	<!-- Sternum plate -->
-	<T.Mesh position={[0, 1.16 + breathe, -leanForward * 0.3]}>
+	<T.Mesh position={[0, 1.16, -leanForward * 0.3]}>
 		<T.CylinderGeometry args={[0.2, 0.22, 0.15, 6]} />
 		<T.MeshStandardMaterial color={plateTint} roughness={0.35} metalness={0.35} />
 	</T.Mesh>
 	<!-- Class emblem glow on chest -->
-	<T.Mesh position={[0, 1.27 + breathe, -leanForward * 0.38 - 0.17]} rotation={[0, Math.PI, 0]}>
+	<T.Mesh position={[0, 1.27, -leanForward * 0.38 - 0.17]} rotation={[0, Math.PI, 0]}>
 		<T.CircleGeometry args={[0.052, 8]} />
 		<T.MeshBasicMaterial color={visorColor} transparent opacity={emblemGlow} />
 	</T.Mesh>
 
 	<!-- HEAD GROUP — all parts share one rotation so we only compute it once -->
 	<T.Group
-		position={[0, 1.63 + breathe * 0.5, -leanForward * 0.75]}
+		position={[0, 1.63, -leanForward * 0.75]}
 		rotation={[headTilt + leanForward * 0.4, 0, 0]}
 	>
 		<!-- Skull base -->
@@ -404,7 +401,7 @@
 			<T.SpotLight
 				position={[0, 0, -0.2]}
 				color="#fff2c6"
-				intensity={6.0 * lightPulse * spotlightBoost}
+				intensity={6.0 * spotlightBoost}
 				distance={20}
 				angle={0.22}
 				penumbra={0.35}
@@ -419,7 +416,7 @@
 				<T.MeshStandardMaterial
 					color="#ffeeaa"
 					emissive="#ffeeaa"
-					emissiveIntensity={3.2 * lightFlicker}
+					emissiveIntensity={3.2}
 				/>
 			</T.Mesh>
 			<!-- Near-source glow sphere (very transparent) -->
@@ -428,7 +425,7 @@
 				<T.MeshBasicMaterial
 					color="#fff8e0"
 					transparent
-					opacity={0.02 * lightFlicker * beamBoost}
+					opacity={0.02 * beamBoost}
 					side={2}
 					depthWrite={false}
 					blending={AdditiveBlending}
@@ -440,7 +437,7 @@
 				<T.MeshBasicMaterial
 					color="#fffcf4"
 					transparent
-					opacity={0.5 * lightFlicker}
+					opacity={0.5}
 					blending={AdditiveBlending}
 					depthWrite={false}
 				/>
@@ -451,7 +448,7 @@
 				<T.MeshBasicMaterial
 					color="#fff4cc"
 					transparent
-					opacity={0.12 * lightFlicker}
+					opacity={0.12}
 					blending={AdditiveBlending}
 					depthWrite={false}
 				/>
@@ -462,7 +459,7 @@
 				<T.MeshBasicMaterial
 					color="#ffe890"
 					transparent
-					opacity={0.025 * lightFlicker}
+					opacity={0.025}
 					blending={AdditiveBlending}
 					depthWrite={false}
 				/>
@@ -473,7 +470,7 @@
 				<T.MeshBasicMaterial
 					color="#fff8e8"
 					transparent
-					opacity={0.006 * lightPulse * beamBoost}
+					opacity={0.006 * beamBoost}
 					side={2}
 					depthWrite={false}
 					blending={AdditiveBlending}
@@ -485,7 +482,7 @@
 				<T.MeshBasicMaterial
 					color="#fffefc"
 					transparent
-					opacity={0.014 * lightPulse * beamBoost}
+					opacity={0.014 * beamBoost}
 					side={2}
 					depthWrite={false}
 					blending={AdditiveBlending}

@@ -1,3 +1,5 @@
+import { ARENA_PLAY_RADIUS } from './lib/arenaConfig.js';
+
 export type InputState = {
 	forward: boolean;
 	back: boolean;
@@ -112,4 +114,20 @@ export function updateLocalMovement(
 	localPos.z += worldZ * speed * dt;
 	localVelocity.x = worldX * speed;
 	localVelocity.z = worldZ * speed;
+
+	// Clamp to arena boundary
+	const rSq = localPos.x * localPos.x + localPos.z * localPos.z;
+	if (rSq > ARENA_PLAY_RADIUS * ARENA_PLAY_RADIUS) {
+		const r = Math.sqrt(rSq);
+		localPos.x = (localPos.x / r) * ARENA_PLAY_RADIUS;
+		localPos.z = (localPos.z / r) * ARENA_PLAY_RADIUS;
+		// Cancel outward velocity component so the player doesn't slide along the wall
+		const nx = localPos.x / ARENA_PLAY_RADIUS;
+		const nz = localPos.z / ARENA_PLAY_RADIUS;
+		const dot = localVelocity.x * nx + localVelocity.z * nz;
+		if (dot > 0) {
+			localVelocity.x -= dot * nx;
+			localVelocity.z -= dot * nz;
+		}
+	}
 }
