@@ -6,6 +6,7 @@
 	import { gameState, gameActions } from '../game.svelte.js';
 	import {
 		localPos,
+		localVelocity,
 		input,
 		updateLocalMovement,
 		resetLocalState,
@@ -170,6 +171,7 @@
 		overridePos={{ x: localPos.x, y: localPos.y, z: localPos.z }}
 		overrideFacing={aimAngle}
 		overrideAim={{ x: localAim.x, z: localAim.z }}
+		overrideVel={{ x: localVelocity.x, z: localVelocity.z }}
 	/>
 {/if}
 
