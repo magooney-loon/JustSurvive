@@ -174,6 +174,13 @@
 						>Settings</button
 					>
 				</div>
+				<a
+					href="https://github.com/magooney-loon/JustSurvive"
+					target="_blank"
+					rel="noopener noreferrer"
+					style="padding: 0.5rem; background: rgba(255,255,255,0.07); color: rgba(255,255,255,0.6); border: 1px solid rgba(255,255,255,0.15); border-radius: 0.5rem; cursor: pointer; text-align: center; text-decoration: none; font-size: 0.8rem;"
+					>Source Code</a
+				>
 			{:else}
 				<input
 					type="text"

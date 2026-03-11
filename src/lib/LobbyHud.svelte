@@ -155,6 +155,47 @@
 						</button>
 					{/each}
 				</div>
+
+				{#if myEntry?.classChoice}
+					<div
+						style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 0.5rem; padding: 0.75rem; margin-bottom: 1rem;"
+					>
+						<p
+							style="margin: 0 0 0.5rem; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.08em; opacity: 0.6;"
+						>
+							{myEntry.classChoice} Abilities
+						</p>
+						{#if myEntry.classChoice === 'spotter'}
+							<p style="margin: 0 0 0.25rem; font-size: 0.8rem;">
+								<span style="opacity: 0.7;">LMB:</span> Mark enemy (5s cooldown)
+							</p>
+							<p style="margin: 0; font-size: 0.8rem;">
+								<span style="opacity: 0.7;">RMB:</span> Ping location
+							</p>
+						{:else if myEntry.classChoice === 'gunner'}
+							<p style="margin: 0 0 0.25rem; font-size: 0.8rem;">
+								<span style="opacity: 0.7;">LMB:</span> Shoot enemy
+							</p>
+							<p style="margin: 0; font-size: 0.8rem;">
+								<span style="opacity: 0.7;">Every 3rd shot:</span> Suppresses enemy
+							</p>
+						{:else if myEntry.classChoice === 'tank'}
+							<p style="margin: 0 0 0.25rem; font-size: 0.8rem;">
+								<span style="opacity: 0.7;">LMB:</span> Shield bash (1.5s cooldown)
+							</p>
+							<p style="margin: 0; font-size: 0.8rem;">
+								<span style="opacity: 0.7;">RMB hold:</span> Brace (5s, reduces damage)
+							</p>
+						{:else if myEntry.classChoice === 'healer'}
+							<p style="margin: 0 0 0.25rem; font-size: 0.8rem;">
+								<span style="opacity: 0.7;">LMB:</span> Heal teammate (2s cooldown)
+							</p>
+							<p style="margin: 0; font-size: 0.8rem;">
+								<span style="opacity: 0.7;">RMB:</span> Revive downed teammate
+							</p>
+						{/if}
+					</div>
+				{/if}
 			</div>
 
 			<!-- Ready toggle -->
@@ -220,6 +261,30 @@
 			>
 				Leave Lobby
 			</button>
+
+			<div
+				style="margin-top: 0.75rem; padding-top: 0.75rem; border-top: 1px solid rgba(255,255,255,0.1);"
+			>
+				<p
+					style="margin: 0 0 0.35rem; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.08em; opacity: 0.5; text-align: center;"
+				>
+					Controls
+				</p>
+				<div style="display: flex; flex-wrap: wrap; gap: 0.35rem; justify-content: center;">
+					<span
+						style="font-size: 0.65rem; padding: 0.2rem 0.4rem; background: rgba(255,255,255,0.1); border-radius: 0.25rem;"
+						>WASD - Move</span
+					>
+					<span
+						style="font-size: 0.65rem; padding: 0.2rem 0.4rem; background: rgba(255,255,255,0.1); border-radius: 0.25rem;"
+						>Shift - Sprint</span
+					>
+					<span
+						style="font-size: 0.65rem; padding: 0.2rem 0.4rem; background: rgba(255,255,255,0.1); border-radius: 0.25rem;"
+						>Mouse - Aim</span
+					>
+				</div>
+			</div>
 
 			{#if gameState.error}
 				<p style="color: #f66; margin: 0.75rem 0 0; font-size: 0.875rem;">{gameState.error}</p>
