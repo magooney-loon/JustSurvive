@@ -126,6 +126,14 @@ export const gameActions = {
 		if (!conn) return;
 		conn.reducers.movePlayer(args);
 	},
+	async resetLobby(lobbyId: bigint) {
+		if (!conn) return;
+		try {
+			await conn.reducers.resetLobby({ lobbyId });
+		} catch (e) {
+			setError(e);
+		}
+	},
 	clearError() {
 		gameState.error = null;
 	},

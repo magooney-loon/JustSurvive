@@ -368,6 +368,21 @@ export const leave_lobby = spacetimedb.reducer({
   ctx.db.lobby.id.update({ ...lobby, playerCount: newCount, hostIdentity: newHost });
 });
 
+export const reset_lobby = spacetimedb.reducer({
+  lobbyId: t.u64(),
+}, (ctx, { lobbyId }) => {
+  const lobby = ctx.db.lobby.id.find(lobbyId);
+  if (!lobby) throw new SenderError('Lobby not found');
+  if (!lobby.hostIdentity.isEqual(ctx.sender)) throw new SenderError('Only host can reset');
+  if (lobby.status !== 'game_over') throw new SenderError('Game not over yet');
+
+  ctx.db.lobby.id.update({ ...lobby, status: 'waiting' });
+
+  for (const p of ctx.db.lobbyPlayer.lobby_player_lobby_id.filter(lobbyId)) {
+    ctx.db.lobbyPlayer.id.update({ ...p, isReady: false });
+  }
+});
+
 export const start_countdown = spacetimedb.reducer({
   lobbyId: t.u64(),
 }, (ctx, { lobbyId }) => {
