@@ -65,7 +65,8 @@
 	const downedTilt = $derived(dead ? -Math.PI / 2 : 0);
 	const downedYOffset = $derived(dead ? -0.35 : 0);
 	const splatAge = $derived(dead ? nowMs - (deathAt ?? nowMs) : 0);
-	const splatT = $derived(dead ? Math.max(0, 1 - splatAge / 1800) : 0);
+	const splatT = $derived(dead ? Math.max(0, 1 - splatAge / 2200) : 0);
+	const splatGrow = $derived(dead ? Math.min(1, splatAge / 350) : 0);
 	const expired = $derived(dead && splatAge >= DEAD_PERSIST_MS);
 </script>
 
@@ -137,12 +138,70 @@ s{#if !expired}
 
 		{#if dead && splatT > 0}
 			<!-- Blood splatter -->
-			<T.Mesh position={[0, -0.49, 0]} rotation={[-Math.PI / 2, 0, 0]} scale={[1.2, 1.2, 1]}>
-				<T.CircleGeometry args={[0.45 + (1 - splatT) * 0.5, 16]} />
+			<T.Mesh
+				position={[0, -0.49, 0]}
+				rotation={[-Math.PI / 2, 0, 0]}
+				scale={[1.1 + splatGrow * 0.6, 1.1 + splatGrow * 0.6, 1]}
+			>
+				<T.CircleGeometry args={[0.45 + (1 - splatT) * 0.55, 16]} />
 				<T.MeshBasicMaterial
-					color="#551111"
+					color="#4a0f0f"
 					transparent
-					opacity={0.6 * splatT}
+					opacity={0.7 * splatT}
+					depthWrite={false}
+				/>
+			</T.Mesh>
+			<!-- Darker edge puddle -->
+			<T.Mesh
+				position={[0.05, -0.491, -0.08]}
+				rotation={[-Math.PI / 2, 0.2, 0]}
+				scale={[1.2 + splatGrow * 0.7, 1.0 + splatGrow * 0.5, 1]}
+			>
+				<T.RingGeometry args={[0.35, 0.85, 18]} />
+				<T.MeshBasicMaterial
+					color="#2b0606"
+					transparent
+					opacity={0.35 * splatT}
+					depthWrite={false}
+				/>
+			</T.Mesh>
+			<!-- Splash droplets -->
+			<T.Mesh
+				position={[-0.35, -0.485, 0.15]}
+				rotation={[-Math.PI / 2, 0, 0]}
+				scale={[0.35, 0.25, 1]}
+			>
+				<T.CircleGeometry args={[0.25, 12]} />
+				<T.MeshBasicMaterial
+					color="#4a0f0f"
+					transparent
+					opacity={0.45 * splatT}
+					depthWrite={false}
+				/>
+			</T.Mesh>
+			<T.Mesh
+				position={[0.32, -0.485, -0.22]}
+				rotation={[-Math.PI / 2, 0, 0]}
+				scale={[0.28, 0.22, 1]}
+			>
+				<T.CircleGeometry args={[0.22, 12]} />
+				<T.MeshBasicMaterial
+					color="#4a0f0f"
+					transparent
+					opacity={0.4 * splatT}
+					depthWrite={false}
+				/>
+			</T.Mesh>
+			<T.Mesh
+				position={[0.18, -0.485, 0.32]}
+				rotation={[-Math.PI / 2, 0, 0]}
+				scale={[0.22, 0.18, 1]}
+			>
+				<T.CircleGeometry args={[0.18, 12]} />
+				<T.MeshBasicMaterial
+					color="#3b0b0b"
+					transparent
+					opacity={0.35 * splatT}
 					depthWrite={false}
 				/>
 			</T.Mesh>
@@ -155,7 +214,21 @@ s{#if !expired}
 				<T.MeshBasicMaterial
 					color="#7a1a1a"
 					transparent
-					opacity={0.35 * splatT}
+					opacity={0.45 * splatT}
+					depthWrite={false}
+				/>
+			</T.Mesh>
+			<!-- Shock ring -->
+			<T.Mesh
+				position={[0, -0.48, 0]}
+				rotation={[-Math.PI / 2, 0, 0]}
+				scale={[1 + splatGrow * 1.2, 1 + splatGrow * 1.2, 1]}
+			>
+				<T.RingGeometry args={[0.25, 0.55, 16]} />
+				<T.MeshBasicMaterial
+					color="#aa2222"
+					transparent
+					opacity={0.25 * splatT}
 					depthWrite={false}
 				/>
 			</T.Mesh>
