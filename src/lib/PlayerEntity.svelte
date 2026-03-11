@@ -49,6 +49,9 @@
 	const facing = $derived(overrideFacing ?? Number(player.facingAngle) / 1000);
 	const aimX = $derived(overrideAim?.x ?? displayX + -Math.sin(facing) * aimRange);
 	const aimZ = $derived(overrideAim?.z ?? displayZ + -Math.cos(facing) * aimRange);
+	const isDowned = $derived(player.status === 'downed');
+	const downedTilt = $derived(isDowned ? -Math.PI / 2 : 0);
+	const downedYOffset = $derived(isDowned ? -0.35 : 0);
 
 	let shotPulse = $state(0);
 	let walkPhase = $state(0);
@@ -93,13 +96,16 @@
 </script>
 
 {#if player.status !== 'eliminated'}
-	<T.Group position={[displayX, displayY, displayZ]} rotation={[0, facing, 0]}>
+	<T.Group
+		position={[displayX, displayY + downedYOffset, displayZ]}
+		rotation={[downedTilt, facing, 0]}
+	>
 		<StickRig
 			classChoice={player.classChoice}
 			color={CLASS_COLORS[player.classChoice] ?? '#fff'}
-			walkPhase={walkPhase}
-			speed={speed}
-			shotPulse={shotPulse}
+			{walkPhase}
+			{speed}
+			{shotPulse}
 		/>
 	</T.Group>
 	<AimReticle x={aimX} z={aimZ} color={CLASS_COLORS[player.classChoice] ?? '#fff'} />

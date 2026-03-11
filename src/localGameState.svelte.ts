@@ -16,6 +16,14 @@ const input = $state<InputState>({
 const localPos = $state({ x: 0, y: 0, z: 0 });
 const localVelocity = $state({ x: 0, z: 0 });
 export const localAim = $state({ x: 0, z: 0 });
+export const cameraFollow = $state({
+	active: false,
+	x: 0,
+	y: 0,
+	z: 0,
+	aimX: 0,
+	aimZ: 0
+});
 
 export { input, localPos, localVelocity };
 
@@ -30,6 +38,12 @@ export function resetLocalState() {
 	localPos.z = 0;
 	localVelocity.x = 0;
 	localVelocity.z = 0;
+	cameraFollow.active = false;
+	cameraFollow.x = 0;
+	cameraFollow.y = 0;
+	cameraFollow.z = 0;
+	cameraFollow.aimX = 0;
+	cameraFollow.aimZ = 0;
 }
 
 const CLASS_SPEED: Record<string, { walk: number; sprint: number }> = {

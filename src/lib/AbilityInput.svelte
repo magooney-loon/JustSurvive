@@ -130,13 +130,27 @@
 	function onMouseDown(e: MouseEvent) {
 		if (!myState || myState.status !== 'alive') return;
 		const sid = gameState.currentSessionId;
-		if (!sid || e.button !== 0) return;
+		if (!sid) return;
 
 		if (myState.classChoice === 'spotter') {
+			if (e.button === 2) {
+				// RMB: ping location
+				gameActions.pingLocation(
+					sid,
+					BigInt(Math.round(localAim.x * 1000)),
+					BigInt(Math.round(localAim.z * 1000))
+				);
+				return;
+			}
+			if (e.button !== 0) return;
 			// LMB: mark nearest enemy to aim
 			const enemy = nearestEnemyToAim(15_000);
 			if (enemy) gameActions.markEnemy(sid, enemy.id);
-		} else if (myState.classChoice === 'gunner' || myState.classChoice === 'healer') {
+			return;
+		}
+
+		if (e.button !== 0) return;
+		if (myState.classChoice === 'gunner' || myState.classChoice === 'healer') {
 			const enemy = nearestEnemyToAim(10_000);
 			if (!enemy) return;
 			// Track suppression: suppress every 3rd hit on same enemy
@@ -150,6 +164,17 @@
 			gameActions.attackEnemy(sid, enemy.id, suppress);
 		}
 	}
+
+	function onContextMenu(e: MouseEvent) {
+		if (myState?.classChoice === 'spotter') {
+			e.preventDefault();
+		}
+	}
 </script>
 
-<svelte:window onkeydown={onKeyDown} onkeyup={onKeyUp} onmousedown={onMouseDown} />
+<svelte:window
+	onkeydown={onKeyDown}
+	onkeyup={onKeyUp}
+	onmousedown={onMouseDown}
+	oncontextmenu={onContextMenu}
+/>

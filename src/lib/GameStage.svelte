@@ -10,7 +10,8 @@
 		input,
 		updateLocalMovement,
 		resetLocalState,
-		localAim
+		localAim,
+		cameraFollow
 	} from '../localGameState.svelte.js';
 	import { onMount } from 'svelte';
 	import PlayerEntity from './PlayerEntity.svelte';
@@ -44,6 +45,9 @@
 		$enemies.filter((e) => e.sessionId === gameState.currentSessionId && e.isAlive)
 	);
 	const livePools = $derived($acidPools.filter((p) => p.sessionId === gameState.currentSessionId));
+	const alivePlayers = $derived(
+		$players.filter((p) => p.sessionId === gameState.currentSessionId && p.status === 'alive')
+	);
 
 	const CLASS_RANGE: Record<string, number> = {
 		spotter: 15,
@@ -66,6 +70,14 @@
 	let hasMouse = false;
 	const lastAimDir = new THREE.Vector2(0, -1);
 	const targetAimDir = new THREE.Vector2(0, -1);
+	let spectateIndex = $state(0);
+
+	function onMouseDownSpectate(e: MouseEvent) {
+		if (!myState || myState.status !== 'eliminated') return;
+		if (e.button !== 0) return;
+		if (alivePlayers.length === 0) return;
+		spectateIndex = (spectateIndex + 1) % alivePlayers.length;
+	}
 
 	function onMouseMove(e: MouseEvent) {
 		const canvas = renderer.domElement;
@@ -106,6 +118,27 @@
 	const SEND_INTERVAL = 1 / 60;
 
 	useTask((dt) => {
+		if (myState?.status === 'eliminated') {
+			if (alivePlayers.length > 0) {
+				if (spectateIndex >= alivePlayers.length) spectateIndex = 0;
+				const target = alivePlayers[spectateIndex];
+				const tx = Number(target.posX) / 1000;
+				const ty = Number(target.posY) / 1000;
+				const tz = Number(target.posZ) / 1000;
+				const facing = Number(target.facingAngle) / 1000;
+				cameraFollow.active = true;
+				cameraFollow.x = tx;
+				cameraFollow.y = ty;
+				cameraFollow.z = tz;
+				cameraFollow.aimX = tx + -Math.sin(facing);
+				cameraFollow.aimZ = tz + -Math.cos(facing);
+			} else {
+				cameraFollow.active = false;
+			}
+			return;
+		}
+
+		cameraFollow.active = false;
 		if (!myState || myState.status !== 'alive') return;
 
 		if (hasMouse) {
@@ -153,7 +186,7 @@
 	});
 </script>
 
-<svelte:window onmousemove={onMouseMove} />
+<svelte:window onmousemove={onMouseMove} onmousedown={onMouseDownSpectate} />
 
 <DayNightSky phase={session?.dayPhase ?? 'sunset'} />
 
