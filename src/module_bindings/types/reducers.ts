@@ -6,21 +6,39 @@
 import { type Infer as __Infer } from "spacetimedb";
 
 // Import all reducer arg schemas
+import AttackEnemyReducer from "../attack_enemy_reducer";
+import BraceEndReducer from "../brace_end_reducer";
+import BraceStartReducer from "../brace_start_reducer";
+import ClearDebrisReducer from "../clear_debris_reducer";
 import CreateLobbyReducer from "../create_lobby_reducer";
 import JoinByCodeReducer from "../join_by_code_reducer";
 import JoinLobbyReducer from "../join_lobby_reducer";
 import LeaveLobbyReducer from "../leave_lobby_reducer";
+import MarkEnemyReducer from "../mark_enemy_reducer";
 import MovePlayerReducer from "../move_player_reducer";
+import PickupItemReducer from "../pickup_item_reducer";
+import PingLocationReducer from "../ping_location_reducer";
+import ReviveStartReducer from "../revive_start_reducer";
 import SetClassReducer from "../set_class_reducer";
 import SetReadyReducer from "../set_ready_reducer";
+import ShieldBashReducer from "../shield_bash_reducer";
 import StartCountdownReducer from "../start_countdown_reducer";
 
+export type AttackEnemyParams = __Infer<typeof AttackEnemyReducer>;
+export type BraceEndParams = __Infer<typeof BraceEndReducer>;
+export type BraceStartParams = __Infer<typeof BraceStartReducer>;
+export type ClearDebrisParams = __Infer<typeof ClearDebrisReducer>;
 export type CreateLobbyParams = __Infer<typeof CreateLobbyReducer>;
 export type JoinByCodeParams = __Infer<typeof JoinByCodeReducer>;
 export type JoinLobbyParams = __Infer<typeof JoinLobbyReducer>;
 export type LeaveLobbyParams = __Infer<typeof LeaveLobbyReducer>;
+export type MarkEnemyParams = __Infer<typeof MarkEnemyReducer>;
 export type MovePlayerParams = __Infer<typeof MovePlayerReducer>;
+export type PickupItemParams = __Infer<typeof PickupItemReducer>;
+export type PingLocationParams = __Infer<typeof PingLocationReducer>;
+export type ReviveStartParams = __Infer<typeof ReviveStartReducer>;
 export type SetClassParams = __Infer<typeof SetClassReducer>;
 export type SetReadyParams = __Infer<typeof SetReadyReducer>;
+export type ShieldBashParams = __Infer<typeof ShieldBashReducer>;
 export type StartCountdownParams = __Infer<typeof StartCountdownReducer>;
 

@@ -24,4 +24,11 @@ export default __t.row({
   posZ: __t.i64().name("pos_z"),
   status: __t.string(),
   score: __t.u64(),
+  isBracing: __t.bool().name("is_bracing"),
+  armorBonus: __t.u64().name("armor_bonus"),
+  speedBoostUntil: __t.option(__t.timestamp()).name("speed_boost_until"),
+  staminaBoostUntil: __t.option(__t.timestamp()).name("stamina_boost_until"),
+  reviveCooldownUntil: __t.option(__t.timestamp()).name("revive_cooldown_until"),
+  pingCooldownUntil: __t.option(__t.timestamp()).name("ping_cooldown_until"),
+  hasFlare: __t.bool().name("has_flare"),
 });

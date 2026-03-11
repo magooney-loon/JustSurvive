@@ -15,7 +15,7 @@ const Lobby = table({
   hostIdentity: t.identity(),
   code: t.string(),
   isPublic: t.bool(),
-  status: t.string(),           // 'waiting' | 'countdown' | 'in_progress' | 'game_over'
+  status: t.string(),
   playerCount: t.u64(),
   maxPlayers: t.u64(),
   createdAt: t.timestamp(),
@@ -33,7 +33,7 @@ const LobbyPlayer = table({
   lobbyId: t.u64(),
   playerIdentity: t.identity(),
   playerName: t.string(),
-  classChoice: t.string(),      // 'spotter' | 'gunner' | 'tank' | 'healer' | '' (unselected)
+  classChoice: t.string(),
   isReady: t.bool(),
   joinedAt: t.timestamp(),
 });
@@ -47,10 +47,10 @@ const GameSession = table({
 }, {
   id: t.u64().primaryKey().autoInc(),
   lobbyId: t.u64(),
-  status: t.string(),           // 'active' | 'finished'
+  status: t.string(),
   startedAt: t.timestamp(),
   endedAt: t.timestamp().optional(),
-  dayPhase: t.string(),         // 'sunset' | 'dusk' | 'twilight' | 'night' | 'deep_night'
+  dayPhase: t.string(),
   cycleNumber: t.u64(),
   phaseStartedAt: t.timestamp(),
   fogActive: t.bool(),
@@ -73,11 +73,19 @@ const PlayerState = table({
   maxHp: t.u64(),
   stamina: t.u64(),
   maxStamina: t.u64(),
-  posX: t.i64(),                // fixed-point: value * 0.001 = world units
+  posX: t.i64(),
   posY: t.i64(),
   posZ: t.i64(),
-  status: t.string(),           // 'alive' | 'downed' | 'eliminated'
+  status: t.string(),
   score: t.u64(),
+  // Phase 4
+  isBracing: t.bool(),
+  armorBonus: t.u64(),
+  speedBoostUntil: t.timestamp().optional(),
+  staminaBoostUntil: t.timestamp().optional(),
+  reviveCooldownUntil: t.timestamp().optional(),
+  pingCooldownUntil: t.timestamp().optional(),
+  hasFlare: t.bool(),
 });
 
 const Enemy = table({
@@ -89,18 +97,20 @@ const Enemy = table({
 }, {
   id: t.u64().primaryKey().autoInc(),
   sessionId: t.u64(),
-  enemyType: t.string(),        // 'basic' | 'fast' | 'brute' | 'spitter'
+  enemyType: t.string(),
   hp: t.u64(),
   maxHp: t.u64(),
   posX: t.i64(),
   posZ: t.i64(),
-  speedMultiplier: t.u64(),     // fixed-point: 100 = 1.0x, 110 = 1.1x
+  speedMultiplier: t.u64(),
   isDazed: t.bool(),
   dazedUntil: t.timestamp().optional(),
   isAlive: t.bool(),
+  // Phase 4
+  isMarked: t.bool(),
+  markedUntil: t.timestamp().optional(),
 });
 
-// LobbyCountdown is defined before fire_start_game but references it lazily
 const LobbyCountdown = table({
   name: 'lobby_countdown',
   scheduled: (): any => fire_start_game,
@@ -110,7 +120,6 @@ const LobbyCountdown = table({
   lobbyId: t.u64(),
 });
 
-// Scheduled: enemy tick (movement + damage)
 const EnemyTickJob = table({
   name: 'enemy_tick_job',
   scheduled: (): any => enemy_tick,
@@ -120,7 +129,6 @@ const EnemyTickJob = table({
   sessionId: t.u64(),
 });
 
-// Scheduled: spawn a new enemy
 const EnemySpawnJob = table({
   name: 'enemy_spawn_job',
   scheduled: (): any => spawn_enemy,
@@ -130,7 +138,6 @@ const EnemySpawnJob = table({
   sessionId: t.u64(),
 });
 
-// Scheduled: advance day/night phase
 const DayPhaseJob = table({
   name: 'day_phase_job',
   scheduled: (): any => advance_day_phase,
@@ -140,7 +147,6 @@ const DayPhaseJob = table({
   sessionId: t.u64(),
 });
 
-// Scheduled: eliminate a downed player after 30s
 const EliminateJob = table({
   name: 'eliminate_job',
   scheduled: (): any => eliminate_downed,
@@ -151,6 +157,91 @@ const EliminateJob = table({
   scheduledId: t.u64().primaryKey().autoInc(),
   scheduledAt: t.scheduleAt(),
   sessionId: t.u64(),
+  targetIdentity: t.identity(),
+});
+
+// ─── Phase 4 Tables ──────────────────────────────────────────────────────────
+
+const Mark = table({
+  name: 'mark',
+  public: true,
+  indexes: [
+    { name: 'mark_session_id', accessor: 'mark_session_id', algorithm: 'btree', columns: ['sessionId'] },
+  ],
+}, {
+  id: t.u64().primaryKey().autoInc(),
+  sessionId: t.u64(),
+  sourceIdentity: t.identity(),
+  targetType: t.string(),        // 'enemy' | 'location'
+  targetEnemyId: t.u64().optional(),
+  posX: t.i64().optional(),
+  posZ: t.i64().optional(),
+  expiresAt: t.timestamp(),
+});
+
+const AcidPool = table({
+  name: 'acid_pool',
+  public: true,
+  indexes: [
+    { name: 'acid_pool_session_id', accessor: 'acid_pool_session_id', algorithm: 'btree', columns: ['sessionId'] },
+  ],
+}, {
+  id: t.u64().primaryKey().autoInc(),
+  sessionId: t.u64(),
+  posX: t.i64(),
+  posZ: t.i64(),
+  radius: t.u64(),               // fixed-point: 2000 = 2 world units
+  expiresAt: t.timestamp(),
+});
+
+const ItemSpawn = table({
+  name: 'item_spawn',
+  public: true,
+  indexes: [
+    { name: 'item_spawn_session_id', accessor: 'item_spawn_session_id', algorithm: 'btree', columns: ['sessionId'] },
+  ],
+}, {
+  id: t.u64().primaryKey().autoInc(),
+  sessionId: t.u64(),
+  itemType: t.string(),          // 'energy_drink'|'stamina_boost'|'medkit'|'armor_plate'|'flare'
+  posX: t.i64(),
+  posZ: t.i64(),
+});
+
+const ItemSpawnJob = table({
+  name: 'item_spawn_job',
+  scheduled: (): any => spawn_item,
+}, {
+  scheduledId: t.u64().primaryKey().autoInc(),
+  scheduledAt: t.scheduleAt(),
+  sessionId: t.u64(),
+});
+
+const ReviveChannel = table({
+  name: 'revive_channel',
+  public: true,
+  indexes: [
+    { name: 'revive_channel_session_id', accessor: 'revive_channel_session_id', algorithm: 'btree', columns: ['sessionId'] },
+  ],
+}, {
+  id: t.u64().primaryKey().autoInc(),
+  sessionId: t.u64(),
+  healerIdentity: t.identity(),
+  targetIdentity: t.identity(),
+  channelStartedAt: t.timestamp(),
+});
+
+const ReviveCompleteJob = table({
+  name: 'revive_complete_job',
+  scheduled: (): any => complete_revive,
+  indexes: [
+    { name: 'revive_job_session', accessor: 'revive_job_session', algorithm: 'btree', columns: ['sessionId'] },
+  ],
+}, {
+  scheduledId: t.u64().primaryKey().autoInc(),
+  scheduledAt: t.scheduleAt(),
+  sessionId: t.u64(),
+  healerIdentity: t.identity(),
   targetIdentity: t.identity(),
 });
 
@@ -167,6 +258,12 @@ const spacetimedb = schema({
   enemySpawnJob: EnemySpawnJob,
   dayPhaseJob: DayPhaseJob,
   eliminateJob: EliminateJob,
+  mark: Mark,
+  acidPool: AcidPool,
+  itemSpawn: ItemSpawn,
+  itemSpawnJob: ItemSpawnJob,
+  reviveChannel: ReviveChannel,
+  reviveCompleteJob: ReviveCompleteJob,
 });
 
 export default spacetimedb;
@@ -194,7 +291,9 @@ function classMaxStamina(cls: string): bigint {
   return 80n;
 }
 
-// Integer square root (Newton's method) — deterministic distance calcs
+// Shorthand to create a Timestamp-compatible value from raw microseconds
+function ts(micros: bigint): any { return { microsSinceUnixEpoch: micros }; }
+
 function bigintSqrt(n: bigint): bigint {
   if (n < 0n) return 0n;
   if (n < 2n) return n;
@@ -215,8 +314,22 @@ function apply_player_damage(ctx: any, sessionId: bigint, ps: any, damage: bigin
       sessionId,
       targetIdentity: ps.playerIdentity,
     });
+    // Interrupt revive if this player was healing someone
+    for (const c of ctx.db.reviveChannel.revive_channel_session_id.filter(sessionId)) {
+      if (c.healerIdentity.isEqual(ps.playerIdentity)) {
+        ctx.db.reviveChannel.id.delete(c.id);
+        break;
+      }
+    }
   } else {
     ctx.db.playerState.id.update({ ...ps, hp: newHp });
+    // Interrupt revive if this player was healing someone
+    for (const c of ctx.db.reviveChannel.revive_channel_session_id.filter(sessionId)) {
+      if (c.healerIdentity.isEqual(ps.playerIdentity)) {
+        ctx.db.reviveChannel.id.delete(c.id);
+        break;
+      }
+    }
   }
 }
 
@@ -225,13 +338,25 @@ function end_session(ctx: any, sessionId: bigint) {
   if (!session) return;
   ctx.db.gameSession.id.update({ ...session, status: 'finished', endedAt: ctx.timestamp });
 
-  // Delete enemies immediately — not needed for game over screen
+  // Delete enemies immediately
   for (const e of ctx.db.enemy.enemy_session_id.filter(sessionId)) {
     ctx.db.enemy.id.delete(e.id);
   }
-  // Note: PlayerState rows are kept until next game starts (game over screen needs them)
+  // Clean up Phase 4 session data
+  for (const m of ctx.db.mark.mark_session_id.filter(sessionId)) {
+    ctx.db.mark.id.delete(m.id);
+  }
+  for (const p of ctx.db.acidPool.acid_pool_session_id.filter(sessionId)) {
+    ctx.db.acidPool.id.delete(p.id);
+  }
+  for (const item of ctx.db.itemSpawn.item_spawn_session_id.filter(sessionId)) {
+    ctx.db.itemSpawn.id.delete(item.id);
+  }
+  for (const c of ctx.db.reviveChannel.revive_channel_session_id.filter(sessionId)) {
+    ctx.db.reviveChannel.id.delete(c.id);
+  }
+  // Note: PlayerState rows kept until next game starts (game over screen needs them)
 
-  // Reset lobby so players can start a new game immediately
   const lobby = ctx.db.lobby.id.find(session.lobbyId);
   if (lobby) {
     ctx.db.lobby.id.update({ ...lobby, status: 'waiting' });
@@ -447,32 +572,38 @@ export const fire_start_game = spacetimedb.reducer({
       posZ: 0n,
       status: 'alive',
       score: 0n,
+      isBracing: false,
+      armorBonus: 0n,
+      speedBoostUntil: undefined,
+      staminaBoostUntil: undefined,
+      reviveCooldownUntil: undefined,
+      pingCooldownUntil: undefined,
+      hasFlare: false,
     });
   }
 
   ctx.db.lobby.id.update({ ...lobby, status: 'in_progress' });
 
-  // Schedule game loop jobs
   const now = ctx.timestamp.microsSinceUnixEpoch;
 
-  // Enemy tick starts immediately
   ctx.db.enemyTickJob.insert({
     scheduledId: 0n,
     scheduledAt: ScheduleAt.time(now + 100_000n),
     sessionId: session.id,
   });
-
-  // First enemy spawn after 5 seconds
   ctx.db.enemySpawnJob.insert({
     scheduledId: 0n,
     scheduledAt: ScheduleAt.time(now + 5_000_000n),
     sessionId: session.id,
   });
-
-  // First phase advance after 60 seconds
   ctx.db.dayPhaseJob.insert({
     scheduledId: 0n,
     scheduledAt: ScheduleAt.time(now + 60_000_000n),
+    sessionId: session.id,
+  });
+  ctx.db.itemSpawnJob.insert({
+    scheduledId: 0n,
+    scheduledAt: ScheduleAt.time(now + 15_000_000n),
     sessionId: session.id,
   });
 });
@@ -503,19 +634,31 @@ export const move_player = spacetimedb.reducer({
 
   const distDelta = posZ < ps.posZ ? ps.posZ - posZ : 0n;
   const newScore = ps.score + distDelta / 1000n;
+  const updatedPs = { ...ps, posX, posY, posZ, stamina: newStamina, score: newScore };
 
-  ctx.db.playerState.id.update({ ...ps, posX, posY, posZ, stamina: newStamina, score: newScore });
+  // Check acid pool overlap
+  const now = ctx.timestamp.microsSinceUnixEpoch;
+  for (const pool of ctx.db.acidPool.acid_pool_session_id.filter(sessionId)) {
+    if (pool.expiresAt.microsSinceUnixEpoch < now) continue;
+    const dxp = posX - pool.posX;
+    const dzp = posZ - pool.posZ;
+    if (dxp * dxp + dzp * dzp < pool.radius * pool.radius) {
+      apply_player_damage(ctx, sessionId, updatedPs, 1n);
+      return;
+    }
+  }
+
+  ctx.db.playerState.id.update(updatedPs);
 });
 
-// Fixed-point speed: moveAmount = speed * TICK_MS(100n) / 1000n = speed/10
-// speed = desiredUnitsPerSec * 1000n (e.g. 3 units/sec = 3000n)
 const ENEMY_BASE_SPEED: Record<string, bigint> = {
-  basic: 3000n,    // 3 units/sec
-  fast: 5000n,     // 5 units/sec (near sprint speed)
-  brute: 2000n,    // 2 units/sec (slow tank)
-  spitter: 1500n,  // 1.5 units/sec (ranged, slow)
+  basic: 3000n,
+  fast: 5000n,
+  brute: 2000n,
+  spitter: 1500n,
 };
 const MELEE_RANGE = 2000n;
+const SPITTER_RANGE_SQ = 64_000_000n; // 8 world units squared
 const TICK_MS = 100n;
 
 export const enemy_tick = spacetimedb.reducer({
@@ -545,17 +688,52 @@ export const enemy_tick = spacetimedb.reducer({
     const dx = nearest.posX - enemy.posX;
     const dz = nearest.posZ - enemy.posZ;
 
+    // Spitter: ranged acid spit instead of melee
+    if (enemy.enemyType === 'spitter') {
+      if (nearestDist <= SPITTER_RANGE_SQ && !enemy.isDazed) {
+        const poolExpiry = ctx.timestamp.microsSinceUnixEpoch + 8_000_000n;
+        ctx.db.acidPool.insert({
+          id: 0n,
+          sessionId: arg.sessionId,
+          posX: enemy.posX + dx / 2n,
+          posZ: enemy.posZ + dz / 2n,
+          radius: 2000n,
+          expiresAt: ts(poolExpiry),
+        });
+      } else if (!enemy.isDazed) {
+        const speed = ENEMY_BASE_SPEED['spitter'] * enemy.speedMultiplier / 100n;
+        const moveAmount = speed * TICK_MS / 1000n;
+        const magnitude = bigintSqrt(nearestDist);
+        if (magnitude > 0n) {
+          ctx.db.enemy.id.update({ ...enemy, posX: enemy.posX + dx * moveAmount / magnitude, posZ: enemy.posZ + dz * moveAmount / magnitude });
+        }
+      } else if (enemy.dazedUntil && ctx.timestamp.microsSinceUnixEpoch >= enemy.dazedUntil.microsSinceUnixEpoch) {
+        ctx.db.enemy.id.update({ ...enemy, isDazed: false, dazedUntil: undefined });
+      }
+      continue;
+    }
+
+    // Tank brace: bounce enemy back instead of dealing damage
+    if (nearestDist <= MELEE_RANGE * MELEE_RANGE && nearest.isBracing && !enemy.isDazed) {
+      const magnitude = bigintSqrt(nearestDist);
+      const knockback = 4000n;
+      const newX = magnitude > 0n ? enemy.posX - dx * knockback / magnitude : enemy.posX - knockback;
+      const newZ = magnitude > 0n ? enemy.posZ - dz * knockback / magnitude : enemy.posZ - knockback;
+      const dazedUntil = ts(ctx.timestamp.microsSinceUnixEpoch + 1_500_000n);
+      ctx.db.enemy.id.update({ ...enemy, posX: newX, posZ: newZ, isDazed: true, dazedUntil });
+      continue;
+    }
+
+    // Normal: melee damage or move toward player
     if (nearestDist <= MELEE_RANGE * MELEE_RANGE && !enemy.isDazed) {
       const damage = enemy.enemyType === 'brute' ? 3n : 1n;
       apply_player_damage(ctx, arg.sessionId, nearest, damage);
     } else if (!enemy.isDazed) {
       const speed = (ENEMY_BASE_SPEED[enemy.enemyType] ?? 3000n) * enemy.speedMultiplier / 100n;
       const moveAmount = speed * TICK_MS / 1000n;
-      const magnitude = bigintSqrt(dx * dx + dz * dz);
+      const magnitude = bigintSqrt(nearestDist);
       if (magnitude > 0n) {
-        const newX = enemy.posX + dx * moveAmount / magnitude;
-        const newZ = enemy.posZ + dz * moveAmount / magnitude;
-        ctx.db.enemy.id.update({ ...enemy, posX: newX, posZ: newZ });
+        ctx.db.enemy.id.update({ ...enemy, posX: enemy.posX + dx * moveAmount / magnitude, posZ: enemy.posZ + dz * moveAmount / magnitude });
       }
     } else {
       if (enemy.dazedUntil && ctx.timestamp.microsSinceUnixEpoch >= enemy.dazedUntil.microsSinceUnixEpoch) {
@@ -606,7 +784,7 @@ export const spawn_enemy = spacetimedb.reducer({
 
   const avgZ = players.reduce((s, p) => s + p.posZ, 0n) / BigInt(players.length);
   const spawnX = (ctx.timestamp.microsSinceUnixEpoch % 30_000n) - 15_000n;
-  const spawnZ = avgZ - 30_000n; // 30 units ahead of players (-Z = forward direction)
+  const spawnZ = avgZ - 30_000n;
 
   const baseMultiplier = 100n + session.cycleNumber * 5n;
 
@@ -622,6 +800,8 @@ export const spawn_enemy = spacetimedb.reducer({
     isDazed: false,
     dazedUntil: undefined,
     isAlive: true,
+    isMarked: false,
+    markedUntil: undefined,
   });
 
   const baseInterval = 8_000_000n;
@@ -682,11 +862,316 @@ export const eliminate_downed = spacetimedb.reducer({
   }
 });
 
+// ─── Phase 4 Reducers ─────────────────────────────────────────────────────────
+
+export const mark_enemy = spacetimedb.reducer({
+  sessionId: t.u64(),
+  enemyId: t.u64(),
+}, (ctx, { sessionId, enemyId }) => {
+  let ps: any;
+  for (const p of ctx.db.playerState.player_state_session_id.filter(sessionId)) {
+    if (p.playerIdentity.isEqual(ctx.sender)) { ps = p; break; }
+  }
+  if (!ps || ps.classChoice !== 'spotter') throw new SenderError('Not a Spotter');
+  if (ps.status !== 'alive') return;
+
+  const enemy = ctx.db.enemy.id.find(enemyId);
+  if (!enemy || !enemy.isAlive) return;
+
+  const expiresAt = ctx.timestamp.microsSinceUnixEpoch + 5_000_000n;
+  ctx.db.mark.insert({
+    id: 0n,
+    sessionId,
+    sourceIdentity: ctx.sender,
+    targetType: 'enemy',
+    targetEnemyId: enemyId,
+    posX: undefined,
+    posZ: undefined,
+    expiresAt: ts(expiresAt),
+  });
+  ctx.db.enemy.id.update({ ...enemy, isMarked: true, markedUntil: ts(expiresAt) });
+});
+
+export const ping_location = spacetimedb.reducer({
+  sessionId: t.u64(),
+  posX: t.i64(),
+  posZ: t.i64(),
+}, (ctx, { sessionId, posX, posZ }) => {
+  let ps: any;
+  for (const p of ctx.db.playerState.player_state_session_id.filter(sessionId)) {
+    if (p.playerIdentity.isEqual(ctx.sender)) { ps = p; break; }
+  }
+  if (!ps || ps.classChoice !== 'spotter') throw new SenderError('Not a Spotter');
+  if (ps.status !== 'alive') return;
+  if (ps.pingCooldownUntil && ctx.timestamp.microsSinceUnixEpoch < ps.pingCooldownUntil.microsSinceUnixEpoch) {
+    throw new SenderError('Ping on cooldown');
+  }
+
+  const expiresAt = ctx.timestamp.microsSinceUnixEpoch + 10_000_000n;
+  ctx.db.mark.insert({
+    id: 0n,
+    sessionId,
+    sourceIdentity: ctx.sender,
+    targetType: 'location',
+    targetEnemyId: undefined,
+    posX,
+    posZ,
+    expiresAt: ts(expiresAt),
+  });
+
+  const cooldownUntil = ts(ctx.timestamp.microsSinceUnixEpoch + 10_000_000n);
+  ctx.db.playerState.id.update({ ...ps, pingCooldownUntil: cooldownUntil });
+});
+
+const WEAPON_DAMAGE: Record<string, bigint> = {
+  gunner: 15n,
+  healer: 35n,
+};
+
+export const attack_enemy = spacetimedb.reducer({
+  sessionId: t.u64(),
+  enemyId: t.u64(),
+  suppress: t.bool(),
+}, (ctx, { sessionId, enemyId, suppress }) => {
+  let ps: any;
+  for (const p of ctx.db.playerState.player_state_session_id.filter(sessionId)) {
+    if (p.playerIdentity.isEqual(ctx.sender)) { ps = p; break; }
+  }
+  if (!ps || (ps.classChoice !== 'gunner' && ps.classChoice !== 'healer')) {
+    throw new SenderError('Class cannot attack');
+  }
+  if (ps.status !== 'alive') return;
+
+  const enemy = ctx.db.enemy.id.find(enemyId);
+  if (!enemy || !enemy.isAlive) return;
+
+  const dmg = WEAPON_DAMAGE[ps.classChoice] ?? 15n;
+  const newHp = enemy.hp > dmg ? enemy.hp - dmg : 0n;
+
+  if (newHp <= 0n) {
+    ctx.db.enemy.id.update({ ...enemy, hp: 0n, isAlive: false });
+    ctx.db.playerState.id.update({ ...ps, score: ps.score + 10n });
+    for (const m of ctx.db.mark.mark_session_id.filter(sessionId)) {
+      if (m.targetEnemyId === enemyId) ctx.db.mark.id.delete(m.id);
+    }
+  } else {
+    let updatedEnemy = { ...enemy, hp: newHp };
+    if (suppress && ps.classChoice === 'gunner') {
+      const suppressUntil = ts(ctx.timestamp.microsSinceUnixEpoch + 1_000_000n);
+      updatedEnemy = { ...updatedEnemy, isDazed: true, dazedUntil: suppressUntil };
+    }
+    ctx.db.enemy.id.update(updatedEnemy);
+  }
+});
+
+export const shield_bash = spacetimedb.reducer({
+  sessionId: t.u64(),
+  enemyId: t.u64().optional(),
+}, (ctx, { sessionId, enemyId }) => {
+  let ps: any;
+  for (const p of ctx.db.playerState.player_state_session_id.filter(sessionId)) {
+    if (p.playerIdentity.isEqual(ctx.sender)) { ps = p; break; }
+  }
+  if (!ps || ps.classChoice !== 'tank') throw new SenderError('Not a Tank');
+  if (ps.status !== 'alive') return;
+
+  if (enemyId !== undefined) {
+    const enemy = ctx.db.enemy.id.find(enemyId);
+    if (!enemy || !enemy.isAlive) return;
+
+    const dx = enemy.posX - ps.posX;
+    const dz = enemy.posZ - ps.posZ;
+    const mag = bigintSqrt(dx * dx + dz * dz);
+    const knockback = 4000n;
+    const newX = mag > 0n ? enemy.posX + dx * knockback / mag : enemy.posX + knockback;
+    const newZ = mag > 0n ? enemy.posZ + dz * knockback / mag : enemy.posZ + knockback;
+    const dazedUntil = ts(ctx.timestamp.microsSinceUnixEpoch + 1_500_000n);
+    ctx.db.enemy.id.update({ ...enemy, posX: newX, posZ: newZ, isDazed: true, dazedUntil });
+  }
+});
+
+export const clear_debris = spacetimedb.reducer({
+  sessionId: t.u64(),
+  debrisId: t.u64(),
+}, (ctx, { sessionId, debrisId }) => {
+  let ps: any;
+  for (const p of ctx.db.playerState.player_state_session_id.filter(sessionId)) {
+    if (p.playerIdentity.isEqual(ctx.sender)) { ps = p; break; }
+  }
+  if (!ps || ps.status !== 'alive') return;
+  // Debris table added in Phase 5 — placeholder
+});
+
+export const brace_start = spacetimedb.reducer({
+  sessionId: t.u64(),
+}, (ctx, { sessionId }) => {
+  let ps: any;
+  for (const p of ctx.db.playerState.player_state_session_id.filter(sessionId)) {
+    if (p.playerIdentity.isEqual(ctx.sender)) { ps = p; break; }
+  }
+  if (!ps || ps.classChoice !== 'tank') return;
+  ctx.db.playerState.id.update({ ...ps, isBracing: true });
+});
+
+export const brace_end = spacetimedb.reducer({
+  sessionId: t.u64(),
+}, (ctx, { sessionId }) => {
+  let ps: any;
+  for (const p of ctx.db.playerState.player_state_session_id.filter(sessionId)) {
+    if (p.playerIdentity.isEqual(ctx.sender)) { ps = p; break; }
+  }
+  if (!ps) return;
+  ctx.db.playerState.id.update({ ...ps, isBracing: false });
+});
+
+const REVIVE_COOLDOWN_US = 15_000_000n;
+const REVIVE_CHANNEL_US = 2_000_000n;
+
+export const revive_start = spacetimedb.reducer({
+  sessionId: t.u64(),
+  targetIdentity: t.identity(),
+}, (ctx, { sessionId, targetIdentity }) => {
+  let healer: any;
+  for (const p of ctx.db.playerState.player_state_session_id.filter(sessionId)) {
+    if (p.playerIdentity.isEqual(ctx.sender)) { healer = p; break; }
+  }
+  if (!healer || healer.classChoice !== 'healer') throw new SenderError('Not a Healer');
+  if (healer.status !== 'alive') return;
+
+  if (healer.reviveCooldownUntil && ctx.timestamp.microsSinceUnixEpoch < healer.reviveCooldownUntil.microsSinceUnixEpoch) {
+    throw new SenderError('Revive on cooldown');
+  }
+
+  let target: any;
+  for (const p of ctx.db.playerState.player_state_session_id.filter(sessionId)) {
+    if (p.playerIdentity.isEqual(targetIdentity)) { target = p; break; }
+  }
+  if (!target || target.status !== 'downed') throw new SenderError('Target is not downed');
+
+  const dx = healer.posX - target.posX;
+  const dz = healer.posZ - target.posZ;
+  if (dx * dx + dz * dz > 9_000_000n) throw new SenderError('Too far from downed player');
+
+  ctx.db.reviveChannel.insert({
+    id: 0n,
+    sessionId,
+    healerIdentity: ctx.sender,
+    targetIdentity,
+    channelStartedAt: ctx.timestamp,
+  });
+
+  const completeAt = ctx.timestamp.microsSinceUnixEpoch + REVIVE_CHANNEL_US;
+  ctx.db.reviveCompleteJob.insert({
+    scheduledId: 0n,
+    scheduledAt: ScheduleAt.time(completeAt),
+    sessionId,
+    healerIdentity: ctx.sender,
+    targetIdentity,
+  });
+});
+
+export const complete_revive = spacetimedb.reducer({
+  arg: ReviveCompleteJob.rowType,
+}, (ctx, { arg }) => {
+  let channel: any;
+  for (const c of ctx.db.reviveChannel.revive_channel_session_id.filter(arg.sessionId)) {
+    if (c.healerIdentity.isEqual(arg.healerIdentity) && c.targetIdentity.isEqual(arg.targetIdentity)) {
+      channel = c; break;
+    }
+  }
+  if (!channel) return; // interrupted
+
+  let healer: any, target: any;
+  for (const p of ctx.db.playerState.player_state_session_id.filter(arg.sessionId)) {
+    if (p.playerIdentity.isEqual(arg.healerIdentity)) healer = p;
+    if (p.playerIdentity.isEqual(arg.targetIdentity)) target = p;
+  }
+
+  if (!healer || !target || target.status !== 'downed') {
+    ctx.db.reviveChannel.id.delete(channel.id);
+    return;
+  }
+
+  const speedBoostUntil = ts(ctx.timestamp.microsSinceUnixEpoch + 5_000_000n);
+  ctx.db.playerState.id.update({ ...target, hp: 50n, status: 'alive', speedBoostUntil });
+
+  const cooldownUntil = ts(ctx.timestamp.microsSinceUnixEpoch + REVIVE_COOLDOWN_US);
+  ctx.db.playerState.id.update({ ...healer, reviveCooldownUntil: cooldownUntil });
+
+  ctx.db.reviveChannel.id.delete(channel.id);
+});
+
+export const spawn_item = spacetimedb.reducer({
+  arg: ItemSpawnJob.rowType,
+}, (ctx, { arg }) => {
+  const session = ctx.db.gameSession.id.find(arg.sessionId);
+  if (!session || session.status !== 'active') return;
+
+  const ITEMS = ['energy_drink', 'stamina_boost', 'medkit', 'armor_plate', 'flare'];
+  const seed = Number(ctx.timestamp.microsSinceUnixEpoch % BigInt(ITEMS.length));
+  const itemType = ITEMS[seed];
+
+  const players = [...ctx.db.playerState.player_state_session_id.filter(arg.sessionId)]
+    .filter(p => p.status === 'alive');
+  if (players.length === 0) return;
+
+  const avgZ = players.reduce((s, p) => s + p.posZ, 0n) / BigInt(players.length);
+  const spawnX = (ctx.timestamp.microsSinceUnixEpoch % 20_000n) - 10_000n;
+  const spawnZ = avgZ - 15_000n;
+
+  ctx.db.itemSpawn.insert({ id: 0n, sessionId: arg.sessionId, itemType, posX: spawnX, posZ: spawnZ });
+
+  const nextSpawn = ctx.timestamp.microsSinceUnixEpoch + 12_000_000n;
+  ctx.db.itemSpawnJob.insert({
+    scheduledId: 0n,
+    scheduledAt: ScheduleAt.time(nextSpawn),
+    sessionId: arg.sessionId,
+  });
+});
+
+export const pickup_item = spacetimedb.reducer({
+  sessionId: t.u64(),
+  itemId: t.u64(),
+}, (ctx, { sessionId, itemId }) => {
+  const item = ctx.db.itemSpawn.id.find(itemId);
+  if (!item || item.sessionId !== sessionId) return;
+
+  let ps: any;
+  for (const p of ctx.db.playerState.player_state_session_id.filter(sessionId)) {
+    if (p.playerIdentity.isEqual(ctx.sender)) { ps = p; break; }
+  }
+  if (!ps || ps.status !== 'alive') return;
+
+  const dx = ps.posX - item.posX;
+  const dz = ps.posZ - item.posZ;
+  if (dx * dx + dz * dz > 2_250_000n) return; // 1.5 units
+
+  let updatedPs = { ...ps };
+  const now = ctx.timestamp.microsSinceUnixEpoch;
+
+  if (item.itemType === 'energy_drink') {
+    updatedPs.speedBoostUntil = ts(now + 10_000_000n);
+  } else if (item.itemType === 'stamina_boost') {
+    updatedPs.stamina = ps.maxStamina + ps.maxStamina / 4n;
+    updatedPs.staminaBoostUntil = ts(now + 30_000_000n);
+  } else if (item.itemType === 'medkit') {
+    const effectiveMax = ps.maxHp + ps.armorBonus;
+    updatedPs.hp = ps.hp + 50n > effectiveMax ? effectiveMax : ps.hp + 50n;
+  } else if (item.itemType === 'armor_plate') {
+    const newArmor = ps.armorBonus + 25n > 50n ? 50n : ps.armorBonus + 25n;
+    updatedPs.armorBonus = newArmor;
+    updatedPs.maxHp = ps.maxHp - ps.armorBonus + newArmor;
+  } else if (item.itemType === 'flare') {
+    updatedPs.hasFlare = true;
+  }
+
+  ctx.db.playerState.id.update(updatedPs);
+  ctx.db.itemSpawn.id.delete(itemId);
+});
+
 // ─── Lifecycle ─────────────────────────────────────────────────────────────────
 
-spacetimedb.clientConnected((_ctx) => {
-  // Phase 2: create/update player presence
-});
+spacetimedb.clientConnected((_ctx) => {});
 
 spacetimedb.clientDisconnected((ctx) => {
   for (const p of ctx.db.lobbyPlayer.lobby_player_identity.filter(ctx.sender)) {

@@ -1,0 +1,126 @@
+<script lang="ts">
+	import { useTable, useSpacetimeDB } from 'spacetimedb/svelte';
+	import { tables } from '../module_bindings/index.js';
+	import { gameState, gameActions } from '../game.svelte.js';
+	import { localPos } from '../localGameState.svelte.js';
+
+	const conn = useSpacetimeDB();
+	const [players] = useTable(tables.playerState);
+	const [enemies] = useTable(tables.enemy);
+
+	const myState = $derived($players.find(
+		p => p.playerIdentity.toHexString() === $conn.identity?.toHexString() &&
+		     p.sessionId === gameState.currentSessionId
+	));
+
+	// Nearest live enemy within given range (fixed-point units)
+	function nearestEnemy(rangeFP: number) {
+		const ox = BigInt(Math.round(localPos.x * 1000));
+		const oz = BigInt(Math.round(localPos.z * 1000));
+		const rangeN = BigInt(rangeFP);
+		let best: any = null;
+		let bestDist = BigInt(Number.MAX_SAFE_INTEGER);
+		for (const e of $enemies) {
+			if (!e.isAlive || e.sessionId !== gameState.currentSessionId) continue;
+			const dx = e.posX - ox;
+			const dz = e.posZ - oz;
+			const d = dx * dx + dz * dz;
+			if (d < rangeN * rangeN && d < bestDist) { best = e; bestDist = d; }
+		}
+		return best;
+	}
+
+	// Nearest downed player within given range (fixed-point units)
+	function nearestDowned(rangeFP: number) {
+		const ox = BigInt(Math.round(localPos.x * 1000));
+		const oz = BigInt(Math.round(localPos.z * 1000));
+		const rangeN = BigInt(rangeFP);
+		let best: any = null;
+		let bestDist = BigInt(Number.MAX_SAFE_INTEGER);
+		for (const p of $players) {
+			if (p.status !== 'downed' || p.sessionId !== gameState.currentSessionId) continue;
+			if (p.playerIdentity.toHexString() === $conn.identity?.toHexString()) continue;
+			const dx = p.posX - ox;
+			const dz = p.posZ - oz;
+			const d = dx * dx + dz * dz;
+			if (d < rangeN * rangeN && d < bestDist) { best = p; bestDist = d; }
+		}
+		return best;
+	}
+
+	// Gunner suppression tracking
+	let lastSuppressedEnemyId: bigint | null = null;
+	let suppressHits = 0;
+
+	function onKeyDown(e: KeyboardEvent) {
+		if (!myState || myState.status !== 'alive') return;
+		const sid = gameState.currentSessionId;
+		if (!sid) return;
+
+		switch (e.code) {
+			case 'KeyF': {
+				if (myState.classChoice !== 'spotter') break;
+				const enemy = nearestEnemy(15_000); // 15 unit flashlight range
+				if (enemy) gameActions.markEnemy(sid, enemy.id);
+				break;
+			}
+			case 'KeyG': {
+				if (myState.classChoice !== 'spotter') break;
+				gameActions.pingLocation(sid,
+					BigInt(Math.round(localPos.x * 1000)),
+					BigInt(Math.round(localPos.z * 1000))
+				);
+				break;
+			}
+			case 'KeyE': {
+				if (myState.classChoice !== 'tank') break;
+				const enemy = nearestEnemy(5_000); // 5 unit bash range
+				gameActions.shieldBash(sid, enemy?.id);
+				break;
+			}
+			case 'Space': {
+				e.preventDefault();
+				if (myState.classChoice !== 'tank') break;
+				gameActions.braceStart(sid);
+				break;
+			}
+			case 'KeyR': {
+				if (myState.classChoice !== 'healer') break;
+				const target = nearestDowned(3_000); // 3 unit revive range
+				if (target) gameActions.reviveStart(sid, target.playerIdentity);
+				break;
+			}
+		}
+	}
+
+	function onKeyUp(e: KeyboardEvent) {
+		if (!myState) return;
+		const sid = gameState.currentSessionId;
+		if (!sid) return;
+		if (e.code === 'Space' && myState.classChoice === 'tank') {
+			gameActions.braceEnd(sid);
+		}
+	}
+
+	function onMouseDown(e: MouseEvent) {
+		if (!myState || myState.status !== 'alive') return;
+		const sid = gameState.currentSessionId;
+		if (!sid || e.button !== 0) return;
+		if (myState.classChoice !== 'gunner' && myState.classChoice !== 'healer') return;
+
+		const enemy = nearestEnemy(10_000); // 10 unit attack range
+		if (!enemy) return;
+
+		// Track suppression: suppress every 3rd hit on same enemy
+		if (enemy.id === lastSuppressedEnemyId) {
+			suppressHits++;
+		} else {
+			lastSuppressedEnemyId = enemy.id;
+			suppressHits = 1;
+		}
+		const suppress = myState.classChoice === 'gunner' && suppressHits % 3 === 0;
+		gameActions.attackEnemy(sid, enemy.id, suppress);
+	}
+</script>
+
+<svelte:window onkeydown={onKeyDown} onkeyup={onKeyUp} onmousedown={onMouseDown} />

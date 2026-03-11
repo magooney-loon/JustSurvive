@@ -7,12 +7,17 @@
 	import { onMount } from 'svelte';
 	import PlayerEntity from './PlayerEntity.svelte';
 	import EnemyEntity from './EnemyEntity.svelte';
+	import AcidPoolEntity from './AcidPoolEntity.svelte';
+	import ItemPickupEntity from './ItemPickupEntity.svelte';
+	import MarkOverlay from './MarkOverlay.svelte';
 	import DayNightSky from './DayNightSky.svelte';
 
 	const conn = useSpacetimeDB();
 	const [players] = useTable(tables.playerState);
 	const [enemies] = useTable(tables.enemy);
 	const [sessions] = useTable(tables.gameSession);
+	const [acidPools] = useTable(tables.acidPool);
+	const [items] = useTable(tables.itemSpawn);
 
 	const session = $derived($sessions.find(s => s.id === gameState.currentSessionId));
 	const myState = $derived($players.find(
@@ -25,6 +30,12 @@
 	));
 	const liveEnemies = $derived($enemies.filter(
 		e => e.sessionId === gameState.currentSessionId && e.isAlive
+	));
+	const livePools = $derived($acidPools.filter(
+		p => p.sessionId === gameState.currentSessionId
+	));
+	const liveItems = $derived($items.filter(
+		i => i.sessionId === gameState.currentSessionId
 	));
 
 	const CLASS_COLORS: Record<string, string> = {
@@ -48,13 +59,23 @@
 		sendTimer += dt;
 		if (sendTimer >= SEND_INTERVAL) {
 			sendTimer = 0;
+			const px = BigInt(Math.round(localPos.x * 1000));
+			const pz = BigInt(Math.round(localPos.z * 1000));
 			gameActions.movePlayer({
 				sessionId: gameState.currentSessionId!,
-				posX: BigInt(Math.round(localPos.x * 1000)),
+				posX: px,
 				posY: BigInt(Math.round(localPos.y * 1000)),
-				posZ: BigInt(Math.round(localPos.z * 1000)),
+				posZ: pz,
 				isSprinting: input.sprint && hasStamina,
 			});
+			// Auto-pickup items within 1.5 units
+			for (const item of liveItems) {
+				const dx = Number(item.posX - px) / 1000;
+				const dz = Number(item.posZ - pz) / 1000;
+				if (dx * dx + dz * dz < 2.25) {
+					gameActions.pickupItem(gameState.currentSessionId!, item.id);
+				}
+			}
 		}
 	});
 </script>
@@ -86,3 +107,16 @@
 {#each liveEnemies as enemy (enemy.id)}
 	<EnemyEntity {enemy} />
 {/each}
+
+<!-- Acid pools -->
+{#each livePools as pool (pool.id)}
+	<AcidPoolEntity {pool} />
+{/each}
+
+<!-- Item pickups -->
+{#each liveItems as item (item.id)}
+	<ItemPickupEntity {item} />
+{/each}
+
+<!-- Mark / ping overlays -->
+<MarkOverlay />

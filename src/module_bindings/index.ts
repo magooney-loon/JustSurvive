@@ -34,28 +34,55 @@ import {
 } from "spacetimedb";
 
 // Import all reducer arg schemas
+import AttackEnemyReducer from "./attack_enemy_reducer";
+import BraceEndReducer from "./brace_end_reducer";
+import BraceStartReducer from "./brace_start_reducer";
+import ClearDebrisReducer from "./clear_debris_reducer";
 import CreateLobbyReducer from "./create_lobby_reducer";
 import JoinByCodeReducer from "./join_by_code_reducer";
 import JoinLobbyReducer from "./join_lobby_reducer";
 import LeaveLobbyReducer from "./leave_lobby_reducer";
+import MarkEnemyReducer from "./mark_enemy_reducer";
 import MovePlayerReducer from "./move_player_reducer";
+import PickupItemReducer from "./pickup_item_reducer";
+import PingLocationReducer from "./ping_location_reducer";
+import ReviveStartReducer from "./revive_start_reducer";
 import SetClassReducer from "./set_class_reducer";
 import SetReadyReducer from "./set_ready_reducer";
+import ShieldBashReducer from "./shield_bash_reducer";
 import StartCountdownReducer from "./start_countdown_reducer";
 
 // Import all procedure arg schemas
 
 // Import all table schema definitions
+import AcidPoolRow from "./acid_pool_table";
 import EnemyRow from "./enemy_table";
 import GameSessionRow from "./game_session_table";
+import ItemSpawnRow from "./item_spawn_table";
 import LobbyRow from "./lobby_table";
 import LobbyPlayerRow from "./lobby_player_table";
+import MarkRow from "./mark_table";
 import PlayerStateRow from "./player_state_table";
+import ReviveChannelRow from "./revive_channel_table";
 
 /** Type-only namespace exports for generated type groups. */
 
 /** The schema information for all tables in this module. This is defined the same was as the tables would have been defined in the server. */
 const tablesSchema = __schema({
+  acidPool: __table({
+    name: 'acid_pool',
+    indexes: [
+      { name: 'id', algorithm: 'btree', columns: [
+        'id',
+      ] },
+      { name: 'acid_pool_session_id', algorithm: 'btree', columns: [
+        'sessionId',
+      ] },
+    ],
+    constraints: [
+      { name: 'acid_pool_id_key', constraint: 'unique', columns: ['id'] },
+    ],
+  }, AcidPoolRow),
   enemy: __table({
     name: 'enemy',
     indexes: [
@@ -84,6 +111,20 @@ const tablesSchema = __schema({
       { name: 'game_session_id_key', constraint: 'unique', columns: ['id'] },
     ],
   }, GameSessionRow),
+  itemSpawn: __table({
+    name: 'item_spawn',
+    indexes: [
+      { name: 'id', algorithm: 'btree', columns: [
+        'id',
+      ] },
+      { name: 'item_spawn_session_id', algorithm: 'btree', columns: [
+        'sessionId',
+      ] },
+    ],
+    constraints: [
+      { name: 'item_spawn_id_key', constraint: 'unique', columns: ['id'] },
+    ],
+  }, ItemSpawnRow),
   lobby: __table({
     name: 'lobby',
     indexes: [
@@ -118,6 +159,20 @@ const tablesSchema = __schema({
       { name: 'lobby_player_id_key', constraint: 'unique', columns: ['id'] },
     ],
   }, LobbyPlayerRow),
+  mark: __table({
+    name: 'mark',
+    indexes: [
+      { name: 'id', algorithm: 'btree', columns: [
+        'id',
+      ] },
+      { name: 'mark_session_id', algorithm: 'btree', columns: [
+        'sessionId',
+      ] },
+    ],
+    constraints: [
+      { name: 'mark_id_key', constraint: 'unique', columns: ['id'] },
+    ],
+  }, MarkRow),
   playerState: __table({
     name: 'player_state',
     indexes: [
@@ -135,17 +190,40 @@ const tablesSchema = __schema({
       { name: 'player_state_id_key', constraint: 'unique', columns: ['id'] },
     ],
   }, PlayerStateRow),
+  reviveChannel: __table({
+    name: 'revive_channel',
+    indexes: [
+      { name: 'id', algorithm: 'btree', columns: [
+        'id',
+      ] },
+      { name: 'revive_channel_session_id', algorithm: 'btree', columns: [
+        'sessionId',
+      ] },
+    ],
+    constraints: [
+      { name: 'revive_channel_id_key', constraint: 'unique', columns: ['id'] },
+    ],
+  }, ReviveChannelRow),
 });
 
 /** The schema information for all reducers in this module. This is defined the same way as the reducers would have been defined in the server, except the body of the reducer is omitted in code generation. */
 const reducersSchema = __reducers(
+  __reducerSchema("attack_enemy", AttackEnemyReducer),
+  __reducerSchema("brace_end", BraceEndReducer),
+  __reducerSchema("brace_start", BraceStartReducer),
+  __reducerSchema("clear_debris", ClearDebrisReducer),
   __reducerSchema("create_lobby", CreateLobbyReducer),
   __reducerSchema("join_by_code", JoinByCodeReducer),
   __reducerSchema("join_lobby", JoinLobbyReducer),
   __reducerSchema("leave_lobby", LeaveLobbyReducer),
+  __reducerSchema("mark_enemy", MarkEnemyReducer),
   __reducerSchema("move_player", MovePlayerReducer),
+  __reducerSchema("pickup_item", PickupItemReducer),
+  __reducerSchema("ping_location", PingLocationReducer),
+  __reducerSchema("revive_start", ReviveStartReducer),
   __reducerSchema("set_class", SetClassReducer),
   __reducerSchema("set_ready", SetReadyReducer),
+  __reducerSchema("shield_bash", ShieldBashReducer),
   __reducerSchema("start_countdown", StartCountdownReducer),
 );
 

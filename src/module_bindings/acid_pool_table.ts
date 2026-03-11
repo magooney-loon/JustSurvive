@@ -13,15 +13,8 @@ import {
 export default __t.row({
   id: __t.u64().primaryKey(),
   sessionId: __t.u64().name("session_id"),
-  enemyType: __t.string().name("enemy_type"),
-  hp: __t.u64(),
-  maxHp: __t.u64().name("max_hp"),
   posX: __t.i64().name("pos_x"),
   posZ: __t.i64().name("pos_z"),
-  speedMultiplier: __t.u64().name("speed_multiplier"),
-  isDazed: __t.bool().name("is_dazed"),
-  dazedUntil: __t.option(__t.timestamp()).name("dazed_until"),
-  isAlive: __t.bool().name("is_alive"),
-  isMarked: __t.bool().name("is_marked"),
-  markedUntil: __t.option(__t.timestamp()).name("marked_until"),
+  radius: __t.u64(),
+  expiresAt: __t.timestamp().name("expires_at"),
 });

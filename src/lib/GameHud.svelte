@@ -4,6 +4,7 @@
 	import { tables } from '../module_bindings/index.js';
 	import { gameState } from '../game.svelte.js';
 	import { stageActions } from '../stage.svelte.js';
+	import ReviveChannelHud from './ReviveChannelHud.svelte';
 
 	const conn = useSpacetimeDB();
 	const [players] = useTable(tables.playerState);
@@ -110,4 +111,7 @@
 			</div>
 		</div>
 	{/if}
+
+	<!-- Revive channel progress (healer only) -->
+	<ReviveChannelHud />
 </div>

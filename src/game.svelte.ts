@@ -1,5 +1,6 @@
 import type { DbConnection } from './module_bindings/index.js';
 import type { Lobby } from './module_bindings/types.js';
+import type { Identity } from 'spacetimedb';
 
 export type PlayerClass = 'spotter' | 'gunner' | 'tank' | 'healer';
 
@@ -126,6 +127,38 @@ export const gameActions = {
 	movePlayer(args: { sessionId: bigint; posX: bigint; posY: bigint; posZ: bigint; isSprinting: boolean }) {
 		if (!conn) return;
 		conn.reducers.movePlayer(args);
+	},
+	async markEnemy(sessionId: bigint, enemyId: bigint) {
+		if (!conn) return;
+		try { await conn.reducers.markEnemy({ sessionId, enemyId }); } catch {}
+	},
+	async pingLocation(sessionId: bigint, posX: bigint, posZ: bigint) {
+		if (!conn) return;
+		try { await conn.reducers.pingLocation({ sessionId, posX, posZ }); } catch {}
+	},
+	async attackEnemy(sessionId: bigint, enemyId: bigint, suppress: boolean) {
+		if (!conn) return;
+		try { await conn.reducers.attackEnemy({ sessionId, enemyId, suppress }); } catch {}
+	},
+	async shieldBash(sessionId: bigint, enemyId?: bigint) {
+		if (!conn) return;
+		try { await conn.reducers.shieldBash({ sessionId, enemyId }); } catch {}
+	},
+	braceStart(sessionId: bigint) {
+		if (!conn) return;
+		conn.reducers.braceStart({ sessionId });
+	},
+	braceEnd(sessionId: bigint) {
+		if (!conn) return;
+		conn.reducers.braceEnd({ sessionId });
+	},
+	async reviveStart(sessionId: bigint, targetIdentity: Identity) {
+		if (!conn) return;
+		try { await conn.reducers.reviveStart({ sessionId, targetIdentity }); } catch {}
+	},
+	async pickupItem(sessionId: bigint, itemId: bigint) {
+		if (!conn) return;
+		try { await conn.reducers.pickupItem({ sessionId, itemId }); } catch {}
 	},
 	clearError() {
 		gameState.error = null;
