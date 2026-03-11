@@ -363,6 +363,7 @@ const gameState = $state({
   localPlayerClass: null as PlayerClass | null,
   localPlayerName:  'Player',
   error:            null as string | null,
+  leavingLobby:     false,  // prevents MenuHud auto-redirect while leave reducer processes
 });
 
 export { gameState };
@@ -467,6 +468,7 @@ export const gameActions = {
 
   leaveLobby(lobbyId: bigint) {
     if (!conn) return;
+    gameState.leavingLobby = true; // suppress MenuHud auto-redirect until reducer confirms
     conn.reducers.leaveLobby({ lobbyId }); // fire-and-forget; UI navigates immediately
     gameState.currentLobbyId = null;
   },
@@ -625,36 +627,52 @@ let audioInstance = $state.raw<THREE.Audio | null>(null);
 
 ## MenuHud Reconnect Pattern
 
-When a player is in a lobby and navigates to the menu stage (without leaving), or refreshes the page, they should not be presented with the join/host UI — they should see a reconnect button instead.
+When a player is in an **active game** (`in_progress`) and lands on the menu (e.g. page refresh), show a reconnect button. For `waiting`/`countdown` lobbies, auto-redirect to the lobby stage immediately.
 
-Detection: check whether the current identity already has a `LobbyPlayer` row in the client-side cache.
+The `leavingLobby` flag in `gameState` prevents a redirect loop: when a player clicks Leave, the `lobbyPlayer` row briefly still exists while the reducer processes — without the flag, MenuHud would see `myLobby.status === 'waiting'` and redirect back to the lobby.
 
 ```svelte
 <script lang="ts">
   import { useSpacetimeDB, useTable } from 'spacetimedb/svelte';
   import { tables } from '../module_bindings/index.js';
   import { stageActions } from '../stage.svelte.js';
+  import { gameState } from '../game.svelte.js';
 
   const conn = useSpacetimeDB();
+  const [lobbies] = useTable(tables.lobby);
   const [lobbyPlayers] = useTable(tables.lobbyPlayer);
 
   const myEntry = $derived(
     $lobbyPlayers.find(p => p.playerIdentity.toHexString() === $conn.identity?.toHexString())
   );
-  const alreadyInLobby = $derived(!!myEntry);
+  const myLobby = $derived(myEntry ? $lobbies.find(l => l.id === myEntry.lobbyId) : null);
+  // Only show reconnect for in_progress games; redirect for waiting/countdown
+  const inActiveGame = $derived(myLobby?.status === 'in_progress');
+
+  $effect(() => {
+    if (!myLobby) {
+      gameState.leavingLobby = false; // clear flag once player row is gone
+      return;
+    }
+    if (myLobby.status !== 'in_progress' && !gameState.leavingLobby) {
+      stageActions.setStage('lobby'); // auto-redirect for waiting/countdown lobbies
+    }
+  });
 </script>
 
-{#if alreadyInLobby}
-  <!-- Show reconnect UI: don't let them create or join another lobby -->
+{#if inActiveGame}
+  <!-- Reconnect to an in-progress game only -->
   <p>Welcome back, {myEntry?.playerName}!</p>
-  <button onclick={() => stageActions.setStage('lobby')}>Reconnect to Lobby</button>
+  <button onclick={() => stageActions.setStage('game')}>Reconnect to Game</button>
 {:else}
   <!-- Normal join/host UI -->
   ...
 {/if}
 ```
 
-This is safe because `subscribeToAllTables()` keeps the `lobbyPlayer` cache up to date. If the player was cleaned up by `clientDisconnected`, `myEntry` will be `undefined` after reconnect.
+**Why `leavingLobby` is needed:** `leaveLobby` fires a reducer and immediately calls `setStage('menu')`. MenuHud mounts and the `$effect` runs before the subscription update removes the `lobbyPlayer` row — so `myLobby` is still `waiting`. The flag blocks the redirect until the row disappears (then clears itself).
+
+This is safe because `subscribeToAllTables()` keeps all table caches up to date. If the player was cleaned up by `clientDisconnected`, `myEntry` will be `undefined` after reconnect.
 
 ---
 

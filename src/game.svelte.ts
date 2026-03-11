@@ -9,6 +9,7 @@ const gameState = $state({
 	localPlayerClass: null as PlayerClass | null,
 	localPlayerName: 'Player',
 	error: null as string | null,
+	leavingLobby: false,
 });
 
 export { gameState };
@@ -93,6 +94,7 @@ export const gameActions = {
 	},
 	leaveLobby(lobbyId: bigint) {
 		if (!conn) return;
+		gameState.leavingLobby = true;
 		conn.reducers.leaveLobby({ lobbyId });
 		gameState.currentLobbyId = null;
 	},

@@ -12,7 +12,19 @@
 	const myEntry = $derived(
 		$lobbyPlayers.find(p => p.playerIdentity.toHexString() === $conn.identity?.toHexString())
 	);
-	const alreadyInLobby = $derived(!!myEntry);
+	const myLobby = $derived(myEntry ? $lobbies.find(l => l.id === myEntry.lobbyId) : null);
+	// Only show reconnect for active games; redirect to lobby for waiting/countdown
+	const inActiveGame = $derived(myLobby?.status === 'in_progress');
+
+	$effect(() => {
+		if (!myLobby) {
+			gameState.leavingLobby = false;
+			return;
+		}
+		if (myLobby.status !== 'in_progress' && !gameState.leavingLobby) {
+			stageActions.setStage('lobby');
+		}
+	});
 
 	let joinCode = $state('');
 	let playerName = $state('Player');
@@ -51,7 +63,7 @@
 >
 	<h1 style="font-size: 3rem; margin: 0;">Forest Run</h1>
 
-	{#if alreadyInLobby}
+	{#if inActiveGame}
 		<input
 			type="text"
 			value={myEntry?.playerName}
