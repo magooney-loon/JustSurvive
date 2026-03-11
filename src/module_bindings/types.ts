@@ -4,162 +4,164 @@
 /* eslint-disable */
 /* tslint:disable */
 import {
-	TypeBuilder as __TypeBuilder,
-	t as __t,
-	type AlgebraicTypeType as __AlgebraicTypeType,
-	type Infer as __Infer
-} from 'spacetimedb';
+  TypeBuilder as __TypeBuilder,
+  t as __t,
+  type AlgebraicTypeType as __AlgebraicTypeType,
+  type Infer as __Infer,
+} from "spacetimedb";
 
-export const AcidPool = __t.object('AcidPool', {
-	id: __t.u64(),
-	sessionId: __t.u64(),
-	posX: __t.i64(),
-	posZ: __t.i64(),
-	radius: __t.u64(),
-	expiresAt: __t.timestamp()
+export const AcidPool = __t.object("AcidPool", {
+  id: __t.u64(),
+  sessionId: __t.u64(),
+  posX: __t.i64(),
+  posZ: __t.i64(),
+  radius: __t.u64(),
+  expiresAt: __t.timestamp(),
 });
 export type AcidPool = __Infer<typeof AcidPool>;
 
-export const DayPhaseJob = __t.object('DayPhaseJob', {
-	scheduledId: __t.u64(),
-	scheduledAt: __t.scheduleAt(),
-	sessionId: __t.u64()
+export const DayPhaseJob = __t.object("DayPhaseJob", {
+  scheduledId: __t.u64(),
+  scheduledAt: __t.scheduleAt(),
+  sessionId: __t.u64(),
 });
 export type DayPhaseJob = __Infer<typeof DayPhaseJob>;
 
-export const EliminateJob = __t.object('EliminateJob', {
-	scheduledId: __t.u64(),
-	scheduledAt: __t.scheduleAt(),
-	sessionId: __t.u64(),
-	targetIdentity: __t.identity()
+export const EliminateJob = __t.object("EliminateJob", {
+  scheduledId: __t.u64(),
+  scheduledAt: __t.scheduleAt(),
+  sessionId: __t.u64(),
+  targetIdentity: __t.identity(),
 });
 export type EliminateJob = __Infer<typeof EliminateJob>;
 
-export const Enemy = __t.object('Enemy', {
-	id: __t.u64(),
-	sessionId: __t.u64(),
-	enemyType: __t.string(),
-	hp: __t.u64(),
-	maxHp: __t.u64(),
-	posX: __t.i64(),
-	posZ: __t.i64(),
-	speedMultiplier: __t.u64(),
-	isDazed: __t.bool(),
-	dazedUntil: __t.option(__t.timestamp()),
-	isAlive: __t.bool(),
-	isMarked: __t.bool(),
-	markedUntil: __t.option(__t.timestamp())
+export const Enemy = __t.object("Enemy", {
+  id: __t.u64(),
+  sessionId: __t.u64(),
+  enemyType: __t.string(),
+  hp: __t.u64(),
+  maxHp: __t.u64(),
+  posX: __t.i64(),
+  posZ: __t.i64(),
+  speedMultiplier: __t.u64(),
+  isDazed: __t.bool(),
+  dazedUntil: __t.option(__t.timestamp()),
+  isAlive: __t.bool(),
+  isMarked: __t.bool(),
+  markedUntil: __t.option(__t.timestamp()),
 });
 export type Enemy = __Infer<typeof Enemy>;
 
-export const EnemySpawnJob = __t.object('EnemySpawnJob', {
-	scheduledId: __t.u64(),
-	scheduledAt: __t.scheduleAt(),
-	sessionId: __t.u64()
+export const EnemySpawnJob = __t.object("EnemySpawnJob", {
+  scheduledId: __t.u64(),
+  scheduledAt: __t.scheduleAt(),
+  sessionId: __t.u64(),
 });
 export type EnemySpawnJob = __Infer<typeof EnemySpawnJob>;
 
-export const EnemyTickJob = __t.object('EnemyTickJob', {
-	scheduledId: __t.u64(),
-	scheduledAt: __t.scheduleAt(),
-	sessionId: __t.u64()
+export const EnemyTickJob = __t.object("EnemyTickJob", {
+  scheduledId: __t.u64(),
+  scheduledAt: __t.scheduleAt(),
+  sessionId: __t.u64(),
 });
 export type EnemyTickJob = __Infer<typeof EnemyTickJob>;
 
-export const GameSession = __t.object('GameSession', {
-	id: __t.u64(),
-	lobbyId: __t.u64(),
-	status: __t.string(),
-	startedAt: __t.timestamp(),
-	endedAt: __t.option(__t.timestamp()),
-	dayPhase: __t.string(),
-	cycleNumber: __t.u64(),
-	phaseStartedAt: __t.timestamp(),
-	fogActive: __t.bool(),
-	mapSeed: __t.u64()
+export const GameSession = __t.object("GameSession", {
+  id: __t.u64(),
+  lobbyId: __t.u64(),
+  status: __t.string(),
+  startedAt: __t.timestamp(),
+  endedAt: __t.option(__t.timestamp()),
+  dayPhase: __t.string(),
+  cycleNumber: __t.u64(),
+  phaseStartedAt: __t.timestamp(),
+  fogActive: __t.bool(),
+  mapSeed: __t.u64(),
 });
 export type GameSession = __Infer<typeof GameSession>;
 
-export const Lobby = __t.object('Lobby', {
-	id: __t.u64(),
-	hostIdentity: __t.identity(),
-	code: __t.string(),
-	isPublic: __t.bool(),
-	status: __t.string(),
-	playerCount: __t.u64(),
-	maxPlayers: __t.u64(),
-	createdAt: __t.timestamp()
+export const Lobby = __t.object("Lobby", {
+  id: __t.u64(),
+  hostIdentity: __t.identity(),
+  code: __t.string(),
+  isPublic: __t.bool(),
+  status: __t.string(),
+  playerCount: __t.u64(),
+  maxPlayers: __t.u64(),
+  createdAt: __t.timestamp(),
 });
 export type Lobby = __Infer<typeof Lobby>;
 
-export const LobbyCountdown = __t.object('LobbyCountdown', {
-	scheduledId: __t.u64(),
-	scheduledAt: __t.scheduleAt(),
-	lobbyId: __t.u64()
+export const LobbyCountdown = __t.object("LobbyCountdown", {
+  scheduledId: __t.u64(),
+  scheduledAt: __t.scheduleAt(),
+  lobbyId: __t.u64(),
 });
 export type LobbyCountdown = __Infer<typeof LobbyCountdown>;
 
-export const LobbyPlayer = __t.object('LobbyPlayer', {
-	id: __t.u64(),
-	lobbyId: __t.u64(),
-	playerIdentity: __t.identity(),
-	playerName: __t.string(),
-	classChoice: __t.string(),
-	isReady: __t.bool(),
-	joinedAt: __t.timestamp()
+export const LobbyPlayer = __t.object("LobbyPlayer", {
+  id: __t.u64(),
+  lobbyId: __t.u64(),
+  playerIdentity: __t.identity(),
+  playerName: __t.string(),
+  classChoice: __t.string(),
+  isReady: __t.bool(),
+  joinedAt: __t.timestamp(),
 });
 export type LobbyPlayer = __Infer<typeof LobbyPlayer>;
 
-export const Mark = __t.object('Mark', {
-	id: __t.u64(),
-	sessionId: __t.u64(),
-	sourceIdentity: __t.identity(),
-	targetType: __t.string(),
-	posX: __t.i64(),
-	posZ: __t.i64(),
-	expiresAt: __t.timestamp()
+export const Mark = __t.object("Mark", {
+  id: __t.u64(),
+  sessionId: __t.u64(),
+  sourceIdentity: __t.identity(),
+  targetType: __t.string(),
+  posX: __t.i64(),
+  posZ: __t.i64(),
+  expiresAt: __t.timestamp(),
 });
 export type Mark = __Infer<typeof Mark>;
 
-export const PlayerState = __t.object('PlayerState', {
-	id: __t.u64(),
-	sessionId: __t.u64(),
-	playerIdentity: __t.identity(),
-	classChoice: __t.string(),
-	hp: __t.u64(),
-	maxHp: __t.u64(),
-	stamina: __t.u64(),
-	maxStamina: __t.u64(),
-	lastMoveAt: __t.timestamp(),
-	staminaRegenStartAt: __t.option(__t.timestamp()),
-	staminaRegenCarry: __t.u64(),
-	posX: __t.i64(),
-	posY: __t.i64(),
-	posZ: __t.i64(),
-	status: __t.string(),
-	score: __t.u64(),
-	facingAngle: __t.i64(),
-	isBracing: __t.bool(),
-	speedBoostUntil: __t.option(__t.timestamp()),
-	reviveCooldownUntil: __t.option(__t.timestamp()),
-	pingCooldownUntil: __t.option(__t.timestamp())
+export const PlayerState = __t.object("PlayerState", {
+  id: __t.u64(),
+  sessionId: __t.u64(),
+  playerIdentity: __t.identity(),
+  classChoice: __t.string(),
+  hp: __t.u64(),
+  maxHp: __t.u64(),
+  stamina: __t.u64(),
+  maxStamina: __t.u64(),
+  lastMoveAt: __t.timestamp(),
+  staminaRegenStartAt: __t.option(__t.timestamp()),
+  staminaRegenCarry: __t.u64(),
+  lastShotAt: __t.option(__t.timestamp()),
+  posX: __t.i64(),
+  posY: __t.i64(),
+  posZ: __t.i64(),
+  status: __t.string(),
+  score: __t.u64(),
+  facingAngle: __t.i64(),
+  isBracing: __t.bool(),
+  speedBoostUntil: __t.option(__t.timestamp()),
+  reviveCooldownUntil: __t.option(__t.timestamp()),
+  pingCooldownUntil: __t.option(__t.timestamp()),
 });
 export type PlayerState = __Infer<typeof PlayerState>;
 
-export const ReviveChannel = __t.object('ReviveChannel', {
-	id: __t.u64(),
-	sessionId: __t.u64(),
-	healerIdentity: __t.identity(),
-	targetIdentity: __t.identity(),
-	channelStartedAt: __t.timestamp()
+export const ReviveChannel = __t.object("ReviveChannel", {
+  id: __t.u64(),
+  sessionId: __t.u64(),
+  healerIdentity: __t.identity(),
+  targetIdentity: __t.identity(),
+  channelStartedAt: __t.timestamp(),
 });
 export type ReviveChannel = __Infer<typeof ReviveChannel>;
 
-export const ReviveCompleteJob = __t.object('ReviveCompleteJob', {
-	scheduledId: __t.u64(),
-	scheduledAt: __t.scheduleAt(),
-	sessionId: __t.u64(),
-	healerIdentity: __t.identity(),
-	targetIdentity: __t.identity()
+export const ReviveCompleteJob = __t.object("ReviveCompleteJob", {
+  scheduledId: __t.u64(),
+  scheduledAt: __t.scheduleAt(),
+  sessionId: __t.u64(),
+  healerIdentity: __t.identity(),
+  targetIdentity: __t.identity(),
 });
 export type ReviveCompleteJob = __Infer<typeof ReviveCompleteJob>;
+

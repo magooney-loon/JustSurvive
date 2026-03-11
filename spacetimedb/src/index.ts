@@ -112,6 +112,7 @@ const PlayerState = table(
 		lastMoveAt: t.timestamp(),
 		staminaRegenStartAt: t.timestamp().optional(),
 		staminaRegenCarry: t.u64(),
+		lastShotAt: t.timestamp().optional(),
 		posX: t.i64(),
 		posY: t.i64(),
 		posZ: t.i64(),
@@ -667,6 +668,7 @@ export const fire_start_game = spacetimedb.reducer(
 				lastMoveAt: ctx.timestamp,
 				staminaRegenStartAt: undefined,
 				staminaRegenCarry: 0n,
+				lastShotAt: undefined,
 				posX: 0n,
 				posY: 0n,
 				posZ: 0n,
@@ -1135,9 +1137,10 @@ export const attack_enemy = spacetimedb.reducer(
 		const dmg = WEAPON_DAMAGE[ps.classChoice] ?? 15n;
 		const newHp = enemy.hp > dmg ? enemy.hp - dmg : 0n;
 
+		const shotAt = ctx.timestamp;
 		if (newHp <= 0n) {
 			ctx.db.enemy.id.update({ ...enemy, hp: 0n, isAlive: false });
-			ctx.db.playerState.id.update({ ...ps, score: ps.score + 10n });
+			ctx.db.playerState.id.update({ ...ps, score: ps.score + 10n, lastShotAt: shotAt });
 		} else {
 			let updatedEnemy = { ...enemy, hp: newHp };
 			if (suppress && ps.classChoice === 'gunner') {
@@ -1145,6 +1148,7 @@ export const attack_enemy = spacetimedb.reducer(
 				updatedEnemy = { ...updatedEnemy, isDazed: true, dazedUntil: suppressUntil };
 			}
 			ctx.db.enemy.id.update(updatedEnemy);
+			ctx.db.playerState.id.update({ ...ps, lastShotAt: shotAt });
 		}
 	}
 );

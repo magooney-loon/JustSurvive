@@ -41,7 +41,17 @@
 	const aimX = $derived(overrideAim?.x ?? displayX + -Math.sin(facing) * aimRange);
 	const aimZ = $derived(overrideAim?.z ?? displayZ + -Math.cos(facing) * aimRange);
 
+	let shotPulse = $state(0);
+
 	useTask((dt) => {
+		const lastShotMicros = (player as any).lastShotAt?.microsSinceUnixEpoch as bigint | undefined;
+		if (lastShotMicros) {
+			const ageMs = Date.now() - Number(lastShotMicros) / 1000;
+			shotPulse = ageMs >= 0 && ageMs < 220 ? 1 - ageMs / 220 : 0;
+		} else {
+			shotPulse = 0;
+		}
+
 		if (isLocal && overridePos) {
 			displayX = overridePos.x;
 			displayY = overridePos.y;
@@ -57,14 +67,28 @@
 
 {#if player.status !== 'eliminated'}
 	<T.Group position={[displayX, displayY, displayZ]} rotation={[0, facing, 0]}>
-		<T.Mesh>
-			<T.CapsuleGeometry args={[0.4, 1.2]} />
-			<T.MeshStandardMaterial
-				color={player.status === 'downed' ? '#555' : (CLASS_COLORS[player.classChoice] ?? '#fff')}
-				opacity={player.status === 'downed' ? 0.5 : 1}
-				transparent={player.status === 'downed'}
-			/>
-		</T.Mesh>
+		<T.Group>
+			<T.Mesh position={[0, 0.9, 0]}>
+				<T.BoxGeometry args={[0.55, 0.8, 0.3]} />
+				<T.MeshStandardMaterial
+					color={player.status === 'downed' ? '#555' : (CLASS_COLORS[player.classChoice] ?? '#fff')}
+					opacity={player.status === 'downed' ? 0.5 : 1}
+					transparent={player.status === 'downed'}
+				/>
+			</T.Mesh>
+			<T.Mesh position={[0, 1.5, 0]}>
+				<T.SphereGeometry args={[0.22, 10, 8]} />
+				<T.MeshStandardMaterial color="#d9c5a7" />
+			</T.Mesh>
+			<T.Mesh position={[-0.18, 0.3, 0]}>
+				<T.CylinderGeometry args={[0.12, 0.12, 0.6, 6]} />
+				<T.MeshStandardMaterial color="#3a2f25" />
+			</T.Mesh>
+			<T.Mesh position={[0.18, 0.3, 0]}>
+				<T.CylinderGeometry args={[0.12, 0.12, 0.6, 6]} />
+				<T.MeshStandardMaterial color="#3a2f25" />
+			</T.Mesh>
+		</T.Group>
 		<!-- Facing nub -->
 		<T.Mesh position={[0, 0, -0.45]}>
 			<T.SphereGeometry args={[0.12, 6, 4]} />
@@ -82,23 +106,59 @@
 			</T.Mesh>
 		{/if}
 		{#if player.classChoice === 'gunner'}
+			{@const recoil = shotPulse * 0.18}
 			<T.Group position={[0, 0.6, -0.25]}>
-				<T.Mesh position={[-0.35, 0, -0.2]} rotation={[0.2, 0, 0.1]}>
+				<T.Mesh position={[-0.35, 0, -0.2 - recoil]} rotation={[0.2, 0, 0.1]}>
 					<T.CylinderGeometry args={[0.06, 0.07, 0.5, 6]} />
 					<T.MeshStandardMaterial color="#2b2b2b" />
 				</T.Mesh>
-				<T.Mesh position={[0.35, 0, -0.2]} rotation={[0.2, 0, -0.1]}>
+				<T.Mesh position={[0.35, 0, -0.2 - recoil]} rotation={[0.2, 0, -0.1]}>
 					<T.CylinderGeometry args={[0.06, 0.07, 0.5, 6]} />
 					<T.MeshStandardMaterial color="#2b2b2b" />
 				</T.Mesh>
-				<T.Mesh position={[-0.35, 0.05, -0.55]}>
+				<T.Mesh position={[-0.35, 0.05, -0.55 - recoil]}>
 					<T.BoxGeometry args={[0.14, 0.1, 0.28]} />
 					<T.MeshStandardMaterial color="#1a1a1a" />
 				</T.Mesh>
-				<T.Mesh position={[0.35, 0.05, -0.55]}>
+				<T.Mesh position={[0.35, 0.05, -0.55 - recoil]}>
 					<T.BoxGeometry args={[0.14, 0.1, 0.28]} />
 					<T.MeshStandardMaterial color="#1a1a1a" />
 				</T.Mesh>
+				{#if shotPulse > 0}
+					<T.Mesh
+						position={[-0.35, 0.05, -0.95 - recoil]}
+						scale={[shotPulse, shotPulse, shotPulse]}
+					>
+						<T.ConeGeometry args={[0.16, 0.45, 6]} />
+						<T.MeshBasicMaterial color="#ffcc55" transparent opacity={shotPulse} />
+					</T.Mesh>
+					<T.Mesh position={[0.35, 0.05, -0.95 - recoil]} scale={[shotPulse, shotPulse, shotPulse]}>
+						<T.ConeGeometry args={[0.16, 0.45, 6]} />
+						<T.MeshBasicMaterial color="#ffcc55" transparent opacity={shotPulse} />
+					</T.Mesh>
+				{/if}
+			</T.Group>
+		{:else if player.classChoice === 'healer'}
+			{@const recoil = shotPulse * 0.12}
+			<T.Group position={[0, 0.85, -0.15]}>
+				<T.Mesh position={[-0.4, 0, -0.1 - recoil]} rotation={[0.15, 0, 0.2]}>
+					<T.CylinderGeometry args={[0.05, 0.06, 0.5, 6]} />
+					<T.MeshStandardMaterial color="#2b2b2b" />
+				</T.Mesh>
+				<T.Mesh position={[0.4, 0, -0.1 - recoil]} rotation={[0.15, 0, -0.2]}>
+					<T.CylinderGeometry args={[0.05, 0.06, 0.5, 6]} />
+					<T.MeshStandardMaterial color="#2b2b2b" />
+				</T.Mesh>
+				{#if shotPulse > 0}
+					<T.Mesh position={[-0.4, 0, -0.5 - recoil]} scale={[shotPulse, shotPulse, shotPulse]}>
+						<T.ConeGeometry args={[0.12, 0.35, 6]} />
+						<T.MeshBasicMaterial color="#ffcc55" transparent opacity={shotPulse} />
+					</T.Mesh>
+					<T.Mesh position={[0.4, 0, -0.5 - recoil]} scale={[shotPulse, shotPulse, shotPulse]}>
+						<T.ConeGeometry args={[0.12, 0.35, 6]} />
+						<T.MeshBasicMaterial color="#ffcc55" transparent opacity={shotPulse} />
+					</T.Mesh>
+				{/if}
 			</T.Group>
 		{/if}
 	</T.Group>

@@ -112,6 +112,7 @@ export const PlayerState = table(
 		lastMoveAt: t.timestamp(),
 		staminaRegenStartAt: t.timestamp().optional(),
 		staminaRegenCarry: t.u64(),
+		lastShotAt: t.timestamp().optional(),
 		posX: t.i64(), // fixed-point: value * 0.001 = world units
 		posY: t.i64(),
 		posZ: t.i64(),

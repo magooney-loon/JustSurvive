@@ -22,6 +22,7 @@ export default __t.row({
   lastMoveAt: __t.timestamp().name("last_move_at"),
   staminaRegenStartAt: __t.option(__t.timestamp()).name("stamina_regen_start_at"),
   staminaRegenCarry: __t.u64().name("stamina_regen_carry"),
+  lastShotAt: __t.option(__t.timestamp()).name("last_shot_at"),
   posX: __t.i64().name("pos_x"),
   posY: __t.i64().name("pos_y"),
   posZ: __t.i64().name("pos_z"),
