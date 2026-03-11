@@ -212,7 +212,7 @@
 
 <!-- Ground plane -->
 <T.Mesh position={[0, -0.5, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-	<T.PlaneGeometry args={[500, 500]} />
+	<T.PlaneGeometry args={[350, 350]} />
 	<T.MeshStandardMaterial color="#1a3a10" />
 </T.Mesh>
 

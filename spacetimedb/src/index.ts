@@ -1037,6 +1037,8 @@ const ENEMY_HP: Record<string, bigint> = {
 	brute: 150n,
 	spitter: 60n
 };
+const ENEMY_HP_CYCLE_BONUS = 5n; // +5 HP per cycle
+const ENEMY_HP_MAX_MULTIPLIER = 300n; // Hard cap at 3x base HP
 
 export const spawn_enemy = spacetimedb.reducer(
 	{
@@ -1079,21 +1081,31 @@ export const spawn_enemy = spacetimedb.reducer(
 		);
 		if (players.length === 0) return;
 
-		const avgZ = players.reduce((s, p) => s + p.posZ, 0n) / BigInt(players.length);
+		// Spawn 360 degrees around a random player
+		const targetPlayer =
+			players[Number(ctx.timestamp.microsSinceUnixEpoch % BigInt(players.length))];
 		const seedBase = ctx.timestamp.microsSinceUnixEpoch + session.mapSeed;
-		const spreadX = (seedBase % 60_000n) - 30_000n;
-		const spreadZ = ((seedBase / 97n) % 40_000n) - 20_000n;
-		const spawnX = spreadX;
-		const spawnZ = avgZ - 30_000n + spreadZ;
+		const angle = Number(seedBase % 360n); // 0-359 degrees
+		const angleRad = (angle * Math.PI) / 180;
+		const SPAWN_DISTANCE = 35_000n; // 35 units from player
+		const spread = Number((seedBase / 360n) % 10_000n) - 5000; // +-5 units random
+		const dist = Number(SPAWN_DISTANCE) + spread;
+		const spawnX = targetPlayer.posX + BigInt(Math.round(Math.sin(angleRad) * dist));
+		const spawnZ = targetPlayer.posZ + BigInt(Math.round(Math.cos(angleRad) * dist));
 
 		const baseMultiplier = 100n + session.cycleNumber * 5n;
+		const hpBonus = session.cycleNumber * ENEMY_HP_CYCLE_BONUS;
+		const baseHp = ENEMY_HP[enemyType] ?? 50n;
+		const maxHp = baseHp + hpBonus;
+		const maxCap = (baseHp * ENEMY_HP_MAX_MULTIPLIER) / 100n;
+		const cappedHp = maxHp > maxCap ? maxCap : maxHp;
 
 		ctx.db.enemy.insert({
 			id: 0n,
 			sessionId: arg.sessionId,
 			enemyType,
-			hp: ENEMY_HP[enemyType] ?? 50n,
-			maxHp: ENEMY_HP[enemyType] ?? 50n,
+			hp: cappedHp,
+			maxHp: cappedHp,
 			posX: spawnX,
 			posZ: spawnZ,
 			speedMultiplier: baseMultiplier,

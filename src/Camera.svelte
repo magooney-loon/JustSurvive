@@ -49,7 +49,7 @@
 	position={[0, 0, 10]}
 	fov={60}
 	near={0.001}
-	far={400}
+	far={100}
 	makeDefault
 	oncreate={handleCameraCreate}
 >
