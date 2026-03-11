@@ -36,19 +36,33 @@
 	);
 
 	function nearestEnemyToAim(rangeFP: number) {
-		const ax = BigInt(Math.round(localAim.x * 1000));
-		const az = BigInt(Math.round(localAim.z * 1000));
-		const rangeSq = BigInt(rangeFP) * BigInt(rangeFP);
+		const AIM_RAY_RADIUS_FP = 1200; // 1.2 world units
+		const ox = localPos.x * 1000;
+		const oz = localPos.z * 1000;
+		const ax = localAim.x * 1000;
+		const az = localAim.z * 1000;
+		const dirX = ax - ox;
+		const dirZ = az - oz;
+		const dirLenSq = dirX * dirX + dirZ * dirZ;
+		if (dirLenSq <= 0.0001) return null;
+		const dirLen = Math.sqrt(dirLenSq);
+		const maxDist = rangeFP;
+		const maxPerpSq = AIM_RAY_RADIUS_FP * AIM_RAY_RADIUS_FP;
 		let best: any = null;
-		let bestDist = BigInt(Number.MAX_SAFE_INTEGER);
+		let bestPerp = Number.POSITIVE_INFINITY;
 		for (const e of $enemies) {
 			if (!e.isAlive || e.sessionId !== gameState.currentSessionId) continue;
-			const dx = e.posX - ax;
-			const dz = e.posZ - az;
-			const d = dx * dx + dz * dz;
-			if (d < rangeSq && d < bestDist) {
+			const ex = Number(e.posX);
+			const ez = Number(e.posZ);
+			const vx = ex - ox;
+			const vz = ez - oz;
+			const along = (vx * dirX + vz * dirZ) / dirLen;
+			if (along < 0 || along > maxDist) continue;
+			const perpSq = Math.max(0, vx * vx + vz * vz - along * along);
+			if (perpSq > maxPerpSq) continue;
+			if (perpSq < bestPerp) {
 				best = e;
-				bestDist = d;
+				bestPerp = perpSq;
 			}
 		}
 		return best;
