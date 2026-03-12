@@ -328,6 +328,82 @@ const ReviveCompleteJob = table(
 	}
 );
 
+// ─── Leaderboard Tables ───────────────────────────────────────────────────────
+
+const LobbyResult = table(
+	{
+		name: 'lobby_result',
+		public: true,
+		indexes: [
+			{ name: 'lobby_result_score', accessor: 'lobby_result_score', algorithm: 'btree', columns: ['totalScore'] },
+			{ name: 'lobby_result_session', accessor: 'lobby_result_session', algorithm: 'btree', columns: ['sessionId'] }
+		]
+	},
+	{
+		id: t.u64().primaryKey().autoInc(),
+		sessionId: t.u64(),
+		lobbyCode: t.string(),
+		combo: t.string(),
+		playerCount: t.u64(),
+		totalScore: t.u64(),
+		survivalSecs: t.u64(),
+		cycleNumber: t.u64(),
+		createdAt: t.timestamp()
+	}
+);
+
+const LobbyResultPlayer = table(
+	{
+		name: 'lobby_result_player',
+		public: true,
+		indexes: [
+			{ name: 'lobby_result_player_session', accessor: 'lobby_result_player_session', algorithm: 'btree', columns: ['sessionId'] }
+		]
+	},
+	{
+		id: t.u64().primaryKey().autoInc(),
+		sessionId: t.u64(),
+		playerName: t.string(),
+		classChoice: t.string()
+	}
+);
+
+const GlobalStats = table(
+	{
+		name: 'global_stats',
+		public: true
+	},
+	{
+		id: t.u64().primaryKey(),
+		totalGames: t.u64(),
+		totalSurvivalSecs: t.u64(),
+		bestSurvivalSecs: t.u64(),
+		classSpotter: t.u64(),
+		classGunner: t.u64(),
+		classTank: t.u64(),
+		classHealer: t.u64()
+	}
+);
+
+const SquadRecord = table(
+	{
+		name: 'squad_record',
+		public: true,
+		indexes: [
+			{ name: 'squad_record_combo', accessor: 'squad_record_combo', algorithm: 'btree', columns: ['combo'] },
+			{ name: 'squad_record_times_played', accessor: 'squad_record_times_played', algorithm: 'btree', columns: ['timesPlayed'] },
+			{ name: 'squad_record_best_score', accessor: 'squad_record_best_score', algorithm: 'btree', columns: ['bestScore'] }
+		]
+	},
+	{
+		id: t.u64().primaryKey().autoInc(),
+		combo: t.string(),
+		timesPlayed: t.u64(),
+		bestScore: t.u64(),
+		bestSurvivalSecs: t.u64()
+	}
+);
+
 // ─── Schema ───────────────────────────────────────────────────────────────────
 
 const spacetimedb = schema({
@@ -344,7 +420,11 @@ const spacetimedb = schema({
 	mark: Mark,
 	acidPool: AcidPool,
 	reviveChannel: ReviveChannel,
-	reviveCompleteJob: ReviveCompleteJob
+	reviveCompleteJob: ReviveCompleteJob,
+	lobbyResult: LobbyResult,
+	lobbyResultPlayer: LobbyResultPlayer,
+	globalStats: GlobalStats,
+	squadRecord: SquadRecord
 });
 
 export default spacetimedb;
@@ -445,6 +525,119 @@ function end_session(ctx: any, sessionId: bigint) {
 		ctx.db.lobby.id.update({ ...lobby, status: 'waiting' });
 		for (const p of ctx.db.lobbyPlayer.lobby_player_lobby_id.filter(lobby.id)) {
 			ctx.db.lobbyPlayer.id.update({ ...p, isReady: false });
+		}
+	}
+
+	// ─── Leaderboard ─────────────────────────────────────────────────────────────
+	const sessionPlayers = [...ctx.db.playerState.player_state_session_id.filter(sessionId)];
+	const sessionLobbyPlayers = [...ctx.db.lobbyPlayer.lobby_player_lobby_id.filter(session.lobbyId)];
+	const classes = sessionLobbyPlayers.map((p) => p.classChoice).filter((c) => c !== '').sort();
+	const combo = classes.length > 0 ? classes.join(',') : 'none';
+	const totalScore = sessionPlayers.reduce((acc, p) => acc + p.score, 0n);
+	const survivalMicros =
+		(ctx.timestamp.microsSinceUnixEpoch as bigint) -
+		(session.startedAt.microsSinceUnixEpoch as bigint);
+	const survivalSecs = survivalMicros > 0n ? survivalMicros / 1_000_000n : 0n;
+
+	// 1. GlobalStats upsert (id always 1n)
+	const spotterCount = BigInt(classes.filter((c) => c === 'spotter').length);
+	const gunnerCount = BigInt(classes.filter((c) => c === 'gunner').length);
+	const tankCount = BigInt(classes.filter((c) => c === 'tank').length);
+	const healerCount = BigInt(classes.filter((c) => c === 'healer').length);
+	const gs = ctx.db.globalStats.id.find(1n);
+	if (gs) {
+		ctx.db.globalStats.id.update({
+			...gs,
+			totalGames: gs.totalGames + 1n,
+			totalSurvivalSecs: gs.totalSurvivalSecs + survivalSecs,
+			bestSurvivalSecs: survivalSecs > gs.bestSurvivalSecs ? survivalSecs : gs.bestSurvivalSecs,
+			classSpotter: gs.classSpotter + spotterCount,
+			classGunner: gs.classGunner + gunnerCount,
+			classTank: gs.classTank + tankCount,
+			classHealer: gs.classHealer + healerCount
+		});
+	} else {
+		ctx.db.globalStats.insert({
+			id: 1n,
+			totalGames: 1n,
+			totalSurvivalSecs: survivalSecs,
+			bestSurvivalSecs: survivalSecs,
+			classSpotter: spotterCount,
+			classGunner: gunnerCount,
+			classTank: tankCount,
+			classHealer: healerCount
+		});
+	}
+
+	// 2. SquadRecord upsert
+	const existingSquad = [...ctx.db.squadRecord.squad_record_combo.filter(combo)][0];
+	if (existingSquad) {
+		ctx.db.squadRecord.id.update({
+			...existingSquad,
+			timesPlayed: existingSquad.timesPlayed + 1n,
+			bestScore: totalScore > existingSquad.bestScore ? totalScore : existingSquad.bestScore,
+			bestSurvivalSecs:
+				survivalSecs > existingSquad.bestSurvivalSecs ? survivalSecs : existingSquad.bestSurvivalSecs
+		});
+	} else {
+		ctx.db.squadRecord.insert({
+			id: 0n,
+			combo,
+			timesPlayed: 1n,
+			bestScore: totalScore,
+			bestSurvivalSecs: survivalSecs
+		});
+	}
+
+	// 3. Top-20 gate
+	const alreadyRecorded =
+		[...ctx.db.lobbyResult.lobby_result_session.filter(sessionId)].length > 0;
+	if (!alreadyRecorded) {
+		const allResults = [...ctx.db.lobbyResult.iter()];
+		let qualified = false;
+		let evictRow: any = null;
+		if (allResults.length < 20) {
+			qualified = true;
+		} else {
+			let minRow = allResults[0];
+			for (const r of allResults) {
+				if (r.totalScore < minRow.totalScore) minRow = r;
+			}
+			if (totalScore > minRow.totalScore) {
+				qualified = true;
+				evictRow = minRow;
+			}
+		}
+		if (qualified) {
+			if (evictRow) {
+				for (const p of ctx.db.lobbyResultPlayer.lobby_result_player_session.filter(
+					evictRow.sessionId
+				)) {
+					ctx.db.lobbyResultPlayer.id.delete(p.id);
+				}
+				ctx.db.lobbyResult.id.delete(evictRow.id);
+			}
+			ctx.db.lobbyResult.insert({
+				id: 0n,
+				sessionId,
+				lobbyCode: lobby?.code ?? '??????',
+				combo,
+				playerCount: BigInt(classes.length),
+				totalScore,
+				survivalSecs,
+				cycleNumber: session.cycleNumber,
+				createdAt: ctx.timestamp
+			});
+			for (const lp of sessionLobbyPlayers) {
+				if (lp.classChoice) {
+					ctx.db.lobbyResultPlayer.insert({
+						id: 0n,
+						sessionId,
+						playerName: lp.playerName,
+						classChoice: lp.classChoice
+					});
+				}
+			}
 		}
 	}
 }

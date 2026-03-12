@@ -59,11 +59,15 @@ import StartCountdownReducer from "./start_countdown_reducer";
 import AcidPoolRow from "./acid_pool_table";
 import EnemyRow from "./enemy_table";
 import GameSessionRow from "./game_session_table";
+import GlobalStatsRow from "./global_stats_table";
 import LobbyRow from "./lobby_table";
 import LobbyPlayerRow from "./lobby_player_table";
+import LobbyResultRow from "./lobby_result_table";
+import LobbyResultPlayerRow from "./lobby_result_player_table";
 import MarkRow from "./mark_table";
 import PlayerStateRow from "./player_state_table";
 import ReviveChannelRow from "./revive_channel_table";
+import SquadRecordRow from "./squad_record_table";
 
 /** Type-only namespace exports for generated type groups. */
 
@@ -111,6 +115,17 @@ const tablesSchema = __schema({
       { name: 'game_session_id_key', constraint: 'unique', columns: ['id'] },
     ],
   }, GameSessionRow),
+  globalStats: __table({
+    name: 'global_stats',
+    indexes: [
+      { name: 'id', algorithm: 'btree', columns: [
+        'id',
+      ] },
+    ],
+    constraints: [
+      { name: 'global_stats_id_key', constraint: 'unique', columns: ['id'] },
+    ],
+  }, GlobalStatsRow),
   lobby: __table({
     name: 'lobby',
     indexes: [
@@ -145,6 +160,37 @@ const tablesSchema = __schema({
       { name: 'lobby_player_id_key', constraint: 'unique', columns: ['id'] },
     ],
   }, LobbyPlayerRow),
+  lobbyResult: __table({
+    name: 'lobby_result',
+    indexes: [
+      { name: 'id', algorithm: 'btree', columns: [
+        'id',
+      ] },
+      { name: 'lobby_result_session', algorithm: 'btree', columns: [
+        'sessionId',
+      ] },
+      { name: 'lobby_result_score', algorithm: 'btree', columns: [
+        'totalScore',
+      ] },
+    ],
+    constraints: [
+      { name: 'lobby_result_id_key', constraint: 'unique', columns: ['id'] },
+    ],
+  }, LobbyResultRow),
+  lobbyResultPlayer: __table({
+    name: 'lobby_result_player',
+    indexes: [
+      { name: 'id', algorithm: 'btree', columns: [
+        'id',
+      ] },
+      { name: 'lobby_result_player_session', algorithm: 'btree', columns: [
+        'sessionId',
+      ] },
+    ],
+    constraints: [
+      { name: 'lobby_result_player_id_key', constraint: 'unique', columns: ['id'] },
+    ],
+  }, LobbyResultPlayerRow),
   mark: __table({
     name: 'mark',
     indexes: [
@@ -190,6 +236,26 @@ const tablesSchema = __schema({
       { name: 'revive_channel_id_key', constraint: 'unique', columns: ['id'] },
     ],
   }, ReviveChannelRow),
+  squadRecord: __table({
+    name: 'squad_record',
+    indexes: [
+      { name: 'squad_record_best_score', algorithm: 'btree', columns: [
+        'bestScore',
+      ] },
+      { name: 'squad_record_combo', algorithm: 'btree', columns: [
+        'combo',
+      ] },
+      { name: 'id', algorithm: 'btree', columns: [
+        'id',
+      ] },
+      { name: 'squad_record_times_played', algorithm: 'btree', columns: [
+        'timesPlayed',
+      ] },
+    ],
+    constraints: [
+      { name: 'squad_record_id_key', constraint: 'unique', columns: ['id'] },
+    ],
+  }, SquadRecordRow),
 });
 
 /** The schema information for all reducers in this module. This is defined the same way as the reducers would have been defined in the server, except the body of the reducer is omitted in code generation. */

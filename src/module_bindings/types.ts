@@ -83,6 +83,18 @@ export const GameSession = __t.object("GameSession", {
 });
 export type GameSession = __Infer<typeof GameSession>;
 
+export const GlobalStats = __t.object("GlobalStats", {
+  id: __t.u64(),
+  totalGames: __t.u64(),
+  totalSurvivalSecs: __t.u64(),
+  bestSurvivalSecs: __t.u64(),
+  classSpotter: __t.u64(),
+  classGunner: __t.u64(),
+  classTank: __t.u64(),
+  classHealer: __t.u64(),
+});
+export type GlobalStats = __Infer<typeof GlobalStats>;
+
 export const Lobby = __t.object("Lobby", {
   id: __t.u64(),
   hostIdentity: __t.identity(),
@@ -112,6 +124,27 @@ export const LobbyPlayer = __t.object("LobbyPlayer", {
   joinedAt: __t.timestamp(),
 });
 export type LobbyPlayer = __Infer<typeof LobbyPlayer>;
+
+export const LobbyResult = __t.object("LobbyResult", {
+  id: __t.u64(),
+  sessionId: __t.u64(),
+  lobbyCode: __t.string(),
+  combo: __t.string(),
+  playerCount: __t.u64(),
+  totalScore: __t.u64(),
+  survivalSecs: __t.u64(),
+  cycleNumber: __t.u64(),
+  createdAt: __t.timestamp(),
+});
+export type LobbyResult = __Infer<typeof LobbyResult>;
+
+export const LobbyResultPlayer = __t.object("LobbyResultPlayer", {
+  id: __t.u64(),
+  sessionId: __t.u64(),
+  playerName: __t.string(),
+  classChoice: __t.string(),
+});
+export type LobbyResultPlayer = __Infer<typeof LobbyResultPlayer>;
 
 export const Mark = __t.object("Mark", {
   id: __t.u64(),
@@ -172,4 +205,13 @@ export const ReviveCompleteJob = __t.object("ReviveCompleteJob", {
   targetIdentity: __t.identity(),
 });
 export type ReviveCompleteJob = __Infer<typeof ReviveCompleteJob>;
+
+export const SquadRecord = __t.object("SquadRecord", {
+  id: __t.u64(),
+  combo: __t.string(),
+  timesPlayed: __t.u64(),
+  bestScore: __t.u64(),
+  bestSurvivalSecs: __t.u64(),
+});
+export type SquadRecord = __Infer<typeof SquadRecord>;
 
