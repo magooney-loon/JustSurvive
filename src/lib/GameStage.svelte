@@ -47,8 +47,8 @@
 				p.sessionId === gameState.currentSessionId
 		)
 	);
-	const MAX_RENDER_DIST = 70; // world units
-	const NEAR_RENDER_DIST = 20; // world units
+	const MAX_RENDER_DIST = 80; // world units
+	const NEAR_RENDER_DIST = 40; // world units
 	const NEAR_DIST_SQ = NEAR_RENDER_DIST * NEAR_RENDER_DIST;
 	const MAX_DIST_SQ = MAX_RENDER_DIST * MAX_RENDER_DIST;
 

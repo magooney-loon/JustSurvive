@@ -53,8 +53,14 @@
 	let nowMs = $state(Date.now());
 	let deathAt = $state<number | null>(null);
 
-	// Spawn animation - use enemy.spawnedAt timestamp
-	let spawnT = $state(1);
+	// Spawn animation - skip for enemies already old (entering from proxy range)
+	let spawnT = $state(
+		untrack(() => {
+			if (!enemy.spawnedAt) return 1;
+			const age = Date.now() - Number(enemy.spawnedAt.microsSinceUnixEpoch) / 1000;
+			return age >= 400 ? 1 : Math.max(0, age / 400);
+		})
+	);
 	const spawnTimeMs = $derived(
 		enemy.spawnedAt ? Number(enemy.spawnedAt.microsSinceUnixEpoch) / 1000 : 0
 	);

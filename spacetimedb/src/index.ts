@@ -1107,7 +1107,7 @@ export const fire_start_game = spacetimedb.reducer(
 			scheduledAt: ScheduleAt.time(now + 100_000n),
 			sessionId: session.id
 		});
-		const INITIAL_SPAWN_JOBS = 2;
+		const INITIAL_SPAWN_JOBS = 3;
 		for (let i = 0; i < INITIAL_SPAWN_JOBS; i++) {
 			ctx.db.enemySpawnJob.insert({
 				scheduledId: 0n,
@@ -1255,7 +1255,7 @@ const ENEMY_BASE_SPEED: Record<string, bigint> = {
 	spitter: 1700n,
 	caster: 1400n
 };
-const ENEMY_CAP = 16;
+const ENEMY_CAP = 26;
 const MELEE_RANGE = 2000n;
 const SPITTER_RANGE_SQ = 144_000_000n; // 12 world units squared
 const CASTER_RANGE_SQ = 64_000_000n; // 8 world units squared
