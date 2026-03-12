@@ -11,7 +11,8 @@
 		updateLocalMovement,
 		resetLocalState,
 		localAim,
-		cameraFollow
+		cameraFollow,
+		localHealthState
 	} from '../localGameState.svelte.js';
 	import { settingsState } from '../settings.svelte.js';
 	import { onMount } from 'svelte';
@@ -98,6 +99,14 @@
 
 	onMount(() => {
 		resetLocalState();
+	});
+
+	$effect(() => {
+		const hp = myState?.hp ?? null;
+		const max = myState?.maxHp ?? null;
+		localHealthState.ratio = hp !== null && max && max > 0n
+			? Math.max(0, Math.min(1, Number(hp) / Number(max)))
+			: 1;
 	});
 
 	// Mouse → screen-space aim direction

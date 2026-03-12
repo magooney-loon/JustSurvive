@@ -12,6 +12,7 @@
 		VignetteEffect
 	} from 'postprocessing';
 	import { settingsState, log } from './settings.svelte.js';
+	import { localHealthState } from './localGameState.svelte.js';
 
 	const { scene, renderer, camera, size, autoRender, renderStage } = useThrelte();
 
@@ -19,10 +20,16 @@
 	// Note: Default WebGL anti-aliasing is disabled in Canvas for performance,
 	// we use SMAA post-processing anti-aliasing instead for better control
 	const composer = new EffectComposer(renderer);
+	let vignetteEffect: VignetteEffect | null = null;
+
+	const VIGNETTE_BASE = 0.75;
+	const VIGNETTE_MAX  = 1.8;
+	const VIGNETTE_LERP = 4; // lerp speed (units/sec)
 
 	const setupEffectComposer = () => {
 		// Remove all existing passes to prevent duplicates
 		composer.removeAllPasses();
+		vignetteEffect = null;
 
 		// Add the render pass
 		const renderPass = new RenderPass(scene, $camera);
@@ -54,10 +61,10 @@
 			preset: isHighQuality ? SMAAPreset.ULTRA : SMAAPreset.MEDIUM
 		});
 
-		const vignetteEffect = new VignetteEffect({
+		vignetteEffect = new VignetteEffect({
 			eskil: false,
 			offset: 0.2,
-			darkness: 0.75
+			darkness: VIGNETTE_BASE
 		});
 
 		const effectPass = new EffectPass($camera, bloomEffect, smaaEffect, vignetteEffect);
@@ -83,6 +90,10 @@
 	// Use the render task to render with the composer
 	useTask(
 		(delta) => {
+			if (vignetteEffect) {
+				const target = VIGNETTE_BASE + (VIGNETTE_MAX - VIGNETTE_BASE) * (1 - localHealthState.ratio);
+				vignetteEffect.darkness += (target - vignetteEffect.darkness) * Math.min(1, VIGNETTE_LERP * delta);
+			}
 			composer.render(delta);
 		},
 		{ stage: renderStage, autoInvalidate: false }

@@ -43,6 +43,9 @@ export const abilityState = $state({
 export const healBeam = $state({ active: false, toX: 0, toZ: 0, until: 0 });
 export const HEAL_BEAM_MS = 350;
 
+// Local player HP ratio [0..1] — written by GameStage, read by Renderer
+export const localHealthState = $state({ ratio: 1 });
+
 export function resetLocalState() {
 	input.forward = false;
 	input.back = false;
