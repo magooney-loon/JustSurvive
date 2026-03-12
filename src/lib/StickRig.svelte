@@ -1,3 +1,14 @@
+<script module lang="ts">
+	import { MeshLambertMaterial } from 'three';
+	// Module-level Lambert cache — one material per color, shared across ALL StickRig instances
+	const _lc = new Map<string, MeshLambertMaterial>();
+	export function eL(hex: string): MeshLambertMaterial {
+		let m = _lc.get(hex);
+		if (!m) _lc.set(hex, (m = new MeshLambertMaterial({ color: hex })));
+		return m;
+	}
+</script>
+
 <script lang="ts">
 	import { T, useTask } from '@threlte/core';
 	import { AdditiveBlending, Object3D, type Texture } from 'three';
@@ -52,6 +63,10 @@
 	const leanForward = $derived((isSprinting ? 0.22 : 0.08) * moveIntensity);
 	const boneTint = $derived(classChoice === 'spotter' ? '#d7ccb6' : '#d2c3a5');
 	const plateTint = $derived(classChoice === 'gunner' ? '#2b2620' : '#2f271f');
+	// Pre-built Lambert materials for enemy rendering — no PBR shading
+	const eMat = $derived(eL(color));
+	const ePlateMat = $derived(eL(plateTint));
+	const eBoneMat = $derived(eL(boneTint));
 	const spotlightBoost = $derived(phase === 'deep_night' ? 2.2 : phase === 'night' ? 1.6 : 1);
 	const beamBoost = $derived(phase === 'deep_night' ? 1.9 : phase === 'night' ? 1.4 : 1);
 	const enemyGlow = $derived(isEnemy ? 0.18 : 1);
@@ -88,97 +103,103 @@
 					? '#66ff44'
 					: '#ff88cc'
 	);
-	const visorGlow = $derived(0.75 * enemyGlow);
+	const visorGlow = $derived(isEnemy ? 0.55 : 0.75);
 	const emblemGlow = $derived(0.55 * enemyGlow);
 </script>
 
 <T.Group position={[hipShift, bob, 0]} rotation={[sway * 0.08, torsoTwist, sway * 0.12]}>
 	<!-- SPINE -->
-	<T.Mesh position={[0, 0.93, -leanForward * 0.45]} rotation={[leanForward, 0, 0]}>
+	<T.Mesh position={[0, 0.93, -leanForward * 0.45]} rotation={[leanForward, 0, 0]} {...(isEnemy ? { material: eMat } : {})}>
 		<T.CylinderGeometry args={[0.14, 0.18, 0.65, 6]} />
-		<T.MeshStandardMaterial {...bodyMat} />
+		{#if !isEnemy}<T.MeshStandardMaterial {...bodyMat} />{/if}
 	</T.Mesh>
-	<T.Mesh position={[0, 1.18, -leanForward * 0.55]} rotation={[leanForward * 0.9, 0, 0]}>
+	<T.Mesh position={[0, 1.18, -leanForward * 0.55]} rotation={[leanForward * 0.9, 0, 0]} {...(isEnemy ? { material: eMat } : {})}>
 		<T.CylinderGeometry args={[0.1, 0.15, 0.55, 6]} />
-		<T.MeshStandardMaterial {...bodyMat} />
+		{#if !isEnemy}<T.MeshStandardMaterial {...bodyMat} />{/if}
 	</T.Mesh>
-	<T.Mesh position={[0, 1.32, -leanForward * 0.6]} rotation={[leanForward * 0.9, 0, 0]}>
+	<T.Mesh position={[0, 1.32, -leanForward * 0.6]} rotation={[leanForward * 0.9, 0, 0]} {...(isEnemy ? { material: eMat } : {})}>
 		<T.CylinderGeometry args={[0.08, 0.12, 0.4, 6]} />
-		<T.MeshStandardMaterial {...bodyMat} />
+		{#if !isEnemy}<T.MeshStandardMaterial {...bodyMat} />{/if}
 	</T.Mesh>
 	<!-- Neck -->
-	<T.Mesh position={[0, 1.44, -leanForward * 0.65]} rotation={[leanForward * 0.8, 0, 0]}>
+	<T.Mesh position={[0, 1.44, -leanForward * 0.65]} rotation={[leanForward * 0.8, 0, 0]} {...(isEnemy ? { material: eL('#d0bb9a') } : {})}>
 		<T.CylinderGeometry args={[0.075, 0.11, 0.2, 8]} />
-		<T.MeshStandardMaterial color="#d0bb9a" roughness={0.85} />
+		{#if !isEnemy}<T.MeshStandardMaterial color="#d0bb9a" roughness={0.85} />{/if}
 	</T.Mesh>
 
 	<!-- HIPS & PELVIS -->
-	<T.Mesh position={[0, 0.75, 0]}>
+	<T.Mesh position={[0, 0.75, 0]} {...(isEnemy ? { material: eMat } : {})}>
 		<T.SphereGeometry args={[0.12, 8, 6]} />
-		<T.MeshStandardMaterial {...bodyMat} />
+		{#if !isEnemy}<T.MeshStandardMaterial {...bodyMat} />{/if}
 	</T.Mesh>
-	<T.Mesh position={[0, 0.78, 0]}>
+	<T.Mesh position={[0, 0.78, 0]} {...(isEnemy ? { material: eMat } : {})}>
 		<T.CapsuleGeometry args={[0.16, 0.22, 6, 10]} />
-		<T.MeshStandardMaterial {...bodyMat} />
+		{#if !isEnemy}<T.MeshStandardMaterial {...bodyMat} />{/if}
 	</T.Mesh>
-	<T.Mesh position={[-0.2, 0.78, 0.04]} rotation={[0, 0, Math.PI / 2]}>
-		<T.CapsuleGeometry args={[0.065, 0.19, 4, 8]} />
-		<T.MeshStandardMaterial color={plateTint} roughness={0.38} metalness={0.3} />
-	</T.Mesh>
-	<T.Mesh position={[0.2, 0.78, 0.04]} rotation={[0, 0, Math.PI / 2]}>
-		<T.CapsuleGeometry args={[0.065, 0.19, 4, 8]} />
-		<T.MeshStandardMaterial color={plateTint} roughness={0.38} metalness={0.3} />
-	</T.Mesh>
-	<T.Mesh position={[0, 0.68, 0.08]}>
-		<T.CylinderGeometry args={[0.08, 0.12, 0.12, 6]} />
-		<T.MeshStandardMaterial color={plateTint} roughness={0.38} metalness={0.3} />
-	</T.Mesh>
+	{#if !isEnemy}
+		<T.Mesh position={[-0.2, 0.78, 0.04]} rotation={[0, 0, Math.PI / 2]}>
+			<T.CapsuleGeometry args={[0.065, 0.19, 4, 8]} />
+			<T.MeshStandardMaterial color={plateTint} roughness={0.38} metalness={0.3} />
+		</T.Mesh>
+		<T.Mesh position={[0.2, 0.78, 0.04]} rotation={[0, 0, Math.PI / 2]}>
+			<T.CapsuleGeometry args={[0.065, 0.19, 4, 8]} />
+			<T.MeshStandardMaterial color={plateTint} roughness={0.38} metalness={0.3} />
+		</T.Mesh>
+		<T.Mesh position={[0, 0.68, 0.08]}>
+			<T.CylinderGeometry args={[0.08, 0.12, 0.12, 6]} />
+			<T.MeshStandardMaterial color={plateTint} roughness={0.38} metalness={0.3} />
+		</T.Mesh>
+	{/if}
 
 	<!-- SHOULDERS -->
-	<T.Mesh position={[0, 1.35, 0]}>
+	<T.Mesh position={[0, 1.35, 0]} {...(isEnemy ? { material: eMat } : {})}>
 		<T.SphereGeometry args={[0.1, 8, 6]} />
-		<T.MeshStandardMaterial {...bodyMat} />
+		{#if !isEnemy}<T.MeshStandardMaterial {...bodyMat} />{/if}
 	</T.Mesh>
-	<T.Mesh position={[-0.28, 1.34, -0.02]}>
+	<T.Mesh position={[-0.28, 1.34, -0.02]} {...(isEnemy ? { material: ePlateMat } : {})}>
 		<T.CapsuleGeometry args={[0.068, 0.22, 4, 8]} />
-		<T.MeshStandardMaterial color={plateTint} roughness={0.35} metalness={0.35} />
+		{#if !isEnemy}<T.MeshStandardMaterial color={plateTint} roughness={0.35} metalness={0.35} />{/if}
 	</T.Mesh>
-	<T.Mesh position={[0.28, 1.34, -0.02]}>
+	<T.Mesh position={[0.28, 1.34, -0.02]} {...(isEnemy ? { material: ePlateMat } : {})}>
 		<T.CapsuleGeometry args={[0.068, 0.22, 4, 8]} />
-		<T.MeshStandardMaterial color={plateTint} roughness={0.35} metalness={0.35} />
+		{#if !isEnemy}<T.MeshStandardMaterial color={plateTint} roughness={0.35} metalness={0.35} />{/if}
 	</T.Mesh>
-	<T.Mesh position={[-0.36, 1.32, 0.02]} rotation={[0, 0, 0.3]}>
-		<T.BoxGeometry args={[0.15, 0.09, 0.17]} />
-		<T.MeshStandardMaterial color={plateTint} roughness={0.35} metalness={0.35} />
-	</T.Mesh>
-	<T.Mesh position={[0.36, 1.32, 0.02]} rotation={[0, 0, -0.3]}>
-		<T.BoxGeometry args={[0.15, 0.09, 0.17]} />
-		<T.MeshStandardMaterial color={plateTint} roughness={0.35} metalness={0.35} />
-	</T.Mesh>
+	{#if !isEnemy}
+		<T.Mesh position={[-0.36, 1.32, 0.02]} rotation={[0, 0, 0.3]}>
+			<T.BoxGeometry args={[0.15, 0.09, 0.17]} />
+			<T.MeshStandardMaterial color={plateTint} roughness={0.35} metalness={0.35} />
+		</T.Mesh>
+		<T.Mesh position={[0.36, 1.32, 0.02]} rotation={[0, 0, -0.3]}>
+			<T.BoxGeometry args={[0.15, 0.09, 0.17]} />
+			<T.MeshStandardMaterial color={plateTint} roughness={0.35} metalness={0.35} />
+		</T.Mesh>
+	{/if}
 
 	<!-- RIBCAGE / CHEST (breathes) -->
-	<T.Mesh position={[0, 1.25, -leanForward * 0.4]}>
+	<T.Mesh position={[0, 1.25, -leanForward * 0.4]} {...(isEnemy ? { material: eMat } : {})}>
 		<T.CapsuleGeometry args={[0.18, 0.3, 6, 10]} />
-		<T.MeshStandardMaterial {...bodyMat} />
+		{#if !isEnemy}<T.MeshStandardMaterial {...bodyMat} />{/if}
 	</T.Mesh>
-	<T.Mesh position={[-0.27, 1.25, -leanForward * 0.35]}>
-		<T.CapsuleGeometry args={[0.062, 0.25, 4, 8]} />
-		<T.MeshStandardMaterial color={plateTint} roughness={0.35} metalness={0.35} />
-	</T.Mesh>
-	<T.Mesh position={[0.27, 1.25, -leanForward * 0.35]}>
-		<T.CapsuleGeometry args={[0.062, 0.25, 4, 8]} />
-		<T.MeshStandardMaterial color={plateTint} roughness={0.35} metalness={0.35} />
-	</T.Mesh>
-	<!-- Sternum plate -->
-	<T.Mesh position={[0, 1.16, -leanForward * 0.3]}>
-		<T.CylinderGeometry args={[0.2, 0.22, 0.15, 6]} />
-		<T.MeshStandardMaterial color={plateTint} roughness={0.35} metalness={0.35} />
-	</T.Mesh>
-	<!-- Class emblem glow on chest -->
-	<T.Mesh position={[0, 1.27, -leanForward * 0.38 - 0.17]} rotation={[0, Math.PI, 0]}>
-		<T.CircleGeometry args={[0.052, 8]} />
-		<T.MeshBasicMaterial color={visorColor} transparent opacity={emblemGlow} />
-	</T.Mesh>
+	{#if !isEnemy}
+		<T.Mesh position={[-0.27, 1.25, -leanForward * 0.35]}>
+			<T.CapsuleGeometry args={[0.062, 0.25, 4, 8]} />
+			<T.MeshStandardMaterial color={plateTint} roughness={0.35} metalness={0.35} />
+		</T.Mesh>
+		<T.Mesh position={[0.27, 1.25, -leanForward * 0.35]}>
+			<T.CapsuleGeometry args={[0.062, 0.25, 4, 8]} />
+			<T.MeshStandardMaterial color={plateTint} roughness={0.35} metalness={0.35} />
+		</T.Mesh>
+		<!-- Sternum plate -->
+		<T.Mesh position={[0, 1.16, -leanForward * 0.3]}>
+			<T.CylinderGeometry args={[0.2, 0.22, 0.15, 6]} />
+			<T.MeshStandardMaterial color={plateTint} roughness={0.35} metalness={0.35} />
+		</T.Mesh>
+		<!-- Class emblem glow on chest -->
+		<T.Mesh position={[0, 1.27, -leanForward * 0.38 - 0.17]} rotation={[0, Math.PI, 0]}>
+			<T.CircleGeometry args={[0.052, 8]} />
+			<T.MeshBasicMaterial color={visorColor} transparent opacity={emblemGlow} />
+		</T.Mesh>
+	{/if}
 
 	<!-- HEAD GROUP — all parts share one rotation so we only compute it once -->
 	<T.Group
@@ -186,29 +207,29 @@
 		rotation={[headTilt + leanForward * 0.4, 0, 0]}
 	>
 		<!-- Skull base -->
-		<T.Mesh position={[0, 0.02, 0]}>
+		<T.Mesh position={[0, 0.02, 0]} {...(isEnemy ? { material: eL('#d9c5a7') } : {})}>
 			<T.SphereGeometry args={[0.185, 10, 7]} />
-			<T.MeshStandardMaterial color="#d9c5a7" roughness={0.85} />
+			{#if !isEnemy}<T.MeshStandardMaterial color="#d9c5a7" roughness={0.85} />{/if}
 		</T.Mesh>
 		<!-- Face box -->
-		<T.Mesh>
+		<T.Mesh {...(isEnemy ? { material: eL('#cdbb9c') } : {})}>
 			<T.BoxGeometry args={[0.32, 0.26, 0.24]} />
-			<T.MeshStandardMaterial color="#cdbb9c" roughness={0.85} />
+			{#if !isEnemy}<T.MeshStandardMaterial color="#cdbb9c" roughness={0.85} />{/if}
 		</T.Mesh>
 		<!-- Helmet ring -->
-		<T.Mesh position={[0, -0.01, 0]}>
+		<T.Mesh position={[0, -0.01, 0]} {...(isEnemy ? { material: eBoneMat } : {})}>
 			<T.CylinderGeometry args={[0.205, 0.248, 0.13, 8]} />
-			<T.MeshStandardMaterial color={boneTint} roughness={0.5} metalness={0.18} />
+			{#if !isEnemy}<T.MeshStandardMaterial color={boneTint} roughness={0.5} metalness={0.18} />{/if}
 		</T.Mesh>
 		<!-- Brow ridge -->
-		<T.Mesh position={[0, 0.075, -0.17]}>
+		<T.Mesh position={[0, 0.075, -0.17]} {...(isEnemy ? { material: eL('#bfa98c') } : {})}>
 			<T.BoxGeometry args={[0.28, 0.055, 0.065]} />
-			<T.MeshStandardMaterial color="#bfa98c" roughness={0.75} />
+			{#if !isEnemy}<T.MeshStandardMaterial color="#bfa98c" roughness={0.75} />{/if}
 		</T.Mesh>
 		<!-- Visor band (dark lens strip) -->
-		<T.Mesh position={[0, 0.028, -0.163]}>
+		<T.Mesh position={[0, 0.028, -0.163]} {...(isEnemy ? { material: eL('#0d0d0d') } : {})}>
 			<T.BoxGeometry args={[0.305, 0.092, 0.052]} />
-			<T.MeshStandardMaterial color="#0d0d0d" roughness={0.22} metalness={0.55} />
+			{#if !isEnemy}<T.MeshStandardMaterial color="#0d0d0d" roughness={0.22} metalness={0.55} />{/if}
 		</T.Mesh>
 		<!-- Left eye glow -->
 		<T.Mesh position={[-0.072, 0.028, -0.192]} rotation={[0, Math.PI, 0]}>
@@ -221,136 +242,154 @@
 			<T.MeshBasicMaterial color={visorColor} transparent opacity={visorGlow} />
 		</T.Mesh>
 		<!-- Chin strap / jaw -->
-		<T.Mesh position={[0, -0.09, -0.17]}>
+		<T.Mesh position={[0, -0.09, -0.17]} {...(isEnemy ? { material: eL('#bfa98c') } : {})}>
 			<T.CapsuleGeometry args={[0.036, 0.1, 4, 8]} />
-			<T.MeshStandardMaterial color="#bfa98c" roughness={0.8} />
+			{#if !isEnemy}<T.MeshStandardMaterial color="#bfa98c" roughness={0.8} />{/if}
 		</T.Mesh>
 		<!-- Top crest -->
-		<T.Mesh position={[0, 0.17, -0.06]}>
+		<T.Mesh position={[0, 0.17, -0.06]} {...(isEnemy ? { material: eL('#bfa98c') } : {})}>
 			<T.BoxGeometry args={[0.18, 0.065, 0.1]} />
-			<T.MeshStandardMaterial color="#bfa98c" roughness={0.65} />
+			{#if !isEnemy}<T.MeshStandardMaterial color="#bfa98c" roughness={0.65} />{/if}
 		</T.Mesh>
 	</T.Group>
 
 	<!-- LEFT LEG — thigh + knee pivot + shin + ankle + boot -->
 	<T.Group position={[-0.14, 0.75, 0]} rotation={[swing, 0, 0]}>
 		<!-- Thigh -->
-		<T.Mesh position={[0, -0.21, 0]}>
+		<T.Mesh position={[0, -0.21, 0]} {...(isEnemy ? { material: eL('#3a2f25') } : {})}>
 			<T.CylinderGeometry args={[limbR * 1.1, limbR * 0.9, 0.42, 6]} />
-			<T.MeshStandardMaterial color="#3a2f25" roughness={0.9} />
+			{#if !isEnemy}<T.MeshStandardMaterial color="#3a2f25" roughness={0.9} />{/if}
 		</T.Mesh>
-		<!-- Thigh armor -->
-		<T.Mesh position={[0, -0.17, 0.075]}>
-			<T.BoxGeometry args={[limbR * 2.1, limbR * 2.5, limbR * 1.15]} />
-			<T.MeshStandardMaterial color={plateTint} roughness={0.4} metalness={0.25} />
-		</T.Mesh>
-		<!-- Knee sphere -->
-		<T.Mesh position={[0, -0.42, 0]}>
-			<T.SphereGeometry args={[limbR * 1.05, 7, 5]} />
-			<T.MeshStandardMaterial color="#2a1d12" roughness={0.65} metalness={0.12} />
-		</T.Mesh>
-		<!-- Knee cap plate -->
-		<T.Mesh position={[0, -0.42, 0.09]}>
-			<T.BoxGeometry args={[limbR * 1.9, limbR * 1.1, limbR * 0.9]} />
-			<T.MeshStandardMaterial color={plateTint} roughness={0.35} metalness={0.35} />
-		</T.Mesh>
-		<!-- Lower leg — pivots at knee -->
-		<T.Group position={[0, -0.42, 0]} rotation={[-kneeBendL, 0, 0]}>
-			<T.Mesh position={[0, -0.26, 0]}>
-				<T.CylinderGeometry args={[limbR * 0.88, limbR * 0.72, 0.52, 6]} />
-				<T.MeshStandardMaterial color="#3a2f25" roughness={0.9} />
-			</T.Mesh>
-			<!-- Shin plate -->
-			<T.Mesh position={[0, -0.24, 0.075]}>
-				<T.CapsuleGeometry args={[limbR * 0.42, limbR * 2.1, 4, 8]} />
+		{#if !isEnemy}
+			<!-- Thigh armor -->
+			<T.Mesh position={[0, -0.17, 0.075]}>
+				<T.BoxGeometry args={[limbR * 2.1, limbR * 2.5, limbR * 1.15]} />
 				<T.MeshStandardMaterial color={plateTint} roughness={0.4} metalness={0.25} />
 			</T.Mesh>
+		{/if}
+		<!-- Knee sphere -->
+		<T.Mesh position={[0, -0.42, 0]} {...(isEnemy ? { material: eL('#2a1d12') } : {})}>
+			<T.SphereGeometry args={[limbR * 1.05, 7, 5]} />
+			{#if !isEnemy}<T.MeshStandardMaterial color="#2a1d12" roughness={0.65} metalness={0.12} />{/if}
+		</T.Mesh>
+		{#if !isEnemy}
+			<!-- Knee cap plate -->
+			<T.Mesh position={[0, -0.42, 0.09]}>
+				<T.BoxGeometry args={[limbR * 1.9, limbR * 1.1, limbR * 0.9]} />
+				<T.MeshStandardMaterial color={plateTint} roughness={0.35} metalness={0.35} />
+			</T.Mesh>
+		{/if}
+		<!-- Lower leg — pivots at knee -->
+		<T.Group position={[0, -0.42, 0]} rotation={[-kneeBendL, 0, 0]}>
+			<T.Mesh position={[0, -0.26, 0]} {...(isEnemy ? { material: eL('#3a2f25') } : {})}>
+				<T.CylinderGeometry args={[limbR * 0.88, limbR * 0.72, 0.52, 6]} />
+				{#if !isEnemy}<T.MeshStandardMaterial color="#3a2f25" roughness={0.9} />{/if}
+			</T.Mesh>
+			{#if !isEnemy}
+				<!-- Shin plate -->
+				<T.Mesh position={[0, -0.24, 0.075]}>
+					<T.CapsuleGeometry args={[limbR * 0.42, limbR * 2.1, 4, 8]} />
+					<T.MeshStandardMaterial color={plateTint} roughness={0.4} metalness={0.25} />
+				</T.Mesh>
+			{/if}
 			<!-- Ankle sphere -->
-			<T.Mesh position={[0, -0.54, 0]}>
+			<T.Mesh position={[0, -0.54, 0]} {...(isEnemy ? { material: eL('#221710') } : {})}>
 				<T.SphereGeometry args={[limbR * 0.78, 6, 4]} />
-				<T.MeshStandardMaterial color="#221710" roughness={0.75} />
+				{#if !isEnemy}<T.MeshStandardMaterial color="#221710" roughness={0.75} />{/if}
 			</T.Mesh>
 			<!-- Ankle pivot + boot -->
 			<T.Group position={[0, -0.54, 0]} rotation={[footRoll, 0, 0]}>
-				<T.Mesh position={[0, -0.065, -0.03]}>
+				<T.Mesh position={[0, -0.065, -0.03]} {...(isEnemy ? { material: eL('#141414') } : {})}>
 					<T.BoxGeometry args={[limbR * 2.25, limbR * 1.05, limbR * 3.5]} />
-					<T.MeshStandardMaterial color="#141414" roughness={0.82} />
+					{#if !isEnemy}<T.MeshStandardMaterial color="#141414" roughness={0.82} />{/if}
 				</T.Mesh>
-				<T.Mesh position={[0, -0.1, 0.09]}>
-					<T.CapsuleGeometry args={[limbR * 0.52, limbR * 1.9, 4, 8]} />
-					<T.MeshStandardMaterial color="#1c1c1c" roughness={0.82} />
-				</T.Mesh>
-				<!-- Sole -->
-				<T.Mesh position={[0, -0.122, -0.025]}>
-					<T.BoxGeometry args={[limbR * 2.15, limbR * 0.32, limbR * 3.1]} />
-					<T.MeshStandardMaterial color="#090909" roughness={0.95} />
-				</T.Mesh>
+				{#if !isEnemy}
+					<T.Mesh position={[0, -0.1, 0.09]}>
+						<T.CapsuleGeometry args={[limbR * 0.52, limbR * 1.9, 4, 8]} />
+						<T.MeshStandardMaterial color="#1c1c1c" roughness={0.82} />
+					</T.Mesh>
+					<!-- Sole -->
+					<T.Mesh position={[0, -0.122, -0.025]}>
+						<T.BoxGeometry args={[limbR * 2.15, limbR * 0.32, limbR * 3.1]} />
+						<T.MeshStandardMaterial color="#090909" roughness={0.95} />
+					</T.Mesh>
+				{/if}
 			</T.Group>
 		</T.Group>
 	</T.Group>
 
 	<!-- RIGHT LEG — mirror of left -->
 	<T.Group position={[0.14, 0.75, 0]} rotation={[-swing, 0, 0]}>
-		<T.Mesh position={[0, -0.21, 0]}>
+		<T.Mesh position={[0, -0.21, 0]} {...(isEnemy ? { material: eL('#3a2f25') } : {})}>
 			<T.CylinderGeometry args={[limbR * 1.1, limbR * 0.9, 0.42, 6]} />
-			<T.MeshStandardMaterial color="#3a2f25" roughness={0.9} />
+			{#if !isEnemy}<T.MeshStandardMaterial color="#3a2f25" roughness={0.9} />{/if}
 		</T.Mesh>
-		<T.Mesh position={[0, -0.17, 0.075]}>
-			<T.BoxGeometry args={[limbR * 2.1, limbR * 2.5, limbR * 1.15]} />
-			<T.MeshStandardMaterial color={plateTint} roughness={0.4} metalness={0.25} />
-		</T.Mesh>
-		<T.Mesh position={[0, -0.42, 0]}>
-			<T.SphereGeometry args={[limbR * 1.05, 7, 5]} />
-			<T.MeshStandardMaterial color="#2a1d12" roughness={0.65} metalness={0.12} />
-		</T.Mesh>
-		<T.Mesh position={[0, -0.42, 0.09]}>
-			<T.BoxGeometry args={[limbR * 1.9, limbR * 1.1, limbR * 0.9]} />
-			<T.MeshStandardMaterial color={plateTint} roughness={0.35} metalness={0.35} />
-		</T.Mesh>
-		<T.Group position={[0, -0.42, 0]} rotation={[-kneeBendR, 0, 0]}>
-			<T.Mesh position={[0, -0.26, 0]}>
-				<T.CylinderGeometry args={[limbR * 0.88, limbR * 0.72, 0.52, 6]} />
-				<T.MeshStandardMaterial color="#3a2f25" roughness={0.9} />
-			</T.Mesh>
-			<T.Mesh position={[0, -0.24, 0.075]}>
-				<T.CapsuleGeometry args={[limbR * 0.42, limbR * 2.1, 4, 8]} />
+		{#if !isEnemy}
+			<T.Mesh position={[0, -0.17, 0.075]}>
+				<T.BoxGeometry args={[limbR * 2.1, limbR * 2.5, limbR * 1.15]} />
 				<T.MeshStandardMaterial color={plateTint} roughness={0.4} metalness={0.25} />
 			</T.Mesh>
-			<T.Mesh position={[0, -0.54, 0]}>
+		{/if}
+		<T.Mesh position={[0, -0.42, 0]} {...(isEnemy ? { material: eL('#2a1d12') } : {})}>
+			<T.SphereGeometry args={[limbR * 1.05, 7, 5]} />
+			{#if !isEnemy}<T.MeshStandardMaterial color="#2a1d12" roughness={0.65} metalness={0.12} />{/if}
+		</T.Mesh>
+		{#if !isEnemy}
+			<T.Mesh position={[0, -0.42, 0.09]}>
+				<T.BoxGeometry args={[limbR * 1.9, limbR * 1.1, limbR * 0.9]} />
+				<T.MeshStandardMaterial color={plateTint} roughness={0.35} metalness={0.35} />
+			</T.Mesh>
+		{/if}
+		<T.Group position={[0, -0.42, 0]} rotation={[-kneeBendR, 0, 0]}>
+			<T.Mesh position={[0, -0.26, 0]} {...(isEnemy ? { material: eL('#3a2f25') } : {})}>
+				<T.CylinderGeometry args={[limbR * 0.88, limbR * 0.72, 0.52, 6]} />
+				{#if !isEnemy}<T.MeshStandardMaterial color="#3a2f25" roughness={0.9} />{/if}
+			</T.Mesh>
+			{#if !isEnemy}
+				<T.Mesh position={[0, -0.24, 0.075]}>
+					<T.CapsuleGeometry args={[limbR * 0.42, limbR * 2.1, 4, 8]} />
+					<T.MeshStandardMaterial color={plateTint} roughness={0.4} metalness={0.25} />
+				</T.Mesh>
+			{/if}
+			<T.Mesh position={[0, -0.54, 0]} {...(isEnemy ? { material: eL('#221710') } : {})}>
 				<T.SphereGeometry args={[limbR * 0.78, 6, 4]} />
-				<T.MeshStandardMaterial color="#221710" roughness={0.75} />
+				{#if !isEnemy}<T.MeshStandardMaterial color="#221710" roughness={0.75} />{/if}
 			</T.Mesh>
 			<T.Group position={[0, -0.54, 0]} rotation={[-footRoll, 0, 0]}>
-				<T.Mesh position={[0, -0.065, -0.03]}>
+				<T.Mesh position={[0, -0.065, -0.03]} {...(isEnemy ? { material: eL('#141414') } : {})}>
 					<T.BoxGeometry args={[limbR * 2.25, limbR * 1.05, limbR * 3.5]} />
-					<T.MeshStandardMaterial color="#141414" roughness={0.82} />
+					{#if !isEnemy}<T.MeshStandardMaterial color="#141414" roughness={0.82} />{/if}
 				</T.Mesh>
-				<T.Mesh position={[0, -0.1, 0.09]}>
-					<T.CapsuleGeometry args={[limbR * 0.52, limbR * 1.9, 4, 8]} />
-					<T.MeshStandardMaterial color="#1c1c1c" roughness={0.82} />
-				</T.Mesh>
-				<T.Mesh position={[0, -0.122, -0.025]}>
-					<T.BoxGeometry args={[limbR * 2.15, limbR * 0.32, limbR * 3.1]} />
-					<T.MeshStandardMaterial color="#090909" roughness={0.95} />
-				</T.Mesh>
+				{#if !isEnemy}
+					<T.Mesh position={[0, -0.1, 0.09]}>
+						<T.CapsuleGeometry args={[limbR * 0.52, limbR * 1.9, 4, 8]} />
+						<T.MeshStandardMaterial color="#1c1c1c" roughness={0.82} />
+					</T.Mesh>
+					<T.Mesh position={[0, -0.122, -0.025]}>
+						<T.BoxGeometry args={[limbR * 2.15, limbR * 0.32, limbR * 3.1]} />
+						<T.MeshStandardMaterial color="#090909" roughness={0.95} />
+					</T.Mesh>
+				{/if}
 			</T.Group>
 		</T.Group>
 	</T.Group>
 
 	<!-- LEFT ARM -->
 	<T.Group position={[-0.24, 1.1, armForwardZ - leanForward * 0.6]} rotation={[leftArmRotX, 0, 0]}>
-		<T.Mesh position={[0, 0, -0.35]}>
+		<T.Mesh position={[0, 0, -0.35]} {...(isEnemy ? { material: eL('#d9c5a7') } : {})}>
 			<T.CapsuleGeometry args={[limbR * 0.5, limbR * 1.8, 4, 8]} />
-			<T.MeshStandardMaterial color="#d9c5a7" roughness={0.85} />
+			{#if !isEnemy}<T.MeshStandardMaterial color="#d9c5a7" roughness={0.85} />{/if}
 		</T.Mesh>
-		<T.Mesh position={[0, 0.02, -0.45]}>
+		<T.Mesh position={[0, 0.02, -0.45]} {...(isEnemy ? { material: eL('#c9b499') } : {})}>
 			<T.SphereGeometry args={[limbR * 0.75, 7, 5]} />
-			<T.MeshStandardMaterial color="#c9b499" roughness={0.85} />
+			{#if !isEnemy}<T.MeshStandardMaterial color="#c9b499" roughness={0.85} />{/if}
 		</T.Mesh>
-		<T.Mesh position={[0, -0.04, -0.22]}>
-			<T.BoxGeometry args={[limbR * 2.0, limbR * 0.5, limbR * 1.2]} />
-			<T.MeshStandardMaterial color={plateTint} roughness={0.38} metalness={0.28} />
-		</T.Mesh>
+		{#if !isEnemy}
+			<T.Mesh position={[0, -0.04, -0.22]}>
+				<T.BoxGeometry args={[limbR * 2.0, limbR * 0.5, limbR * 1.2]} />
+				<T.MeshStandardMaterial color={plateTint} roughness={0.38} metalness={0.28} />
+			</T.Mesh>
+		{/if}
 		{#if !isEnemy && classChoice === 'spotter'}
 			<T.Group position={[0.02, 0.02, -0.56]} rotation={[0.1, 0.2, 0]}>
 				<T.Mesh>
@@ -447,18 +486,20 @@
 
 	<!-- RIGHT ARM -->
 	<T.Group position={[0.24, 1.1, armForwardZ - leanForward * 0.6]} rotation={[rightArmRotX, 0, 0]}>
-		<T.Mesh position={[0, 0, -0.35]}>
+		<T.Mesh position={[0, 0, -0.35]} {...(isEnemy ? { material: eL('#d9c5a7') } : {})}>
 			<T.CapsuleGeometry args={[limbR * 0.5, limbR * 1.8, 4, 8]} />
-			<T.MeshStandardMaterial color="#d9c5a7" roughness={0.85} />
+			{#if !isEnemy}<T.MeshStandardMaterial color="#d9c5a7" roughness={0.85} />{/if}
 		</T.Mesh>
-		<T.Mesh position={[0, 0.02, -0.45]}>
+		<T.Mesh position={[0, 0.02, -0.45]} {...(isEnemy ? { material: eL('#c9b499') } : {})}>
 			<T.SphereGeometry args={[limbR * 0.75, 7, 5]} />
-			<T.MeshStandardMaterial color="#c9b499" roughness={0.85} />
+			{#if !isEnemy}<T.MeshStandardMaterial color="#c9b499" roughness={0.85} />{/if}
 		</T.Mesh>
-		<T.Mesh position={[0, -0.04, -0.22]}>
-			<T.BoxGeometry args={[limbR * 2.0, limbR * 0.5, limbR * 1.2]} />
-			<T.MeshStandardMaterial color={plateTint} roughness={0.38} metalness={0.28} />
-		</T.Mesh>
+		{#if !isEnemy}
+			<T.Mesh position={[0, -0.04, -0.22]}>
+				<T.BoxGeometry args={[limbR * 2.0, limbR * 0.5, limbR * 1.2]} />
+				<T.MeshStandardMaterial color={plateTint} roughness={0.38} metalness={0.28} />
+			</T.Mesh>
+		{/if}
 		{#if !isEnemy && classChoice === 'spotter'}
 			<!-- Flashlight housing -->
 			<T.Mesh position={[0, 0, -0.18]} rotation={[-Math.PI / 2, 0, 0]}>
