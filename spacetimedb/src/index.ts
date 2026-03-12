@@ -536,10 +536,16 @@ function end_session(ctx: any, sessionId: bigint) {
 
 	const lobby = ctx.db.lobby.id.find(session.lobbyId);
 	if (lobby) {
-		ctx.db.lobby.id.update({ ...lobby, status: 'waiting' });
+		const newIdleDeadline = ctx.timestamp.microsSinceUnixEpoch + 120_000_000n;
+		ctx.db.lobby.id.update({ ...lobby, status: 'waiting', hostIdleDeadline: ts(newIdleDeadline) });
 		for (const p of ctx.db.lobbyPlayer.lobby_player_lobby_id.filter(lobby.id)) {
 			ctx.db.lobbyPlayer.id.update({ ...p, isReady: false });
 		}
+		ctx.db.lobbyIdleJob.insert({
+			scheduledId: 0n,
+			scheduledAt: ScheduleAt.time(newIdleDeadline),
+			lobbyId: lobby.id
+		});
 	}
 
 	// ─── Leaderboard ─────────────────────────────────────────────────────────────
