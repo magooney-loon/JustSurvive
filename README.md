@@ -42,12 +42,24 @@ Squad-based survival arena. Up to 4 players pick a class, drop into a circular a
 
 ## Classes
 
-| Class   | Role      | HP  | Abilities                                |
-| ------- | --------- | --- | ---------------------------------------- |
-| Spotter | Scout     | 100 | Mark enemy (LMB), Ping location (RMB)    |
-| Gunner  | DPS       | 100 | Shoot (LMB), every 3rd shot suppresses   |
-| Tank    | Frontline | 150 | Shield Bash (LMB), Brace (RMB hold)      |
-| Healer  | Support   | 100 | Heal teammate (LMB), Revive downed (RMB) |
+| Class   | Role      | HP  | Stamina | Walk Speed | Sprint Speed | Abilities                                |
+| ------- | --------- | --- | ------- | ---------- | ------------ | ---------------------------------------- |
+| Spotter | Scout     | 100 | 450     | 5.0        | 9.0          | Mark enemy (LMB), Ping location (RMB)    |
+| Gunner  | DPS       | 100 | 80      | 4.5        | 7.5          | Shoot (LMB), every 3rd shot suppresses   |
+| Tank    | Frontline | 150 | 200     | 2.5        | 3.5          | Shield Bash (LMB), Brace (RMB hold)      |
+| Healer  | Support   | 100 | 80      | 5.0        | 8.5          | Heal teammate (LMB), Revive downed (RMB) |
+
+## Enemies
+
+| Type    | HP  | Base Speed | Abilities                       |
+| ------- | --- | ---------- | ------------------------------- |
+| Basic   | 80  | 3.2        | Melee attacks                   |
+| Fast    | 50  | 5.2        | Quick melee, hard to hit        |
+| Brute   | 250 | 2.1        | Heavy melee, high damage        |
+| Spitter | 100 | 1.7        | Acid pools (damage over time)   |
+| Caster  | 80  | 1.4        | Beam attack + strafing movement |
+
+_Enemies gain +5 HP per cycle and +2%/s speed (capped at +50%)._
 
 ## Tech Stack
 
