@@ -79,6 +79,7 @@
 	import { Audio } from '@threlte/extras';
 	import { Audio as ThreeAudio } from 'three';
 	import { settingsState, log } from './settings.svelte.js';
+	import { skyState } from './localGameState.svelte.js';
 
 	// Place your audio files in /public/sounds/
 	const base = import.meta.env.BASE_URL;
@@ -95,6 +96,7 @@
 	const SPREE_DOMINATING_URL = `${base}sounds/spree_dominating.mp3`;
 	const SPREE_GODLIKE_URL = `${base}sounds/spree_godlike.mp3`;
 	const SPREE_HUMILIATION_URL = `${base}sounds/spree_humiliation.mp3`;
+	const RAINSTORM_URL = `${base}sounds/rainstorm.mp3`;
 
 	// $state.raw — prevents Svelte 5 from wrapping class instances in a Proxy
 	let ostAudio = $state.raw<ThreeAudio>();
@@ -115,6 +117,7 @@
 	let spreeDominatingAudio = $state.raw<ThreeAudio>();
 	let spreeGodlikeAudio = $state.raw<ThreeAudio>();
 	let spreeHumiliationAudio = $state.raw<ThreeAudio>();
+	let rainstormAudio = $state.raw<ThreeAudio>();
 
 	// ─── Playback helpers ─────────────────────────────────────────────────────
 
@@ -223,6 +226,18 @@
 	$effect(() => {
 		if (!ambienceAudio) return;
 		ambienceAudio.setVolume(settingsState.audio.ambienceVolume);
+	});
+
+	// ─── Rain — loops during night phases, volume scales with storm intensity ─
+	$effect(() => {
+		if (!rainstormAudio) return;
+		const vol = skyState.stormIntensity * settingsState.audio.ambienceVolume;
+		rainstormAudio.setVolume(vol);
+		if (skyState.stormIntensity > 0.05 && settingsState.audio.ambienceEnabled) {
+			if (!rainstormAudio.isPlaying) rainstormAudio.play();
+		} else {
+			if (rainstormAudio.isPlaying) rainstormAudio.pause();
+		}
 	});
 
 	$effect(() => {
@@ -451,6 +466,17 @@
 	src={SPREE_HUMILIATION_URL}
 	oncreate={(a) => {
 		spreeHumiliationAudio = a;
+	}}
+	userData={{ hideInTree: true, selectable: false }}
+/>
+
+<!-- Rainstorm — loops during night/storm phases, volume driven by skyState.stormIntensity -->
+<Audio
+	src={RAINSTORM_URL}
+	loop
+	oncreate={(a) => {
+		rainstormAudio = a;
+		log.info('Audio loaded: Rainstorm');
 	}}
 	userData={{ hideInTree: true, selectable: false }}
 />

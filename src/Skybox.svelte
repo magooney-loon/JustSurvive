@@ -40,6 +40,18 @@
 		`rgb(${Math.round(skyState.sunR * 255)},${Math.round(skyState.sunG * 255)},${Math.round(skyState.sunB * 255)})`
 	);
 
+	// ─── Lightning flash state machine ───────────────────────────────────────
+	let lightningFlash = $state(0);
+
+	// Per-strike parameters chosen at random when a strike fires
+	type LPhase = 'idle' | 'f1' | 'g1' | 'f2' | 'g2' | 'f3';
+	let lPhase: LPhase = 'idle';
+	let lTimer = 0;
+	let lNext = 6 + Math.random() * 10;
+	// durations and intensities randomised per strike
+	let lF1 = 0, lG1 = 0, lF2 = 0, lI2 = 0, lG2 = 0, lF3 = 0, lI3 = 0;
+	let lExtra = 0; // 0, 1, or 2 extra flashes
+
 	useTask((dt) => {
 		if (!skyGroup) return;
 		const cam = $camera;
@@ -47,6 +59,43 @@
 		const LERP = 1 - Math.pow(0.0001, dt);
 		skyPos.lerp(cam.position, LERP * 0.15);
 		skyGroup.position.copy(skyPos);
+
+		const storm = skyState.stormIntensity;
+
+		if (lPhase === 'idle') {
+			if (storm > 0.05) lNext -= dt;
+			if (lNext <= 0) {
+				// Randomise entire strike profile
+				lF1    = 0.04 + Math.random() * 0.07;
+				lExtra = Math.random() < 0.55 ? (Math.random() < 0.45 ? 2 : 1) : 0;
+				lG1    = 0.06 + Math.random() * 0.14;
+				lI2    = 0.25 + Math.random() * 0.3;
+				lF2    = 0.03 + Math.random() * 0.05;
+				lG2    = 0.05 + Math.random() * 0.10;
+				lI3    = 0.10 + Math.random() * 0.15;
+				lF3    = 0.02 + Math.random() * 0.04;
+				lNext  = (4 + Math.random() * 14 + Math.random() * 8) / storm;
+				lPhase = 'f1'; lTimer = 0;
+			}
+		} else {
+			lTimer += dt;
+			if (lPhase === 'f1') {
+				lightningFlash = storm;
+				if (lTimer >= lF1) { lPhase = lExtra > 0 ? 'g1' : 'idle'; lTimer = 0; lightningFlash = 0; }
+			} else if (lPhase === 'g1') {
+				lightningFlash = 0;
+				if (lTimer >= lG1) { lPhase = 'f2'; lTimer = 0; }
+			} else if (lPhase === 'f2') {
+				lightningFlash = storm * lI2;
+				if (lTimer >= lF2) { lPhase = lExtra > 1 ? 'g2' : 'idle'; lTimer = 0; lightningFlash = 0; }
+			} else if (lPhase === 'g2') {
+				lightningFlash = 0;
+				if (lTimer >= lG2) { lPhase = 'f3'; lTimer = 0; }
+			} else if (lPhase === 'f3') {
+				lightningFlash = storm * lI3;
+				if (lTimer >= lF3) { lPhase = 'idle'; lTimer = 0; lightningFlash = 0; }
+			}
+		}
 	});
 </script>
 
@@ -68,6 +117,10 @@
 	color={sunColor}
 	castShadow={false}
 />
+
+<!-- Lightning flash — subtle cold blue-white pulse, scaled way down -->
+<T.AmbientLight color="#c8d8ff" intensity={lightningFlash * 1.8} />
+<T.DirectionalLight position={[15, 60, 25]} color="#ddeeff" intensity={lightningFlash * 3.0} castShadow={false} />
 
 <!-- Stars ───────────────────────────────────────────────────────────── -->
 <T.Group bind:ref={skyGroup}>

@@ -13,7 +13,8 @@
 		localAim,
 		cameraFollow,
 		localHealthState,
-		skyState
+		skyState,
+		devSky
 	} from '../localGameState.svelte.js';
 	import { settingsState } from '../settings.svelte.js';
 	import { onMount } from 'svelte';
@@ -25,6 +26,7 @@
 	import GameGround from './GameGround.svelte';
 	import HealBeam from './HealBeam.svelte';
 	import GameSounds from './GameSounds.svelte';
+	import RainEffect from './RainEffect.svelte';
 
 	const conn = useSpacetimeDB();
 	const [players] = useTable(tables.playerState);
@@ -88,14 +90,14 @@
 	const alivePlayers = $derived(
 		$players.filter((p) => p.sessionId === gameState.currentSessionId && p.status === 'alive')
 	);
-	const phase = $derived(session?.dayPhase ?? 'sunset');
+	const phase = $derived(devSky.forcedPhase ?? session?.dayPhase ?? 'sunset');
 
 	const PHASE_SKY = {
-		sunset:     { elevation: 3,   azimuth: 260, turbidity: 12, rayleigh: 2.5,  mieC: 0.007, mieG: 0.80, ambient: 0.60, sun: 1.00, sunR: 1.0,  sunG: 0.75, sunB: 0.45 },
-		dusk:       { elevation: 0,   azimuth: 255, turbidity: 10, rayleigh: 1.5,  mieC: 0.005, mieG: 0.75, ambient: 0.35, sun: 0.50, sunR: 0.85, sunG: 0.55, sunB: 0.30 },
-		twilight:   { elevation: -3,  azimuth: 250, turbidity: 8,  rayleigh: 0.5,  mieC: 0.004, mieG: 0.70, ambient: 0.18, sun: 0.12, sunR: 0.45, sunG: 0.45, sunB: 0.65 },
-		night:      { elevation: -8,  azimuth: 180, turbidity: 6,  rayleigh: 0.2,  mieC: 0.003, mieG: 0.70, ambient: 0.07, sun: 0.04, sunR: 0.30, sunG: 0.35, sunB: 0.55 },
-		deep_night: { elevation: -15, azimuth: 180, turbidity: 4,  rayleigh: 0.08, mieC: 0.002, mieG: 0.70, ambient: 0.03, sun: 0.01, sunR: 0.20, sunG: 0.25, sunB: 0.40 },
+		sunset:     { elevation: 3,   azimuth: 260, turbidity: 12, rayleigh: 2.5,  mieC: 0.007, mieG: 0.80, ambient: 0.60, sun: 1.00, sunR: 1.0,  sunG: 0.75, sunB: 0.45, storm: 0.00 },
+		dusk:       { elevation: 0,   azimuth: 255, turbidity: 10, rayleigh: 1.5,  mieC: 0.005, mieG: 0.75, ambient: 0.35, sun: 0.50, sunR: 0.85, sunG: 0.55, sunB: 0.30, storm: 0.00 },
+		twilight:   { elevation: -3,  azimuth: 250, turbidity: 8,  rayleigh: 0.5,  mieC: 0.004, mieG: 0.70, ambient: 0.18, sun: 0.12, sunR: 0.45, sunG: 0.45, sunB: 0.65, storm: 0.20 },
+		night:      { elevation: -8,  azimuth: 180, turbidity: 6,  rayleigh: 0.2,  mieC: 0.003, mieG: 0.70, ambient: 0.07, sun: 0.04, sunR: 0.30, sunG: 0.35, sunB: 0.55, storm: 0.75 },
+		deep_night: { elevation: -15, azimuth: 180, turbidity: 4,  rayleigh: 0.08, mieC: 0.002, mieG: 0.70, ambient: 0.03, sun: 0.01, sunR: 0.20, sunG: 0.25, sunB: 0.40, storm: 1.00 },
 	} as const;
 
 	const CLASS_RANGE: Record<string, number> = {
@@ -189,6 +191,7 @@
 		skyState.sunR += (skyTarget.sunR - skyState.sunR) * t;
 		skyState.sunG += (skyTarget.sunG - skyState.sunG) * t;
 		skyState.sunB += (skyTarget.sunB - skyState.sunB) * t;
+		skyState.stormIntensity += (skyTarget.storm - skyState.stormIntensity) * t;
 
 		if (myState?.status === 'eliminated') {
 			if (alivePlayers.length > 0) {
@@ -262,6 +265,7 @@
 <svelte:window onmousemove={onMouseMove} onmousedown={onMouseDownSpectate} />
 
 <GameGround />
+<RainEffect />
 
 <!-- Local player (predicted position, rotated toward aim) -->
 {#if myState}
