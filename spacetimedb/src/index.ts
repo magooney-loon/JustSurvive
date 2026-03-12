@@ -765,9 +765,8 @@ export const quick_join = spacetimedb.reducer(
 		if (!playerName) throw new SenderError('playerName required');
 
 		// Check caller isn't already in a lobby
-		for (const p of ctx.db.lobbyPlayer.iter()) {
-			if (p.playerIdentity.isEqual(ctx.sender)) throw new SenderError('Already in a lobby');
-		}
+		const existing = [...ctx.db.lobbyPlayer.lobby_player_identity.filter(ctx.sender)];
+		if (existing.length > 0) throw new SenderError('Already in a lobby');
 
 		// Find an available public waiting lobby server-side
 		let joined = false;

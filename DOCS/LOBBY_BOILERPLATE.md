@@ -9,17 +9,23 @@ A self-contained reference for reusing this multiplayer lobby system in other Sp
 1. [Full Flow Diagram](#full-flow-diagram)
 2. [Backend Schema Patterns](#backend-schema-patterns)
 3. [Deterministic Code Generation (LCG)](#deterministic-code-generation-lcg)
-4. [Idempotent Leave Reducer Pattern](#idempotent-leave-reducer-pattern)
-5. [Scheduled Countdown Pattern](#scheduled-countdown-pattern)
-6. [Lifecycle Hooks](#lifecycle-hooks)
-7. [Frontend: game.svelte.ts Singleton](#frontend-gamesveltets-singleton)
-8. [Frontend: Global Subscription Pattern](#frontend-global-subscription-pattern)
-9. [Frontend: useSpacetimeDB + useTable Stores](#frontend-usespacetimedb--usetable-stores)
-10. [Svelte 5 Gotchas](#svelte-5-gotchas)
-11. [MenuHud Reconnect Pattern](#menuhud-reconnect-pattern)
-12. [Async Reducer Error Handling](#async-reducer-error-handling)
-13. [LobbyHud Patterns](#lobbyhud-patterns)
-14. [Complete Backend Reference](#complete-backend-reference)
+4. [Timestamp Helper](#timestamp-helper)
+5. [Idempotent Leave Reducer Pattern](#idempotent-leave-reducer-pattern)
+6. [Scheduled Countdown Pattern](#scheduled-countdown-pattern)
+7. [Idle Host Detection Pattern](#idle-host-detection-pattern)
+8. [Server-Side Quick Join Pattern](#server-side-quick-join-pattern)
+9. [Kick Player Pattern](#kick-player-pattern)
+10. [End Session & Leaderboard Pattern](#end-session--leaderboard-pattern)
+11. [Lifecycle Hooks](#lifecycle-hooks)
+12. [Frontend: game.svelte.ts Singleton](#frontend-gamesveltets-singleton)
+13. [Frontend: Global Subscription Pattern](#frontend-global-subscription-pattern)
+14. [Frontend: useSpacetimeDB + useTable Stores](#frontend-usespacetimedb--usetable-stores)
+15. [Svelte 5 Gotchas](#svelte-5-gotchas)
+16. [MenuHud Reconnect Pattern](#menuhud-reconnect-pattern)
+17. [Async Reducer Error Handling](#async-reducer-error-handling)
+18. [LobbyHud Patterns](#lobbyhud-patterns)
+19. [Complete Backend Reference](#complete-backend-reference)
+20. [Quick Reference: Checklist for a New Project](#quick-reference-checklist-for-a-new-project)
 
 ---
 
@@ -30,55 +36,69 @@ Player opens game
        │
        ▼
   [MenuHud]
-  ┌─────────────────────────────────────────────┐
-  │  alreadyInLobby?                            │
-  │  ├── YES → "Reconnect to Lobby" button      │
-  │  │          └─→ setStage('lobby')           │
-  │  └── NO  → name input + buttons             │
-  │             ├── Quick Play                  │
-  │             │    └─→ find open public lobby │
-  │             │         ├── found → joinLobby  │
-  │             │         └── none  → createLobby (public) │
-  │             ├── Host Private Lobby          │
-  │             │    └─→ createLobby (private)  │
-  │             └── Join by Code               │
-  │                  └─→ joinByCode(code)       │
-  └─────────────────────────────────────────────┘
+  ┌─────────────────────────────────────────────────────┐
+  │  alreadyInLobby?                                    │
+  │  ├── YES (in_progress) → "Reconnect to Lobby" btn  │
+  │  │          └─→ setStage('lobby')                  │
+  │  ├── YES (waiting/countdown) → auto-redirect        │
+  │  │          └─→ setStage('lobby')                  │
+  │  └── NO  → name input + buttons                    │
+  │             ├── Quick Play  ──→ quick_join reducer  │
+  │             │    (server picks open lobby or creates)│
+  │             ├── Host Private Lobby                  │
+  │             │    └─→ createLobby (private)          │
+  │             └── Join by Code                       │
+  │                  └─→ joinByCode(code)               │
+  └─────────────────────────────────────────────────────┘
        │ (on success, no error)
        ▼
   setStage('lobby')
        │
        ▼
   [LobbyHud]
-  ┌─────────────────────────────────────────────┐
-  │  Waits for LobbyPlayer row with own identity│
-  │  Shows: player list, class selector, ready  │
-  │                                             │
-  │  Each player:                               │
-  │    1. Select class (setClass reducer)       │
-  │    2. Ready up (setReady reducer)           │
-  │                                             │
-  │  Host sees Start button when:               │
-  │    - playerCount >= 2                       │
-  │    - all players isReady && classChoice     │
-  │                                             │
-  │  Host clicks Start →                        │
-  │    startCountdown reducer                   │
-  │    → lobby.status = 'countdown'             │
-  │    → LobbyCountdown row inserted            │
-  │    → 3-second timer fires fire_start_game   │
-  │    → GameSession + PlayerState rows created │
-  │    → lobby.status = 'in_progress'           │
-  │                                             │
-  │  All clients watch lobby.status:            │
-  │    'in_progress' → find GameSession row     │
-  │    → set currentSessionId                   │
-  │    → setStage('game')                       │
-  └─────────────────────────────────────────────┘
+  ┌─────────────────────────────────────────────────────┐
+  │  Waits for LobbyPlayer row with own identity        │
+  │  Shows: player list, class selector, ready, code    │
+  │                                                     │
+  │  [Idle Host Timer — server-side]                    │
+  │    If host is not ready for 2 min:                  │
+  │      Solo → lobby deleted                           │
+  │      Others present → host transferred, timer reset │
+  │    UI shows countdown to deadline                   │
+  │                                                     │
+  │  Each player:                                       │
+  │    1. Select class (setClass reducer)               │
+  │    2. Ready up (setReady reducer)                   │
+  │                                                     │
+  │  Host sees Start button when all players are ready  │
+  │  Host clicks Start →                                │
+  │    startCountdown reducer                           │
+  │    → lobby.status = 'countdown'                     │
+  │    → LobbyCountdown row inserted (3s delay)         │
+  │    → fire_start_game fires                          │
+  │    → GameSession + PlayerState rows created         │
+  │    → lobby.status = 'in_progress'                   │
+  │                                                     │
+  │  All clients watch lobby.status:                    │
+  │    'in_progress' → find active GameSession row      │
+  │    → set currentSessionId → setStage('game')        │
+  └─────────────────────────────────────────────────────┘
        │
        ▼
   [GameStage + GameHud]
   Game runs using PlayerState rows
+       │
+       ▼
+  end_session() (called by game-over logic)
+  ┌─────────────────────────────────────────────────────┐
+  │  1. Sets GameSession status = 'finished'            │
+  │  2. Writes GlobalStats (upsert by id=1)             │
+  │  3. Writes SquadRecord (upsert by class combo)      │
+  │  4. Writes LobbyResult if score is top-20           │
+  │     (evicts lowest if already 20 entries)           │
+  │  5. Writes LobbyResultPlayer for each player        │
+  │  6. Resets lobby → status='waiting', isReady=false  │
+  └─────────────────────────────────────────────────────┘
 ```
 
 ---
@@ -92,14 +112,16 @@ All tables, schema, helpers, and reducers live in one file (`src/index.ts`). Tab
 ```
 spacetimedb/src/index.ts
   1. imports
-  2. table definitions (Lobby, LobbyPlayer, GameSession, PlayerState, LobbyCountdown)
+  2. table definitions (Lobby, LobbyPlayer, GameSession, PlayerState,
+                        LobbyCountdown, LobbyIdleJob,
+                        LobbyResult, LobbyResultPlayer, GlobalStats, SquadRecord)
   3. schema({ ... }) export default
-  4. helper functions
+  4. helper functions (generateCode, ts, ...)
   5. reducer exports
   6. lifecycle hooks
 ```
 
-### Table Definitions
+### Core Table Definitions
 
 ```typescript
 import { schema, table, t, SenderError } from 'spacetimedb/server';
@@ -113,14 +135,15 @@ const Lobby = table({
     { name: 'lobby_code',   accessor: 'lobby_code',   algorithm: 'btree', columns: ['code'] },
   ],
 }, {
-  id:           t.u64().primaryKey().autoInc(),
-  hostIdentity: t.identity(),
-  code:         t.string(),
-  isPublic:     t.bool(),
-  status:       t.string(),     // 'waiting' | 'countdown' | 'in_progress' | 'game_over'
-  playerCount:  t.u64(),
-  maxPlayers:   t.u64(),
-  createdAt:    t.timestamp(),
+  id:               t.u64().primaryKey().autoInc(),
+  hostIdentity:     t.identity(),
+  code:             t.string(),
+  isPublic:         t.bool(),
+  status:           t.string(),          // 'waiting' | 'countdown' | 'in_progress'
+  playerCount:      t.u64(),
+  maxPlayers:       t.u64(),
+  createdAt:        t.timestamp(),
+  hostIdleDeadline: t.timestamp(),       // server-managed: when idle job fires
 });
 
 const LobbyPlayer = table({
@@ -147,12 +170,12 @@ const GameSession = table({
     { name: 'game_session_lobby_id', accessor: 'game_session_lobby_id', algorithm: 'btree', columns: ['lobbyId'] },
   ],
 }, {
-  id:             t.u64().primaryKey().autoInc(),
-  lobbyId:        t.u64(),
-  status:         t.string(),   // 'active' | 'finished'
-  startedAt:      t.timestamp(),
-  endedAt:        t.timestamp().optional(),
-  mapSeed:        t.u64(),
+  id:        t.u64().primaryKey().autoInc(),
+  lobbyId:   t.u64(),
+  status:    t.string(),   // 'active' | 'finished'
+  startedAt: t.timestamp(),
+  endedAt:   t.timestamp().optional(),
+  mapSeed:   t.u64(),
   // add your game-specific fields here
 });
 
@@ -168,10 +191,12 @@ const PlayerState = table({
   sessionId:      t.u64(),
   playerIdentity: t.identity(),
   classChoice:    t.string(),
+  status:         t.string(),   // 'alive' | 'downed' | 'eliminated'
+  score:          t.u64(),
   // add your game-specific fields here
 });
 
-// Defined before fire_start_game exists — use lazy arrow to avoid reference error
+// Scheduled tables — reference reducers lazily ((): any => reducerFn) to break circular TS inference
 const LobbyCountdown = table({
   name: 'lobby_countdown',
   scheduled: (): any => fire_start_game,
@@ -181,12 +206,100 @@ const LobbyCountdown = table({
   lobbyId:     t.u64(),
 });
 
+const LobbyIdleJob = table({
+  name: 'lobby_idle_job',
+  scheduled: (): any => fire_lobby_idle,
+}, {
+  scheduledId: t.u64().primaryKey().autoInc(),
+  scheduledAt: t.scheduleAt(),
+  lobbyId:     t.u64(),
+});
+```
+
+### Leaderboard Table Definitions
+
+```typescript
+// Per-session leaderboard entry (top 20, enforced server-side)
+const LobbyResult = table({
+  name: 'lobby_result',
+  public: true,
+  indexes: [
+    { name: 'lobby_result_score',   accessor: 'lobby_result_score',   algorithm: 'btree', columns: ['totalScore'] },
+    { name: 'lobby_result_session', accessor: 'lobby_result_session', algorithm: 'btree', columns: ['sessionId'] },
+  ],
+}, {
+  id:           t.u64().primaryKey().autoInc(),
+  sessionId:    t.u64(),
+  lobbyCode:    t.string(),
+  combo:        t.string(),        // sorted, comma-joined class names, e.g. "gunner,healer,spotter"
+  playerCount:  t.u64(),
+  totalScore:   t.u64(),
+  survivalSecs: t.u64(),
+  cycleNumber:  t.u64(),
+  createdAt:    t.timestamp(),
+});
+
+// Players in a leaderboard entry (for display only — no identity exposed)
+const LobbyResultPlayer = table({
+  name: 'lobby_result_player',
+  public: true,
+  indexes: [
+    { name: 'lobby_result_player_session', accessor: 'lobby_result_player_session', algorithm: 'btree', columns: ['sessionId'] },
+  ],
+}, {
+  id:          t.u64().primaryKey().autoInc(),
+  sessionId:   t.u64(),
+  playerName:  t.string(),
+  classChoice: t.string(),
+});
+
+// Single-row global stats (id always 1n)
+const GlobalStats = table({
+  name: 'global_stats',
+  public: true,
+}, {
+  id:                t.u64().primaryKey(),
+  totalGames:        t.u64(),
+  totalSurvivalSecs: t.u64(),
+  bestSurvivalSecs:  t.u64(),
+  classSpotter:      t.u64(),
+  classGunner:       t.u64(),
+  classTank:         t.u64(),
+  classHealer:       t.u64(),
+});
+
+// Per-class-combo records (key = sorted class string)
+const SquadRecord = table({
+  name: 'squad_record',
+  public: true,
+  indexes: [
+    { name: 'squad_record_combo',        accessor: 'squad_record_combo',        algorithm: 'btree', columns: ['combo'] },
+    { name: 'squad_record_times_played', accessor: 'squad_record_times_played', algorithm: 'btree', columns: ['timesPlayed'] },
+    { name: 'squad_record_best_score',   accessor: 'squad_record_best_score',   algorithm: 'btree', columns: ['bestScore'] },
+  ],
+}, {
+  id:              t.u64().primaryKey().autoInc(),
+  combo:           t.string(),
+  timesPlayed:     t.u64(),
+  bestScore:       t.u64(),
+  bestSurvivalSecs: t.u64(),
+});
+```
+
+### Schema Registration
+
+```typescript
 const spacetimedb = schema({
-  lobby:          Lobby,
-  lobbyPlayer:    LobbyPlayer,
-  gameSession:    GameSession,
-  playerState:    PlayerState,
-  lobbyCountdown: LobbyCountdown,
+  lobby:             Lobby,
+  lobbyPlayer:       LobbyPlayer,
+  gameSession:       GameSession,
+  playerState:       PlayerState,
+  lobbyCountdown:    LobbyCountdown,
+  lobbyIdleJob:      LobbyIdleJob,
+  lobbyResult:       LobbyResult,
+  lobbyResultPlayer: LobbyResultPlayer,
+  globalStats:       GlobalStats,
+  squadRecord:       SquadRecord,
 });
 export default spacetimedb;
 ```
@@ -223,6 +336,30 @@ code: generateCode(ctx.timestamp.microsSinceUnixEpoch),
 ```
 
 The `& 0xFFFFFFFFn` keeps `s` in the u32 range after each step, preventing BigInt overflow while maintaining the LCG cycle length.
+
+---
+
+## Timestamp Helper
+
+SpacetimeDB's `t.timestamp()` columns expect a specific wire format. Use this helper to create a timestamp from a raw microsecond bigint (e.g. when setting scheduled deadlines):
+
+```typescript
+function ts(micros: bigint): any {
+  return { __timestamp_micros_since_unix_epoch__: micros };
+}
+
+// Usage:
+const deadline = ctx.timestamp.microsSinceUnixEpoch + 120_000_000n; // 2 minutes
+ctx.db.lobby.id.update({ ...lobby, hostIdleDeadline: ts(deadline) });
+```
+
+On the client side, `timestamp` columns arrive as objects with `.microsSinceUnixEpoch: bigint`. Convert to a JS Date with:
+
+```typescript
+const date = new Date(Number(row.hostIdleDeadline.microsSinceUnixEpoch / 1000n));
+```
+
+Note the division by `1000n` — timestamps are in **microseconds**, `Date` expects **milliseconds**.
 
 ---
 
@@ -304,7 +441,7 @@ export const fire_start_game = spacetimedb.reducer({
   const lobby = ctx.db.lobby.id.find(arg.lobbyId);
   if (!lobby || lobby.status !== 'countdown') return;
 
-  // Create session, player states, update lobby status
+  // Clean up old session data, create new session + player states
   const session = ctx.db.gameSession.insert({ ... });
   for (const p of ctx.db.lobbyPlayer.lobby_player_lobby_id.filter(arg.lobbyId)) {
     ctx.db.playerState.insert({ ..., sessionId: session.id, ... });
@@ -317,17 +454,386 @@ The guard `if (!lobby || lobby.status !== 'countdown') return` is important — 
 
 ---
 
+## Idle Host Detection Pattern
+
+Prevent stale lobbies with AFK hosts using a scheduled job. On lobby creation, set a `hostIdleDeadline` timestamp and schedule a `LobbyIdleJob`. When it fires:
+- If host is already ready → do nothing.
+- If host is alone → delete lobby.
+- If others are present → transfer host, reset deadline, schedule a new job for the new host.
+
+This chains naturally: the new host also gets a deadline. No job is ever left dangling.
+
+```typescript
+// Table (defined before fire_lobby_idle, so use lazy arrow)
+const LobbyIdleJob = table({
+  name: 'lobby_idle_job',
+  scheduled: (): any => fire_lobby_idle,
+}, {
+  scheduledId: t.u64().primaryKey().autoInc(),
+  scheduledAt: t.scheduleAt(),
+  lobbyId:     t.u64(),
+});
+
+// In create_lobby — set deadline and schedule first job
+const IDLE_MICROS = 120_000_000n; // 2 minutes
+
+export const create_lobby = spacetimedb.reducer({
+  playerName: t.string(),
+  classChoice: t.string(),
+  isPublic: t.bool(),
+}, (ctx, { playerName, classChoice, isPublic }) => {
+  if (!playerName) throw new SenderError('playerName required');
+  const idleDeadline = ctx.timestamp.microsSinceUnixEpoch + IDLE_MICROS;
+  const lobby = ctx.db.lobby.insert({
+    id: 0n, hostIdentity: ctx.sender,
+    code: generateCode(ctx.timestamp.microsSinceUnixEpoch),
+    isPublic, status: 'waiting', playerCount: 1n, maxPlayers: 4n,
+    createdAt: ctx.timestamp,
+    hostIdleDeadline: ts(idleDeadline),
+  });
+  ctx.db.lobbyPlayer.insert({
+    id: 0n, lobbyId: lobby.id, playerIdentity: ctx.sender,
+    playerName, classChoice: classChoice || '', isReady: false, joinedAt: ctx.timestamp,
+  });
+  ctx.db.lobbyIdleJob.insert({
+    scheduledId: 0n,
+    scheduledAt: ScheduleAt.time(idleDeadline),
+    lobbyId: lobby.id,
+  });
+});
+
+// Scheduled reducer
+export const fire_lobby_idle = spacetimedb.reducer({
+  arg: LobbyIdleJob.rowType,
+}, (ctx, { arg }) => {
+  const lobby = ctx.db.lobby.id.find(arg.lobbyId);
+  if (!lobby || lobby.status !== 'waiting') return; // gone or in-game
+
+  const allPlayers = [...ctx.db.lobbyPlayer.lobby_player_lobby_id.filter(lobby.id)];
+  const hostPlayer = allPlayers.find(p => p.playerIdentity.isEqual(lobby.hostIdentity));
+
+  if (hostPlayer?.isReady) return; // host became ready before deadline
+
+  const others = allPlayers.filter(p => !p.playerIdentity.isEqual(lobby.hostIdentity));
+
+  if (others.length === 0) {
+    // Solo idle host — kill the lobby
+    for (const p of allPlayers) ctx.db.lobbyPlayer.id.delete(p.id);
+    ctx.db.lobby.id.delete(lobby.id);
+  } else {
+    // Transfer host to first other player, reset deadline
+    const newHost = others[0];
+    const newDeadline = ctx.timestamp.microsSinceUnixEpoch + IDLE_MICROS;
+    ctx.db.lobby.id.update({
+      ...lobby,
+      hostIdentity: newHost.playerIdentity,
+      hostIdleDeadline: ts(newDeadline),
+    });
+    ctx.db.lobbyIdleJob.insert({
+      scheduledId: 0n,
+      scheduledAt: ScheduleAt.time(newDeadline),
+      lobbyId: lobby.id,
+    });
+  }
+});
+```
+
+### Client-Side Idle Countdown UI
+
+In `LobbyHud.svelte`, drive a live countdown from the `hostIdleDeadline` field on the lobby row. Because it's a reactive derived value, it automatically updates after host transfers.
+
+```svelte
+<script lang="ts">
+  // currentLobby is derived from table data (see LobbyHud Patterns section)
+
+  let idleSecsLeft = $state(0);
+
+  $effect(() => {
+    if (!currentLobby || currentLobby.status !== 'waiting') return;
+
+    function tick() {
+      const deadlineMicros = currentLobby!.hostIdleDeadline.microsSinceUnixEpoch;
+      const nowMicros = BigInt(Date.now()) * 1000n;
+      const diff = deadlineMicros - nowMicros;
+      idleSecsLeft = diff > 0n ? Number(diff / 1_000_000n) : 0;
+    }
+
+    tick();
+    const id = setInterval(tick, 1000);
+    return () => clearInterval(id);
+  });
+
+  // Derive the current host player
+  const hostEntry = $derived(players.find(p => p.playerIdentity.isEqual(currentLobby?.hostIdentity)));
+  const hostNotReady = $derived(!hostEntry?.isReady);
+  const isSolo = $derived(players.length <= 1);
+  const amHost = $derived(hostEntry?.playerIdentity.isEqual($conn.identity));
+</script>
+
+{#if hostNotReady && idleSecsLeft > 0}
+  <div style="
+    color: {idleSecsLeft <= 10 ? '#f87171' : idleSecsLeft <= 30 ? '#fb923c' : 'rgba(255,255,255,0.5)'};
+    font-size: 0.8rem; text-align: right;
+  ">
+    {#if amHost}
+      {isSolo ? 'Solo lobby auto-closes' : 'You will be removed as host'} in {idleSecsLeft}s
+    {:else}
+      Host idle — transfers in {idleSecsLeft}s
+    {/if}
+  </div>
+{/if}
+```
+
+---
+
+## Server-Side Quick Join Pattern
+
+**Do not** implement Quick Play client-side by filtering the subscribed `$lobbies` array — two players can race to pick the same lobby simultaneously. Implement it as a server-side reducer that atomically finds or creates a lobby:
+
+```typescript
+export const quick_join = spacetimedb.reducer({
+  playerName: t.string(),
+  classChoice: t.string(),
+}, (ctx, { playerName, classChoice }) => {
+  if (!playerName) throw new SenderError('playerName required');
+
+  // Guard: already in a lobby?
+  const existing = [...ctx.db.lobbyPlayer.lobby_player_identity.filter(ctx.sender)];
+  if (existing.length > 0) throw new SenderError('Already in a lobby');
+
+  // Find any available public waiting lobby (use status index for efficiency)
+  let joined = false;
+  for (const lobby of ctx.db.lobby.lobby_status.filter('waiting')) {
+    if (!lobby.isPublic) continue;
+    if (lobby.playerCount >= lobby.maxPlayers) continue;
+
+    ctx.db.lobbyPlayer.insert({
+      id: 0n, lobbyId: lobby.id, playerIdentity: ctx.sender,
+      playerName, classChoice: classChoice || '', isReady: false, joinedAt: ctx.timestamp,
+    });
+    ctx.db.lobby.id.update({ ...lobby, playerCount: lobby.playerCount + 1n });
+    joined = true;
+    break;
+  }
+
+  if (!joined) {
+    // No available lobby — create a new public one (with idle job)
+    const idleDeadline = ctx.timestamp.microsSinceUnixEpoch + 120_000_000n;
+    const lobby = ctx.db.lobby.insert({
+      id: 0n, hostIdentity: ctx.sender,
+      code: generateCode(ctx.timestamp.microsSinceUnixEpoch),
+      isPublic: true, status: 'waiting', playerCount: 1n, maxPlayers: 4n,
+      createdAt: ctx.timestamp, hostIdleDeadline: ts(idleDeadline),
+    });
+    ctx.db.lobbyPlayer.insert({
+      id: 0n, lobbyId: lobby.id, playerIdentity: ctx.sender,
+      playerName, classChoice: classChoice || '', isReady: false, joinedAt: ctx.timestamp,
+    });
+    ctx.db.lobbyIdleJob.insert({
+      scheduledId: 0n,
+      scheduledAt: ScheduleAt.time(idleDeadline),
+      lobbyId: lobby.id,
+    });
+  }
+});
+```
+
+**Client side** — `game.svelte.ts`:
+
+```typescript
+async quickplay() {
+  if (!conn) return;
+  gameState.error = null;
+  try {
+    await conn.reducers.quickJoin({
+      playerName: gameState.localPlayerName,
+      classChoice: gameState.localPlayerClass ?? '',
+    });
+  } catch (e) {
+    setError(e);
+  }
+},
+```
+
+No lobby list needed on the client. The `$lobbies` subscription is still useful for displaying counts in the menu.
+
+---
+
+## Kick Player Pattern
+
+Only the host can kick players. The kicked player's `lobbyPlayer` row is deleted and `playerCount` decremented.
+
+```typescript
+export const kick_player = spacetimedb.reducer({
+  lobbyId: t.u64(),
+  playerIdentity: t.identity(),
+}, (ctx, { lobbyId, playerIdentity }) => {
+  const lobby = ctx.db.lobby.id.find(lobbyId);
+  if (!lobby) throw new SenderError('Lobby not found');
+  if (!lobby.hostIdentity.isEqual(ctx.sender)) throw new SenderError('Only host can kick');
+  if (playerIdentity.isEqual(ctx.sender)) throw new SenderError('Cannot kick yourself');
+
+  for (const p of ctx.db.lobbyPlayer.lobby_player_lobby_id.filter(lobbyId)) {
+    if (p.playerIdentity.isEqual(playerIdentity)) {
+      ctx.db.lobbyPlayer.id.delete(p.id);
+      ctx.db.lobby.id.update({ ...lobby, playerCount: lobby.playerCount - 1n });
+      return;
+    }
+  }
+  throw new SenderError('Player not in lobby');
+});
+```
+
+**Client side:**
+
+```typescript
+kickPlayer(lobbyId: bigint, playerIdentity: Identity) {
+  if (!conn) return;
+  conn.reducers.kickPlayer({ lobbyId, playerIdentity }); // fire-and-forget
+},
+```
+
+**Ghost player note:** If a player disconnected mid-game and the game ended while they were offline, their `lobbyPlayer` row persists in the `waiting` lobby (server intentionally keeps it to allow reconnect during `in_progress`). After the game ends their `isReady` is reset to `false`, which blocks the next `start_countdown` since all players must be ready. The host can kick them to unblock the lobby.
+
+---
+
+## End Session & Leaderboard Pattern
+
+Call `end_session()` as a private helper function (not a reducer) from wherever the game over condition is detected (e.g. a scheduled tick reducer). It handles all cleanup and leaderboard writes atomically in one transaction.
+
+```typescript
+function end_session(ctx: any, sessionId: bigint) {
+  const session = ctx.db.gameSession.id.find(sessionId);
+  if (!session) return;
+  ctx.db.gameSession.id.update({ ...session, status: 'finished', endedAt: ctx.timestamp });
+
+  // Clean up game-specific rows (enemies, effects, etc.)
+  // ...
+
+  // Reset lobby for next game
+  const lobby = ctx.db.lobby.id.find(session.lobbyId);
+  if (lobby) {
+    ctx.db.lobby.id.update({ ...lobby, status: 'waiting' });
+    for (const p of ctx.db.lobbyPlayer.lobby_player_lobby_id.filter(lobby.id)) {
+      ctx.db.lobbyPlayer.id.update({ ...p, isReady: false });
+    }
+  }
+
+  // ─── Leaderboard ─────────────────────────────────────
+  const sessionPlayers = [...ctx.db.playerState.player_state_session_id.filter(sessionId)];
+  const sessionLobbyPlayers = [...ctx.db.lobbyPlayer.lobby_player_lobby_id.filter(session.lobbyId)];
+
+  // Class combo = sorted class names joined by comma
+  const classes = sessionLobbyPlayers.map(p => p.classChoice).filter(c => c !== '').sort();
+  const combo = classes.length > 0 ? classes.join(',') : 'none';
+  const totalScore = sessionPlayers.reduce((acc, p) => acc + p.score, 0n);
+
+  // CRITICAL: both sides must be cast to bigint before subtraction
+  // `ctx.timestamp.microsSinceUnixEpoch` has type `any` — subtracting two `any` values
+  // gives TypeScript type `number`, making `/ 1_000_000n` fail. Cast explicitly:
+  const survivalMicros =
+    (ctx.timestamp.microsSinceUnixEpoch as bigint) -
+    (session.startedAt.microsSinceUnixEpoch as bigint);
+  const survivalSecs = survivalMicros > 0n ? survivalMicros / 1_000_000n : 0n;
+
+  // 1. GlobalStats upsert (singleton row, id = 1n)
+  const gs = ctx.db.globalStats.id.find(1n);
+  const spotterCount = BigInt(classes.filter(c => c === 'spotter').length);
+  const gunnerCount  = BigInt(classes.filter(c => c === 'gunner').length);
+  const tankCount    = BigInt(classes.filter(c => c === 'tank').length);
+  const healerCount  = BigInt(classes.filter(c => c === 'healer').length);
+  if (gs) {
+    ctx.db.globalStats.id.update({
+      ...gs,
+      totalGames:        gs.totalGames + 1n,
+      totalSurvivalSecs: gs.totalSurvivalSecs + survivalSecs,
+      bestSurvivalSecs:  survivalSecs > gs.bestSurvivalSecs ? survivalSecs : gs.bestSurvivalSecs,
+      classSpotter:      gs.classSpotter + spotterCount,
+      classGunner:       gs.classGunner  + gunnerCount,
+      classTank:         gs.classTank    + tankCount,
+      classHealer:       gs.classHealer  + healerCount,
+    });
+  } else {
+    ctx.db.globalStats.insert({
+      id: 1n, totalGames: 1n,
+      totalSurvivalSecs: survivalSecs, bestSurvivalSecs: survivalSecs,
+      classSpotter: spotterCount, classGunner: gunnerCount,
+      classTank: tankCount, classHealer: healerCount,
+    });
+  }
+
+  // 2. SquadRecord upsert (keyed by combo string)
+  const existingSquad = [...ctx.db.squadRecord.squad_record_combo.filter(combo)][0];
+  if (existingSquad) {
+    ctx.db.squadRecord.id.update({
+      ...existingSquad,
+      timesPlayed:      existingSquad.timesPlayed + 1n,
+      bestScore:        totalScore > existingSquad.bestScore ? totalScore : existingSquad.bestScore,
+      bestSurvivalSecs: survivalSecs > existingSquad.bestSurvivalSecs ? survivalSecs : existingSquad.bestSurvivalSecs,
+    });
+  } else {
+    ctx.db.squadRecord.insert({ id: 0n, combo, timesPlayed: 1n, bestScore: totalScore, bestSurvivalSecs: survivalSecs });
+  }
+
+  // 3. Top-20 gate (deduplicated by sessionId)
+  const alreadyRecorded = [...ctx.db.lobbyResult.lobby_result_session.filter(sessionId)].length > 0;
+  if (!alreadyRecorded) {
+    const allResults = [...ctx.db.lobbyResult.iter()];
+    let qualified = false;
+    let evictRow: any = null;
+
+    if (allResults.length < 20) {
+      qualified = true;
+    } else {
+      // Find lowest-scoring entry
+      let minRow = allResults[0];
+      for (const r of allResults) { if (r.totalScore < minRow.totalScore) minRow = r; }
+      if (totalScore > minRow.totalScore) { qualified = true; evictRow = minRow; }
+    }
+
+    if (qualified) {
+      if (evictRow) {
+        // Evict the lowest entry and its player records
+        for (const p of ctx.db.lobbyResultPlayer.lobby_result_player_session.filter(evictRow.sessionId)) {
+          ctx.db.lobbyResultPlayer.id.delete(p.id);
+        }
+        ctx.db.lobbyResult.id.delete(evictRow.id);
+      }
+      ctx.db.lobbyResult.insert({
+        id: 0n, sessionId, lobbyCode: lobby?.code ?? '??????',
+        combo, playerCount: BigInt(classes.length),
+        totalScore, survivalSecs, cycleNumber: session.cycleNumber ?? 0n,
+        createdAt: ctx.timestamp,
+      });
+      for (const lp of sessionLobbyPlayers) {
+        ctx.db.lobbyResultPlayer.insert({
+          id: 0n, sessionId,
+          playerName: lp.playerName,
+          classChoice: lp.classChoice,
+        });
+      }
+    }
+  }
+}
+```
+
+**Critical BigInt pitfall** — `ctx.timestamp.microsSinceUnixEpoch` has TypeScript type `any`. Subtracting two `any` values gives type `number` in TypeScript, so `survivalMicros / 1_000_000n` would fail to compile. Always cast both operands to `bigint` explicitly before arithmetic.
+
+---
+
 ## Lifecycle Hooks
 
 ```typescript
 spacetimedb.clientConnected((_ctx) => {
   // Optional: create a player presence row, log connection, etc.
   // ctx.sender is the connecting identity.
+  // Leave empty if no presence tracking needed.
 });
 
 spacetimedb.clientDisconnected((ctx) => {
   // Remove player from any 'waiting' lobby they're in.
   // Use the lobby_player_identity index for an O(1) lookup.
+  // In-progress lobbies: intentionally skip — player can reconnect during the game.
   for (const p of ctx.db.lobbyPlayer.lobby_player_identity.filter(ctx.sender)) {
     const lobby = ctx.db.lobby.id.find(p.lobbyId);
     if (lobby && lobby.status === 'waiting') {
@@ -346,6 +852,8 @@ spacetimedb.clientDisconnected((ctx) => {
 });
 ```
 
+**Reconnect behavior for `in_progress` lobbies:** The player's `lobbyPlayer` and `PlayerState` rows remain intact during disconnection. When they reconnect, their subscription resyncs these rows and the UI detects the in-progress game automatically. The host can kick ghost players manually if they never return.
+
 ---
 
 ## Frontend: game.svelte.ts Singleton
@@ -354,6 +862,7 @@ Create `src/game.svelte.ts` (the `.svelte.ts` extension enables `$state` runes a
 
 ```typescript
 import type { DbConnection } from './module_bindings/index.js';
+import type { Identity } from 'spacetimedb';
 
 export type PlayerClass = 'spotter' | 'gunner' | 'tank' | 'healer';
 
@@ -394,9 +903,7 @@ export const gameActions = {
         classChoice: gameState.localPlayerClass ?? '',
         isPublic,
       });
-    } catch (e) {
-      setError(e);
-    }
+    } catch (e) { setError(e); }
   },
 
   async joinByCode(code: string) {
@@ -408,34 +915,19 @@ export const gameActions = {
         playerName: gameState.localPlayerName,
         classChoice: gameState.localPlayerClass ?? '',
       });
-    } catch (e) {
-      setError(e);
-    }
+    } catch (e) { setError(e); }
   },
 
-  async quickplay(lobbies: readonly { id: bigint; isPublic: boolean; status: string; playerCount: bigint; maxPlayers: bigint }[]) {
+  // Server-side: no lobby list argument needed
+  async quickplay() {
     if (!conn) return;
     gameState.error = null;
-    const available = lobbies.find(
-      l => l.isPublic && l.status === 'waiting' && l.playerCount < l.maxPlayers
-    );
     try {
-      if (available) {
-        await conn.reducers.joinLobby({
-          lobbyId: available.id,
-          playerName: gameState.localPlayerName,
-          classChoice: gameState.localPlayerClass ?? '',
-        });
-      } else {
-        await conn.reducers.createLobby({
-          playerName: gameState.localPlayerName,
-          classChoice: gameState.localPlayerClass ?? '',
-          isPublic: true,
-        });
-      }
-    } catch (e) {
-      setError(e);
-    }
+      await conn.reducers.quickJoin({
+        playerName: gameState.localPlayerName,
+        classChoice: gameState.localPlayerClass ?? '',
+      });
+    } catch (e) { setError(e); }
   },
 
   async setClass(cls: PlayerClass, lobbyId: bigint) {
@@ -443,27 +935,21 @@ export const gameActions = {
     gameState.localPlayerClass = cls;
     try {
       await conn.reducers.setClass({ lobbyId, classChoice: cls });
-    } catch (e) {
-      setError(e);
-    }
+    } catch (e) { setError(e); }
   },
 
   async setReady(lobbyId: bigint, isReady: boolean) {
     if (!conn) return;
     try {
       await conn.reducers.setReady({ lobbyId, isReady });
-    } catch (e) {
-      setError(e);
-    }
+    } catch (e) { setError(e); }
   },
 
   async startCountdown(lobbyId: bigint) {
     if (!conn) return;
     try {
       await conn.reducers.startCountdown({ lobbyId });
-    } catch (e) {
-      setError(e);
-    }
+    } catch (e) { setError(e); }
   },
 
   leaveLobby(lobbyId: bigint) {
@@ -471,6 +957,11 @@ export const gameActions = {
     gameState.leavingLobby = true; // suppress MenuHud auto-redirect until reducer confirms
     conn.reducers.leaveLobby({ lobbyId }); // fire-and-forget; UI navigates immediately
     gameState.currentLobbyId = null;
+  },
+
+  kickPlayer(lobbyId: bigint, playerIdentity: Identity) {
+    if (!conn) return;
+    conn.reducers.kickPlayer({ lobbyId, playerIdentity }); // fire-and-forget
   },
 
   clearError() {
@@ -512,9 +1003,9 @@ import { tables } from '../module_bindings/index.js';
 const conn = useSpacetimeDB();
 
 // useTable returns a tuple [store, isLoadingStore]
-const [lobbies] = useTable(tables.lobby);
+const [lobbies]      = useTable(tables.lobby);
 const [lobbyPlayers] = useTable(tables.lobbyPlayer);
-const [sessions] = useTable(tables.gameSession);
+const [sessions]     = useTable(tables.gameSession);
 
 // Read values with $
 const myEntry = $derived(
@@ -532,32 +1023,16 @@ const myEntry = $derived(
 
 ### 1. Do Not Read $derived Inside $effect Cleanup
 
-The cleanup function returned from `$effect` is called synchronously when the effect re-runs or the component is destroyed. If the cleanup reads a reactive value (`$derived`, `$state`), it sees the current value at cleanup time, which may be different from the value at setup time.
+The cleanup function returned from `$effect` is called synchronously when the effect re-runs or the component is destroyed. Capture values you need before the return:
 
 ```typescript
-// BAD: cleanup reads the reactive `intervalId` which may have changed
-$effect(() => {
-  const intervalId = setInterval(() => { ... }, 1000);
-  return () => clearInterval(intervalId); // fine — intervalId is a local const
-});
-
-// BAD VARIANT: reading a $derived inside the cleanup
-$effect(() => {
-  if ($someCondition) {
-    doSetup();
-    return () => {
-      doTeardown($someOtherDerived); // $someOtherDerived may be stale here!
-    };
-  }
-});
-
 // GOOD: capture what you need before the return
 $effect(() => {
   if ($someCondition) {
     const capturedValue = $someOtherDerived; // capture now
     doSetup();
     return () => {
-      doTeardown(capturedValue); // uses captured value
+      doTeardown(capturedValue); // uses captured value, not reactive stale read
     };
   }
 });
@@ -565,32 +1040,25 @@ $effect(() => {
 
 ### 2. Optional Chaining in Reactive Templates
 
-In Svelte 5, reactive template expressions are evaluated eagerly by the reactive graph. A `null` reference mid-transition will throw synchronously, not be caught silently. Any value that can be `null` during a state transition must use optional chaining in the template:
+In Svelte 5, reactive template expressions are evaluated eagerly. A `null` reference mid-transition will throw synchronously. Any value that can be `null` during a state transition must use optional chaining:
 
 ```svelte
 <!-- BAD: crashes if currentLobby is null during transition -->
-<button onclick={copyCode}>Code: {currentLobby.code}</button>
+<button>{currentLobby.code}</button>
 
 <!-- GOOD: safe even if currentLobby is transiently null -->
-<button onclick={copyCode}>Code: {currentLobby?.code}</button>
+<button>{currentLobby?.code}</button>
 ```
 
 ### 3. $effect Double-Fire in Development (Strict Mode)
 
-In development (Svelte runs effects twice on mount to detect side-effects), `$effect` may run twice. Ensure your effects are idempotent — setting a value to the same thing twice is fine; inserting a row twice is not. This matters less for read-only reactive effects (like watching a lobby status) but matters a lot for effects that call reducers or do DOM operations.
+In development, Svelte runs effects twice on mount to detect side-effects. Ensure your effects are idempotent — setting a value to the same thing twice is fine; inserting a row twice is not.
 
 ### 4. Do Not Use {:else if} for Stage HUD Routing
 
 Using `{#if} {:else if}` in a HUD router prevents Svelte from running exit transitions on the leaving component before mounting the entering one. Always use separate `{#if}` blocks:
 
 ```svelte
-<!-- BAD: no exit transitions -->
-{#if stage === 'menu'}
-  <MenuHud />
-{:else if stage === 'lobby'}
-  <LobbyHud />
-{/if}
-
 <!-- GOOD: both transitions run independently -->
 {#if stage === 'menu'}
   <MenuHud />
@@ -610,14 +1078,14 @@ Using `{#if} {:else if}` in a HUD router prevents Svelte from running exit trans
 const lobbies = useTable(tables.lobby); // lobbies is [store, store], not a store
 
 // GOOD
-const [lobbies, lobbiesLoading] = useTable(tables.lobby);
-// or if you don't need loading:
 const [lobbies] = useTable(tables.lobby);
+// or
+const [lobbies, lobbiesLoading] = useTable(tables.lobby);
 ```
 
 ### 6. $state.raw for Three.js Instances
 
-If your game state holds Three.js class instances (e.g. `THREE.Audio`, `THREE.Object3D`), use `$state.raw<T>()` instead of `$state()`. Svelte 5 wraps `$state` values in a Proxy, which breaks Three.js internal methods.
+If your game state holds Three.js class instances, use `$state.raw<T>()` instead of `$state()`. Svelte 5 wraps `$state` values in a Proxy which breaks Three.js internal methods.
 
 ```typescript
 let audioInstance = $state.raw<THREE.Audio | null>(null);
@@ -639,14 +1107,14 @@ The `leavingLobby` flag in `gameState` prevents a redirect loop: when a player c
   import { gameState } from '../game.svelte.js';
 
   const conn = useSpacetimeDB();
-  const [lobbies] = useTable(tables.lobby);
+  const [lobbies]      = useTable(tables.lobby);
   const [lobbyPlayers] = useTable(tables.lobbyPlayer);
 
   const myEntry = $derived(
     $lobbyPlayers.find(p => p.playerIdentity.toHexString() === $conn.identity?.toHexString())
   );
   const myLobby = $derived(myEntry ? $lobbies.find(l => l.id === myEntry.lobbyId) : null);
-  // Only show reconnect for in_progress games; redirect for waiting/countdown
+  // Show reconnect button only for in_progress games; auto-redirect handles waiting/countdown
   const inActiveGame = $derived(myLobby?.status === 'in_progress');
 
   $effect(() => {
@@ -663,7 +1131,7 @@ The `leavingLobby` flag in `gameState` prevents a redirect loop: when a player c
 {#if inActiveGame}
   <!-- Reconnect to an in-progress game only -->
   <p>Welcome back, {myEntry?.playerName}!</p>
-  <button onclick={() => stageActions.setStage('game')}>Reconnect to Game</button>
+  <button onclick={() => stageActions.setStage('lobby')}>Reconnect to Lobby</button>
 {:else}
   <!-- Normal join/host UI -->
   ...
@@ -671,8 +1139,6 @@ The `leavingLobby` flag in `gameState` prevents a redirect loop: when a player c
 ```
 
 **Why `leavingLobby` is needed:** `leaveLobby` fires a reducer and immediately calls `setStage('menu')`. MenuHud mounts and the `$effect` runs before the subscription update removes the `lobbyPlayer` row — so `myLobby` is still `waiting`. The flag blocks the redirect until the row disappears (then clears itself).
-
-This is safe because `subscribeToAllTables()` keeps all table caches up to date. If the player was cleaned up by `clientDisconnected`, `myEntry` will be `undefined` after reconnect.
 
 ---
 
@@ -714,7 +1180,7 @@ Never store a `lobbyId` in local state to find the current lobby. Instead, deriv
 
 ```typescript
 const conn = useSpacetimeDB();
-const [lobbies] = useTable(tables.lobby);
+const [lobbies]      = useTable(tables.lobby);
 const [lobbyPlayers] = useTable(tables.lobbyPlayer);
 
 const myEntry = $derived(
@@ -748,8 +1214,6 @@ $effect(() => {
 });
 ```
 
-`stageActions.setStage` is a no-op if already on `'game'`, so this effect is safe to re-run.
-
 ### Countdown UI
 
 ```typescript
@@ -766,7 +1230,6 @@ $effect(() => {
 });
 ```
 
-Show in template:
 ```svelte
 {#if currentLobby?.status === 'countdown'}
   <p>Starting in {countdownValue}...</p>
@@ -814,14 +1277,15 @@ const Lobby = table({
     { name: 'lobby_code',   accessor: 'lobby_code',   algorithm: 'btree', columns: ['code'] },
   ],
 }, {
-  id:           t.u64().primaryKey().autoInc(),
-  hostIdentity: t.identity(),
-  code:         t.string(),
-  isPublic:     t.bool(),
-  status:       t.string(),
-  playerCount:  t.u64(),
-  maxPlayers:   t.u64(),
-  createdAt:    t.timestamp(),
+  id:               t.u64().primaryKey().autoInc(),
+  hostIdentity:     t.identity(),
+  code:             t.string(),
+  isPublic:         t.bool(),
+  status:           t.string(),          // 'waiting' | 'countdown' | 'in_progress'
+  playerCount:      t.u64(),
+  maxPlayers:       t.u64(),
+  createdAt:        t.timestamp(),
+  hostIdleDeadline: t.timestamp(),
 });
 
 const LobbyPlayer = table({
@@ -881,14 +1345,90 @@ const LobbyCountdown = table({
   lobbyId:     t.u64(),
 });
 
+const LobbyIdleJob = table({
+  name: 'lobby_idle_job',
+  scheduled: (): any => fire_lobby_idle,
+}, {
+  scheduledId: t.u64().primaryKey().autoInc(),
+  scheduledAt: t.scheduleAt(),
+  lobbyId:     t.u64(),
+});
+
+const LobbyResult = table({
+  name: 'lobby_result',
+  public: true,
+  indexes: [
+    { name: 'lobby_result_score',   accessor: 'lobby_result_score',   algorithm: 'btree', columns: ['totalScore'] },
+    { name: 'lobby_result_session', accessor: 'lobby_result_session', algorithm: 'btree', columns: ['sessionId'] },
+  ],
+}, {
+  id:           t.u64().primaryKey().autoInc(),
+  sessionId:    t.u64(),
+  lobbyCode:    t.string(),
+  combo:        t.string(),
+  playerCount:  t.u64(),
+  totalScore:   t.u64(),
+  survivalSecs: t.u64(),
+  cycleNumber:  t.u64(),
+  createdAt:    t.timestamp(),
+});
+
+const LobbyResultPlayer = table({
+  name: 'lobby_result_player',
+  public: true,
+  indexes: [
+    { name: 'lobby_result_player_session', accessor: 'lobby_result_player_session', algorithm: 'btree', columns: ['sessionId'] },
+  ],
+}, {
+  id:          t.u64().primaryKey().autoInc(),
+  sessionId:   t.u64(),
+  playerName:  t.string(),
+  classChoice: t.string(),
+});
+
+const GlobalStats = table({
+  name: 'global_stats',
+  public: true,
+}, {
+  id:                t.u64().primaryKey(),
+  totalGames:        t.u64(),
+  totalSurvivalSecs: t.u64(),
+  bestSurvivalSecs:  t.u64(),
+  classSpotter:      t.u64(),
+  classGunner:       t.u64(),
+  classTank:         t.u64(),
+  classHealer:       t.u64(),
+});
+
+const SquadRecord = table({
+  name: 'squad_record',
+  public: true,
+  indexes: [
+    { name: 'squad_record_combo',        accessor: 'squad_record_combo',        algorithm: 'btree', columns: ['combo'] },
+    { name: 'squad_record_times_played', accessor: 'squad_record_times_played', algorithm: 'btree', columns: ['timesPlayed'] },
+    { name: 'squad_record_best_score',   accessor: 'squad_record_best_score',   algorithm: 'btree', columns: ['bestScore'] },
+  ],
+}, {
+  id:               t.u64().primaryKey().autoInc(),
+  combo:            t.string(),
+  timesPlayed:      t.u64(),
+  bestScore:        t.u64(),
+  bestSurvivalSecs: t.u64(),
+});
+
 // ─── Schema ───────────────────────────────────────────────────────────────────
 
 const spacetimedb = schema({
-  lobby:          Lobby,
-  lobbyPlayer:    LobbyPlayer,
-  gameSession:    GameSession,
-  playerState:    PlayerState,
-  lobbyCountdown: LobbyCountdown,
+  lobby:             Lobby,
+  lobbyPlayer:       LobbyPlayer,
+  gameSession:       GameSession,
+  playerState:       PlayerState,
+  lobbyCountdown:    LobbyCountdown,
+  lobbyIdleJob:      LobbyIdleJob,
+  lobbyResult:       LobbyResult,
+  lobbyResultPlayer: LobbyResultPlayer,
+  globalStats:       GlobalStats,
+  squadRecord:       SquadRecord,
 });
 export default spacetimedb;
 
@@ -905,6 +1445,111 @@ function generateCode(seed: bigint): string {
   return code;
 }
 
+// Create a Timestamp from raw microseconds (required when setting timestamp columns from bigint math)
+function ts(micros: bigint): any {
+  return { __timestamp_micros_since_unix_epoch__: micros };
+}
+
+const IDLE_MICROS = 120_000_000n; // 2 minutes
+
+// ─── Private: End Session ─────────────────────────────────────────────────────
+
+function end_session(ctx: any, sessionId: bigint) {
+  const session = ctx.db.gameSession.id.find(sessionId);
+  if (!session) return;
+  ctx.db.gameSession.id.update({ ...session, status: 'finished', endedAt: ctx.timestamp });
+
+  const lobby = ctx.db.lobby.id.find(session.lobbyId);
+  if (lobby) {
+    ctx.db.lobby.id.update({ ...lobby, status: 'waiting' });
+    for (const p of ctx.db.lobbyPlayer.lobby_player_lobby_id.filter(lobby.id)) {
+      ctx.db.lobbyPlayer.id.update({ ...p, isReady: false });
+    }
+  }
+
+  const sessionPlayers     = [...ctx.db.playerState.player_state_session_id.filter(sessionId)];
+  const sessionLobbyPlayers = [...ctx.db.lobbyPlayer.lobby_player_lobby_id.filter(session.lobbyId)];
+  const classes  = sessionLobbyPlayers.map(p => p.classChoice).filter(c => c !== '').sort();
+  const combo    = classes.length > 0 ? classes.join(',') : 'none';
+  const totalScore = sessionPlayers.reduce((acc, p) => acc + p.score, 0n);
+
+  const survivalMicros =
+    (ctx.timestamp.microsSinceUnixEpoch as bigint) -
+    (session.startedAt.microsSinceUnixEpoch as bigint);
+  const survivalSecs = survivalMicros > 0n ? survivalMicros / 1_000_000n : 0n;
+
+  // GlobalStats (singleton, id = 1n)
+  const gs = ctx.db.globalStats.id.find(1n);
+  const spotterCount = BigInt(classes.filter(c => c === 'spotter').length);
+  const gunnerCount  = BigInt(classes.filter(c => c === 'gunner').length);
+  const tankCount    = BigInt(classes.filter(c => c === 'tank').length);
+  const healerCount  = BigInt(classes.filter(c => c === 'healer').length);
+  if (gs) {
+    ctx.db.globalStats.id.update({
+      ...gs,
+      totalGames: gs.totalGames + 1n,
+      totalSurvivalSecs: gs.totalSurvivalSecs + survivalSecs,
+      bestSurvivalSecs: survivalSecs > gs.bestSurvivalSecs ? survivalSecs : gs.bestSurvivalSecs,
+      classSpotter: gs.classSpotter + spotterCount,
+      classGunner:  gs.classGunner  + gunnerCount,
+      classTank:    gs.classTank    + tankCount,
+      classHealer:  gs.classHealer  + healerCount,
+    });
+  } else {
+    ctx.db.globalStats.insert({
+      id: 1n, totalGames: 1n,
+      totalSurvivalSecs: survivalSecs, bestSurvivalSecs: survivalSecs,
+      classSpotter: spotterCount, classGunner: gunnerCount,
+      classTank: tankCount, classHealer: healerCount,
+    });
+  }
+
+  // SquadRecord (keyed by combo string)
+  const existingSquad = [...ctx.db.squadRecord.squad_record_combo.filter(combo)][0];
+  if (existingSquad) {
+    ctx.db.squadRecord.id.update({
+      ...existingSquad,
+      timesPlayed: existingSquad.timesPlayed + 1n,
+      bestScore: totalScore > existingSquad.bestScore ? totalScore : existingSquad.bestScore,
+      bestSurvivalSecs: survivalSecs > existingSquad.bestSurvivalSecs ? survivalSecs : existingSquad.bestSurvivalSecs,
+    });
+  } else {
+    ctx.db.squadRecord.insert({ id: 0n, combo, timesPlayed: 1n, bestScore: totalScore, bestSurvivalSecs: survivalSecs });
+  }
+
+  // LobbyResult top-20 gate
+  const alreadyRecorded = [...ctx.db.lobbyResult.lobby_result_session.filter(sessionId)].length > 0;
+  if (!alreadyRecorded) {
+    const allResults = [...ctx.db.lobbyResult.iter()];
+    let qualified = false;
+    let evictRow: any = null;
+    if (allResults.length < 20) {
+      qualified = true;
+    } else {
+      let minRow = allResults[0];
+      for (const r of allResults) { if (r.totalScore < minRow.totalScore) minRow = r; }
+      if (totalScore > minRow.totalScore) { qualified = true; evictRow = minRow; }
+    }
+    if (qualified) {
+      if (evictRow) {
+        for (const p of ctx.db.lobbyResultPlayer.lobby_result_player_session.filter(evictRow.sessionId)) {
+          ctx.db.lobbyResultPlayer.id.delete(p.id);
+        }
+        ctx.db.lobbyResult.id.delete(evictRow.id);
+      }
+      ctx.db.lobbyResult.insert({
+        id: 0n, sessionId, lobbyCode: lobby?.code ?? '??????',
+        combo, playerCount: BigInt(classes.length),
+        totalScore, survivalSecs, cycleNumber: 0n,
+        createdAt: ctx.timestamp,
+      });
+      for (const lp of sessionLobbyPlayers) {
+        ctx.db.lobbyResultPlayer.insert({ id: 0n, sessionId, playerName: lp.playerName, classChoice: lp.classChoice });
+      }
+    }
+  }
+}
+
 // ─── Reducers ─────────────────────────────────────────────────────────────────
 
 export const create_lobby = spacetimedb.reducer({
@@ -913,15 +1558,21 @@ export const create_lobby = spacetimedb.reducer({
   isPublic: t.bool(),
 }, (ctx, { playerName, classChoice, isPublic }) => {
   if (!playerName) throw new SenderError('playerName required');
+  const idleDeadline = ctx.timestamp.microsSinceUnixEpoch + IDLE_MICROS;
   const lobby = ctx.db.lobby.insert({
     id: 0n, hostIdentity: ctx.sender,
     code: generateCode(ctx.timestamp.microsSinceUnixEpoch),
     isPublic, status: 'waiting', playerCount: 1n, maxPlayers: 4n,
-    createdAt: ctx.timestamp,
+    createdAt: ctx.timestamp, hostIdleDeadline: ts(idleDeadline),
   });
   ctx.db.lobbyPlayer.insert({
     id: 0n, lobbyId: lobby.id, playerIdentity: ctx.sender,
     playerName, classChoice: classChoice || '', isReady: false, joinedAt: ctx.timestamp,
+  });
+  ctx.db.lobbyIdleJob.insert({
+    scheduledId: 0n,
+    scheduledAt: ScheduleAt.time(idleDeadline),
+    lobbyId: lobby.id,
   });
 });
 
@@ -955,6 +1606,41 @@ export const join_by_code = spacetimedb.reducer({
     playerName, classChoice: classChoice || '', isReady: false, joinedAt: ctx.timestamp,
   });
   ctx.db.lobby.id.update({ ...lobby, playerCount: lobby.playerCount + 1n });
+});
+
+export const quick_join = spacetimedb.reducer({
+  playerName: t.string(), classChoice: t.string(),
+}, (ctx, { playerName, classChoice }) => {
+  if (!playerName) throw new SenderError('playerName required');
+  const existing = [...ctx.db.lobbyPlayer.lobby_player_identity.filter(ctx.sender)];
+  if (existing.length > 0) throw new SenderError('Already in a lobby');
+  let joined = false;
+  for (const lobby of ctx.db.lobby.lobby_status.filter('waiting')) {
+    if (!lobby.isPublic || lobby.playerCount >= lobby.maxPlayers) continue;
+    ctx.db.lobbyPlayer.insert({
+      id: 0n, lobbyId: lobby.id, playerIdentity: ctx.sender,
+      playerName, classChoice: classChoice || '', isReady: false, joinedAt: ctx.timestamp,
+    });
+    ctx.db.lobby.id.update({ ...lobby, playerCount: lobby.playerCount + 1n });
+    joined = true;
+    break;
+  }
+  if (!joined) {
+    const idleDeadline = ctx.timestamp.microsSinceUnixEpoch + IDLE_MICROS;
+    const lobby = ctx.db.lobby.insert({
+      id: 0n, hostIdentity: ctx.sender,
+      code: generateCode(ctx.timestamp.microsSinceUnixEpoch),
+      isPublic: true, status: 'waiting', playerCount: 1n, maxPlayers: 4n,
+      createdAt: ctx.timestamp, hostIdleDeadline: ts(idleDeadline),
+    });
+    ctx.db.lobbyPlayer.insert({
+      id: 0n, lobbyId: lobby.id, playerIdentity: ctx.sender,
+      playerName, classChoice: classChoice || '', isReady: false, joinedAt: ctx.timestamp,
+    });
+    ctx.db.lobbyIdleJob.insert({
+      scheduledId: 0n, scheduledAt: ScheduleAt.time(idleDeadline), lobbyId: lobby.id,
+    });
+  }
 });
 
 export const set_class = spacetimedb.reducer({
@@ -1006,6 +1692,23 @@ export const leave_lobby = spacetimedb.reducer({
   ctx.db.lobby.id.update({ ...lobby, playerCount: newCount, hostIdentity: newHost });
 });
 
+export const kick_player = spacetimedb.reducer({
+  lobbyId: t.u64(), playerIdentity: t.identity(),
+}, (ctx, { lobbyId, playerIdentity }) => {
+  const lobby = ctx.db.lobby.id.find(lobbyId);
+  if (!lobby) throw new SenderError('Lobby not found');
+  if (!lobby.hostIdentity.isEqual(ctx.sender)) throw new SenderError('Only host can kick');
+  if (playerIdentity.isEqual(ctx.sender)) throw new SenderError('Cannot kick yourself');
+  for (const p of ctx.db.lobbyPlayer.lobby_player_lobby_id.filter(lobbyId)) {
+    if (p.playerIdentity.isEqual(playerIdentity)) {
+      ctx.db.lobbyPlayer.id.delete(p.id);
+      ctx.db.lobby.id.update({ ...lobby, playerCount: lobby.playerCount - 1n });
+      return;
+    }
+  }
+  throw new SenderError('Player not in lobby');
+});
+
 export const start_countdown = spacetimedb.reducer({
   lobbyId: t.u64(),
 }, (ctx, { lobbyId }) => {
@@ -1014,7 +1717,7 @@ export const start_countdown = spacetimedb.reducer({
   if (!lobby.hostIdentity.isEqual(ctx.sender)) throw new SenderError('Only host can start');
   if (lobby.status !== 'waiting') throw new SenderError('Already starting');
   const players = [...ctx.db.lobbyPlayer.lobby_player_lobby_id.filter(lobbyId)];
-  if (players.length < 2) throw new SenderError('Need at least 2 players');
+  if (players.length < 1) throw new SenderError('Need at least 1 player');
   if (!players.every(p => p.isReady && p.classChoice)) {
     throw new SenderError('All players must be ready with a class selected');
   }
@@ -1032,7 +1735,7 @@ export const fire_start_game = spacetimedb.reducer({
   const lobby = ctx.db.lobby.id.find(arg.lobbyId);
   if (!lobby || lobby.status !== 'countdown') return;
 
-  // Clean up previous session(s) for this lobby (PlayerState rows kept until now for game over screen)
+  // Clean up previous session(s) for this lobby
   for (const oldSession of ctx.db.gameSession.game_session_lobby_id.filter(arg.lobbyId)) {
     for (const p of ctx.db.playerState.player_state_session_id.filter(oldSession.id)) {
       ctx.db.playerState.id.delete(p.id);
@@ -1052,6 +1755,36 @@ export const fire_start_game = spacetimedb.reducer({
     });
   }
   ctx.db.lobby.id.update({ ...lobby, status: 'in_progress' });
+});
+
+export const fire_lobby_idle = spacetimedb.reducer({
+  arg: LobbyIdleJob.rowType,
+}, (ctx, { arg }) => {
+  const lobby = ctx.db.lobby.id.find(arg.lobbyId);
+  if (!lobby || lobby.status !== 'waiting') return;
+
+  const allPlayers = [...ctx.db.lobbyPlayer.lobby_player_lobby_id.filter(lobby.id)];
+  const hostPlayer = allPlayers.find(p => p.playerIdentity.isEqual(lobby.hostIdentity));
+  if (hostPlayer?.isReady) return; // host became ready before deadline
+
+  const others = allPlayers.filter(p => !p.playerIdentity.isEqual(lobby.hostIdentity));
+  if (others.length === 0) {
+    for (const p of allPlayers) ctx.db.lobbyPlayer.id.delete(p.id);
+    ctx.db.lobby.id.delete(lobby.id);
+  } else {
+    const newHost = others[0];
+    const newDeadline = ctx.timestamp.microsSinceUnixEpoch + IDLE_MICROS;
+    ctx.db.lobby.id.update({
+      ...lobby,
+      hostIdentity: newHost.playerIdentity,
+      hostIdleDeadline: ts(newDeadline),
+    });
+    ctx.db.lobbyIdleJob.insert({
+      scheduledId: 0n,
+      scheduledAt: ScheduleAt.time(newDeadline),
+      lobbyId: lobby.id,
+    });
+  }
 });
 
 // ─── Lifecycle ─────────────────────────────────────────────────────────────────
@@ -1074,7 +1807,7 @@ spacetimedb.clientDisconnected((ctx) => {
         ctx.db.lobby.id.update({ ...lobby, playerCount: lobby.playerCount - 1n, hostIdentity: newHost });
       }
     }
-    break;
+    break; // a player is in at most one lobby
   }
 });
 ```
@@ -1083,13 +1816,18 @@ spacetimedb.clientDisconnected((ctx) => {
 
 ## Quick Reference: Checklist for a New Project
 
-- [ ] Copy tables, schema, reducers, lifecycle into `spacetimedb/src/index.ts`
-- [ ] Run `pnpm spacetime:publish` to publish the module
-- [ ] Run `pnpm spacetime:generate` to regenerate client bindings
+- [ ] Copy all tables and schema into `spacetimedb/src/index.ts` (single file — no split schema/index)
+- [ ] Add `hostIdleDeadline: t.timestamp()` to Lobby, `LobbyIdleJob` scheduled table, `fire_lobby_idle` reducer
+- [ ] Include leaderboard tables if persistence is needed: `LobbyResult`, `LobbyResultPlayer`, `GlobalStats`, `SquadRecord`
+- [ ] Run `npm run spacetime:publish:local:fresh` to publish the module
+- [ ] Run `npm run spacetime:generate` to regenerate client bindings
 - [ ] Create `src/game.svelte.ts` with `$state`, `gameActions`, `setError` helper
+- [ ] `quickplay()` takes no arguments — calls `conn.reducers.quickJoin(...)` (server-side selection)
 - [ ] In `Root.svelte` `onConnect`: call `gameActions.init(conn)` and `conn.subscriptionBuilder().subscribeToAllTables()`
-- [ ] Create `MenuHud.svelte` with `alreadyInLobby` check, loading state, error display
-- [ ] Create `LobbyHud.svelte` with derived lobby/player state, countdown effect, game-start watcher
+- [ ] Create `MenuHud.svelte` with `inActiveGame` check, `leavingLobby` flag, loading state, error display
+- [ ] Create `LobbyHud.svelte`: derive lobby/players from identity lookup (not stored lobbyId), add countdown effect, idle deadline UI, game-start watcher
 - [ ] Use separate `{#if}` blocks (not `{:else if}`) for HUD routing
 - [ ] Use optional chaining on all reactive template expressions that may be `null` during transitions
 - [ ] Confirm identity comparison uses `.toHexString()` on both sides
+- [ ] Cast both sides to `bigint` before timestamp arithmetic — `any - any = number` in TypeScript
+- [ ] Client timestamps: `new Date(Number(row.someTimestamp.microsSinceUnixEpoch / 1000n))`
