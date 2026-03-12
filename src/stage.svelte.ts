@@ -18,18 +18,18 @@ export const STAGES: StageConfig[] = [
 		icon: 'mdiHome',
 		camera: (controls, animated) => {
 			// Cinematic forest vista — adjust values in Phase 3 art pass
-			controls.setTarget(0, 0, 0, animated);
+			controls.setTarget(0, 10, 0, animated);
 			controls.setPosition(0, 8, 20, animated);
-		},
+		}
 	},
 	{
 		id: 'lobby',
 		label: 'Lobby',
 		icon: 'mdiAccountGroup',
 		camera: (controls, animated) => {
-			controls.setTarget(0, 0, 0, animated);
+			controls.setTarget(9, 10, 0, animated);
 			controls.setPosition(0, 8, 20, animated);
-		},
+		}
 	},
 	{
 		id: 'game',
@@ -39,7 +39,7 @@ export const STAGES: StageConfig[] = [
 			// Placeholder — overridden by follow-cam in Phase 3
 			controls.setTarget(0, 2, 0, animated);
 			controls.setPosition(0, 6, 12, animated);
-		},
+		}
 	},
 	{
 		id: 'game_over',
@@ -48,7 +48,7 @@ export const STAGES: StageConfig[] = [
 		camera: (controls, animated) => {
 			controls.setTarget(0, 0, 0, animated);
 			controls.setPosition(5, 4, 15, animated);
-		},
+		}
 	},
 	{
 		id: 'leaderboard',
@@ -57,7 +57,7 @@ export const STAGES: StageConfig[] = [
 		camera: (controls, animated) => {
 			controls.setTarget(0, 0, 0, animated);
 			controls.setPosition(0, 8, 20, animated);
-		},
+		}
 	},
 	{
 		id: 'settings',
@@ -66,8 +66,8 @@ export const STAGES: StageConfig[] = [
 		camera: (controls, animated) => {
 			controls.setTarget(0, 0, 0, animated);
 			controls.setPosition(0, 8, 20, animated);
-		},
-	},
+		}
+	}
 ];
 
 export interface StageState {

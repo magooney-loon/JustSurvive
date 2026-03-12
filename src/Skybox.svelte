@@ -12,17 +12,21 @@
 	// ─── Quality-based star counts ────────────────────────────────────────────
 	const starCounts = $derived.by(() => {
 		switch (settingsState.graphics.quality) {
-			case 'low':  return { stars1: 200, stars2: 180 };
-			case 'mid':  return { stars1: 450, stars2: 350 };
-			case 'high': return { stars1: 720, stars2: 540 };
-			default:     return { stars1: 450, stars2: 350 };
+			case 'low':
+				return { stars1: 200, stars2: 180 };
+			case 'mid':
+				return { stars1: 450, stars2: 350 };
+			case 'high':
+				return { stars1: 720, stars2: 540 };
+			default:
+				return { stars1: 450, stars2: 350 };
 		}
 	});
 
 	// ─── Sun world position (for directional light) ───────────────────────────
 	const sunPos = $derived.by(() => {
 		const elRad = skyState.elevation * (Math.PI / 180);
-		const azRad = skyState.azimuth   * (Math.PI / 180);
+		const azRad = skyState.azimuth * (Math.PI / 180);
 		// Keep light source above horizon so shadows always come from above
 		const y = Math.max(10, Math.sin(elRad) * 100);
 		return [
@@ -84,8 +88,8 @@
 	<T.Group userData={{ hideInTree: true, selectable: false }}>
 		<StarsComponent
 			count={starCounts.stars2}
-			radius={10}
-			depth={20}
+			radius={20}
+			depth={30}
 			factor={1.9}
 			fade={true}
 			lightness={0.4}
