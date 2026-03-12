@@ -37,7 +37,8 @@ export const abilityState = $state({
 	lastSuppressedEnemyId: null as bigint | null,
 	bashCooldownUntil: 0, // ms timestamp (tank bash, 1.5s)
 	healCooldownUntil: 0, // ms timestamp (healer heal shot, 2s)
-	braceCooldownUntil: 0 // ms timestamp (tank brace, 1s between activations)
+	braceCooldownUntil: 0, // ms timestamp (tank brace, 1s between activations)
+	flashCooldownUntil: 0 // ms timestamp (spotter flash stun, 1.5s)
 });
 
 // Heal beam — written by AbilityInput, read by HealBeam (3D scene)
@@ -48,6 +49,10 @@ export const HEAL_BEAM_MS = 350;
 // Uses optimistic local state to avoid latency issues in production
 export const shotFlash = $state({ until: 0 });
 export const SHOT_FLASH_MS = 200;
+
+// Spotter flash stun cone — written by AbilityInput, read by SpotterFlashEffect
+export const spotterFlash = $state({ active: false, yaw: 0, until: 0 });
+export const SPOTTER_FLASH_MS = 500;
 
 // Local player HP ratio [0..1] — written by GameStage, read by Renderer
 export const localHealthState = $state({ ratio: 1 });
@@ -96,6 +101,7 @@ export function resetLocalState() {
 	abilityState.bashCooldownUntil = 0;
 	abilityState.healCooldownUntil = 0;
 	abilityState.braceCooldownUntil = 0;
+	abilityState.flashCooldownUntil = 0;
 	shotFlash.until = 0;
 	healBeam.active = false;
 	healBeam.toX = 0;

@@ -1758,45 +1758,50 @@ export const mark_enemy = spacetimedb.reducer(
 	}
 );
 
-export const ping_location = spacetimedb.reducer(
-	{
-		sessionId: t.u64(),
-		posX: t.i64(),
-		posZ: t.i64()
-	},
-	(ctx, { sessionId, posX, posZ }) => {
+export const spotter_flash = spacetimedb.reducer(
+	{ sessionId: t.u64() },
+	(ctx, { sessionId }) => {
 		let ps: any;
 		for (const p of ctx.db.playerState.player_state_session_id.filter(sessionId)) {
-			if (p.playerIdentity.isEqual(ctx.sender)) {
-				ps = p;
-				break;
-			}
+			if (p.playerIdentity.isEqual(ctx.sender)) { ps = p; break; }
 		}
 		if (!ps || ps.classChoice !== 'spotter') throw new SenderError('Not a Spotter');
 		if (ps.status !== 'alive') return;
+		const COOLDOWN_US = 1_500_000n;
 		if (
 			ps.pingCooldownUntil &&
 			ctx.timestamp.microsSinceUnixEpoch < ps.pingCooldownUntil.microsSinceUnixEpoch
-		) {
-			throw new SenderError('Ping on cooldown');
+		) throw new SenderError('Flash on cooldown');
+
+		// Cone parameters: 5 unit range, ±45° (90° total)
+		const CONE_RANGE = 5000; // fixed-point (× 1000)
+		const HALF_ANGLE = Math.PI / 4;
+		const STUN_US = 2_000_000n;
+
+		const facingRad = Number(ps.facingAngle) / 1000;
+		const fwdX = -Math.sin(facingRad);
+		const fwdZ = -Math.cos(facingRad);
+		const cosHalf = Math.cos(HALF_ANGLE);
+
+		let stunned = 0n;
+		for (const e of ctx.db.enemy.enemy_session_id.filter(sessionId)) {
+			if (!e.isAlive) continue;
+			const ex = Number(e.posX) - Number(ps.posX);
+			const ez = Number(e.posZ) - Number(ps.posZ);
+			const dist = Math.sqrt(ex * ex + ez * ez);
+			if (dist > CONE_RANGE || dist < 1) continue;
+			const dot = (ex * fwdX + ez * fwdZ) / dist;
+			if (dot < cosHalf) continue;
+			// Enemy is in cone — stun it
+			const dazedUntil = ts(ctx.timestamp.microsSinceUnixEpoch + STUN_US);
+			ctx.db.enemy.id.update({ ...e, isDazed: true, dazedUntil });
+			stunned += 1n;
 		}
 
-		const expiresAt = ctx.timestamp.microsSinceUnixEpoch + 10_000_000n;
-		ctx.db.mark.insert({
-			id: 0n,
-			sessionId,
-			sourceIdentity: ctx.sender,
-			targetType: 'location',
-			posX,
-			posZ,
-			expiresAt: ts(expiresAt)
-		});
-
-		const cooldownUntil = ts(ctx.timestamp.microsSinceUnixEpoch + 10_000_000n);
 		ctx.db.playerState.id.update({
 			...ps,
-			score: ps.score + 5n,
-			pingCooldownUntil: cooldownUntil
+			score: ps.score + stunned * 10n,
+			pingCooldownUntil: ts(ctx.timestamp.microsSinceUnixEpoch + COOLDOWN_US)
 		});
 	}
 );

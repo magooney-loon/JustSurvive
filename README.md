@@ -44,7 +44,7 @@ Squad-based survival arena. Up to 4 players pick a class, drop into a circular a
 
 | Class   | Role      | HP  | Stamina | Walk Speed | Sprint Speed | Abilities                                |
 | ------- | --------- | --- | ------- | ---------- | ------------ | ---------------------------------------- |
-| Spotter | Scout     | 100 | 450     | 5.0        | 9.0          | Mark enemy (LMB), Ping location (RMB)    |
+| Spotter | Scout     | 100 | 450     | 5.0        | 9.0          | Mark enemy (LMB), Flash stun cone (RMB)  |
 | Gunner  | DPS       | 100 | 80      | 4.5        | 7.5          | Shoot (LMB), every 3rd shot suppresses   |
 | Tank    | Frontline | 150 | 200     | 2.5        | 3.5          | Shield Bash (LMB), Brace (RMB hold)      |
 | Healer  | Support   | 100 | 80      | 5.0        | 8.5          | Heal teammate (LMB), Revive downed (RMB) |
@@ -90,16 +90,16 @@ npm build
 spacetime start
 
 # publish module (local)
-npm spacetime:publish:local
+npm run spacetime:publish:local
 
 # publish module (local, wipe db)
-npm spacetime:publish:local:fresh
+npm run spacetime:publish:local:fresh
 
 # publish to maincloud
-npm spacetime:publish
+npm run spacetime:publish
 
 # regenerate client bindings after schema changes
-npm spacetime:generate
+npm run spacetime:generate
 ```
 
 ---

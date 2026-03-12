@@ -18,12 +18,12 @@ import KickPlayerReducer from "../kick_player_reducer";
 import LeaveLobbyReducer from "../leave_lobby_reducer";
 import MarkEnemyReducer from "../mark_enemy_reducer";
 import MovePlayerReducer from "../move_player_reducer";
-import PingLocationReducer from "../ping_location_reducer";
 import QuickJoinReducer from "../quick_join_reducer";
 import ReviveStartReducer from "../revive_start_reducer";
 import SetClassReducer from "../set_class_reducer";
 import SetReadyReducer from "../set_ready_reducer";
 import ShieldBashReducer from "../shield_bash_reducer";
+import SpotterFlashReducer from "../spotter_flash_reducer";
 import StartCountdownReducer from "../start_countdown_reducer";
 
 export type AttackEnemyParams = __Infer<typeof AttackEnemyReducer>;
@@ -38,11 +38,11 @@ export type KickPlayerParams = __Infer<typeof KickPlayerReducer>;
 export type LeaveLobbyParams = __Infer<typeof LeaveLobbyReducer>;
 export type MarkEnemyParams = __Infer<typeof MarkEnemyReducer>;
 export type MovePlayerParams = __Infer<typeof MovePlayerReducer>;
-export type PingLocationParams = __Infer<typeof PingLocationReducer>;
 export type QuickJoinParams = __Infer<typeof QuickJoinReducer>;
 export type ReviveStartParams = __Infer<typeof ReviveStartReducer>;
 export type SetClassParams = __Infer<typeof SetClassReducer>;
 export type SetReadyParams = __Infer<typeof SetReadyReducer>;
 export type ShieldBashParams = __Infer<typeof ShieldBashReducer>;
+export type SpotterFlashParams = __Infer<typeof SpotterFlashReducer>;
 export type StartCountdownParams = __Infer<typeof StartCountdownReducer>;
 

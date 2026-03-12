@@ -12,6 +12,4 @@ import {
 
 export default {
   sessionId: __t.u64(),
-  posX: __t.i64(),
-  posZ: __t.i64(),
 };

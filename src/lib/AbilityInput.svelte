@@ -9,7 +9,10 @@
 		healBeam,
 		HEAL_BEAM_MS,
 		shotFlash,
-		SHOT_FLASH_MS
+		SHOT_FLASH_MS,
+		spotterFlash,
+		SPOTTER_FLASH_MS,
+		fpsCamera
 	} from '../localGameState.svelte.js';
 	import { soundActions } from '../Sound.svelte';
 
@@ -153,13 +156,14 @@
 					abilityState.markCooldownUntil = Date.now() + 5000;
 				}
 			} else if (e.button === 2) {
-				// RMB: ping location
-				gameActions.pingLocation(
-					sid,
-					BigInt(Math.round(localAim.x * 1000)),
-					BigInt(Math.round(localAim.z * 1000))
-				);
+				// RMB: flash stun — cone in front of player (1.5s cooldown)
+				if (abilityState.flashCooldownUntil > Date.now()) return;
+				gameActions.spotterFlash(sid);
 				soundActions.playSpotterPing();
+				abilityState.flashCooldownUntil = Date.now() + 1500;
+				spotterFlash.active = true;
+				spotterFlash.yaw = fpsCamera.yaw;
+				spotterFlash.until = Date.now() + SPOTTER_FLASH_MS;
 			}
 			return;
 		}

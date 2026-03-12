@@ -26,6 +26,7 @@
 	import HealBeam from './HealBeam.svelte';
 	import GameSounds from './GameSounds.svelte';
 	import RainEffect from './RainEffect.svelte';
+	import SpotterFlashEffect from './SpotterFlashEffect.svelte';
 
 	const conn = useSpacetimeDB();
 	const [players] = useTable(tables.playerState);
@@ -238,5 +239,6 @@
 
 <!-- Mark / ping overlays -->
 <HealBeam />
+<SpotterFlashEffect />
 <GameSounds />
 <MarkOverlay />

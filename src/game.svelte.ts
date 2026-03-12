@@ -130,10 +130,10 @@ export const gameActions = {
 		if (!conn) return;
 		conn.reducers.markEnemy({ sessionId, enemyId });
 	},
-	async pingLocation(sessionId: bigint, posX: bigint, posZ: bigint) {
+	async spotterFlash(sessionId: bigint) {
 		if (!conn) return;
 		try {
-			await conn.reducers.pingLocation({ sessionId, posX, posZ });
+			await conn.reducers.spotterFlash({ sessionId });
 		} catch {}
 	},
 	async attackEnemy(sessionId: bigint, enemyId: bigint, suppress: boolean) {

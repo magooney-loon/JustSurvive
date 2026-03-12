@@ -57,7 +57,7 @@
 		// ── Solo ──────────────────────────────────────────────────────────────
 		spotter: {
 			label: 'Lone Scout',
-			desc: 'Mark targets and ping threats solo. Fast, fragile, flying blind on support.',
+			desc: 'Mark targets and flash stun threats solo. Fast, fragile, flying blind on support.',
 			color: '#4af'
 		},
 		gunner: {
@@ -78,7 +78,7 @@
 		// ── Double same class ─────────────────────────────────────────────────
 		spotterx2: {
 			label: 'Twin Eyes',
-			desc: 'Double marks, double pings — the map is yours. Zero sustain though.',
+			desc: 'Double marks, double flash stuns — crowd control everywhere. Zero sustain though.',
 			color: '#4af'
 		},
 		gunnerx2: {
@@ -472,7 +472,7 @@
 		{
 			tag: 'Spotter',
 			color: '#4af',
-			text: 'Ping locations to map incoming packs for teammates before they arrive.'
+			text: 'Flash stun stuns enemies in a 90° cone — use it to buy time for teammates when overwhelmed.'
 		},
 		{
 			tag: 'Gunner',
@@ -708,7 +708,7 @@
 								<span style="opacity: 0.7;">LMB:</span> Mark enemy (2s cooldown)
 							</p>
 							<p style="margin: 0; font-size: 0.8rem;">
-								<span style="opacity: 0.7;">RMB:</span> Ping location
+								<span style="opacity: 0.7;">RMB:</span> Flash stun (1.5s cooldown)
 							</p>
 						{:else if myEntry.classChoice === 'gunner'}
 							<p style="margin: 0 0 0.25rem; font-size: 0.8rem;">

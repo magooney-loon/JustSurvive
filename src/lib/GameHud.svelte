@@ -94,11 +94,11 @@
 					cdMs: 2000
 				},
 				{
-					label: 'Ping',
+					label: 'Flash',
 					input: 'RMB',
 					color: '#22d4ff',
-					cdFrac: cdFrac(myState?.pingCooldownUntil?.microsSinceUnixEpoch, 10000),
-					cdMs: 10000
+					cdFrac: Math.max(0, (abilityState.flashCooldownUntil - now) / 1500),
+					cdMs: 1500
 				}
 			];
 		if (cls === 'gunner')
