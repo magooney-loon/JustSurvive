@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { T, useTask } from '@threlte/core';
-	import { AdditiveBlending, Object3D } from 'three';
+	import { AdditiveBlending, Object3D, type Texture } from 'three';
 	export type StickRigProps = {
 		classChoice: string;
 		color: string;
@@ -10,6 +10,7 @@
 		phase?: string;
 		isEnemy?: boolean;
 		isBracing?: boolean;
+		texture?: Texture | null;
 	};
 
 	let {
@@ -20,8 +21,13 @@
 		shotPulse,
 		phase = 'sunset',
 		isEnemy = false,
-		isBracing = false
+		isBracing = false,
+		texture = null
 	}: StickRigProps = $props();
+
+	const bodyMat = $derived(
+		texture ? { map: texture, color, roughness: 0.85 } : { color, roughness: 0.88 }
+	);
 
 	const limbR = $derived(classChoice === 'tank' ? 0.09 : classChoice === 'gunner' ? 0.075 : 0.065);
 
@@ -86,15 +92,15 @@
 	<!-- SPINE -->
 	<T.Mesh position={[0, 0.93, -leanForward * 0.45]} rotation={[leanForward, 0, 0]}>
 		<T.CylinderGeometry args={[0.14, 0.18, 0.65, 6]} />
-		<T.MeshStandardMaterial {color} roughness={0.88} />
+		<T.MeshStandardMaterial {...bodyMat} />
 	</T.Mesh>
 	<T.Mesh position={[0, 1.18, -leanForward * 0.55]} rotation={[leanForward * 0.9, 0, 0]}>
 		<T.CylinderGeometry args={[0.1, 0.15, 0.55, 6]} />
-		<T.MeshStandardMaterial {color} roughness={0.88} />
+		<T.MeshStandardMaterial {...bodyMat} />
 	</T.Mesh>
 	<T.Mesh position={[0, 1.32, -leanForward * 0.6]} rotation={[leanForward * 0.9, 0, 0]}>
 		<T.CylinderGeometry args={[0.08, 0.12, 0.4, 6]} />
-		<T.MeshStandardMaterial {color} roughness={0.88} />
+		<T.MeshStandardMaterial {...bodyMat} />
 	</T.Mesh>
 	<!-- Neck -->
 	<T.Mesh position={[0, 1.44, -leanForward * 0.65]} rotation={[leanForward * 0.8, 0, 0]}>
@@ -105,11 +111,11 @@
 	<!-- HIPS & PELVIS -->
 	<T.Mesh position={[0, 0.75, 0]}>
 		<T.SphereGeometry args={[0.12, 8, 6]} />
-		<T.MeshStandardMaterial {color} roughness={0.88} />
+		<T.MeshStandardMaterial {...bodyMat} />
 	</T.Mesh>
 	<T.Mesh position={[0, 0.78, 0]}>
 		<T.CapsuleGeometry args={[0.16, 0.22, 6, 10]} />
-		<T.MeshStandardMaterial {color} roughness={0.88} />
+		<T.MeshStandardMaterial {...bodyMat} />
 	</T.Mesh>
 	<T.Mesh position={[-0.2, 0.78, 0.04]} rotation={[0, 0, Math.PI / 2]}>
 		<T.CapsuleGeometry args={[0.065, 0.19, 4, 8]} />
@@ -127,7 +133,7 @@
 	<!-- SHOULDERS -->
 	<T.Mesh position={[0, 1.35, 0]}>
 		<T.SphereGeometry args={[0.1, 8, 6]} />
-		<T.MeshStandardMaterial {color} roughness={0.88} />
+		<T.MeshStandardMaterial {...bodyMat} />
 	</T.Mesh>
 	<T.Mesh position={[-0.28, 1.34, -0.02]}>
 		<T.CapsuleGeometry args={[0.068, 0.22, 4, 8]} />
@@ -149,7 +155,7 @@
 	<!-- RIBCAGE / CHEST (breathes) -->
 	<T.Mesh position={[0, 1.25, -leanForward * 0.4]}>
 		<T.CapsuleGeometry args={[0.18, 0.3, 6, 10]} />
-		<T.MeshStandardMaterial {color} roughness={0.88} />
+		<T.MeshStandardMaterial {...bodyMat} />
 	</T.Mesh>
 	<T.Mesh position={[-0.27, 1.25, -leanForward * 0.35]}>
 		<T.CapsuleGeometry args={[0.062, 0.25, 4, 8]} />
@@ -475,11 +481,7 @@
 			<!-- Emissive filament -->
 			<T.Mesh position={[0, 0, -0.335]}>
 				<T.SphereGeometry args={[0.048, 8, 6]} />
-				<T.MeshStandardMaterial
-					color="#ffeeaa"
-					emissive="#ffeeaa"
-					emissiveIntensity={3.2}
-				/>
+				<T.MeshStandardMaterial color="#ffeeaa" emissive="#ffeeaa" emissiveIntensity={3.2} />
 			</T.Mesh>
 			<!-- Near-source glow sphere (very transparent) -->
 			<T.Mesh position={[0, 0, -0.52]}>
@@ -576,5 +578,4 @@
 			{/if}
 		{/if}
 	</T.Group>
-
 </T.Group>

@@ -1,8 +1,10 @@
 <script lang="ts">
 	import { T, useTask } from '@threlte/core';
+	import { useTexture } from '@threlte/extras';
 	import type { PlayerState } from '../module_bindings/types.js';
 	import AimReticle from './AimReticle.svelte';
 	import StickRig from './StickRig.svelte';
+	import { RepeatWrapping } from 'three';
 
 	type Vec3 = { x: number; y: number; z: number };
 	type Vec2 = { x: number; z: number };
@@ -24,6 +26,32 @@
 		overrideAim,
 		overrideVel
 	}: Props = $props();
+
+	const CLASS_TEXTURES: Record<string, string> = {
+		spotter: '/textures/spotter.webp',
+		gunner: '/textures/gunner.webp',
+		tank: '/textures/tank.webp',
+		healer: '/textures/healer.webp'
+	};
+
+	let classTexture = $state<any>(null);
+
+	$effect(() => {
+		const tex = CLASS_TEXTURES[player.classChoice];
+		if (tex) {
+			useTexture(tex, {
+				transform: (t) => {
+					t.wrapS = RepeatWrapping;
+					t.wrapT = RepeatWrapping;
+					return t;
+				}
+			})
+				.catch(() => null)
+				.then((t) => {
+					classTexture = t;
+				});
+		}
+	});
 
 	let displayX = $state(0);
 	let displayY = $state(0);
@@ -102,15 +130,28 @@
 		position={[displayX, displayY + downedYOffset, displayZ]}
 		rotation={[downedTilt, facing, 0]}
 	>
-		<StickRig
-			classChoice={player.classChoice}
-			color={CLASS_COLORS[player.classChoice] ?? '#fff'}
-			{walkPhase}
-			{speed}
-			{shotPulse}
-			{phase}
-			isBracing={player.isBracing}
-		/>
+		{#if classTexture}
+			<StickRig
+				classChoice={player.classChoice}
+				color={CLASS_COLORS[player.classChoice] ?? '#fff'}
+				{walkPhase}
+				{speed}
+				{shotPulse}
+				{phase}
+				isBracing={player.isBracing}
+				texture={classTexture}
+			/>
+		{:else}
+			<StickRig
+				classChoice={player.classChoice}
+				color={CLASS_COLORS[player.classChoice] ?? '#fff'}
+				{walkPhase}
+				{speed}
+				{shotPulse}
+				{phase}
+				isBracing={player.isBracing}
+			/>
+		{/if}
 	</T.Group>
 	<AimReticle x={aimX} z={aimZ} color={CLASS_COLORS[player.classChoice] ?? '#fff'} />
 {/if}
