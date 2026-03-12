@@ -1,3 +1,14 @@
+<script module lang="ts">
+	import * as THREE from 'three';
+	const downedMarkerGeo = new THREE.ConeGeometry(0.1, 0.22, 3);
+	const downedMarkerMat = new THREE.MeshBasicMaterial({
+		color: '#ffffff',
+		transparent: true,
+		opacity: 0.18,
+		depthWrite: false
+	});
+</script>
+
 <script lang="ts">
 	import { T, useTask } from '@threlte/core';
 	import { useTexture } from '@threlte/extras';
@@ -83,6 +94,7 @@
 	const downedTilt = $derived(isDowned ? -Math.PI / 2 : 0);
 	const downedYOffset = $derived(isDowned ? -0.35 : 0);
 
+	let downedBob = $state(0);
 	let shotPulse = $state(0);
 	let walkPhase = $state(0);
 	let speed = $state(0);
@@ -117,6 +129,8 @@
 
 		prevX = displayX;
 		prevZ = displayZ;
+
+		if (isDowned) downedBob += dt;
 
 		if (speed > 0.2) {
 			const stride = speed > 6 ? 10 : 7;
@@ -153,5 +167,13 @@
 			/>
 		{/if}
 	</T.Group>
+	{#if isDowned}
+		<T.Mesh
+			position={[displayX, displayY + 1.5 + Math.sin(downedBob * 1.5) * 0.08, displayZ]}
+			rotation={[Math.PI, 0, 0]}
+			geometry={downedMarkerGeo}
+			material={downedMarkerMat}
+		/>
+	{/if}
 	<AimReticle x={aimX} z={aimZ} color={CLASS_COLORS[player.classChoice] ?? '#fff'} />
 {/if}
