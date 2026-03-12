@@ -461,7 +461,7 @@ function classMaxHp(cls: string): bigint {
 }
 
 function classMaxStamina(cls: string): bigint {
-	if (cls === 'spotter') return 150n;
+	if (cls === 'spotter') return 450n;
 	if (cls === 'tank') return 200n;
 	return 80n;
 }

@@ -141,6 +141,7 @@
 				const enemy = nearestEnemyToAim(15_000);
 				if (enemy) {
 					gameActions.markEnemy(sid, enemy.id);
+					soundActions.playSpotterMark();
 					abilityState.markCooldownUntil = Date.now() + 5000;
 				}
 			} else if (e.button === 2) {
@@ -150,6 +151,7 @@
 					BigInt(Math.round(localAim.x * 1000)),
 					BigInt(Math.round(localAim.z * 1000))
 				);
+				soundActions.playSpotterPing();
 			}
 			return;
 		}
@@ -178,11 +180,13 @@
 				if (abilityState.bashCooldownUntil > Date.now()) return;
 				const enemy = nearestEnemyToPlayer(5_000);
 				gameActions.shieldBash(sid, enemy?.id);
+				soundActions.playTankBash();
 				abilityState.bashCooldownUntil = Date.now() + 1500;
 			} else if (e.button === 2) {
 				// RMB hold: start brace (1s cooldown between activations)
 				if (abilityState.braceCooldownUntil > Date.now()) return;
 				gameActions.braceStart(sid);
+				soundActions.playTankBrace();
 				startBraceTimer();
 			}
 			return;
@@ -196,6 +200,7 @@
 				const target = nearestAliveTeammate(10_000);
 				if (target) {
 					gameActions.healPlayer(sid, target.playerIdentity);
+					soundActions.playHealerHeal();
 					abilityState.healCooldownUntil = Date.now() + 2000;
 					// Trigger 3D heal beam
 					healBeam.active = true;
