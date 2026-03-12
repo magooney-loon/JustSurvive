@@ -549,6 +549,13 @@ export const set_class = spacetimedb.reducer(
 		const valid = ['spotter', 'gunner', 'tank', 'healer'];
 		if (!valid.includes(classChoice)) throw new SenderError('Invalid class');
 
+		const sameClassCount = [...ctx.db.lobbyPlayer.lobby_player_lobby_id.filter(lobbyId)].filter(
+			(p) => p.classChoice === classChoice && !p.playerIdentity.isEqual(ctx.sender)
+		).length;
+		if (sameClassCount >= 2) {
+			throw new SenderError(`Max 2 ${classChoice}s allowed per lobby`);
+		}
+
 		for (const p of ctx.db.lobbyPlayer.lobby_player_lobby_id.filter(lobbyId)) {
 			if (p.playerIdentity.isEqual(ctx.sender)) {
 				ctx.db.lobbyPlayer.id.update({ ...p, classChoice, isReady: false });

@@ -29,6 +29,13 @@
 	);
 	const canStart = $derived(allReady && !gameStarting);
 
+	const classCounts = $derived({
+		spotter: players.filter((p) => p.classChoice === 'spotter').length,
+		gunner: players.filter((p) => p.classChoice === 'gunner').length,
+		tank: players.filter((p) => p.classChoice === 'tank').length,
+		healer: players.filter((p) => p.classChoice === 'healer').length
+	});
+
 	const CLASSES = ['spotter', 'gunner', 'tank', 'healer'] as const;
 
 	const CLASS_COLORS: Record<string, string> = {
@@ -177,24 +184,36 @@
 				</p>
 				<div style="display: flex; gap: 0.4rem; flex-wrap: wrap;">
 					{#each CLASSES as cls}
+						{@const isFull = classCounts[cls] >= 2}
+						{@const isSelected = myEntry?.classChoice === cls}
 						<button
 							onclick={() => {
-								soundActions.playClick();
-								gameActions.setClass(cls, currentLobby.id);
+								if (!isFull) {
+									soundActions.playClick();
+									gameActions.setClass(cls, currentLobby.id);
+								}
 							}}
-							style="flex: 1; padding: 0.45rem 0.6rem; border-radius: 0.375rem; border: 1px solid rgba(255,255,255,{myEntry?.classChoice ===
-							cls
+							disabled={isFull || currentLobby?.status !== 'waiting'}
+							style="flex: 1; padding: 0.45rem 0.6rem; border-radius: 0.375rem; border: 1px solid rgba(255,255,255,{isSelected
 								? '0.6'
-								: '0.15'}); background: {myEntry?.classChoice === cls
+								: isFull
+									? '0.1'
+									: '0.15'}); background: {isSelected
 								? 'rgba(0,0,0,0.4)'
-								: 'rgba(255,255,255,0.06)'}; color: {myEntry?.classChoice === cls
+								: isFull
+									? 'rgba(0,0,0,0.2)'
+									: 'rgba(255,255,255,0.06)'}; color: {isSelected
 								? CLASS_COLORS[cls]
-								: 'white'}; cursor: pointer; text-transform: capitalize; font-size: 0.875rem; font-weight: {myEntry?.classChoice ===
-							cls
+								: isFull
+									? 'rgba(255,255,255,0.3)'
+									: 'white'}; cursor: {isFull
+								? 'not-allowed'
+								: 'pointer'}; text-transform: capitalize; font-size: 0.875rem; font-weight: {isSelected
 								? '600'
-								: '400'}; transition: background 0.15s, border-color 0.15s;"
+								: '400'}; transition: background 0.15s, border-color 0.15s; position: relative;"
 						>
-							{cls}
+							<div style="font-size: 0.9rem;">{cls}</div>
+							<div style="font-size: 0.7rem; opacity: 0.6;">({classCounts[cls]}/2)</div>
 						</button>
 					{/each}
 				</div>
