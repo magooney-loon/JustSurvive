@@ -10,7 +10,8 @@
 		basic: '#a22',
 		fast: '#94d',
 		brute: '#722',
-		spitter: '#2a6'
+		spitter: '#2a6',
+		caster: '#72c'
 	};
 
 	// Fixed limit — avoids InstancedMesh rebuild when enemy count changes.

@@ -1252,11 +1252,13 @@ const ENEMY_BASE_SPEED: Record<string, bigint> = {
 	basic: 3200n,
 	fast: 5200n,
 	brute: 2100n,
-	spitter: 1700n
+	spitter: 1700n,
+	caster: 1400n
 };
 const ENEMY_CAP = 16;
 const MELEE_RANGE = 2000n;
 const SPITTER_RANGE_SQ = 144_000_000n; // 12 world units squared
+const CASTER_RANGE_SQ = 64_000_000n; // 8 world units squared
 const TICK_MS = 100n;
 const MAX_ENEMIES_PER_PLAYER = 3;
 const TARGET_JITTER = 0.08; // +-8% distance jitter
@@ -1409,6 +1411,40 @@ export const enemy_tick = spacetimedb.reducer(
 				continue;
 			}
 
+			// Caster: fires a beam that deals damage at medium range (8s cooldown)
+			if (enemy.enemyType === 'caster') {
+				const BEAM_COOLDOWN_US = 4_000_000n;
+				const canBeam =
+					!enemy.lastSpitAt ||
+					ctx.timestamp.microsSinceUnixEpoch >=
+						enemy.lastSpitAt.microsSinceUnixEpoch + BEAM_COOLDOWN_US;
+				if (chosenDist <= CASTER_RANGE_SQ && !enemy.isDazed && canBeam) {
+					apply_player_damage(ctx, arg.sessionId, chosen, 2n);
+					ctx.db.enemy.id.update({ ...enemy, lastSpitAt: ts(now) });
+				} else if (!enemy.isDazed) {
+					const ageSec = enemy.spawnedAt
+						? Number(now - enemy.spawnedAt.microsSinceUnixEpoch) / 1_000_000
+						: 0;
+					const timeBonus = BigInt(Math.min(50, Math.floor(ageSec * Number(ENEMY_SPEED_PER_SEC))));
+					const speed = (ENEMY_BASE_SPEED['caster'] * (enemy.speedMultiplier + timeBonus)) / 100n;
+					const moveAmount = (speed * TICK_MS) / 1000n;
+					const magnitude = bigintSqrt(chosenDist);
+					if (magnitude > 0n) {
+						ctx.db.enemy.id.update({
+							...enemy,
+							posX: enemy.posX + (dx * moveAmount) / magnitude,
+							posZ: enemy.posZ + (dz * moveAmount) / magnitude
+						});
+					}
+				} else if (
+					enemy.dazedUntil &&
+					ctx.timestamp.microsSinceUnixEpoch >= enemy.dazedUntil.microsSinceUnixEpoch
+				) {
+					ctx.db.enemy.id.update({ ...enemy, isDazed: false, dazedUntil: undefined });
+				}
+				continue;
+			}
+
 			// Tank brace: bounce enemy back instead of dealing damage
 			if (chosenDist <= MELEE_RANGE * MELEE_RANGE && chosen.isBracing && !enemy.isDazed) {
 				const magnitude = bigintSqrt(chosenDist);
@@ -1494,17 +1530,19 @@ export const enemy_tick = spacetimedb.reducer(
 );
 
 const ENEMY_WEIGHTS = [
-	{ type: 'basic', weight: 60 },
-	{ type: 'fast', weight: 25 },
+	{ type: 'basic', weight: 57 },
+	{ type: 'fast', weight: 24 },
 	{ type: 'brute', weight: 10 },
-	{ type: 'spitter', weight: 5 }
+	{ type: 'spitter', weight: 5 },
+	{ type: 'caster', weight: 4 }
 ];
 
 const ENEMY_HP: Record<string, bigint> = {
 	basic: 80n,
 	fast: 50n,
 	brute: 250n,
-	spitter: 100n
+	spitter: 100n,
+	caster: 80n
 };
 const ENEMY_HP_CYCLE_BONUS = 5n; // +5 HP per cycle
 const ENEMY_HP_MAX_MULTIPLIER = 300n; // Hard cap at 3x base HP

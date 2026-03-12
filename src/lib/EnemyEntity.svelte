@@ -10,6 +10,10 @@
 	export const basicHornGeo = new THREE.ConeGeometry(0.05, 0.2, 6);
 	export const markRingGeo = new THREE.TorusGeometry(0.4, 0.07, 6, 4);
 	export const markStemGeo = new THREE.CylinderGeometry(0.03, 0.03, 1, 4);
+	export const casterOrbGeo = new THREE.SphereGeometry(0.16, 8, 6);
+	export const casterStaffGeo = new THREE.CylinderGeometry(0.03, 0.04, 0.9, 6);
+	export const casterRingGeo = new THREE.TorusGeometry(0.12, 0.025, 6, 12);
+	export const casterBeamGeo = new THREE.CylinderGeometry(0.04, 0.07, 8, 6);
 	// Shared materials
 	export const bruteBodyMat = new THREE.MeshStandardMaterial({ color: '#4a1f1f' });
 	export const bruteSpikeMat = new THREE.MeshStandardMaterial({ color: '#5c2a2a' });
@@ -19,6 +23,13 @@
 	export const spitterSacMat = new THREE.MeshStandardMaterial({ color: '#2b6a2b' });
 	export const basicHornMat = new THREE.MeshStandardMaterial({ color: '#c77' });
 	export const markMat = new THREE.MeshBasicMaterial({ color: '#f84' });
+	export const casterOrbMat = new THREE.MeshStandardMaterial({
+		color: '#8844ff',
+		emissive: '#6622cc',
+		emissiveIntensity: 1.4
+	});
+	export const casterStaffMat = new THREE.MeshStandardMaterial({ color: '#2a1a3a', roughness: 0.7 });
+	export const casterRingMat = new THREE.MeshBasicMaterial({ color: '#aa66ff' });
 </script>
 
 <script lang="ts">
@@ -55,10 +66,15 @@
 		basic: '#c33',
 		fast: '#a4f',
 		brute: '#833',
-		spitter: '#3c3'
+		spitter: '#3c3',
+		caster: '#7733cc'
 	};
 
 	let pulse = $state(1);
+	let attackPhase = $state(0);
+	let attackCycle = 0;
+	let beamTimer = $state(0);
+	let prevSpitAt = $state<bigint | undefined>(undefined);
 	let t = 0;
 	useTask((dt) => {
 		nowMs = Date.now();
@@ -86,6 +102,22 @@
 			facing = Math.atan2(dx, dz) + Math.PI;
 		}
 		if (!deathAt) walkPhase += dt * (1.2 + moveSpeed * 2.4);
+		// Attack animation: pulse arms when stopped and alive
+		if (!deathAt && speed < 0.8) {
+			attackCycle += dt * 0.85;
+		} else {
+			attackCycle = 0;
+		}
+		attackPhase = Math.max(0, Math.sin(attackCycle * Math.PI * 2));
+		// Detect caster beam fire via lastSpitAt change
+		if (enemy.enemyType === 'caster') {
+			const curSpitAt = enemy.lastSpitAt?.microsSinceUnixEpoch;
+			if (curSpitAt !== prevSpitAt) {
+				prevSpitAt = curSpitAt;
+				if (curSpitAt !== undefined) beamTimer = 0.65;
+			}
+		}
+		if (beamTimer > 0) beamTimer = Math.max(0, beamTimer - dt);
 		if (enemy.isMarked) {
 			t += dt;
 			pulse = 0.85 + Math.sin(t * 6) * 0.15;
@@ -99,7 +131,9 @@
 				? 'gunner'
 				: enemy.enemyType === 'spitter'
 					? 'spotter'
-					: 'healer'
+					: enemy.enemyType === 'caster'
+						? 'healer'
+						: 'healer'
 	);
 	const DEAD_PERSIST_MS = 4000;
 	const dead = $derived(deathAt !== null);
@@ -146,6 +180,7 @@
 					{speed}
 					shotPulse={0}
 					isEnemy={true}
+					{attackPhase}
 				/>
 			</T.Group>
 			{#if enemy.enemyType === 'brute'}
@@ -186,6 +221,68 @@
 					geometry={spitterSacGeo}
 					material={spitterSacMat}
 				/>
+			{:else if enemy.enemyType === 'caster'}
+				<!-- Caster: staff + floating orb + rings -->
+				<T.Mesh
+					position={[0.3, 0.95, 0]}
+					rotation={[0, 0, 0.15]}
+					geometry={casterStaffGeo}
+					material={casterStaffMat}
+				/>
+				<T.Mesh
+					position={[0.3, 1.45, 0]}
+					geometry={casterOrbGeo}
+					material={casterOrbMat}
+					scale={[1 + attackPhase * 0.28, 1 + attackPhase * 0.28, 1 + attackPhase * 0.28]}
+				/>
+				<T.Mesh
+					position={[0.3, 1.45, 0]}
+					rotation={[0, 0, Math.PI / 2]}
+					geometry={casterRingGeo}
+					material={casterRingMat}
+				/>
+				<T.Mesh
+					position={[0.3, 1.45, 0]}
+					rotation={[Math.PI / 4, 0, 0]}
+					geometry={casterRingGeo}
+					material={casterRingMat}
+				/>
+				{#if beamTimer > 0}
+					{@const beamOpacity = Math.min(1, (0.65 - beamTimer) * 12) * Math.min(1, beamTimer * 6)}
+					<!-- Core beam — thin bright center -->
+					<T.Mesh position={[0.3, 1.45, -4]} rotation={[Math.PI / 2, 0, 0]} geometry={casterBeamGeo}>
+						<T.MeshBasicMaterial
+							color="#dd99ff"
+							transparent
+							opacity={beamOpacity * 0.9}
+							depthWrite={false}
+						/>
+					</T.Mesh>
+					<!-- Outer glow beam — wider, more transparent -->
+					<T.Mesh
+						position={[0.3, 1.45, -4]}
+						rotation={[Math.PI / 2, 0, 0]}
+						scale={[2.8, 1, 2.8]}
+						geometry={casterBeamGeo}
+					>
+						<T.MeshBasicMaterial
+							color="#9933ff"
+							transparent
+							opacity={beamOpacity * 0.22}
+							depthWrite={false}
+						/>
+					</T.Mesh>
+					<!-- Impact flash at tip -->
+					<T.Mesh position={[0.3, 1.45, -8]} scale={[beamOpacity, beamOpacity, beamOpacity]}>
+						<T.SphereGeometry args={[0.35, 8, 6]} />
+						<T.MeshBasicMaterial
+							color="#ffffff"
+							transparent
+							opacity={beamOpacity * 0.6}
+							depthWrite={false}
+						/>
+					</T.Mesh>
+				{/if}
 			{:else}
 				<!-- Basic: head horns -->
 				<T.Mesh

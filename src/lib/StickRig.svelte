@@ -10,6 +10,7 @@
 		phase?: string;
 		isEnemy?: boolean;
 		isBracing?: boolean;
+		attackPhase?: number;
 		texture?: Texture | null;
 	};
 
@@ -22,6 +23,7 @@
 		phase = 'sunset',
 		isEnemy = false,
 		isBracing = false,
+		attackPhase = 0,
 		texture = null
 	}: StickRigProps = $props();
 
@@ -55,8 +57,10 @@
 	const enemyGlow = $derived(isEnemy ? 0.18 : 1);
 	let spotTarget = $state<Object3D | undefined>(undefined);
 
-	const leftArmRotX = $derived(holdAim ? armPitch : -swing * 0.8);
-	const rightArmRotX = $derived(holdAim ? -armPitch : swing * 0.8);
+	// Attack swing: right arm lunges forward (negative X = forward), left arm pulls back
+	const attackSwing = $derived(isEnemy ? attackPhase * -2.0 : 0);
+	const leftArmRotX = $derived(holdAim ? armPitch : -swing * 0.8 - attackSwing * 0.4);
+	const rightArmRotX = $derived(holdAim ? -armPitch : swing * 0.8 + attackSwing);
 
 	// Knee bends: leg bends at knee when it swings forward, small passive bend at rest
 	const kneeBendL = $derived(0.07 + Math.max(0, sinWalk) * 0.95 * moveIntensity);
