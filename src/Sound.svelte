@@ -83,6 +83,7 @@
 	// Place your audio files in /public/sounds/
 	const base = import.meta.env.BASE_URL;
 	const OST_URL = `${base}sounds/ost.ogg`;
+	const OST1_URL = `${base}sounds/ost1.ogg`;
 	const AMBIENCE_URL = `${base}sounds/ambience.ogg`;
 	const CLICK_URL = `${base}sounds/click.mp3`;
 	const SWOOSH_URL = `${base}sounds/swoosh.mp3`;
@@ -96,6 +97,7 @@
 
 	// $state.raw — prevents Svelte 5 from wrapping class instances in a Proxy
 	let ostAudio = $state.raw<ThreeAudio>();
+	let ost1Audio = $state.raw<ThreeAudio>();
 	let ambienceAudio = $state.raw<ThreeAudio>();
 	let clickAudio = $state.raw<ThreeAudio>();
 	let swooshAudio = $state.raw<ThreeAudio>();
@@ -129,18 +131,86 @@
 		clone.play();
 	};
 
+	// ─── Music playlist (ost.ogg → ost1.ogg → ost.ogg → …) ──────────────────
+
+	// Plain vars — not reactive state, managed imperatively
+	let ostCurrentIdx = 0; // 0 = ost.ogg, 1 = ost1.ogg
+	let ostStoppedByUser = false;
+	let ostFadeTimer: ReturnType<typeof setInterval> | null = null;
+
+	const MUSIC_FADE_STEPS = 25;
+	const MUSIC_FADE_MS = 1500;
+
+	function getOstTrack(idx: number): ThreeAudio | undefined {
+		return idx === 0 ? ostAudio : ost1Audio;
+	}
+
+	function clearMusicFade() {
+		if (ostFadeTimer) {
+			clearInterval(ostFadeTimer);
+			ostFadeTimer = null;
+		}
+	}
+
+	function playOstWithFade(audio: ThreeAudio, targetVol: number) {
+		clearMusicFade();
+		// Must set onEnded BEFORE play() — Three.js binds it inside play()
+		audio.onEnded = function (this: ThreeAudio) {
+			(this as any).isPlaying = false; // mirror Three.js internal (readonly in types)
+			if (ostStoppedByUser) {
+				ostStoppedByUser = false;
+				return; // user paused intentionally — don't switch tracks
+			}
+			if (!settingsState.audio.musicEnabled) return;
+			// Natural end — switch to next track
+			const nextIdx = ostCurrentIdx === 0 ? 1 : 0;
+			const next = getOstTrack(nextIdx);
+			if (!next) return;
+			ostCurrentIdx = nextIdx;
+			playOstWithFade(next, settingsState.audio.musicVolume);
+		};
+		audio.setVolume(0);
+		audio.play();
+		// Fade in
+		let step = 0;
+		ostFadeTimer = setInterval(() => {
+			step++;
+			audio.setVolume(Math.min(targetVol, targetVol * (step / MUSIC_FADE_STEPS)));
+			if (step >= MUSIC_FADE_STEPS) clearMusicFade();
+		}, MUSIC_FADE_MS / MUSIC_FADE_STEPS);
+	}
+
+	function stopCurrentOst() {
+		clearMusicFade();
+		const current = getOstTrack(ostCurrentIdx);
+		if (current?.isPlaying) {
+			ostStoppedByUser = true;
+			current.stop();
+		}
+	}
+
+	// Start/stop based on music toggle — waits for both tracks to be loaded
+	$effect(() => {
+		if (!ostAudio || !ost1Audio) return;
+		if (settingsState.audio.musicEnabled) {
+			const current = getOstTrack(ostCurrentIdx);
+			if (current && !current.isPlaying) {
+				playOstWithFade(current, settingsState.audio.musicVolume);
+			}
+		} else {
+			stopCurrentOst();
+		}
+	});
+
+	// Sync volume to currently playing track (skips during active fade)
+	$effect(() => {
+		const vol = settingsState.audio.musicVolume;
+		if (!ostFadeTimer) {
+			getOstTrack(ostCurrentIdx)?.setVolume(vol);
+		}
+	});
+
 	// ─── Looping tracks ───────────────────────────────────────────────────────
-
-	$effect(() => {
-		if (!ostAudio) return;
-		if (settingsState.audio.musicEnabled) ostAudio.play();
-		else ostAudio.pause();
-	});
-
-	$effect(() => {
-		if (!ostAudio) return;
-		ostAudio.setVolume(settingsState.audio.musicVolume);
-	});
 
 	$effect(() => {
 		if (!ambienceAudio) return;
@@ -263,10 +333,9 @@
 	});
 </script>
 
-<!-- Audio track 1: OST / background music -->
+<!-- Audio track 1: OST / background music (no loop — playlist switches tracks) -->
 <Audio
 	src={OST_URL}
-	loop
 	oncreate={(a) => {
 		ostAudio = a;
 		log.info('Audio loaded: OST');
@@ -274,7 +343,17 @@
 	userData={{ hideInTree: true, selectable: false }}
 />
 
-<!-- Audio track 2: Ambience -->
+<!-- Audio track 2: OST alternate -->
+<Audio
+	src={OST1_URL}
+	oncreate={(a) => {
+		ost1Audio = a;
+		log.info('Audio loaded: OST1');
+	}}
+	userData={{ hideInTree: true, selectable: false }}
+/>
+
+<!-- Audio track 3: Ambience -->
 <Audio
 	src={AMBIENCE_URL}
 	loop
