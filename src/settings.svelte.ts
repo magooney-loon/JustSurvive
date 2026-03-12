@@ -110,7 +110,7 @@ export const settingsState = $state<SettingsState>({
 	},
 	controls: {
 		mouseSensitivity: Math.min(3, Math.max(0.1, parseFloat(fromStorage(MOUSE_SENSITIVITY_KEY, '1')) || 1)),
-		cameraMode: (fromStorage(CAMERA_MODE_KEY, 'fps') === 'tps' ? 'tps' : 'fps') as CameraMode
+		cameraMode: (fromStorage(CAMERA_MODE_KEY, 'tps') === 'fps' ? 'fps' : 'tps') as CameraMode
 	}
 });
 
