@@ -24,9 +24,24 @@
 		roughness: 0.5,
 		metalness: 0.5
 	});
-	const grimeMatA = new THREE.MeshBasicMaterial({ color: '#0d0905', transparent: true, opacity: 0.54, depthWrite: false });
-	const grimeMatB = new THREE.MeshBasicMaterial({ color: '#0d0905', transparent: true, opacity: 0.28, depthWrite: false });
-	const grimeMatC = new THREE.MeshBasicMaterial({ color: '#0d0905', transparent: true, opacity: 0.10, depthWrite: false });
+	const grimeMatA = new THREE.MeshBasicMaterial({
+		color: '#0d0905',
+		transparent: true,
+		opacity: 0.54,
+		depthWrite: false
+	});
+	const grimeMatB = new THREE.MeshBasicMaterial({
+		color: '#0d0905',
+		transparent: true,
+		opacity: 0.28,
+		depthWrite: false
+	});
+	const grimeMatC = new THREE.MeshBasicMaterial({
+		color: '#0d0905',
+		transparent: true,
+		opacity: 0.1,
+		depthWrite: false
+	});
 
 	// ── Spikes on wall cap ─────────────────────────────────────────────────────
 	const SPIKE_COUNT = 64;
@@ -176,7 +191,9 @@
 	import { useTexture } from '@threlte/extras';
 	import { RepeatWrapping } from 'three';
 
-	const groundTexture = useTexture('/textures/concrete_floor_damaged_01.webp', {
+	const base = import.meta.env.BASE_URL;
+
+	const groundTexture = useTexture(`${base}textures/concrete_floor_damaged_01.webp`, {
 		transform: (tex) => {
 			tex.wrapS = RepeatWrapping;
 			tex.wrapT = RepeatWrapping;
@@ -186,7 +203,7 @@
 		}
 	}).catch(() => null);
 
-	const wallTexture = useTexture('/textures/stone_brick_wall_001.webp', {
+	const wallTexture = useTexture(`${base}textures/stone_brick_wall_001.webp`, {
 		transform: (tex) => {
 			tex.wrapS = RepeatWrapping;
 			tex.wrapT = RepeatWrapping;
@@ -195,7 +212,7 @@
 		}
 	}).catch(() => null);
 
-	const spikeTexture = useTexture('/textures/rusty_metal_05.webp', {
+	const spikeTexture = useTexture(`${base}textures/rusty_metal_05.webp`, {
 		transform: (tex) => {
 			tex.wrapS = RepeatWrapping;
 			tex.wrapT = RepeatWrapping;
@@ -220,9 +237,24 @@
 {/await}
 
 <!-- Dirt / grime — 3 concentric rings fading inward for soft gradient -->
-<T.Mesh position={[0, -0.3, 0]} rotation={[-Math.PI / 2, 0, 0]} geometry={grimeGeoA} material={grimeMatA} />
-<T.Mesh position={[0, -0.3, 0]} rotation={[-Math.PI / 2, 0, 0]} geometry={grimeGeoB} material={grimeMatB} />
-<T.Mesh position={[0, -0.3, 0]} rotation={[-Math.PI / 2, 0, 0]} geometry={grimeGeoC} material={grimeMatC} />
+<T.Mesh
+	position={[0, -0.3, 0]}
+	rotation={[-Math.PI / 2, 0, 0]}
+	geometry={grimeGeoA}
+	material={grimeMatA}
+/>
+<T.Mesh
+	position={[0, -0.3, 0]}
+	rotation={[-Math.PI / 2, 0, 0]}
+	geometry={grimeGeoB}
+	material={grimeMatB}
+/>
+<T.Mesh
+	position={[0, -0.3, 0]}
+	rotation={[-Math.PI / 2, 0, 0]}
+	geometry={grimeGeoC}
+	material={grimeMatC}
+/>
 
 {#await wallTexture then tex}
 	<T.Mesh

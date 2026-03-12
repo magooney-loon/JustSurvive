@@ -18,6 +18,8 @@
 	import { RepeatWrapping } from 'three';
 	import { shotFlash, SHOT_FLASH_MS } from '../localGameState.svelte.js';
 
+	const base = import.meta.env.BASE_URL;
+
 	type Vec3 = { x: number; y: number; z: number };
 	type Vec2 = { x: number; z: number };
 	type Props = {
@@ -40,10 +42,10 @@
 	}: Props = $props();
 
 	const CLASS_TEXTURES: Record<string, string> = {
-		spotter: '/textures/spotter.webp',
-		gunner: '/textures/gunner.webp',
-		tank: '/textures/tank.webp',
-		healer: '/textures/healer.webp'
+		spotter: `${base}textures/spotter.webp`,
+		gunner: `${base}textures/gunner.webp`,
+		tank: `${base}textures/tank.webp`,
+		healer: `${base}textures/healer.webp`
 	};
 
 	let classTexture = $state<any>(null);
