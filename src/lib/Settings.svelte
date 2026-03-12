@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { fly } from 'svelte/transition';
 	import { stageActions } from '../stage.svelte.js';
-	import { settingsState, graphicsActions, audioActions } from '../settings.svelte.js';
+	import { settingsState, graphicsActions, audioActions, controlsActions } from '../settings.svelte.js';
 	import type { QualityLevel } from '../settings.svelte.js';
 	import { soundActions } from '../Sound.svelte';
 </script>
@@ -102,6 +102,27 @@
 						style="width: 100%; accent-color: rgba(255,255,255,0.8);"
 					/>
 				</div>
+			</div>
+		</div>
+
+		<!-- Controls -->
+		<div style="margin-bottom: 1.5rem;">
+			<p style="margin: 0 0 0.5rem; opacity: 0.7; font-size: 0.875rem;">Controls</p>
+			<div style="display: flex; flex-direction: column; gap: 0.25rem;">
+				<div style="display: flex; justify-content: space-between; font-size: 0.85rem;">
+					<span>Mouse Sensitivity</span>
+					<span style="opacity: 0.6;">{settingsState.controls.mouseSensitivity.toFixed(2)}</span>
+				</div>
+				<input
+					type="range"
+					min="0.1"
+					max="3"
+					step="0.05"
+					aria-label="Mouse sensitivity"
+					value={settingsState.controls.mouseSensitivity}
+					oninput={(e) => controlsActions.setMouseSensitivity(+(e.target as HTMLInputElement).value)}
+					style="width: 100%; accent-color: rgba(255,255,255,0.8);"
+				/>
 			</div>
 		</div>
 

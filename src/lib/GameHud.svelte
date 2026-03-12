@@ -4,6 +4,7 @@
 	import { tables } from '../module_bindings/index.js';
 	import { gameState } from '../game.svelte.js';
 	import { stageActions } from '../stage.svelte.js';
+	import { soundActions } from '../Sound.svelte';
 	import { abilityState } from '../localGameState.svelte.js';
 	import ReviveChannelHud from './ReviveChannelHud.svelte';
 
@@ -101,6 +102,19 @@
 </script>
 
 <div transition:fly={{ x: -20, duration: 300 }}>
+	<!-- Settings button — top left -->
+	<button
+		onclick={() => { soundActions.playClick(); stageActions.setStage('settings'); }}
+		style="position: absolute; top: 1.25rem; left: 1.25rem; padding: 0.35rem 0.75rem;
+		       background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.15);
+		       border-radius: 0.5rem; color: rgba(255,255,255,0.6); font-size: 0.8rem;
+		       cursor: pointer; backdrop-filter: blur(6px); transition: background 0.15s;"
+		onmouseenter={(e) => (e.currentTarget.style.background = 'rgba(255,255,255,0.14)')}
+		onmouseleave={(e) => (e.currentTarget.style.background = 'rgba(255,255,255,0.07)')}
+	>
+		Settings
+	</button>
+
 	<!-- Day phase indicator — top center -->
 	<div style="
 		position: absolute; top: 1.25rem; left: 50%; transform: translateX(-50%);

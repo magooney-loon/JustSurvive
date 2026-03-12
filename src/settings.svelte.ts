@@ -18,10 +18,15 @@ export interface GeneralSettings {
 	uiVisible: boolean;
 }
 
+export interface ControlsSettings {
+	mouseSensitivity: number; // 0.1 – 3.0, default 1.0
+}
+
 export interface SettingsState {
 	audio: AudioSettings;
 	graphics: GraphicsSettings;
 	general: GeneralSettings;
+	controls: ControlsSettings;
 }
 
 // ─── Debug logger ────────────────────────────────────────────────────────────
@@ -51,6 +56,7 @@ const UI_VISIBLE_KEY = 'ui-visible';
 const MUSIC_VOLUME_KEY = 'music-volume';
 const AMBIENCE_VOLUME_KEY = 'ambience-volume';
 const EFFECTS_VOLUME_KEY = 'effects-volume';
+const MOUSE_SENSITIVITY_KEY = 'mouse-sensitivity';
 
 const fromStorage = (key: string, fallback: string): string => {
 	try {
@@ -97,6 +103,9 @@ export const settingsState = $state<SettingsState>({
 	general: {
 		hideWelcomeModal: fromStorage(WELCOME_MODAL_KEY, 'false') === 'true',
 		uiVisible: fromStorage(UI_VISIBLE_KEY, 'true') !== 'false'
+	},
+	controls: {
+		mouseSensitivity: Math.min(3, Math.max(0.1, parseFloat(fromStorage(MOUSE_SENSITIVITY_KEY, '1')) || 1))
 	}
 });
 
@@ -137,6 +146,13 @@ export const graphicsActions = {
 		settingsState.graphics.quality = quality;
 		toStorage(GRAPHICS_KEY, quality);
 		log.info('Graphics quality:', quality);
+	}
+};
+
+export const controlsActions = {
+	setMouseSensitivity(v: number) {
+		settingsState.controls.mouseSensitivity = v;
+		toStorage(MOUSE_SENSITIVITY_KEY, String(v));
 	}
 };
 

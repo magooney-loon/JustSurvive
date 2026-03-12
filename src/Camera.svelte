@@ -69,5 +69,9 @@
 	oncreate={handleCameraCreate}
 >
 	<AudioListener />
-	<CameraControls enabled={true} bind:ref={controls} oncreate={handleControlsCreate} />
+	<CameraControls
+		enabled={true}
+		bind:ref={controls}
+		oncreate={handleControlsCreate}
+	/>
 </T.PerspectiveCamera>

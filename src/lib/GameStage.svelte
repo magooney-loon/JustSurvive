@@ -13,6 +13,7 @@
 		localAim,
 		cameraFollow
 	} from '../localGameState.svelte.js';
+	import { settingsState } from '../settings.svelte.js';
 	import { onMount } from 'svelte';
 	import PlayerEntity from './PlayerEntity.svelte';
 	import EnemyEntity from './EnemyEntity.svelte';
@@ -181,7 +182,8 @@
 		if (!myState || myState.status !== 'alive') return;
 
 		if (hasMouse) {
-			const LERP = 1 - Math.pow(0.001, dt);
+			const aimBase = Math.pow(0.001, settingsState.controls.mouseSensitivity);
+		const LERP = 1 - Math.pow(aimBase, dt);
 			lastAimDir.x += (targetAimDir.x - lastAimDir.x) * LERP;
 			lastAimDir.y += (targetAimDir.y - lastAimDir.y) * LERP;
 			const len = Math.hypot(lastAimDir.x, lastAimDir.y);
