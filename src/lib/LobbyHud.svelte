@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { fly } from 'svelte/transition';
+	import { fly, fade } from 'svelte/transition';
 	import { stageActions } from '../stage.svelte.js';
 	import { gameActions, gameState } from '../game.svelte.js';
 	import { useSpacetimeDB, useTable } from 'spacetimedb/svelte';
@@ -373,6 +373,141 @@
 	function copyCode() {
 		if (currentLobby) navigator.clipboard.writeText(currentLobby.code);
 	}
+
+	const TIPS = [
+		// Game mechanics
+		{
+			tag: 'Tip',
+			color: '#adf',
+			text: 'Stamina regenerates faster after standing still briefly. Walking is always free.'
+		},
+		{
+			tag: 'Tip',
+			color: '#adf',
+			text: 'Enemies spawn 35 units around a random alive player — you always have a moment to react.'
+		},
+		{
+			tag: 'Tip',
+			color: '#adf',
+			text: 'Each day cycle is 5 minutes (5 phases × 1 minute each). Survive full cycles to score big.'
+		},
+		{
+			tag: 'Tip',
+			color: '#adf',
+			text: 'Spawn rate accelerates every cycle — starts at one enemy every 6s, floors at 1.5s.'
+		},
+		{
+			tag: 'Tip',
+			color: '#adf',
+			text: 'Enemies get +5 HP per cycle completed, capped at 3× their base health.'
+		},
+		{
+			tag: 'Tip',
+			color: '#adf',
+			text: 'Every enemy gets faster the longer it stays alive — up to +50% speed over time. Kill fast.'
+		},
+		{
+			tag: 'Tip',
+			color: '#adf',
+			text: 'Up to 26 enemies can be alive at once. Clearing the field briefly reduces spawn pressure.'
+		},
+		{
+			tag: 'Tip',
+			color: '#adf',
+			text: "If you go down, a teammate has 30 seconds to revive you before you're eliminated."
+		},
+		{
+			tag: 'Tip',
+			color: '#adf',
+			text: 'Enemies loosely spread targets — each player gets at most 3 enemies fixated on them.'
+		},
+		// Day cycle
+		{
+			tag: 'Day Cycle',
+			color: '#fa8',
+			text: 'Sunset → Dusk → Twilight → Night → Deep Night, then loops. Each phase is 60 seconds.'
+		},
+		{
+			tag: 'Day Cycle',
+			color: '#fa8',
+			text: 'Night and Deep Night bring storms, lightning, and faster, harder enemies. Brace up.'
+		},
+		{
+			tag: 'Day Cycle',
+			color: '#fa8',
+			text: "Surviving to the next Sunset completes a cycle and increases your squad's score multiplier."
+		},
+		// Enemy types
+		{
+			tag: 'Enemy: Basic',
+			color: '#f88',
+			text: '57% of spawns. Slow and direct. Easy to kite but threatening in large packs.'
+		},
+		{
+			tag: 'Enemy: Fast',
+			color: '#f88',
+			text: '24% of spawns. Low HP (50) but closes gaps instantly at 5.2 units/s. Shoot on sight.'
+		},
+		{
+			tag: 'Enemy: Brute',
+			color: '#f88',
+			text: '10% of spawns. 250 HP base — the tankiest enemy. Bash it, slow it, then pile on.'
+		},
+		{
+			tag: 'Enemy: Spitter',
+			color: '#f88',
+			text: '5% of spawns. Hangs back at 12-unit range and lobs acid pools. Move out of the green.'
+		},
+		{
+			tag: 'Enemy: Caster',
+			color: '#f88',
+			text: '4% of spawns. Fires a beam from 8 units and strafes unpredictably. Suppress it first.'
+		},
+		// Class tips
+		{
+			tag: 'Spotter',
+			color: '#4af',
+			text: 'Marked enemies take bonus damage from all sources — always mark before the gunner shoots.'
+		},
+		{
+			tag: 'Spotter',
+			color: '#4af',
+			text: 'Ping locations to map incoming packs for teammates before they arrive.'
+		},
+		{
+			tag: 'Gunner',
+			color: '#f84',
+			text: 'Every 3rd shot suppresses (dazes) the target. Chain bursts to keep Brutes permanently staggered.'
+		},
+		{
+			tag: 'Tank',
+			color: '#8a4',
+			text: 'Shield Bash has a 1.5s cooldown. Use it to knock enemies off downed teammates.'
+		},
+		{
+			tag: 'Tank',
+			color: '#8a4',
+			text: 'Bracing significantly reduces incoming damage. Hold RMB when a Brute or beam is incoming.'
+		},
+		{
+			tag: 'Healer',
+			color: '#f4a',
+			text: 'Reviving a downed ally gives them a speed boost — use it to pull them out of a pile.'
+		},
+		{
+			tag: 'Healer',
+			color: '#f4a',
+			text: 'Taking damage while channeling a revive interrupts it. Tank should cover the heal.'
+		}
+	];
+
+	let tipIndex = $state(0);
+	$effect(() => {
+		const id = setInterval(() => {
+			tipIndex = (tipIndex + 1) % TIPS.length;
+		}, 5000);
+		return () => clearInterval(id);
+	});
 </script>
 
 <div
@@ -447,9 +582,11 @@
 									soundActions.playClick();
 									gameActions.kickPlayer(currentLobby.id, player.playerIdentity);
 								}}
+								disabled={gameStarting}
 								title="Kick player"
-								style="padding: 0.15rem 0.4rem; font-size: 0.7rem; background: rgba(220,50,50,0.2); border: 1px solid rgba(220,50,50,0.4); border-radius: 0.25rem; color: #f88; cursor: pointer;"
-								>Kick</button
+								style="padding: 0.15rem 0.4rem; font-size: 0.7rem; background: rgba(220,50,50,0.2); border: 1px solid rgba(220,50,50,0.4); border-radius: 0.25rem; color: #f88; cursor: {gameStarting
+									? 'not-allowed'
+									: 'pointer'}; opacity: {gameStarting ? '0.4' : '1'};">Kick</button
 							>
 						{/if}
 					</div>
@@ -534,7 +671,7 @@
 								? CLASS_COLORS[cls]
 								: isFull
 									? 'rgba(255,255,255,0.3)'
-									: 'white'}; cursor: {isFull
+									: 'white'}; cursor: {isFull || currentLobby?.status !== 'waiting'
 								? 'not-allowed'
 								: 'pointer'}; transition: background 0.15s, border-color 0.15s; display: flex; flex-direction: column; align-items: center; gap: 0.12rem;"
 						>
@@ -630,7 +767,10 @@
 					? '0.45'
 					: '0.2'}); background: {myEntry?.isReady
 					? 'rgba(74,170,136,0.3)'
-					: 'rgba(255,255,255,0.1)'}; color: white; cursor: pointer; font-weight: 600; font-size: 0.95rem; transition: background 0.15s;"
+					: 'rgba(255,255,255,0.1)'}; color: white; cursor: {!myEntry?.classChoice ||
+				currentLobby?.status !== 'waiting'
+					? 'not-allowed'
+					: 'pointer'}; font-weight: 600; font-size: 0.95rem; transition: background 0.15s;"
 			>
 				{myEntry?.isReady ? '✓ Ready' : 'Ready Up'}
 			</button>
@@ -678,7 +818,10 @@
 					stageActions.setStage('menu');
 				}}
 				disabled={currentLobby?.status !== 'waiting'}
-				style="width: 100%; margin-top: 0.25rem; padding: 0.5rem; background: rgba(220,50,50,0.15); border: 1px solid rgba(220,50,50,0.3); border-radius: 0.5rem; color: rgba(255,120,120,0.9); cursor: pointer; font-size: 0.875rem;"
+				style="width: 100%; margin-top: 0.25rem; padding: 0.5rem; background: rgba(220,50,50,0.15); border: 1px solid rgba(220,50,50,0.3); border-radius: 0.5rem; color: rgba(255,120,120,0.9); cursor: {currentLobby?.status !==
+				'waiting'
+					? 'not-allowed'
+					: 'pointer'}; font-size: 0.875rem;"
 			>
 				Leave Lobby
 			</button>
@@ -705,6 +848,27 @@
 						>Mouse - Aim</span
 					>
 				</div>
+			</div>
+
+			<!-- Cycling tips -->
+			<div
+				style="margin-top: 0.6rem; padding: 0.55rem 0.75rem; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); border-radius: 0.5rem; min-height: 2.8rem; position: relative; overflow: hidden;"
+			>
+				{#key tipIndex}
+					{@const tip = TIPS[tipIndex]}
+					<div
+						in:fade={{ duration: 350 }}
+						style="display: flex; flex-direction: column; gap: 0.15rem;"
+					>
+						<span
+							style="font-size: 0.6rem; text-transform: uppercase; letter-spacing: 0.08em; font-weight: 700; color: {tip.color}; opacity: 0.9;"
+							>{tip.tag}</span
+						>
+						<span style="font-size: 0.73rem; color: rgba(255,255,255,0.6); line-height: 1.4;"
+							>{tip.text}</span
+						>
+					</div>
+				{/key}
 			</div>
 
 			{#if gameState.error}

@@ -512,7 +512,13 @@ export const fire_lobby_idle = spacetimedb.reducer({
   const allPlayers = [...ctx.db.lobbyPlayer.lobby_player_lobby_id.filter(lobby.id)];
   const hostPlayer = allPlayers.find(p => p.playerIdentity.isEqual(lobby.hostIdentity));
 
-  if (hostPlayer?.isReady) return; // host became ready before deadline
+  // Host is ready — roll deadline forward so un-readying later shows correct countdown
+  if (hostPlayer?.isReady) {
+    const newDeadline = ctx.timestamp.microsSinceUnixEpoch + IDLE_MICROS;
+    ctx.db.lobby.id.update({ ...lobby, hostIdleDeadline: ts(newDeadline) });
+    ctx.db.lobbyIdleJob.insert({ scheduledId: 0n, scheduledAt: ScheduleAt.time(newDeadline), lobbyId: lobby.id });
+    return;
+  }
 
   const others = allPlayers.filter(p => !p.playerIdentity.isEqual(lobby.hostIdentity));
 
@@ -1765,7 +1771,15 @@ export const fire_lobby_idle = spacetimedb.reducer({
 
   const allPlayers = [...ctx.db.lobbyPlayer.lobby_player_lobby_id.filter(lobby.id)];
   const hostPlayer = allPlayers.find(p => p.playerIdentity.isEqual(lobby.hostIdentity));
-  if (hostPlayer?.isReady) return; // host became ready before deadline
+
+  // Host is ready — roll deadline forward so un-readying later shows correct countdown.
+  // Without this the deadline stays in the past and the UI gets stuck at 0.
+  if (hostPlayer?.isReady) {
+    const newDeadline = ctx.timestamp.microsSinceUnixEpoch + IDLE_MICROS;
+    ctx.db.lobby.id.update({ ...lobby, hostIdleDeadline: ts(newDeadline) });
+    ctx.db.lobbyIdleJob.insert({ scheduledId: 0n, scheduledAt: ScheduleAt.time(newDeadline), lobbyId: lobby.id });
+    return;
+  }
 
   const others = allPlayers.filter(p => !p.playerIdentity.isEqual(lobby.hostIdentity));
   if (others.length === 0) {
