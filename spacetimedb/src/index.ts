@@ -348,8 +348,18 @@ const LobbyResult = table(
 		name: 'lobby_result',
 		public: true,
 		indexes: [
-			{ name: 'lobby_result_score', accessor: 'lobby_result_score', algorithm: 'btree', columns: ['totalScore'] },
-			{ name: 'lobby_result_session', accessor: 'lobby_result_session', algorithm: 'btree', columns: ['sessionId'] }
+			{
+				name: 'lobby_result_score',
+				accessor: 'lobby_result_score',
+				algorithm: 'btree',
+				columns: ['totalScore']
+			},
+			{
+				name: 'lobby_result_session',
+				accessor: 'lobby_result_session',
+				algorithm: 'btree',
+				columns: ['sessionId']
+			}
 		]
 	},
 	{
@@ -370,7 +380,12 @@ const LobbyResultPlayer = table(
 		name: 'lobby_result_player',
 		public: true,
 		indexes: [
-			{ name: 'lobby_result_player_session', accessor: 'lobby_result_player_session', algorithm: 'btree', columns: ['sessionId'] }
+			{
+				name: 'lobby_result_player_session',
+				accessor: 'lobby_result_player_session',
+				algorithm: 'btree',
+				columns: ['sessionId']
+			}
 		]
 	},
 	{
@@ -403,9 +418,24 @@ const SquadRecord = table(
 		name: 'squad_record',
 		public: true,
 		indexes: [
-			{ name: 'squad_record_combo', accessor: 'squad_record_combo', algorithm: 'btree', columns: ['combo'] },
-			{ name: 'squad_record_times_played', accessor: 'squad_record_times_played', algorithm: 'btree', columns: ['timesPlayed'] },
-			{ name: 'squad_record_best_score', accessor: 'squad_record_best_score', algorithm: 'btree', columns: ['bestScore'] }
+			{
+				name: 'squad_record_combo',
+				accessor: 'squad_record_combo',
+				algorithm: 'btree',
+				columns: ['combo']
+			},
+			{
+				name: 'squad_record_times_played',
+				accessor: 'squad_record_times_played',
+				algorithm: 'btree',
+				columns: ['timesPlayed']
+			},
+			{
+				name: 'squad_record_best_score',
+				accessor: 'squad_record_best_score',
+				algorithm: 'btree',
+				columns: ['bestScore']
+			}
 		]
 	},
 	{
@@ -551,7 +581,10 @@ function end_session(ctx: any, sessionId: bigint) {
 	// ─── Leaderboard ─────────────────────────────────────────────────────────────
 	const sessionPlayers = [...ctx.db.playerState.player_state_session_id.filter(sessionId)];
 	const sessionLobbyPlayers = [...ctx.db.lobbyPlayer.lobby_player_lobby_id.filter(session.lobbyId)];
-	const classes = sessionLobbyPlayers.map((p) => p.classChoice).filter((c) => c !== '').sort();
+	const classes = sessionLobbyPlayers
+		.map((p) => p.classChoice)
+		.filter((c) => c !== '')
+		.sort();
 	const combo = classes.length > 0 ? classes.join(',') : 'none';
 	const totalScore = sessionPlayers.reduce((acc, p) => acc + p.score, 0n);
 	const survivalMicros =
@@ -597,7 +630,9 @@ function end_session(ctx: any, sessionId: bigint) {
 			timesPlayed: existingSquad.timesPlayed + 1n,
 			bestScore: totalScore > existingSquad.bestScore ? totalScore : existingSquad.bestScore,
 			bestSurvivalSecs:
-				survivalSecs > existingSquad.bestSurvivalSecs ? survivalSecs : existingSquad.bestSurvivalSecs
+				survivalSecs > existingSquad.bestSurvivalSecs
+					? survivalSecs
+					: existingSquad.bestSurvivalSecs
 		});
 	} else {
 		ctx.db.squadRecord.insert({
@@ -610,8 +645,7 @@ function end_session(ctx: any, sessionId: bigint) {
 	}
 
 	// 3. Top-20 gate
-	const alreadyRecorded =
-		[...ctx.db.lobbyResult.lobby_result_session.filter(sessionId)].length > 0;
+	const alreadyRecorded = [...ctx.db.lobbyResult.lobby_result_session.filter(sessionId)].length > 0;
 	if (!alreadyRecorded) {
 		const allResults = [...ctx.db.lobbyResult.iter()];
 		let qualified = false;
@@ -1667,7 +1701,7 @@ export const mark_enemy = spacetimedb.reducer(
 			ctx.timestamp.microsSinceUnixEpoch < enemy.markedUntil.microsSinceUnixEpoch;
 		ctx.db.enemy.id.update({ ...enemy, isMarked: true, markedUntil: ts(expiresAt) });
 
-		const cooldownUntil = ts(ctx.timestamp.microsSinceUnixEpoch + 1_500_000n);
+		const cooldownUntil = ts(ctx.timestamp.microsSinceUnixEpoch + 2_000_000n);
 		const scoreAdd = alreadyMarked ? 0n : 10n;
 		ctx.db.playerState.id.update({
 			...ps,
