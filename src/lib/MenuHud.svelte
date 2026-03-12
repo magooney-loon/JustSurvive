@@ -16,6 +16,13 @@
 	const myLobby = $derived(myEntry ? $lobbies.find((l) => l.id === myEntry.lobbyId) : null);
 	const inActiveGame = $derived(myLobby?.status === 'in_progress');
 
+	const totalLobbies = $derived($lobbies.filter((l) => l.status === 'waiting').length);
+	const totalPlayers = $derived(
+		$lobbyPlayers.filter((lp) =>
+			$lobbies.some((l) => l.id === lp.lobbyId && l.status === 'waiting')
+		).length
+	);
+
 	$effect(() => {
 		if (!myLobby) {
 			gameState.leavingLobby = false;
@@ -93,6 +100,17 @@
 			</defs>
 			<rect width="200" height="12" fill="url(#hazard)" opacity="0.8" />
 		</svg>
+
+		{#if !inActiveGame}
+			<div style="display: flex; justify-content: center; gap: 1.5rem; margin-bottom: 0.25rem;">
+				<span style="font-size: 0.75rem; color: rgba(255,255,255,0.5);">
+					<span style="color: #4af; font-weight: 600;">{totalLobbies}</span> lobbies
+				</span>
+				<span style="font-size: 0.75rem; color: rgba(255,255,255,0.5);">
+					<span style="color: #8a4; font-weight: 600;">{totalPlayers}</span> players
+				</span>
+			</div>
+		{/if}
 
 		{#if inActiveGame}
 			<label

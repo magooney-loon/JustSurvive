@@ -607,6 +607,39 @@ export const leave_lobby = spacetimedb.reducer(
 	}
 );
 
+export const kick_player = spacetimedb.reducer(
+	{
+		lobbyId: t.u64(),
+		playerIdentity: t.identity()
+	},
+	(ctx, { lobbyId, playerIdentity }) => {
+		const lobby = ctx.db.lobby.id.find(lobbyId);
+		if (!lobby) return;
+		if (!lobby.hostIdentity.isEqual(ctx.sender)) {
+			throw new SenderError('Only the host can kick players');
+		}
+		if (playerIdentity.isEqual(ctx.sender)) {
+			throw new SenderError('Cannot kick yourself');
+		}
+
+		for (const p of ctx.db.lobbyPlayer.lobby_player_lobby_id.filter(lobbyId)) {
+			if (p.playerIdentity.isEqual(playerIdentity)) {
+				ctx.db.lobbyPlayer.id.delete(p.id);
+				break;
+			}
+		}
+
+		const remaining = [...ctx.db.lobbyPlayer.lobby_player_lobby_id.filter(lobbyId)];
+		if (remaining.length === 0) {
+			ctx.db.lobby.id.delete(lobbyId);
+			return;
+		}
+
+		const newCount = lobby.playerCount - 1n;
+		ctx.db.lobby.id.update({ ...lobby, playerCount: newCount });
+	}
+);
+
 export const start_countdown = spacetimedb.reducer(
 	{
 		lobbyId: t.u64()
@@ -787,11 +820,22 @@ export const move_player = spacetimedb.reducer(
 
 		// Reject positions implying faster-than-possible movement (anti-cheat)
 		if (dtMicros > 0n && ps.lastMoveAt) {
-			const CLASS_WALK:   Record<string, bigint> = { spotter: 5000n, gunner: 4500n, tank: 2500n, healer: 5000n };
-			const CLASS_SPRINT: Record<string, bigint> = { spotter: 9000n, gunner: 7500n, tank: 3500n, healer: 8500n };
-			const baseSpeed = isSprinting && ps.stamina > 0n
-				? (CLASS_SPRINT[ps.classChoice] ?? 7500n)
-				: (CLASS_WALK[ps.classChoice] ?? 4500n);
+			const CLASS_WALK: Record<string, bigint> = {
+				spotter: 5000n,
+				gunner: 4500n,
+				tank: 2500n,
+				healer: 5000n
+			};
+			const CLASS_SPRINT: Record<string, bigint> = {
+				spotter: 9000n,
+				gunner: 7500n,
+				tank: 3500n,
+				healer: 8500n
+			};
+			const baseSpeed =
+				isSprinting && ps.stamina > 0n
+					? (CLASS_SPRINT[ps.classChoice] ?? 7500n)
+					: (CLASS_WALK[ps.classChoice] ?? 4500n);
 			const hasSpeedBoost = ps.speedBoostUntil && ps.speedBoostUntil.microsSinceUnixEpoch > now;
 			const maxSpeed = hasSpeedBoost ? (baseSpeed * 3n) / 2n : baseSpeed;
 			// 1.5x tolerance for network jitter and timing imprecision

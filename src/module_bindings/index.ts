@@ -42,6 +42,7 @@ import CreateLobbyReducer from "./create_lobby_reducer";
 import HealPlayerReducer from "./heal_player_reducer";
 import JoinByCodeReducer from "./join_by_code_reducer";
 import JoinLobbyReducer from "./join_lobby_reducer";
+import KickPlayerReducer from "./kick_player_reducer";
 import LeaveLobbyReducer from "./leave_lobby_reducer";
 import MarkEnemyReducer from "./mark_enemy_reducer";
 import MovePlayerReducer from "./move_player_reducer";
@@ -201,6 +202,7 @@ const reducersSchema = __reducers(
   __reducerSchema("heal_player", HealPlayerReducer),
   __reducerSchema("join_by_code", JoinByCodeReducer),
   __reducerSchema("join_lobby", JoinLobbyReducer),
+  __reducerSchema("kick_player", KickPlayerReducer),
   __reducerSchema("leave_lobby", LeaveLobbyReducer),
   __reducerSchema("mark_enemy", MarkEnemyReducer),
   __reducerSchema("move_player", MovePlayerReducer),

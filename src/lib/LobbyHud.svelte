@@ -39,6 +39,22 @@
 	};
 
 	let countdownValue = $state(3);
+	let connectingCountdown = $state(10);
+
+	$effect(() => {
+		if (!currentLobby && gameState.currentLobbyId === null) {
+			connectingCountdown = 10;
+			const interval = setInterval(() => {
+				connectingCountdown--;
+				if (connectingCountdown <= 0) {
+					clearInterval(interval);
+					stageActions.setStage('menu');
+				}
+			}, 1000);
+			return () => clearInterval(interval);
+		}
+	});
+
 	$effect(() => {
 		if (currentLobby?.status === 'countdown') {
 			countdownValue = 3;
@@ -72,10 +88,14 @@
 		style="background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15); border-radius: 1rem; padding: 2rem; min-width: 420px; color: white;"
 	>
 		{#if !currentLobby}
-			<p style="color: rgba(255,255,255,0.6); margin: 0 0 1rem;">Connecting to lobby...</p>
+			<p style="color: rgba(255,255,255,0.6); margin: 0 0 0.5rem;">Connecting to lobby...</p>
+			<p style="color: rgba(255,255,255,0.4); margin: 0 0 1rem; font-size: 0.85rem;">
+				Canceling in {connectingCountdown}s...
+			</p>
 			<button
 				onclick={() => {
 					soundActions.playClick();
+					gameState.currentLobbyId = null;
 					stageActions.setStage('menu');
 				}}
 				style="padding: 0.5rem 1.5rem; background: rgba(255,255,255,0.1); color: white; border: 1px solid rgba(255,255,255,0.2); border-radius: 0.5rem; cursor: pointer;"
@@ -126,6 +146,16 @@
 						</span>
 						{#if player.playerIdentity.toHexString() === currentLobby?.hostIdentity.toHexString()}
 							<span title="Host" style="font-size: 0.85rem;">👑</span>
+						{:else if isHost}
+							<button
+								onclick={() => {
+									soundActions.playClick();
+									gameActions.kickPlayer(currentLobby.id, player.playerIdentity);
+								}}
+								title="Kick player"
+								style="padding: 0.15rem 0.4rem; font-size: 0.7rem; background: rgba(220,50,50,0.2); border: 1px solid rgba(220,50,50,0.4); border-radius: 0.25rem; color: #f88; cursor: pointer;"
+								>Kick</button
+							>
 						{/if}
 					</div>
 				{/each}

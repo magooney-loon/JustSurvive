@@ -10,7 +10,7 @@ const gameState = $state({
 	localPlayerClass: null as PlayerClass | null,
 	localPlayerName: 'Player',
 	error: null as string | null,
-	leavingLobby: false,
+	leavingLobby: false
 });
 
 export { gameState };
@@ -36,7 +36,7 @@ export const gameActions = {
 			await conn.reducers.createLobby({
 				playerName: gameState.localPlayerName,
 				classChoice: gameState.localPlayerClass ?? '',
-				isPublic,
+				isPublic
 			});
 		} catch (e) {
 			setError(e);
@@ -49,7 +49,7 @@ export const gameActions = {
 			await conn.reducers.joinLobby({
 				lobbyId,
 				playerName: gameState.localPlayerName,
-				classChoice: gameState.localPlayerClass ?? '',
+				classChoice: gameState.localPlayerClass ?? ''
 			});
 		} catch (e) {
 			setError(e);
@@ -62,7 +62,7 @@ export const gameActions = {
 			await conn.reducers.joinByCode({
 				code: code.toUpperCase(),
 				playerName: gameState.localPlayerName,
-				classChoice: gameState.localPlayerClass ?? '',
+				classChoice: gameState.localPlayerClass ?? ''
 			});
 		} catch (e) {
 			setError(e);
@@ -100,31 +100,42 @@ export const gameActions = {
 		gameState.currentLobbyId = null;
 		gameState.currentSessionId = null;
 	},
+	kickPlayer(lobbyId: bigint, playerIdentity: Identity) {
+		if (!conn) return;
+		conn.reducers.kickPlayer({ lobbyId, playerIdentity });
+	},
 	async quickplay(lobbies: readonly Lobby[]) {
 		if (!conn) return;
 		gameState.error = null;
 		const available = lobbies.find(
-			l => l.isPublic && l.status === 'waiting' && l.playerCount < l.maxPlayers,
+			(l) => l.isPublic && l.status === 'waiting' && l.playerCount < l.maxPlayers
 		);
 		try {
 			if (available) {
 				await conn.reducers.joinLobby({
 					lobbyId: available.id,
 					playerName: gameState.localPlayerName,
-					classChoice: gameState.localPlayerClass ?? '',
+					classChoice: gameState.localPlayerClass ?? ''
 				});
 			} else {
 				await conn.reducers.createLobby({
 					playerName: gameState.localPlayerName,
 					classChoice: gameState.localPlayerClass ?? '',
-					isPublic: true,
+					isPublic: true
 				});
 			}
 		} catch (e) {
 			setError(e);
 		}
 	},
-	movePlayer(args: { sessionId: bigint; posX: bigint; posY: bigint; posZ: bigint; isSprinting: boolean; facingAngle: bigint }) {
+	movePlayer(args: {
+		sessionId: bigint;
+		posX: bigint;
+		posY: bigint;
+		posZ: bigint;
+		isSprinting: boolean;
+		facingAngle: bigint;
+	}) {
 		if (!conn) return;
 		conn.reducers.movePlayer(args);
 	},
@@ -134,19 +145,27 @@ export const gameActions = {
 	},
 	async pingLocation(sessionId: bigint, posX: bigint, posZ: bigint) {
 		if (!conn) return;
-		try { await conn.reducers.pingLocation({ sessionId, posX, posZ }); } catch {}
+		try {
+			await conn.reducers.pingLocation({ sessionId, posX, posZ });
+		} catch {}
 	},
 	async attackEnemy(sessionId: bigint, enemyId: bigint, suppress: boolean) {
 		if (!conn) return;
-		try { await conn.reducers.attackEnemy({ sessionId, enemyId, suppress }); } catch {}
+		try {
+			await conn.reducers.attackEnemy({ sessionId, enemyId, suppress });
+		} catch {}
 	},
 	async healPlayer(sessionId: bigint, targetIdentity: Identity) {
 		if (!conn) return;
-		try { await conn.reducers.healPlayer({ sessionId, targetIdentity }); } catch {}
+		try {
+			await conn.reducers.healPlayer({ sessionId, targetIdentity });
+		} catch {}
 	},
 	async shieldBash(sessionId: bigint, enemyId?: bigint) {
 		if (!conn) return;
-		try { await conn.reducers.shieldBash({ sessionId, enemyId }); } catch {}
+		try {
+			await conn.reducers.shieldBash({ sessionId, enemyId });
+		} catch {}
 	},
 	braceStart(sessionId: bigint) {
 		if (!conn) return;
@@ -158,9 +177,11 @@ export const gameActions = {
 	},
 	async reviveStart(sessionId: bigint, targetIdentity: Identity) {
 		if (!conn) return;
-		try { await conn.reducers.reviveStart({ sessionId, targetIdentity }); } catch {}
+		try {
+			await conn.reducers.reviveStart({ sessionId, targetIdentity });
+		} catch {}
 	},
 	clearError() {
 		gameState.error = null;
-	},
+	}
 };
