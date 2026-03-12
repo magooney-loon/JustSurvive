@@ -10,7 +10,7 @@
   <span style="font-size: 1.5em; font-weight: bold;">▶ PLAY NOW</span>
 </a>
 
-<br/>
+<br/> <br/>
 
 <table>
   <tr>
