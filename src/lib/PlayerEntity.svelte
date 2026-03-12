@@ -16,6 +16,7 @@
 	import AimReticle from './AimReticle.svelte';
 	import StickRig from './StickRig.svelte';
 	import { RepeatWrapping } from 'three';
+	import { shotFlash, SHOT_FLASH_MS } from '../localGameState.svelte.js';
 
 	type Vec3 = { x: number; y: number; z: number };
 	type Vec2 = { x: number; z: number };
@@ -102,12 +103,19 @@
 	let prevZ = $state(0);
 
 	useTask((dt) => {
-		const lastShotMicros = (player as any).lastShotAt?.microsSinceUnixEpoch as bigint | undefined;
-		if (lastShotMicros) {
-			const ageMs = Date.now() - Number(lastShotMicros) / 1000;
-			shotPulse = ageMs >= 0 && ageMs < 200 ? 1 - ageMs / 200 : 0;
+		// For local player, use optimistic local state (immediate, no latency)
+		// For remote players, use server state (we see what they actually did)
+		if (isLocal) {
+			const remainingMs = shotFlash.until - Date.now();
+			shotPulse = remainingMs > 0 ? remainingMs / SHOT_FLASH_MS : 0;
 		} else {
-			shotPulse = 0;
+			const lastShotMicros = (player as any).lastShotAt?.microsSinceUnixEpoch as bigint | undefined;
+			if (lastShotMicros) {
+				const ageMs = Date.now() - Number(lastShotMicros) / 1000;
+				shotPulse = ageMs >= 0 && ageMs < SHOT_FLASH_MS ? 1 - ageMs / SHOT_FLASH_MS : 0;
+			} else {
+				shotPulse = 0;
+			}
 		}
 
 		if (isLocal && overridePos) {
