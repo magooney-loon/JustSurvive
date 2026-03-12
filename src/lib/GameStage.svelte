@@ -1,6 +1,5 @@
 <script lang="ts">
-	import { useTask, useThrelte } from '@threlte/core';
-	import * as THREE from 'three';
+	import { useTask } from '@threlte/core';
 	import { useSpacetimeDB, useTable } from 'spacetimedb/svelte';
 	import { tables } from '../module_bindings/index.js';
 	import { gameState, gameActions } from '../game.svelte.js';
@@ -11,12 +10,12 @@
 		updateLocalMovement,
 		resetLocalState,
 		localAim,
+		fpsCamera,
 		cameraFollow,
 		localHealthState,
 		skyState,
 		devSky
 	} from '../localGameState.svelte.js';
-	import { settingsState } from '../settings.svelte.js';
 	import { onMount } from 'svelte';
 	import PlayerEntity from './PlayerEntity.svelte';
 	import EnemyEntity from './EnemyEntity.svelte';
@@ -119,16 +118,6 @@
 			: 1;
 	});
 
-	// Mouse → screen-space aim direction
-	const { camera, renderer } = useThrelte();
-	const mouse = new THREE.Vector2();
-	const cameraDir = new THREE.Vector3();
-	const playerScreen = new THREE.Vector3();
-	const cameraRight = new THREE.Vector3();
-	const worldUp = new THREE.Vector3(0, 1, 0);
-	let hasMouse = false;
-	const lastAimDir = new THREE.Vector2(0, -1);
-	const targetAimDir = new THREE.Vector2(0, -1);
 	let spectateIndex = $state(0);
 
 	function onMouseDownSpectate(e: MouseEvent) {
@@ -136,38 +125,6 @@
 		if (e.button !== 0) return;
 		if (alivePlayers.length === 0) return;
 		spectateIndex = (spectateIndex + 1) % alivePlayers.length;
-	}
-
-	function onMouseMove(e: MouseEvent) {
-		const canvas = renderer.domElement;
-		const rect = canvas.getBoundingClientRect();
-		const px = e.clientX - rect.left;
-		const py = e.clientY - rect.top;
-		mouse.x = (px / rect.width) * 2 - 1;
-		mouse.y = -(py / rect.height) * 2 + 1;
-		hasMouse = true;
-		if (camera.current) {
-			playerScreen.set(localPos.x, localPos.y + 1, localPos.z).project(camera.current);
-			const dx = mouse.x - playerScreen.x;
-			const dy = mouse.y - playerScreen.y;
-			const len = Math.hypot(dx, dy);
-			if (len < 0.02) return;
-
-			camera.current.getWorldDirection(cameraDir);
-			cameraDir.y = 0;
-			const fLen = Math.hypot(cameraDir.x, cameraDir.z);
-			if (fLen === 0) return;
-			cameraDir.x /= fLen;
-			cameraDir.z /= fLen;
-			cameraRight.crossVectors(cameraDir, worldUp).normalize();
-
-			// Use screen offset as yaw around the player; ignore vertical for stability
-			const dirX = cameraRight.x * dx + cameraDir.x;
-			const dirZ = cameraRight.z * dx + cameraDir.z;
-			const dLen = Math.hypot(dirX, dirZ);
-			if (dLen < 0.001) return;
-			targetAimDir.set(dirX / dLen, dirZ / dLen);
-		}
 	}
 
 	// Angle to rotate player group so its -Z faces the aim point
@@ -216,33 +173,14 @@
 		cameraFollow.active = false;
 		if (!myState || myState.status !== 'alive') return;
 
-		if (hasMouse) {
-			const aimBase = Math.pow(0.001, settingsState.controls.mouseSensitivity);
-		const LERP = 1 - Math.pow(aimBase, dt);
-			lastAimDir.x += (targetAimDir.x - lastAimDir.x) * LERP;
-			lastAimDir.y += (targetAimDir.y - lastAimDir.y) * LERP;
-			const len = Math.hypot(lastAimDir.x, lastAimDir.y);
-			if (len > 0.0001) {
-				lastAimDir.x /= len;
-				lastAimDir.y /= len;
-			}
-			const range = CLASS_RANGE[myState?.classChoice ?? 'gunner'] ?? 10;
-			localAim.x = localPos.x + lastAimDir.x * range;
-			localAim.z = localPos.z + lastAimDir.y * range;
-		}
+		// FPS aim: project camera forward ray onto the ground plane
+		const range = CLASS_RANGE[myState?.classChoice ?? 'gunner'] ?? 10;
+		localAim.x = localPos.x + (-Math.sin(fpsCamera.yaw)) * range;
+		localAim.z = localPos.z + (-Math.cos(fpsCamera.yaw)) * range;
 
 		const hasStamina = myState.stamina > 0n;
-		let camYaw = 0;
-		if (camera.current) {
-			camera.current.getWorldDirection(cameraDir);
-			cameraDir.y = 0;
-			const len = Math.hypot(cameraDir.x, cameraDir.z);
-			if (len > 0) {
-				cameraDir.x /= len;
-				cameraDir.z /= len;
-				camYaw = Math.atan2(cameraDir.x, cameraDir.z);
-			}
-		}
+		// camYaw for movement: camera forward is (-sin(yaw), -cos(yaw)), so pass yaw+π
+		const camYaw = fpsCamera.yaw + Math.PI;
 		updateLocalMovement(dt, myState.classChoice, hasStamina, camYaw, myState.isBracing);
 
 		sendTimer += dt;
@@ -262,7 +200,7 @@
 	});
 </script>
 
-<svelte:window onmousemove={onMouseMove} onmousedown={onMouseDownSpectate} />
+<svelte:window onmousedown={onMouseDownSpectate} />
 
 <GameGround />
 <RainEffect />

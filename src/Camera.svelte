@@ -1,77 +1,96 @@
 <script lang="ts">
-	import { T, useTask } from '@threlte/core';
+	import { T, useTask, useThrelte } from '@threlte/core';
 	import { AudioListener } from '@threlte/extras';
-	import { CameraControls, type CameraControlsRef } from '@threlte/extras';
-	import { cameraActions, stageState } from './stage.svelte.js';
-	import { log } from './settings.svelte.js';
-	import { cameraFollow, localAim, localPos } from './localGameState.svelte.js';
+	import { stageState } from './stage.svelte.js';
+	import { log, settingsState } from './settings.svelte.js';
+	import { localPos, localVelocity, fpsCamera, cameraFollow } from './localGameState.svelte.js';
 	import type { PerspectiveCamera } from 'three';
 
-	let controls = $state<CameraControlsRef>();
+	const { renderer } = useThrelte();
+	let camera = $state.raw<PerspectiveCamera>();
 
-	const handleCameraCreate = (camera: PerspectiveCamera) => {
-		camera.lookAt(0, 0, 0);
+	// Eye level: head group y=1.63, visor local y=+0.028
+	const EYE_Y_BASE = 1.658;
+	// Visor front face local z ≈ -0.192; add 0.06 safety to stay outside near clip plane
+	const VISOR_Z = 0.192 + 0.06;
+	const PITCH_MIN = -Math.PI / 2 + 0.05;
+	const PITCH_MAX = Math.PI / 2 - 0.05;
+	const BASE_SENS = 0.002;
+
+	$effect(() => {
+		const canvas = renderer.domElement;
+
+		function onClick() {
+			if (stageState.currentStage === 'game') canvas.requestPointerLock();
+		}
+
+		function onMouseMove(e: MouseEvent) {
+			if (document.pointerLockElement !== canvas) return;
+			if (stageState.currentStage !== 'game') return;
+			const sens = BASE_SENS * settingsState.controls.mouseSensitivity;
+			fpsCamera.yaw -= e.movementX * sens;
+			fpsCamera.pitch -= e.movementY * sens;
+			fpsCamera.pitch = Math.max(PITCH_MIN, Math.min(PITCH_MAX, fpsCamera.pitch));
+		}
+
+		canvas.addEventListener('click', onClick);
+		document.addEventListener('mousemove', onMouseMove);
 		return () => {
-			log.info('Camera disposed');
+			canvas.removeEventListener('click', onClick);
+			document.removeEventListener('mousemove', onMouseMove);
+			document.exitPointerLock();
 		};
-	};
-
-	const handleControlsCreate = (controlsRef: CameraControlsRef) => {
-		controls = controlsRef;
-		cameraActions.setCameraControls(controlsRef);
-		return () => {
-			cameraActions.setCameraControls(undefined);
-			controls = undefined;
-		};
-	};
-
-	const FOLLOW_OFFSET = { x: 0, y: 6, z: 12 };
-	const MOVE_THRESHOLD = 0.002; // skip update if target moved less than this
-
-	let prevFollowX = 0, prevFollowZ = 0, prevAimX = 0, prevAimZ = 0;
+	});
 
 	useTask(() => {
-		if (!controls || stageState.currentStage !== 'game') return;
-		const followX = cameraFollow.active ? cameraFollow.x : localPos.x;
-		const followY = cameraFollow.active ? cameraFollow.y : localPos.y;
-		const followZ = cameraFollow.active ? cameraFollow.z : localPos.z;
-		const aimX = cameraFollow.active ? cameraFollow.aimX : localAim.x;
-		const aimZ = cameraFollow.active ? cameraFollow.aimZ : localAim.z;
-
-		// Skip if nothing meaningful changed
-		if (
-			Math.abs(followX - prevFollowX) < MOVE_THRESHOLD &&
-			Math.abs(followZ - prevFollowZ) < MOVE_THRESHOLD &&
-			Math.abs(aimX - prevAimX) < MOVE_THRESHOLD &&
-			Math.abs(aimZ - prevAimZ) < MOVE_THRESHOLD
-		) return;
-
-		prevFollowX = followX; prevFollowZ = followZ;
-		prevAimX = aimX; prevAimZ = aimZ;
-
-		const aimAngle = Math.atan2(followX - aimX, followZ - aimZ);
-		const camAngle = -aimAngle;
-		const cos = Math.cos(camAngle);
-		const sin = Math.sin(camAngle);
-		const offsetX = FOLLOW_OFFSET.x * cos - FOLLOW_OFFSET.z * sin;
-		const offsetZ = FOLLOW_OFFSET.x * sin + FOLLOW_OFFSET.z * cos;
-		controls.setTarget(followX, followY + 1, followZ, false);
-		controls.setPosition(followX + offsetX, followY + FOLLOW_OFFSET.y, followZ + offsetZ, false);
+		if (!camera || stageState.currentStage !== 'game') return;
+		camera.rotation.order = 'YXZ';
+		if (cameraFollow.active) {
+			// Spectate: look from eliminated target's eye level facing their direction
+			const spectateYaw = Math.atan2(
+				cameraFollow.x - cameraFollow.aimX,
+				cameraFollow.z - cameraFollow.aimZ
+			);
+			camera.position.set(cameraFollow.x, cameraFollow.y + EYE_Y_BASE, cameraFollow.z);
+			camera.rotation.y = spectateYaw;
+			camera.rotation.x = 0;
+		} else {
+			// Mirror StickRig's leanForward so the camera tracks the visor during sprint
+			// StickRig: leanForward = (isSprinting ? 0.22 : 0.08) * moveIntensity
+			const spd = Math.hypot(localVelocity.x, localVelocity.z);
+			const moveIntensity = Math.min(1, spd / 5);
+			const leanFwd = (spd > 6 ? 0.22 : 0.08) * moveIntensity;
+			// Head group z shifts by -leanFwd*0.75, so camera must move with it
+			const camFwd = VISOR_Z + leanFwd * 0.75;
+			const fwdX = -Math.sin(fpsCamera.yaw) * camFwd;
+			const fwdZ = -Math.cos(fpsCamera.yaw) * camFwd;
+			camera.position.set(localPos.x + fwdX, localPos.y + EYE_Y_BASE, localPos.z + fwdZ);
+			camera.rotation.y = fpsCamera.yaw;
+			camera.rotation.x = fpsCamera.pitch;
+		}
 	});
 </script>
 
+<!--
+  OLD_CAMERA: Third-person orbit follow camera (CameraControls)
+  Followed localPos with FOLLOW_OFFSET {x:0, y:6, z:12} rotated by aim angle —
+  camera always sat behind the player relative to their aim direction.
+  Used CameraControls from @threlte/extras; controls.setTarget / controls.setPosition each frame.
+  Spectate mode also used CameraControls positioned behind the spectated player.
+  Imports needed: CameraControls, type CameraControlsRef from '@threlte/extras';
+                  cameraActions from './stage.svelte.js'
+  See git history for the full implementation.
+-->
+
 <T.PerspectiveCamera
-	position={[0, 0, 10]}
-	fov={60}
-	near={0.001}
-	far={100}
+	fov={75}
+	near={0.05}
+	far={1000}
 	makeDefault
-	oncreate={handleCameraCreate}
+	oncreate={(cam) => {
+		camera = cam;
+		return () => log.info('Camera disposed');
+	}}
 >
 	<AudioListener />
-	<CameraControls
-		enabled={true}
-		bind:ref={controls}
-		oncreate={handleControlsCreate}
-	/>
 </T.PerspectiveCamera>

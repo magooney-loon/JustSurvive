@@ -59,7 +59,7 @@
 	const holdAim = $derived(!isEnemy && (classChoice === 'spotter' || classChoice === 'gunner'));
 	const armBop = $derived(isSprinting ? sinWalk * 0.2 * moveIntensity : 0);
 	const armPitch = $derived(holdAim ? armBop : 0);
-	const armForwardZ = $derived(holdAim ? -0.35 : 0);
+	const armForwardZ = $derived(holdAim ? -0.55 : -0.2);
 	const leanForward = $derived((isSprinting ? 0.22 : 0.08) * moveIntensity);
 	const boneTint = $derived(classChoice === 'spotter' ? '#d7ccb6' : '#d2c3a5');
 	const plateTint = $derived(classChoice === 'gunner' ? '#2b2620' : '#2f271f');
