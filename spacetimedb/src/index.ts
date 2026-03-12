@@ -2120,6 +2120,7 @@ export const complete_revive = spacetimedb.reducer(
 spacetimedb.clientConnected((_ctx) => {});
 
 spacetimedb.clientDisconnected((ctx) => {
+	// Lobby cleanup (waiting rooms only)
 	for (const p of ctx.db.lobbyPlayer.lobby_player_identity.filter(ctx.sender)) {
 		const lobby = ctx.db.lobby.id.find(p.lobbyId);
 		if (lobby && lobby.status === 'waiting') {
@@ -2138,5 +2139,16 @@ spacetimedb.clientDisconnected((ctx) => {
 			}
 		}
 		break;
+	}
+
+	// In-game cleanup — if all players have disconnected, end the session
+	for (const ps of ctx.db.playerState.player_state_identity.filter(ctx.sender)) {
+		if (ps.status !== 'alive' && ps.status !== 'downed') continue;
+		const others = [...ctx.db.playerState.player_state_session_id.filter(ps.sessionId)].filter(
+			(p) => !p.playerIdentity.isEqual(ctx.sender) && (p.status === 'alive' || p.status === 'downed')
+		);
+		if (others.length === 0) {
+			end_session(ctx, ps.sessionId);
+		}
 	}
 });
