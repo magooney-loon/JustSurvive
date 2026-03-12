@@ -12,7 +12,8 @@
 		resetLocalState,
 		localAim,
 		cameraFollow,
-		localHealthState
+		localHealthState,
+		skyState
 	} from '../localGameState.svelte.js';
 	import { settingsState } from '../settings.svelte.js';
 	import { onMount } from 'svelte';
@@ -21,7 +22,6 @@
 	import EnemyProxyInstances from './EnemyProxyInstances.svelte';
 	import AcidPoolEntity from './AcidPoolEntity.svelte';
 	import MarkOverlay from './MarkOverlay.svelte';
-	import DayNightSky from './DayNightSky.svelte';
 	import GameGround from './GameGround.svelte';
 	import HealBeam from './HealBeam.svelte';
 	import GameSounds from './GameSounds.svelte';
@@ -89,6 +89,14 @@
 		$players.filter((p) => p.sessionId === gameState.currentSessionId && p.status === 'alive')
 	);
 	const phase = $derived(session?.dayPhase ?? 'sunset');
+
+	const PHASE_SKY = {
+		sunset:     { elevation: 3,   azimuth: 260, turbidity: 12, rayleigh: 2.5,  mieC: 0.007, mieG: 0.80, ambient: 0.60, sun: 1.00, sunR: 1.0,  sunG: 0.75, sunB: 0.45 },
+		dusk:       { elevation: 0,   azimuth: 255, turbidity: 10, rayleigh: 1.5,  mieC: 0.005, mieG: 0.75, ambient: 0.35, sun: 0.50, sunR: 0.85, sunG: 0.55, sunB: 0.30 },
+		twilight:   { elevation: -3,  azimuth: 250, turbidity: 8,  rayleigh: 0.5,  mieC: 0.004, mieG: 0.70, ambient: 0.18, sun: 0.12, sunR: 0.45, sunG: 0.45, sunB: 0.65 },
+		night:      { elevation: -8,  azimuth: 180, turbidity: 6,  rayleigh: 0.2,  mieC: 0.003, mieG: 0.70, ambient: 0.07, sun: 0.04, sunR: 0.30, sunG: 0.35, sunB: 0.55 },
+		deep_night: { elevation: -15, azimuth: 180, turbidity: 4,  rayleigh: 0.08, mieC: 0.002, mieG: 0.70, ambient: 0.03, sun: 0.01, sunR: 0.20, sunG: 0.25, sunB: 0.40 },
+	} as const;
 
 	const CLASS_RANGE: Record<string, number> = {
 		spotter: 15,
@@ -167,6 +175,21 @@
 	const SEND_INTERVAL = 1 / 60;
 
 	useTask((dt) => {
+		// ── Sky lerp (always runs) ──────────────────────────────────────────
+		const skyTarget = PHASE_SKY[phase as keyof typeof PHASE_SKY] ?? PHASE_SKY.sunset;
+		const t = Math.min(1, dt * 1.5);
+		skyState.elevation        += (skyTarget.elevation - skyState.elevation) * t;
+		skyState.azimuth          += (skyTarget.azimuth   - skyState.azimuth)   * t;
+		skyState.turbidity        += (skyTarget.turbidity - skyState.turbidity) * t;
+		skyState.rayleigh         += (skyTarget.rayleigh  - skyState.rayleigh)  * t;
+		skyState.mieCoefficient   += (skyTarget.mieC      - skyState.mieCoefficient)  * t;
+		skyState.mieDirectionalG  += (skyTarget.mieG      - skyState.mieDirectionalG) * t;
+		skyState.ambientIntensity += (skyTarget.ambient   - skyState.ambientIntensity) * t;
+		skyState.sunIntensity     += (skyTarget.sun       - skyState.sunIntensity)     * t;
+		skyState.sunR += (skyTarget.sunR - skyState.sunR) * t;
+		skyState.sunG += (skyTarget.sunG - skyState.sunG) * t;
+		skyState.sunB += (skyTarget.sunB - skyState.sunB) * t;
+
 		if (myState?.status === 'eliminated') {
 			if (alivePlayers.length > 0) {
 				if (spectateIndex >= alivePlayers.length) spectateIndex = 0;
@@ -237,8 +260,6 @@
 </script>
 
 <svelte:window onmousemove={onMouseMove} onmousedown={onMouseDownSpectate} />
-
-<DayNightSky {phase} />
 
 <GameGround />
 
