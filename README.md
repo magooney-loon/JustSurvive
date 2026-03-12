@@ -6,7 +6,7 @@
 
 <br/>
 
-<a href="https://magooney-loon.github.io/spaceplate/">
+<a href="https://magooney-loon.github.io/justsurvive/">
   <span style="font-size: 3.6em; font-weight: bold;">▶ PLAY NOW</span>
 </a>
 
