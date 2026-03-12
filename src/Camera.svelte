@@ -49,6 +49,13 @@
 		};
 	});
 
+	// Release pointer lock whenever we leave the game stage
+	$effect(() => {
+		if (stageState.currentStage !== 'game') {
+			document.exitPointerLock();
+		}
+	});
+
 	useTask(() => {
 		if (!camera || stageState.currentStage !== 'game') return;
 		camera.rotation.order = 'YXZ';
