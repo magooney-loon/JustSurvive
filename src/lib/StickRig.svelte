@@ -64,9 +64,8 @@
 	});
 	const shieldGlow = $derived(braceT * 0.85);
 	const shieldGlowVis = $derived(shieldGlow * enemyGlow);
-	const shieldPosX = $derived(-0.22 * (1 - braceT));
-	const shieldPosY = $derived(0.88 + 0.12 * braceT);
-	const shieldPosZ = $derived(-0.42 - 0.18 * braceT);
+	// Shield in left-arm-local space — hand is at ~z=-0.52, arm swings carry it along
+	const shieldArmZ = $derived(-0.52 - 0.08 * braceT);
 	const shieldS = $derived(0.58 + 0.42 * braceT);
 
 	// Class visor/goggle color — constant glow (no per-frame oscillation)
@@ -371,6 +370,69 @@
 				</T.Mesh>
 			{/if}
 		{/if}
+		<!-- TANK SHIELD — child of left arm so it swings and bops with the hand -->
+		{#if classChoice === 'tank'}
+			<T.Group
+				position={[0, 0, shieldArmZ]}
+				rotation={[-Math.PI / 2, 0, 0]}
+				scale={[shieldS, shieldS, shieldS]}
+			>
+				<T.Mesh>
+					<T.CylinderGeometry args={[0.44, 0.44, 0.065, 6]} />
+					<T.MeshStandardMaterial color="#162416" roughness={0.28} metalness={0.6} />
+				</T.Mesh>
+				<T.Mesh>
+					<T.CylinderGeometry args={[0.47, 0.44, 0.02, 6]} />
+					<T.MeshStandardMaterial
+						color="#2a6e2a"
+						emissive="#44ff44"
+						emissiveIntensity={0.12 + shieldGlowVis * 2.2}
+						roughness={0.28}
+						metalness={0.7}
+					/>
+				</T.Mesh>
+				<T.Mesh position={[0, 0.04, 0]}>
+					<T.BoxGeometry args={[0.07, 0.01, 0.38]} />
+					<T.MeshBasicMaterial color="#55ee55" transparent opacity={0.2 + shieldGlowVis * 0.5} />
+				</T.Mesh>
+				<T.Mesh position={[0, 0.04, 0]}>
+					<T.BoxGeometry args={[0.38, 0.01, 0.07]} />
+					<T.MeshBasicMaterial color="#55ee55" transparent opacity={0.2 + shieldGlowVis * 0.5} />
+				</T.Mesh>
+				<T.Mesh position={[0, 0.04, 0]}>
+					<T.CylinderGeometry args={[0.06, 0.06, 0.012, 6]} />
+					<T.MeshStandardMaterial
+						color="#55ee55"
+						emissive="#44ff44"
+						emissiveIntensity={0.2 + shieldGlowVis * 1.8}
+						roughness={0.3}
+						metalness={0.6}
+					/>
+				</T.Mesh>
+				{#if braceT > 0.05}
+					<T.Mesh position={[0, 0.038, 0]}>
+						<T.CylinderGeometry args={[0.43, 0.43, 0.001, 16]} />
+						<T.MeshBasicMaterial
+							color="#44ff44"
+							transparent
+							opacity={shieldGlowVis * 0.15}
+							blending={AdditiveBlending}
+							depthWrite={false}
+						/>
+					</T.Mesh>
+					<T.Mesh position={[0, 0.04, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+						<T.RingGeometry args={[0.44, 0.62, 14]} />
+						<T.MeshBasicMaterial
+							color="#88ff88"
+							transparent
+							opacity={shieldGlowVis * 0.65}
+							blending={AdditiveBlending}
+							depthWrite={false}
+						/>
+					</T.Mesh>
+				{/if}
+			</T.Group>
+		{/if}
 	</T.Group>
 
 	<!-- RIGHT ARM -->
@@ -515,72 +577,4 @@
 		{/if}
 	</T.Group>
 
-	<!-- TANK SHIELD (always present for tank, grows when bracing) -->
-	{#if classChoice === 'tank'}
-		<T.Group
-			position={[shieldPosX, shieldPosY, shieldPosZ]}
-			rotation={[-Math.PI / 2, 0, 0]}
-			scale={[shieldS, shieldS, shieldS]}
-		>
-			<!-- Hex plate body (cylinder flat = hex disc from above) -->
-			<T.Mesh>
-				<T.CylinderGeometry args={[0.44, 0.44, 0.065, 6]} />
-				<T.MeshStandardMaterial color="#162416" roughness={0.28} metalness={0.6} />
-			</T.Mesh>
-			<!-- Outer rim with emissive green glow -->
-			<T.Mesh>
-				<T.CylinderGeometry args={[0.47, 0.44, 0.02, 6]} />
-				<T.MeshStandardMaterial
-					color="#2a6e2a"
-					emissive="#44ff44"
-					emissiveIntensity={0.12 + shieldGlowVis * 2.2}
-					roughness={0.28}
-					metalness={0.7}
-				/>
-			</T.Mesh>
-			<!-- Cross detail on face (visible from above) -->
-			<T.Mesh position={[0, 0.04, 0]}>
-				<T.BoxGeometry args={[0.07, 0.01, 0.38]} />
-				<T.MeshBasicMaterial color="#55ee55" transparent opacity={0.2 + shieldGlowVis * 0.5} />
-			</T.Mesh>
-			<T.Mesh position={[0, 0.04, 0]}>
-				<T.BoxGeometry args={[0.38, 0.01, 0.07]} />
-				<T.MeshBasicMaterial color="#55ee55" transparent opacity={0.2 + shieldGlowVis * 0.5} />
-			</T.Mesh>
-			<!-- Center stud -->
-			<T.Mesh position={[0, 0.04, 0]}>
-				<T.CylinderGeometry args={[0.06, 0.06, 0.012, 6]} />
-				<T.MeshStandardMaterial
-					color="#55ee55"
-					emissive="#44ff44"
-					emissiveIntensity={0.2 + shieldGlowVis * 1.8}
-					roughness={0.3}
-					metalness={0.6}
-				/>
-			</T.Mesh>
-			<!-- Brace active: energy disc + outer ring -->
-			{#if braceT > 0.05}
-				<T.Mesh position={[0, 0.038, 0]}>
-					<T.CylinderGeometry args={[0.43, 0.43, 0.001, 16]} />
-					<T.MeshBasicMaterial
-						color="#44ff44"
-						transparent
-						opacity={shieldGlowVis * 0.15}
-						blending={AdditiveBlending}
-						depthWrite={false}
-					/>
-				</T.Mesh>
-				<T.Mesh position={[0, 0.04, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-					<T.RingGeometry args={[0.44, 0.62, 14]} />
-					<T.MeshBasicMaterial
-						color="#88ff88"
-						transparent
-						opacity={shieldGlowVis * 0.65}
-						blending={AdditiveBlending}
-						depthWrite={false}
-					/>
-				</T.Mesh>
-			{/if}
-		</T.Group>
-	{/if}
 </T.Group>

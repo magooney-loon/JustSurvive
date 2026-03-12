@@ -178,6 +178,18 @@ const LobbyCountdown = table(
 	}
 );
 
+const LobbyIdleJob = table(
+	{
+		name: 'lobby_idle_job',
+		scheduled: (): any => fire_lobby_idle
+	},
+	{
+		scheduledId: t.u64().primaryKey().autoInc(),
+		scheduledAt: t.scheduleAt(),
+		lobbyId: t.u64()
+	}
+);
+
 const EnemyTickJob = table(
 	{
 		name: 'enemy_tick_job',
@@ -421,6 +433,7 @@ const spacetimedb = schema({
 	acidPool: AcidPool,
 	reviveChannel: ReviveChannel,
 	reviveCompleteJob: ReviveCompleteJob,
+	lobbyIdleJob: LobbyIdleJob,
 	lobbyResult: LobbyResult,
 	lobbyResultPlayer: LobbyResultPlayer,
 	globalStats: GlobalStats,
@@ -673,6 +686,13 @@ export const create_lobby = spacetimedb.reducer(
 			isReady: false,
 			joinedAt: ctx.timestamp
 		});
+
+		// Kick idle host after 2 minutes if not ready
+		ctx.db.lobbyIdleJob.insert({
+			scheduledId: 0n,
+			scheduledAt: ScheduleAt.time(ctx.timestamp.microsSinceUnixEpoch + 120_000_000n),
+			lobbyId: lobby.id
+		});
 	}
 );
 
@@ -864,6 +884,42 @@ export const start_countdown = spacetimedb.reducer(
 			scheduledAt: ScheduleAt.time(startAt),
 			lobbyId
 		});
+	}
+);
+
+export const fire_lobby_idle = spacetimedb.reducer(
+	{ arg: LobbyIdleJob.rowType },
+	(ctx, { arg }) => {
+		const lobby = ctx.db.lobby.id.find(arg.lobbyId);
+		// Lobby gone or already in-game — nothing to do
+		if (!lobby || lobby.status !== 'waiting') return;
+
+		const allPlayers = [...ctx.db.lobbyPlayer.lobby_player_lobby_id.filter(lobby.id)];
+		const hostPlayer = allPlayers.find((p) => p.playerIdentity.isEqual(lobby.hostIdentity));
+
+		// Host already ready — no action needed
+		if (hostPlayer?.isReady) return;
+
+		const others = allPlayers.filter((p) => !p.playerIdentity.isEqual(lobby.hostIdentity));
+
+		if (others.length === 0) {
+			// Solo idle host — kill the lobby
+			for (const p of allPlayers) {
+				ctx.db.lobbyPlayer.id.delete(p.id);
+			}
+			ctx.db.lobby.id.delete(lobby.id);
+		} else {
+			// Transfer host to the first other player (any, regardless of ready state)
+			const newHost = others[0];
+			ctx.db.lobby.id.update({ ...lobby, hostIdentity: newHost.playerIdentity });
+
+			// Schedule another idle check for the new host
+			ctx.db.lobbyIdleJob.insert({
+				scheduledId: 0n,
+				scheduledAt: ScheduleAt.time(ctx.timestamp.microsSinceUnixEpoch + 120_000_000n),
+				lobbyId: lobby.id
+			});
+		}
 	}
 );
 

@@ -114,6 +114,13 @@ export const LobbyCountdown = __t.object("LobbyCountdown", {
 });
 export type LobbyCountdown = __Infer<typeof LobbyCountdown>;
 
+export const LobbyIdleJob = __t.object("LobbyIdleJob", {
+  scheduledId: __t.u64(),
+  scheduledAt: __t.scheduleAt(),
+  lobbyId: __t.u64(),
+});
+export type LobbyIdleJob = __Infer<typeof LobbyIdleJob>;
+
 export const LobbyPlayer = __t.object("LobbyPlayer", {
   id: __t.u64(),
   lobbyId: __t.u64(),

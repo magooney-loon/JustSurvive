@@ -47,6 +47,28 @@
 
 	let countdownValue = $state(3);
 	let connectingCountdown = $state(10);
+	let idleSecsLeft = $state(120);
+
+	const hostEntry = $derived(
+		currentLobby
+			? players.find((p) => p.playerIdentity.toHexString() === currentLobby.hostIdentity.toHexString())
+			: null
+	);
+	const hostNotReady = $derived(
+		!!currentLobby && currentLobby.status === 'waiting' && !hostEntry?.isReady
+	);
+	const isSolo = $derived(players.length <= 1);
+
+	$effect(() => {
+		if (!hostNotReady || !currentLobby) return;
+		const deadline = Number(currentLobby.createdAt.microsSinceUnixEpoch / 1000n) + 120_000;
+		const update = () => {
+			idleSecsLeft = Math.max(0, Math.ceil((deadline - Date.now()) / 1000));
+		};
+		update();
+		const interval = setInterval(update, 1000);
+		return () => clearInterval(interval);
+	});
 
 	$effect(() => {
 		if (!currentLobby && gameState.currentLobbyId === null) {
@@ -174,6 +196,28 @@
 					</div>
 				{/each}
 			</div>
+
+			<!-- Idle host warning -->
+			{#if hostNotReady}
+				{@const urgent = idleSecsLeft <= 30}
+				{@const critical = idleSecsLeft <= 10}
+				<div style="margin-bottom: 1rem; padding: 0.6rem 0.85rem; border-radius: 0.5rem;
+					background: {critical ? 'rgba(220,50,50,0.18)' : urgent ? 'rgba(220,120,30,0.18)' : 'rgba(255,255,255,0.06)'};
+					border: 1px solid {critical ? 'rgba(220,50,50,0.4)' : urgent ? 'rgba(220,120,30,0.4)' : 'rgba(255,255,255,0.1)'};
+					display: flex; align-items: center; justify-content: space-between; gap: 0.5rem;">
+					<span style="font-size: 0.78rem; color: {critical ? '#f88' : urgent ? '#fc8' : 'rgba(255,255,255,0.5)'};">
+						{#if isHost}
+							{isSolo ? '⚠ Ready up or lobby will close' : '⚠ Ready up or host will transfer'}
+						{:else}
+							{isSolo ? '⚠ Host idle — lobby will close' : '⚠ Host idle — will be reassigned'}
+						{/if}
+					</span>
+					<span style="font-size: 0.85rem; font-weight: 700; font-variant-numeric: tabular-nums;
+						color: {critical ? '#f66' : urgent ? '#fa0' : 'rgba(255,255,255,0.4)'};">
+						{idleSecsLeft}s
+					</span>
+				</div>
+			{/if}
 
 			<!-- Class selector -->
 			<div style="margin-bottom: 1.25rem;">
