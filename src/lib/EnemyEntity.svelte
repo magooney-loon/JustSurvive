@@ -26,6 +26,7 @@
 	import { PositionalAudio } from '@threlte/extras';
 	import { PositionalAudio as ThreePosAudio } from 'three';
 	import { untrack } from 'svelte';
+	import { cubicOut } from 'svelte/easing';
 	import type { Enemy } from '../module_bindings/types.js';
 	import StickRig from './StickRig.svelte';
 	import { settingsState } from '../settings.svelte.js';
@@ -41,6 +42,12 @@
 	let nowMs = $state(Date.now());
 	let deathAt = $state<number | null>(null);
 
+	// Spawn animation - use enemy.spawnedAt timestamp
+	let spawnT = $state(1);
+	const spawnTimeMs = $derived(
+		enemy.spawnedAt ? Number(enemy.spawnedAt.microsSinceUnixEpoch) / 1000 : 0
+	);
+
 	const targetX = $derived(Number(enemy.posX) / 1000);
 	const targetZ = $derived(Number(enemy.posZ) / 1000);
 
@@ -55,6 +62,14 @@
 	let t = 0;
 	useTask((dt) => {
 		nowMs = Date.now();
+		// Spawn animation - scale from 0 to 1 over 400ms
+		const age = nowMs - spawnTimeMs;
+		if (age < 400) {
+			spawnT = Math.min(1, age / 400);
+		} else {
+			spawnT = 1;
+		}
+
 		if (!enemy.isAlive && deathAt === null) deathAt = nowMs;
 		if (enemy.isAlive && deathAt !== null) deathAt = null;
 
@@ -105,7 +120,7 @@
 </script>
 
 {#if !expired}
-	<T.Group position={[displayX, 0, displayZ]} rotation={[0, facing, 0]}>
+	<T.Group position={[displayX, 0, displayZ]} rotation={[0, facing, 0]} scale={cubicOut(spawnT)}>
 		<!-- Enemy death sound — positional, plays once on kill -->
 		<PositionalAudio
 			src={`${import.meta.env.BASE_URL}sounds/enemy_killed.mp3`}
