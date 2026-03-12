@@ -61,7 +61,7 @@
 
 	$effect(() => {
 		if (!hostNotReady || !currentLobby) return;
-		const deadline = Number(currentLobby.createdAt.microsSinceUnixEpoch / 1000n) + 120_000;
+		const deadline = Number(currentLobby.hostIdleDeadline.microsSinceUnixEpoch / 1000n);
 		const update = () => {
 			idleSecsLeft = Math.max(0, Math.ceil((deadline - Date.now()) / 1000));
 		};

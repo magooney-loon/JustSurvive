@@ -41,7 +41,7 @@
 	async function quickplay() {
 		loading = true;
 		gameActions.setPlayerName(playerName);
-		await gameActions.quickplay($lobbies);
+		await gameActions.quickplay();
 		loading = false;
 		if (!gameState.error) stageActions.setStage('lobby');
 	}

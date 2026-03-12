@@ -1,5 +1,4 @@
 import type { DbConnection } from './module_bindings/index.js';
-import type { Lobby } from './module_bindings/types.js';
 import type { Identity } from 'spacetimedb';
 
 export type PlayerClass = 'spotter' | 'gunner' | 'tank' | 'healer';
@@ -104,26 +103,14 @@ export const gameActions = {
 		if (!conn) return;
 		conn.reducers.kickPlayer({ lobbyId, playerIdentity });
 	},
-	async quickplay(lobbies: readonly Lobby[]) {
+	async quickplay() {
 		if (!conn) return;
 		gameState.error = null;
-		const available = lobbies.find(
-			(l) => l.isPublic && l.status === 'waiting' && l.playerCount < l.maxPlayers
-		);
 		try {
-			if (available) {
-				await conn.reducers.joinLobby({
-					lobbyId: available.id,
-					playerName: gameState.localPlayerName,
-					classChoice: gameState.localPlayerClass ?? ''
-				});
-			} else {
-				await conn.reducers.createLobby({
-					playerName: gameState.localPlayerName,
-					classChoice: gameState.localPlayerClass ?? '',
-					isPublic: true
-				});
-			}
+			await conn.reducers.quickJoin({
+				playerName: gameState.localPlayerName,
+				classChoice: gameState.localPlayerClass ?? ''
+			});
 		} catch (e) {
 			setError(e);
 		}

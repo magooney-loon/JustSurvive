@@ -104,6 +104,7 @@ export const Lobby = __t.object("Lobby", {
   playerCount: __t.u64(),
   maxPlayers: __t.u64(),
   createdAt: __t.timestamp(),
+  hostIdleDeadline: __t.timestamp(),
 });
 export type Lobby = __Infer<typeof Lobby>;
 

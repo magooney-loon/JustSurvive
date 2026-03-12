@@ -19,4 +19,5 @@ export default __t.row({
   playerCount: __t.u64().name("player_count"),
   maxPlayers: __t.u64().name("max_players"),
   createdAt: __t.timestamp().name("created_at"),
+  hostIdleDeadline: __t.timestamp().name("host_idle_deadline"),
 });

@@ -47,6 +47,7 @@ import LeaveLobbyReducer from "./leave_lobby_reducer";
 import MarkEnemyReducer from "./mark_enemy_reducer";
 import MovePlayerReducer from "./move_player_reducer";
 import PingLocationReducer from "./ping_location_reducer";
+import QuickJoinReducer from "./quick_join_reducer";
 import ReviveStartReducer from "./revive_start_reducer";
 import SetClassReducer from "./set_class_reducer";
 import SetReadyReducer from "./set_ready_reducer";
@@ -273,6 +274,7 @@ const reducersSchema = __reducers(
   __reducerSchema("mark_enemy", MarkEnemyReducer),
   __reducerSchema("move_player", MovePlayerReducer),
   __reducerSchema("ping_location", PingLocationReducer),
+  __reducerSchema("quick_join", QuickJoinReducer),
   __reducerSchema("revive_start", ReviveStartReducer),
   __reducerSchema("set_class", SetClassReducer),
   __reducerSchema("set_ready", SetReadyReducer),

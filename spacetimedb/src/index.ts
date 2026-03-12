@@ -20,7 +20,8 @@ const Lobby = table(
 		status: t.string(),
 		playerCount: t.u64(),
 		maxPlayers: t.u64(),
-		createdAt: t.timestamp()
+		createdAt: t.timestamp(),
+		hostIdleDeadline: t.timestamp()
 	}
 );
 
@@ -666,6 +667,7 @@ export const create_lobby = spacetimedb.reducer(
 	(ctx, { playerName, classChoice, isPublic }) => {
 		if (!playerName) throw new SenderError('playerName required');
 
+		const idleDeadline = ctx.timestamp.microsSinceUnixEpoch + 120_000_000n;
 		const lobby = ctx.db.lobby.insert({
 			id: 0n,
 			hostIdentity: ctx.sender,
@@ -674,7 +676,8 @@ export const create_lobby = spacetimedb.reducer(
 			status: 'waiting',
 			playerCount: 1n,
 			maxPlayers: 4n,
-			createdAt: ctx.timestamp
+			createdAt: ctx.timestamp,
+			hostIdleDeadline: ts(idleDeadline)
 		});
 
 		ctx.db.lobbyPlayer.insert({
@@ -750,6 +753,73 @@ export const join_by_code = spacetimedb.reducer(
 		});
 
 		ctx.db.lobby.id.update({ ...lobby, playerCount: lobby.playerCount + 1n });
+	}
+);
+
+export const quick_join = spacetimedb.reducer(
+	{
+		playerName: t.string(),
+		classChoice: t.string()
+	},
+	(ctx, { playerName, classChoice }) => {
+		if (!playerName) throw new SenderError('playerName required');
+
+		// Check caller isn't already in a lobby
+		for (const p of ctx.db.lobbyPlayer.iter()) {
+			if (p.playerIdentity.isEqual(ctx.sender)) throw new SenderError('Already in a lobby');
+		}
+
+		// Find an available public waiting lobby server-side
+		let joined = false;
+		for (const lobby of ctx.db.lobby.lobby_status.filter('waiting')) {
+			if (!lobby.isPublic) continue;
+			if (lobby.playerCount >= lobby.maxPlayers) continue;
+
+			ctx.db.lobbyPlayer.insert({
+				id: 0n,
+				lobbyId: lobby.id,
+				playerIdentity: ctx.sender,
+				playerName,
+				classChoice: classChoice || '',
+				isReady: false,
+				joinedAt: ctx.timestamp
+			});
+			ctx.db.lobby.id.update({ ...lobby, playerCount: lobby.playerCount + 1n });
+			joined = true;
+			break;
+		}
+
+		if (!joined) {
+			// No available lobby — create a new public one
+			const idleDeadline = ctx.timestamp.microsSinceUnixEpoch + 120_000_000n;
+			const lobby = ctx.db.lobby.insert({
+				id: 0n,
+				hostIdentity: ctx.sender,
+				code: generateCode(ctx.timestamp.microsSinceUnixEpoch),
+				isPublic: true,
+				status: 'waiting',
+				playerCount: 1n,
+				maxPlayers: 4n,
+				createdAt: ctx.timestamp,
+				hostIdleDeadline: ts(idleDeadline)
+			});
+
+			ctx.db.lobbyPlayer.insert({
+				id: 0n,
+				lobbyId: lobby.id,
+				playerIdentity: ctx.sender,
+				playerName,
+				classChoice: classChoice || '',
+				isReady: false,
+				joinedAt: ctx.timestamp
+			});
+
+			ctx.db.lobbyIdleJob.insert({
+				scheduledId: 0n,
+				scheduledAt: ScheduleAt.time(idleDeadline),
+				lobbyId: lobby.id
+			});
+		}
 	}
 );
 
@@ -911,12 +981,17 @@ export const fire_lobby_idle = spacetimedb.reducer(
 		} else {
 			// Transfer host to the first other player (any, regardless of ready state)
 			const newHost = others[0];
-			ctx.db.lobby.id.update({ ...lobby, hostIdentity: newHost.playerIdentity });
+			const newDeadline = ctx.timestamp.microsSinceUnixEpoch + 120_000_000n;
+			ctx.db.lobby.id.update({
+				...lobby,
+				hostIdentity: newHost.playerIdentity,
+				hostIdleDeadline: ts(newDeadline)
+			});
 
 			// Schedule another idle check for the new host
 			ctx.db.lobbyIdleJob.insert({
 				scheduledId: 0n,
-				scheduledAt: ScheduleAt.time(ctx.timestamp.microsSinceUnixEpoch + 120_000_000n),
+				scheduledAt: ScheduleAt.time(newDeadline),
 				lobbyId: lobby.id
 			});
 		}
