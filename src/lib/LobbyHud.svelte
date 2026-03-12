@@ -31,6 +31,13 @@
 
 	const CLASSES = ['spotter', 'gunner', 'tank', 'healer'] as const;
 
+	const CLASS_COLORS: Record<string, string> = {
+		spotter: '#4af',
+		gunner: '#f84',
+		tank: '#8a4',
+		healer: '#f4a'
+	};
+
 	let countdownValue = $state(3);
 	$effect(() => {
 		if (currentLobby?.status === 'countdown') {
@@ -106,8 +113,9 @@
 					>
 						<span style="flex: 1; font-size: 0.95rem;">{player.playerName}</span>
 						<span
-							style="color: rgba(255,255,255,0.45); font-size: 0.8rem; text-transform: capitalize;"
-							>{player.classChoice || '—'}</span
+							style="font-size: 0.8rem; font-weight: 600; text-transform: capitalize; color: {player.classChoice
+								? CLASS_COLORS[player.classChoice]
+								: 'rgba(255,255,255,0.45)'};">{player.classChoice || '—'}</span
 						>
 						<span
 							style="font-size: 0.8rem; font-weight: 600; color: {player.isReady
@@ -146,10 +154,15 @@
 							}}
 							style="flex: 1; padding: 0.45rem 0.6rem; border-radius: 0.375rem; border: 1px solid rgba(255,255,255,{myEntry?.classChoice ===
 							cls
-								? '0.5'
+								? '0.6'
 								: '0.15'}); background: {myEntry?.classChoice === cls
-								? 'rgba(255,255,255,0.2)'
-								: 'rgba(255,255,255,0.06)'}; color: white; cursor: pointer; text-transform: capitalize; font-size: 0.875rem; transition: background 0.15s, border-color 0.15s;"
+								? 'rgba(0,0,0,0.4)'
+								: 'rgba(255,255,255,0.06)'}; color: {myEntry?.classChoice === cls
+								? CLASS_COLORS[cls]
+								: 'white'}; cursor: pointer; text-transform: capitalize; font-size: 0.875rem; font-weight: {myEntry?.classChoice ===
+							cls
+								? '600'
+								: '400'}; transition: background 0.15s, border-color 0.15s;"
 						>
 							{cls}
 						</button>
@@ -161,7 +174,9 @@
 						style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 0.5rem; padding: 0.75rem; margin-bottom: 1rem;"
 					>
 						<p
-							style="margin: 0 0 0.5rem; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.08em; opacity: 0.6;"
+							style="margin: 0 0 0.5rem; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.08em; font-weight: 600; color: {CLASS_COLORS[
+								myEntry.classChoice
+							]};"
 						>
 							{myEntry.classChoice} Abilities
 						</p>
