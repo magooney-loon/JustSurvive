@@ -512,10 +512,10 @@
 
 <div
 	transition:fly={{ y: 20, duration: 300 }}
-	style="position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,0.5); backdrop-filter: blur(8px);"
+	style="position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,0.5); backdrop-filter: blur(8px)"
 >
 	<div
-		style="background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15); border-radius: 1rem; padding: 2rem; min-width: 420px; color: white;"
+		style="background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15); border-radius: 1rem; padding: 2rem; min-width: 720px; color: white;"
 	>
 		{#if !currentLobby}
 			<p style="color: rgba(255,255,255,0.6); margin: 0 0 0.5rem;">Connecting to lobby...</p>
