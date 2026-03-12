@@ -10,6 +10,8 @@
   <span style="font-size: 3.6em; font-weight: bold;">▶ PLAY NOW</span>
 </a>
 
+<p> <a href="https://www.youtube.com/watch?v=b8tjPXkCyLc">Gameplay/Engine Video</a></p>
+
 <br/> <br/>
 
 <table>
