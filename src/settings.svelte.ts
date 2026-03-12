@@ -18,8 +18,11 @@ export interface GeneralSettings {
 	uiVisible: boolean;
 }
 
+export type CameraMode = 'fps' | 'tps';
+
 export interface ControlsSettings {
 	mouseSensitivity: number; // 0.1 – 3.0, default 1.0
+	cameraMode: CameraMode;
 }
 
 export interface SettingsState {
@@ -57,6 +60,7 @@ const MUSIC_VOLUME_KEY = 'music-volume';
 const AMBIENCE_VOLUME_KEY = 'ambience-volume';
 const EFFECTS_VOLUME_KEY = 'effects-volume';
 const MOUSE_SENSITIVITY_KEY = 'mouse-sensitivity';
+const CAMERA_MODE_KEY = 'camera-mode';
 
 const fromStorage = (key: string, fallback: string): string => {
 	try {
@@ -105,7 +109,8 @@ export const settingsState = $state<SettingsState>({
 		uiVisible: fromStorage(UI_VISIBLE_KEY, 'true') !== 'false'
 	},
 	controls: {
-		mouseSensitivity: Math.min(3, Math.max(0.1, parseFloat(fromStorage(MOUSE_SENSITIVITY_KEY, '1')) || 1))
+		mouseSensitivity: Math.min(3, Math.max(0.1, parseFloat(fromStorage(MOUSE_SENSITIVITY_KEY, '1')) || 1)),
+		cameraMode: (fromStorage(CAMERA_MODE_KEY, 'fps') === 'tps' ? 'tps' : 'fps') as CameraMode
 	}
 });
 
@@ -153,6 +158,10 @@ export const controlsActions = {
 	setMouseSensitivity(v: number) {
 		settingsState.controls.mouseSensitivity = v;
 		toStorage(MOUSE_SENSITIVITY_KEY, String(v));
+	},
+	setCameraMode(mode: CameraMode) {
+		settingsState.controls.cameraMode = mode;
+		toStorage(CAMERA_MODE_KEY, mode);
 	}
 };
 

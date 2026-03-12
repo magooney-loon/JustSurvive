@@ -108,6 +108,19 @@
 		<!-- Controls -->
 		<div style="margin-bottom: 1.5rem;">
 			<p style="margin: 0 0 0.5rem; opacity: 0.7; font-size: 0.875rem;">Controls</p>
+			<div style="display: flex; flex-direction: column; gap: 0.75rem;">
+			<!-- Camera Mode -->
+			<div>
+				<p style="margin: 0 0 0.4rem; font-size: 0.8rem; opacity: 0.6;">Camera Mode</p>
+				<div style="display: flex; gap: 0.5rem;">
+					{#each [['fps', 'First Person'], ['tps', 'Third Person']] as const as [mode, label]}
+						<button
+							onclick={() => { soundActions.playClick(); controlsActions.setCameraMode(mode); }}
+							style="flex: 1; padding: 0.4rem; border-radius: 0.375rem; border: 1px solid rgba(255,255,255,{settingsState.controls.cameraMode === mode ? '0.6' : '0.2'}); background: {settingsState.controls.cameraMode === mode ? 'rgba(255,255,255,0.2)' : 'transparent'}; color: white; cursor: pointer; font-size: 0.85rem;"
+						>{label}</button>
+					{/each}
+				</div>
+			</div>
 			<div style="display: flex; flex-direction: column; gap: 0.25rem;">
 				<div style="display: flex; justify-content: space-between; font-size: 0.85rem;">
 					<span>Mouse Sensitivity</span>
@@ -123,6 +136,7 @@
 					oninput={(e) => controlsActions.setMouseSensitivity(+(e.target as HTMLInputElement).value)}
 					style="width: 100%; accent-color: rgba(255,255,255,0.8);"
 				/>
+			</div>
 			</div>
 		</div>
 

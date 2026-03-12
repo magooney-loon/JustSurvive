@@ -6,6 +6,7 @@
 	import { stageActions } from '../stage.svelte.js';
 	import { soundActions } from '../Sound.svelte';
 	import { abilityState } from '../localGameState.svelte.js';
+	import { settingsState } from '../settings.svelte.js';
 	import ReviveChannelHud from './ReviveChannelHud.svelte';
 
 	const conn = useSpacetimeDB();
@@ -392,8 +393,8 @@
 	<!-- Revive channel progress (healer only) -->
 	<ReviveChannelHud />
 
-	<!-- FPS crosshair — center of screen, only when alive -->
-	{#if myState?.status === 'alive'}
+	<!-- FPS crosshair — center of screen, only in FPS mode when alive -->
+	{#if myState?.status === 'alive' && settingsState.controls.cameraMode === 'fps'}
 		<div
 			style="position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; pointer-events: none;"
 		>

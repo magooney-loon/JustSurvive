@@ -9,10 +9,14 @@
 	const { renderer } = useThrelte();
 	let camera = $state.raw<PerspectiveCamera>();
 
-	// Eye level: head group y=1.63, visor local y=+0.028
+	// FPS: eye level from head group y=1.63, visor local y=+0.028
 	const EYE_Y_BASE = 1.658;
 	// Visor front face local z ≈ -0.192; add 0.06 safety to stay outside near clip plane
 	const VISOR_Z = 0.192 + 0.06;
+	// TPS: camera offset above and behind the player
+	const TPS_Y = 8;
+	const TPS_Z = 10;
+	const TPS_PITCH = -Math.atan2(TPS_Y, TPS_Z); // fixed downward angle looking at player
 	const PITCH_MIN = -Math.PI / 2 + 0.05;
 	const PITCH_MAX = Math.PI / 2 - 0.05;
 	const BASE_SENS = 0.002;
@@ -29,8 +33,11 @@
 			if (stageState.currentStage !== 'game') return;
 			const sens = BASE_SENS * settingsState.controls.mouseSensitivity;
 			fpsCamera.yaw -= e.movementX * sens;
-			fpsCamera.pitch -= e.movementY * sens;
-			fpsCamera.pitch = Math.max(PITCH_MIN, Math.min(PITCH_MAX, fpsCamera.pitch));
+			// In TPS the pitch is fixed — only update pitch in FPS mode
+			if (settingsState.controls.cameraMode === 'fps') {
+				fpsCamera.pitch -= e.movementY * sens;
+				fpsCamera.pitch = Math.max(PITCH_MIN, Math.min(PITCH_MAX, fpsCamera.pitch));
+			}
 		}
 
 		canvas.addEventListener('click', onClick);
@@ -54,8 +61,20 @@
 			camera.position.set(cameraFollow.x, cameraFollow.y + EYE_Y_BASE, cameraFollow.z);
 			camera.rotation.y = spectateYaw;
 			camera.rotation.x = 0;
+		} else if (settingsState.controls.cameraMode === 'tps') {
+			// TPS: hover above and behind the player, orbiting via yaw
+			// "Behind" = opposite of look direction = +sin/+cos when yaw=0
+			const behindX = Math.sin(fpsCamera.yaw) * TPS_Z;
+			const behindZ = Math.cos(fpsCamera.yaw) * TPS_Z;
+			camera.position.set(
+				localPos.x + behindX,
+				localPos.y + TPS_Y,
+				localPos.z + behindZ
+			);
+			camera.rotation.y = fpsCamera.yaw;
+			camera.rotation.x = TPS_PITCH;
 		} else {
-			// Mirror StickRig's leanForward so the camera tracks the visor during sprint
+			// FPS: mirror StickRig's leanForward so camera tracks the visor during sprint
 			// StickRig: leanForward = (isSprinting ? 0.22 : 0.08) * moveIntensity
 			const spd = Math.hypot(localVelocity.x, localVelocity.z);
 			const moveIntensity = Math.min(1, spd / 5);
