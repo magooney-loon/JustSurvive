@@ -74,13 +74,13 @@ _Enemies gain +5 HP per cycle and +2%/s speed (capped at +50%)._
 
 ```sh
 # install dependencies
-pnpm install
+npm install
 
 # run dev server
-pnpm dev
+npm dev
 
 # build for production
-pnpm build
+npm build
 ```
 
 ### SpacetimeDB
@@ -90,16 +90,16 @@ pnpm build
 spacetime start
 
 # publish module (local)
-pnpm spacetime:publish:local
+npm spacetime:publish:local
 
 # publish module (local, wipe db)
-pnpm spacetime:publish:local:fresh
+npm spacetime:publish:local:fresh
 
 # publish to maincloud
-pnpm spacetime:publish
+npm spacetime:publish
 
 # regenerate client bindings after schema changes
-pnpm spacetime:generate
+npm spacetime:generate
 ```
 
 ---
