@@ -8,7 +8,7 @@
 
 	const ENEMY_COLORS: Record<string, string> = {
 		basic: '#a22',
-		fast: '#c63',
+		fast: '#94d',
 		brute: '#722',
 		spitter: '#2a6'
 	};

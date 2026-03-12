@@ -46,7 +46,7 @@
 
 	const ENEMY_COLORS: Record<string, string> = {
 		basic: '#c33',
-		fast: '#f73',
+		fast: '#a4f',
 		brute: '#833',
 		spitter: '#3c3'
 	};
@@ -112,7 +112,9 @@
 			refDistance={5}
 			maxDistance={30}
 			rolloffFactor={2}
-			oncreate={(a) => { killedAudio = a; }}
+			oncreate={(a) => {
+				killedAudio = a;
+			}}
 		/>
 		<T.Group position={[0, downedYOffset, 0]} rotation={[downedTilt, 0, 0]}>
 			<T.Group
@@ -134,20 +136,55 @@
 			{#if enemy.enemyType === 'brute'}
 				<!-- Brute spikes + wide shoulders -->
 				<T.Mesh position={[0, 1.35, -0.05]} geometry={bruteBodyGeo} material={bruteBodyMat} />
-				<T.Mesh position={[-0.25, 1.55, -0.05]} rotation={[0, 0.2, 0]} geometry={bruteSpikeGeo} material={bruteSpikeMat} />
-				<T.Mesh position={[0.25, 1.55, -0.05]} rotation={[0, -0.2, 0]} geometry={bruteSpikeGeo} material={bruteSpikeMat} />
+				<T.Mesh
+					position={[-0.25, 1.55, -0.05]}
+					rotation={[0, 0.2, 0]}
+					geometry={bruteSpikeGeo}
+					material={bruteSpikeMat}
+				/>
+				<T.Mesh
+					position={[0.25, 1.55, -0.05]}
+					rotation={[0, -0.2, 0]}
+					geometry={bruteSpikeGeo}
+					material={bruteSpikeMat}
+				/>
 			{:else if enemy.enemyType === 'fast'}
 				<!-- Fast fins + lean head crest -->
-				<T.Mesh position={[0, 1.52, -0.02]} rotation={[0.2, 0, 0]} geometry={fastCrestGeo} material={fastCrestMat} />
-				<T.Mesh position={[0, 1.15, 0.2]} rotation={[Math.PI / 2, 0, 0]} geometry={fastFinGeo} material={fastFinMat} />
+				<T.Mesh
+					position={[0, 1.52, -0.02]}
+					rotation={[0.2, 0, 0]}
+					geometry={fastCrestGeo}
+					material={fastCrestMat}
+				/>
+				<T.Mesh
+					position={[0, 1.15, 0.2]}
+					rotation={[Math.PI / 2, 0, 0]}
+					geometry={fastFinGeo}
+					material={fastFinMat}
+				/>
 			{:else if enemy.enemyType === 'spitter'}
 				<!-- Spitter bulb + dorsal sac -->
 				<T.Mesh position={[0, 1.3, 0.22]} geometry={spitterBulbGeo} material={spitterBulbMat} />
-				<T.Mesh position={[0, 1.0, 0.25]} rotation={[Math.PI / 2, 0, 0]} geometry={spitterSacGeo} material={spitterSacMat} />
+				<T.Mesh
+					position={[0, 1.0, 0.25]}
+					rotation={[Math.PI / 2, 0, 0]}
+					geometry={spitterSacGeo}
+					material={spitterSacMat}
+				/>
 			{:else}
 				<!-- Basic: head horns -->
-				<T.Mesh position={[-0.14, 1.64, 0]} rotation={[0, 0, -0.3]} geometry={basicHornGeo} material={basicHornMat} />
-				<T.Mesh position={[0.14, 1.64, 0]} rotation={[0, 0, 0.3]} geometry={basicHornGeo} material={basicHornMat} />
+				<T.Mesh
+					position={[-0.14, 1.64, 0]}
+					rotation={[0, 0, -0.3]}
+					geometry={basicHornGeo}
+					material={basicHornMat}
+				/>
+				<T.Mesh
+					position={[0.14, 1.64, 0]}
+					rotation={[0, 0, 0.3]}
+					geometry={basicHornGeo}
+					material={basicHornMat}
+				/>
 			{/if}
 		</T.Group>
 
@@ -238,7 +275,13 @@
 
 		{#if enemy.isMarked && !dead}
 			<!-- Mark ring above enemy -->
-			<T.Mesh position={[0, 2.2, 0]} rotation={[Math.PI / 4, 0, 0]} scale={[pulse, pulse, pulse]} geometry={markRingGeo} material={markMat} />
+			<T.Mesh
+				position={[0, 2.2, 0]}
+				rotation={[Math.PI / 4, 0, 0]}
+				scale={[pulse, pulse, pulse]}
+				geometry={markRingGeo}
+				material={markMat}
+			/>
 			<!-- Stem -->
 			<T.Mesh position={[0, 1.6, 0]} geometry={markStemGeo} material={markMat} />
 		{/if}
