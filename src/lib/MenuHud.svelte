@@ -72,14 +72,14 @@
 		style="background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15); border-radius: 1rem; padding: 2.5rem; min-width: 340px; color: white; display: flex; flex-direction: column; gap: 1rem; align-items: stretch;"
 	>
 		<h1
-			style="margin: 0.25rem 0 0.5rem; font-size: 2.5rem; font-weight: 900; text-align: center; letter-spacing: 0.15em; color: #fff; text-transform: uppercase; font-family: system-ui, -apple-system, sans-serif;"
+			style="margin: 0.25rem 0 0.5rem; font-size: 2.5rem; font-weight: 900; text-align: center; letter-spacing: 0.15em; color: #fff; text-transform: uppercase; font-family: system-ui, -apple-system, sans-serif; position: relative;"
 		>
 			<span
-				style="display: block; text-shadow: 0 1px 0 #ccc, 0 2px 0 #bbb, 0 3px 0 #aaa, 0 4px 0 #999, 0 5px 0 #888, 0 6px 1px rgba(0,0,0,0.1), 0 0 5px rgba(0,0,0,0.1), 0 1px 3px rgba(0,0,0,0.2), 0 3px 5px rgba(0,0,0,0.2), 0 5px 10px rgba(0,0,0,0.25), 0 10px 10px rgba(0,0,0,0.2), 0 20px 20px rgba(0,0,0,0.15);"
+				style="display: block; text-shadow: 0 1px 0 #0aa, 0 2px 0 #088, 0 3px 0 #066, 0 4px 0 #044, 0 5px 0 #022, 0 6px 1px rgba(0,0,0,0.1), 0 0 5px rgba(0,255,255,0.1), 0 1px 3px rgba(0,255,255,0.3), 0 3px 5px rgba(0,255,255,0.3), 0 5px 10px rgba(0,255,255,0.35), 0 10px 10px rgba(0,255,255,0.3), 0 20px 20px rgba(0,255,255,0.2);"
 				>Just</span
 			>
 			<span
-				style="display: block; background: linear-gradient(to bottom, #f84 0%, #f4a 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; filter: drop-shadow(0 2px 4px rgba(255,136,68,0.5));"
+				style="display: block; background: linear-gradient(to bottom, #0ff 0%, #06f 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; filter: drop-shadow(0 0 8px rgba(0,255,255,0.6)); animation: glitch-survive 3s infinite;"
 				>Survive</span
 			>
 		</h1>
@@ -94,7 +94,7 @@
 					patternUnits="userSpaceOnUse"
 					patternTransform="rotate(45)"
 				>
-					<rect width="5" height="12" fill="#f84" />
+					<rect width="5" height="12" fill="#0ff" />
 					<rect x="5" width="5" height="12" fill="#222" />
 				</pattern>
 			</defs>
@@ -272,6 +272,30 @@
 </div>
 
 <style>
+	@keyframes glitch-survive {
+		0%,
+		90%,
+		100% {
+			transform: translate(0);
+			filter: drop-shadow(0 0 8px rgba(0, 255, 255, 0.6));
+		}
+		92% {
+			transform: translate(-2px, 1px);
+			filter: drop-shadow(0 0 15px rgba(0, 255, 255, 0.9)) hue-rotate(90deg);
+		}
+		94% {
+			transform: translate(2px, -1px);
+			filter: drop-shadow(0 0 12px rgba(0, 255, 255, 0.8)) hue-rotate(-90deg);
+		}
+		96% {
+			transform: translate(-1px, 2px);
+			filter: drop-shadow(0 0 10px rgba(0, 255, 255, 0.7));
+		}
+		98% {
+			transform: translate(1px, -2px);
+			filter: drop-shadow(0 0 14px rgba(0, 255, 255, 0.85)) hue-rotate(45deg);
+		}
+	}
 	.player-name-input {
 		text-align: center;
 		font-size: 1.1rem;

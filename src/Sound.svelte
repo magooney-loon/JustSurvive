@@ -84,6 +84,7 @@
 	const base = import.meta.env.BASE_URL;
 	const OST_URL = `${base}sounds/ost.ogg`;
 	const OST1_URL = `${base}sounds/ost1.ogg`;
+	const OST2_URL = `${base}sounds/ost2.ogg`;
 	const AMBIENCE_URL = `${base}sounds/ambience.ogg`;
 	const CLICK_URL = `${base}sounds/click.mp3`;
 	const SWOOSH_URL = `${base}sounds/swoosh.mp3`;
@@ -98,6 +99,7 @@
 	// $state.raw — prevents Svelte 5 from wrapping class instances in a Proxy
 	let ostAudio = $state.raw<ThreeAudio>();
 	let ost1Audio = $state.raw<ThreeAudio>();
+	let ost2Audio = $state.raw<ThreeAudio>();
 	let ambienceAudio = $state.raw<ThreeAudio>();
 	let clickAudio = $state.raw<ThreeAudio>();
 	let swooshAudio = $state.raw<ThreeAudio>();
@@ -134,7 +136,7 @@
 	// ─── Music playlist (ost.ogg → ost1.ogg → ost.ogg → …) ──────────────────
 
 	// Plain vars — not reactive state, managed imperatively
-	let ostCurrentIdx = 0; // 0 = ost.ogg, 1 = ost1.ogg
+	let ostCurrentIdx = 0; // 0 = ost.ogg, 1 = ost1.ogg, 2 = ost2.ogg
 	let ostStoppedByUser = false;
 	let ostFadeTimer: ReturnType<typeof setInterval> | null = null;
 
@@ -142,7 +144,7 @@
 	const MUSIC_FADE_MS = 1500;
 
 	function getOstTrack(idx: number): ThreeAudio | undefined {
-		return idx === 0 ? ostAudio : ost1Audio;
+		return idx === 0 ? ostAudio : idx === 1 ? ost1Audio : ost2Audio;
 	}
 
 	function clearMusicFade() {
@@ -163,7 +165,7 @@
 			}
 			if (!settingsState.audio.musicEnabled) return;
 			// Natural end — switch to next track
-			const nextIdx = ostCurrentIdx === 0 ? 1 : 0;
+			const nextIdx = (ostCurrentIdx + 1) % 3;
 			const next = getOstTrack(nextIdx);
 			if (!next) return;
 			ostCurrentIdx = nextIdx;
@@ -353,7 +355,17 @@
 	userData={{ hideInTree: true, selectable: false }}
 />
 
-<!-- Audio track 3: Ambience -->
+<!-- Audio track 3: OST alternate 2 -->
+<Audio
+	src={OST2_URL}
+	oncreate={(a) => {
+		ost2Audio = a;
+		log.info('Audio loaded: OST2');
+	}}
+	userData={{ hideInTree: true, selectable: false }}
+/>
+
+<!-- Audio track 4: Ambience -->
 <Audio
 	src={AMBIENCE_URL}
 	loop
