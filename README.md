@@ -7,7 +7,7 @@
 <br/>
 
 <a href="https://magooney-loon.github.io/spaceplate/">
-  <span style="font-size: 1.5em; font-weight: bold;">▶ PLAY NOW</span>
+  <span style="font-size: 3.6em; font-weight: bold;">▶ PLAY NOW</span>
 </a>
 
 <br/> <br/>
