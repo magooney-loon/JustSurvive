@@ -2,12 +2,12 @@
 
 <h1>⚔️ JustSurvive</h1>
 
-<p>Multiplayer real-time survival arena — Svelte 5 + Threlte + SpacetimeDB</p>
+<p>Multiplayer real-time endless shooter survival arena game</p>
 
 <br/>
 
 <a href="https://magooney-loon.github.io/spaceplate/">
-  <h2>▶ PLAY NOW</h2>
+  <span style="font-size: 1.5em; font-weight: bold;">▶ PLAY NOW</span>
 </a>
 
 <br/>
@@ -42,12 +42,12 @@ Squad-based survival arena. Up to 4 players pick a class, drop into a circular a
 
 ## Classes
 
-| Class | Role | HP | Abilities |
-|---|---|---|---|
-| Spotter | Scout | 100 | Mark enemy (LMB), Ping location (RMB) |
-| Gunner | DPS | 100 | Shoot (LMB), every 3rd shot suppresses |
-| Tank | Frontline | 150 | Shield Bash (LMB), Brace (RMB hold) |
-| Healer | Support | 100 | Heal teammate (LMB), Revive downed (RMB) |
+| Class   | Role      | HP  | Abilities                                |
+| ------- | --------- | --- | ---------------------------------------- |
+| Spotter | Scout     | 100 | Mark enemy (LMB), Ping location (RMB)    |
+| Gunner  | DPS       | 100 | Shoot (LMB), every 3rd shot suppresses   |
+| Tank    | Frontline | 150 | Shield Bash (LMB), Brace (RMB hold)      |
+| Healer  | Support   | 100 | Heal teammate (LMB), Revive downed (RMB) |
 
 ## Tech Stack
 
@@ -96,11 +96,11 @@ pnpm spacetime:generate
 
 Copy `.env.example` to `.env.local` and fill in your values.
 
-| Variable | Description |
-|---|---|
-| `VITE_SPACETIMEDB_DB_NAME` | SpacetimeDB database name |
-| `VITE_SPACETIMEDB_HOST` | SpacetimeDB host (`https://maincloud.spacetimedb.com` for maincloud) |
-| `SPACETIMEDB_DB_NAME` | Same as above, used by the `spacetime` CLI |
-| `SPACETIMEDB_HOST` | Same as above, used by the `spacetime` CLI |
-| `VITE_GAME_ENGINE` | `true` to enable Threlte Studio + PerfMonitor in dev |
-| `VITE_GAME_ENGINE_LOGS` | `true` to enable debug logging |
+| Variable                   | Description                                                          |
+| -------------------------- | -------------------------------------------------------------------- |
+| `VITE_SPACETIMEDB_DB_NAME` | SpacetimeDB database name                                            |
+| `VITE_SPACETIMEDB_HOST`    | SpacetimeDB host (`https://maincloud.spacetimedb.com` for maincloud) |
+| `SPACETIMEDB_DB_NAME`      | Same as above, used by the `spacetime` CLI                           |
+| `SPACETIMEDB_HOST`         | Same as above, used by the `spacetime` CLI                           |
+| `VITE_GAME_ENGINE`         | `true` to enable Threlte Studio + PerfMonitor in dev                 |
+| `VITE_GAME_ENGINE_LOGS`    | `true` to enable debug logging                                       |
