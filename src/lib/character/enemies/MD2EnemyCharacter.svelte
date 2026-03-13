@@ -3,6 +3,7 @@
 	import { useTask } from '@threlte/core';
 	import { T } from '@threlte/core';
 	import * as THREE from 'three';
+	import { logEnemy } from '$root/settings.svelte.js';
 	import {
 		loadEnemyModel,
 		createEnemyMesh,
@@ -85,7 +86,7 @@
 
 		const clip = findAnimation(loadedData.animations, name);
 		if (!clip) {
-			console.log(`[MD2] Animation not found: ${name}`);
+			logEnemy.warn(`Animation not found: ${name}`);
 			return;
 		}
 
@@ -116,7 +117,10 @@
 			const weaponAnims = weaponPath ? loadedData.weaponAnimations.get(weaponPath) : undefined;
 			if (weaponAnims && weaponAnims.length > 0) {
 				const weaponClip = findAnimation(weaponAnims, name);
-				if (weaponClip && (!weaponCurrentAction || weaponCurrentAction.getClip().name !== weaponClip.name)) {
+				if (
+					weaponClip &&
+					(!weaponCurrentAction || weaponCurrentAction.getClip().name !== weaponClip.name)
+				) {
 					const newWeaponAction = weaponMixer.clipAction(weaponClip);
 					newWeaponAction.reset();
 					if (isDeath) {
@@ -172,7 +176,7 @@
 	});
 
 	onMount(async () => {
-		console.log(`[MD2] Mounting enemy: ${enemyType}`);
+		logEnemy.info(`Mounting enemy: ${enemyType}`);
 
 		try {
 			const data = await loadEnemyModel(enemyType);
@@ -192,9 +196,9 @@
 			setAnimation(firstAnim);
 
 			loaded = true;
-			console.log(`[MD2] Ready: ${enemyType}`);
+			logEnemy.info(`Ready: ${enemyType}`);
 		} catch (e) {
-			console.error(`[MD2] Failed to load ${enemyType}:`, e);
+			logEnemy.error(`Failed to load ${enemyType}:`, e);
 		}
 	});
 </script>

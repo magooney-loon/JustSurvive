@@ -46,6 +46,12 @@ export const combatActions = {
 			await conn.reducers.shieldBash({ sessionId, enemyId });
 		} catch {}
 	},
+	async adrenaline(sessionId: bigint) {
+		if (!conn) return;
+		try {
+			await conn.reducers.adrenaline({ sessionId });
+		} catch {}
+	},
 	braceStart(sessionId: bigint) {
 		if (!conn) return;
 		conn.reducers.braceStart({ sessionId });

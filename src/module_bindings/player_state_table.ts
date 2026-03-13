@@ -38,4 +38,5 @@ export default __t.row({
   markCooldownUntil: __t.option(__t.timestamp()).name("mark_cooldown_until"),
   pingCooldownUntil: __t.option(__t.timestamp()).name("ping_cooldown_until"),
   bashCooldownUntil: __t.option(__t.timestamp()).name("bash_cooldown_until"),
+  adrenalineCooldownUntil: __t.option(__t.timestamp()).name("adrenaline_cooldown_until"),
 });

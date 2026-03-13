@@ -19,7 +19,7 @@
 	import TankRig from '$lib/character/player/tank/TankRig.svelte';
 	import HealerRig from '$lib/character/player/healer/HealerRig.svelte';
 	import { RepeatWrapping } from 'three';
-	import { shotFlash, SHOT_FLASH_MS } from '$lib/stores/abilities.svelte.js';
+	import { shotFlash, SHOT_FLASH_MS, abilityState } from '$lib/stores/abilities.svelte.js';
 
 	const base = import.meta.env.BASE_URL;
 
@@ -134,9 +134,19 @@
 		}
 
 		if (isLocal && overridePos) {
-			displayX = overridePos.x;
-			displayY = overridePos.y;
-			displayZ = overridePos.z;
+			// During adrenaline effect, lerp toward target for visual effect
+			// Otherwise snap instantly (optimistic local movement)
+			const isAdrenaline = abilityState.adrenalineUntil > Date.now();
+			if (isAdrenaline) {
+				const LERP = 1 - Math.pow(0.01, dt);
+				displayX += (overridePos.x - displayX) * LERP;
+				displayY += (overridePos.y - displayY) * LERP;
+				displayZ += (overridePos.z - displayZ) * LERP;
+			} else {
+				displayX = overridePos.x;
+				displayY = overridePos.y;
+				displayZ = overridePos.z;
+			}
 			if (overrideVel) {
 				speed = Math.hypot(overrideVel.x, overrideVel.z);
 			}

@@ -129,7 +129,8 @@ export const PlayerState = table(
 		healCooldownUntil: t.timestamp().optional(),
 		markCooldownUntil: t.timestamp().optional(),
 		pingCooldownUntil: t.timestamp().optional(),
-		bashCooldownUntil: t.timestamp().optional()
+		bashCooldownUntil: t.timestamp().optional(),
+		adrenalineCooldownUntil: t.timestamp().optional()
 	}
 );
 

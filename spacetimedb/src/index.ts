@@ -63,7 +63,7 @@ function enemyMoveAvoid(curX: bigint, curZ: bigint, nx: bigint, nz: bigint): [bi
 	if (!hitsTorch(curX, nz)) return [curX, nz];
 	return [curX, curZ];
 }
-import { generateCode, classMaxHp, classMaxStamina, ts, bigintSqrt } from './helpers.js';
+import { generateCode, classMaxHp, classMaxStamina, ts, bigintSqrt as bs } from './helpers.js';
 
 // ─── Scheduled Tables ─────────────────────────────────────────────────────────
 // These must stay in index.ts — they forward-reference their reducer functions.
@@ -79,7 +79,6 @@ const LobbyCountdown = table(
 		lobbyId: t.u64()
 	}
 );
-
 
 const EnemyTickJob = table(
 	{
@@ -213,7 +212,10 @@ function apply_player_damage(ctx: any, sessionId: bigint, ps: any, damage: bigin
 	if (newHp <= 0n && ps.status === 'alive') {
 		const sessionPlayers = [...ctx.db.playerState.player_state_session_id.filter(sessionId)];
 		const hasLiveHealer = sessionPlayers.some(
-			(p) => p.classChoice === 'healer' && p.status === 'alive' && !p.playerIdentity.isEqual(ps.playerIdentity)
+			(p) =>
+				p.classChoice === 'healer' &&
+				p.status === 'alive' &&
+				!p.playerIdentity.isEqual(ps.playerIdentity)
 		);
 		const downerDelay = hasLiveHealer ? 30_000_000n : 5_000_000n;
 
@@ -612,7 +614,8 @@ export const set_class = spacetimedb.reducer(
 
 		for (const p of ctx.db.lobbyPlayer.lobby_player_lobby_id.filter(lobbyId)) {
 			if (p.playerIdentity.isEqual(ctx.sender)) {
-				if (lobby.isPublic && p.isReady) throw new SenderError('Cannot change class after readying');
+				if (lobby.isPublic && p.isReady)
+					throw new SenderError('Cannot change class after readying');
 				ctx.db.lobbyPlayer.id.update({ ...p, classChoice, isReady: false });
 				return;
 			}
@@ -757,7 +760,6 @@ export const start_countdown = spacetimedb.reducer(
 	}
 );
 
-
 export const fire_start_game = spacetimedb.reducer(
 	{
 		arg: LobbyCountdown.rowType
@@ -815,7 +817,8 @@ export const fire_start_game = spacetimedb.reducer(
 				healCooldownUntil: undefined,
 				markCooldownUntil: undefined,
 				pingCooldownUntil: undefined,
-				bashCooldownUntil: undefined
+				bashCooldownUntil: undefined,
+				adrenalineCooldownUntil: undefined
 			});
 		}
 
@@ -1161,13 +1164,14 @@ export const enemy_tick = spacetimedb.reducer(
 					const timeBonus = BigInt(Math.min(50, Math.floor(ageSec * Number(ENEMY_SPEED_PER_SEC))));
 					const speed = (ENEMY_BASE_SPEED['spitter'] * (enemy.speedMultiplier + timeBonus)) / 100n;
 					const moveAmount = (speed * TICK_MS) / 1000n;
-					const magnitude = bigintSqrt(chosenDist);
+					const magnitude = bs(chosenDist);
 					if (magnitude > 0n) {
 						const dir = chosenDist < SPITTER_MIN_DIST_SQ ? -1n : 1n;
 						const nx = enemy.posX + (dir * dx * moveAmount) / magnitude;
 						const nz = enemy.posZ + (dir * dz * moveAmount) / magnitude;
 						const [ax, az] = enemyMoveAvoid(enemy.posX, enemy.posZ, nx, nz);
-						if (ax !== enemy.posX || az !== enemy.posZ) ctx.db.enemy.id.update({ ...enemy, posX: ax, posZ: az });
+						if (ax !== enemy.posX || az !== enemy.posZ)
+							ctx.db.enemy.id.update({ ...enemy, posX: ax, posZ: az });
 					}
 				} else if (
 					enemy.dazedUntil &&
@@ -1195,13 +1199,14 @@ export const enemy_tick = spacetimedb.reducer(
 					const timeBonus = BigInt(Math.min(50, Math.floor(ageSec * Number(ENEMY_SPEED_PER_SEC))));
 					const speed = (ENEMY_BASE_SPEED['caster'] * (enemy.speedMultiplier + timeBonus)) / 100n;
 					const moveAmount = (speed * TICK_MS) / 1000n;
-					const magnitude = bigintSqrt(chosenDist);
+					const magnitude = bs(chosenDist);
 					if (magnitude > 0n) {
 						const dir = chosenDist < CASTER_MIN_DIST_SQ ? -1n : 1n;
 						const nx = enemy.posX + (dir * dx * moveAmount) / magnitude;
 						const nz = enemy.posZ + (dir * dz * moveAmount) / magnitude;
 						const [ax, az] = enemyMoveAvoid(enemy.posX, enemy.posZ, nx, nz);
-						if (ax !== enemy.posX || az !== enemy.posZ) ctx.db.enemy.id.update({ ...enemy, posX: ax, posZ: az });
+						if (ax !== enemy.posX || az !== enemy.posZ)
+							ctx.db.enemy.id.update({ ...enemy, posX: ax, posZ: az });
 					}
 				} else if (
 					enemy.dazedUntil &&
@@ -1214,7 +1219,7 @@ export const enemy_tick = spacetimedb.reducer(
 
 			// Tank brace: bounce enemy back instead of dealing damage
 			if (chosenDist <= MELEE_RANGE * MELEE_RANGE && chosen.isBracing && !enemy.isDazed) {
-				const magnitude = bigintSqrt(chosenDist);
+				const magnitude = bs(chosenDist);
 				const knockback = 4000n;
 				const newX =
 					magnitude > 0n ? enemy.posX - (dx * knockback) / magnitude : enemy.posX - knockback;
@@ -1239,7 +1244,7 @@ export const enemy_tick = spacetimedb.reducer(
 					((ENEMY_BASE_SPEED[enemy.enemyType] ?? 3000n) * (enemy.speedMultiplier + timeBonus)) /
 					100n;
 				const moveAmount = (speed * TICK_MS) / 1000n;
-				const magnitude = bigintSqrt(chosenDist);
+				const magnitude = bs(chosenDist);
 				if (magnitude > 0n) {
 					// Close range: always charge straight in
 					const STRAFE_MIN_DIST_SQ = 36_000_000n; // ~6000 units (3x melee range)
@@ -1266,13 +1271,15 @@ export const enemy_tick = spacetimedb.reducer(
 						const nx = enemy.posX + (dx * fwd) / magnitude + (perpX * side) / magnitude;
 						const nz = enemy.posZ + (dz * fwd) / magnitude + (perpZ * side) / magnitude;
 						const [ax, az] = enemyMoveAvoid(enemy.posX, enemy.posZ, nx, nz);
-						if (ax !== enemy.posX || az !== enemy.posZ) ctx.db.enemy.id.update({ ...enemy, posX: ax, posZ: az });
+						if (ax !== enemy.posX || az !== enemy.posZ)
+							ctx.db.enemy.id.update({ ...enemy, posX: ax, posZ: az });
 					} else {
 						// Direct charge
 						const nx = enemy.posX + (dx * moveAmount) / magnitude;
 						const nz = enemy.posZ + (dz * moveAmount) / magnitude;
 						const [ax, az] = enemyMoveAvoid(enemy.posX, enemy.posZ, nx, nz);
-						if (ax !== enemy.posX || az !== enemy.posZ) ctx.db.enemy.id.update({ ...enemy, posX: ax, posZ: az });
+						if (ax !== enemy.posX || az !== enemy.posZ)
+							ctx.db.enemy.id.update({ ...enemy, posX: ax, posZ: az });
 					}
 				}
 			} else {
@@ -1483,53 +1490,54 @@ export const mark_enemy = spacetimedb.reducer(
 	}
 );
 
-export const spotter_flash = spacetimedb.reducer(
-	{ sessionId: t.u64() },
-	(ctx, { sessionId }) => {
-		let ps: any;
-		for (const p of ctx.db.playerState.player_state_session_id.filter(sessionId)) {
-			if (p.playerIdentity.isEqual(ctx.sender)) { ps = p; break; }
+export const spotter_flash = spacetimedb.reducer({ sessionId: t.u64() }, (ctx, { sessionId }) => {
+	let ps: any;
+	for (const p of ctx.db.playerState.player_state_session_id.filter(sessionId)) {
+		if (p.playerIdentity.isEqual(ctx.sender)) {
+			ps = p;
+			break;
 		}
-		if (!ps || ps.classChoice !== 'spotter') throw new SenderError('Not a Spotter');
-		if (ps.status !== 'alive') return;
-		const COOLDOWN_US = 1_500_000n;
-		if (
-			ps.pingCooldownUntil &&
-			ctx.timestamp.microsSinceUnixEpoch < ps.pingCooldownUntil.microsSinceUnixEpoch
-		) throw new SenderError('Flash on cooldown');
-
-		// Cone parameters: 5 unit range, ±45° (90° total)
-		const CONE_RANGE = 5000; // fixed-point (× 1000)
-		const HALF_ANGLE = Math.PI / 4;
-		const STUN_US = 2_000_000n;
-
-		const facingRad = Number(ps.facingAngle) / 1000;
-		const fwdX = -Math.sin(facingRad);
-		const fwdZ = -Math.cos(facingRad);
-		const cosHalf = Math.cos(HALF_ANGLE);
-
-		let stunned = 0n;
-		for (const e of ctx.db.enemy.enemy_session_id.filter(sessionId)) {
-			if (!e.isAlive) continue;
-			const ex = Number(e.posX) - Number(ps.posX);
-			const ez = Number(e.posZ) - Number(ps.posZ);
-			const dist = Math.sqrt(ex * ex + ez * ez);
-			if (dist > CONE_RANGE || dist < 1) continue;
-			const dot = (ex * fwdX + ez * fwdZ) / dist;
-			if (dot < cosHalf) continue;
-			// Enemy is in cone — stun it
-			const dazedUntil = ts(ctx.timestamp.microsSinceUnixEpoch + STUN_US);
-			ctx.db.enemy.id.update({ ...e, isDazed: true, dazedUntil });
-			stunned += 1n;
-		}
-
-		ctx.db.playerState.id.update({
-			...ps,
-			score: ps.score + stunned * 10n,
-			pingCooldownUntil: ts(ctx.timestamp.microsSinceUnixEpoch + COOLDOWN_US)
-		});
 	}
-);
+	if (!ps || ps.classChoice !== 'spotter') throw new SenderError('Not a Spotter');
+	if (ps.status !== 'alive') return;
+	const COOLDOWN_US = 1_500_000n;
+	if (
+		ps.pingCooldownUntil &&
+		ctx.timestamp.microsSinceUnixEpoch < ps.pingCooldownUntil.microsSinceUnixEpoch
+	)
+		throw new SenderError('Flash on cooldown');
+
+	// Cone parameters: 5 unit range, ±45° (90° total)
+	const CONE_RANGE = 5000; // fixed-point (× 1000)
+	const HALF_ANGLE = Math.PI / 4;
+	const STUN_US = 2_000_000n;
+
+	const facingRad = Number(ps.facingAngle) / 1000;
+	const fwdX = -Math.sin(facingRad);
+	const fwdZ = -Math.cos(facingRad);
+	const cosHalf = Math.cos(HALF_ANGLE);
+
+	let stunned = 0n;
+	for (const e of ctx.db.enemy.enemy_session_id.filter(sessionId)) {
+		if (!e.isAlive) continue;
+		const ex = Number(e.posX) - Number(ps.posX);
+		const ez = Number(e.posZ) - Number(ps.posZ);
+		const dist = Math.sqrt(ex * ex + ez * ez);
+		if (dist > CONE_RANGE || dist < 1) continue;
+		const dot = (ex * fwdX + ez * fwdZ) / dist;
+		if (dot < cosHalf) continue;
+		// Enemy is in cone — stun it
+		const dazedUntil = ts(ctx.timestamp.microsSinceUnixEpoch + STUN_US);
+		ctx.db.enemy.id.update({ ...e, isDazed: true, dazedUntil });
+		stunned += 1n;
+	}
+
+	ctx.db.playerState.id.update({
+		...ps,
+		score: ps.score + stunned * 10n,
+		pingCooldownUntil: ts(ctx.timestamp.microsSinceUnixEpoch + COOLDOWN_US)
+	});
+});
 
 export const attack_enemy = spacetimedb.reducer(
 	{
@@ -1636,6 +1644,39 @@ export const heal_player = spacetimedb.reducer(
 	}
 );
 
+export const adrenaline = spacetimedb.reducer({ sessionId: t.u64() }, (ctx, { sessionId }) => {
+	console.log('ADRENALINE: reducer called, sessionId=' + sessionId);
+	let ps: any;
+	for (const p of ctx.db.playerState.player_state_session_id.filter(sessionId)) {
+		if (p.playerIdentity.isEqual(ctx.sender)) {
+			ps = p;
+			break;
+		}
+	}
+	console.log('ADRENALINE: found player', ps ? 'yes' : 'no', 'status=', ps?.status);
+	if (!ps || ps.status !== 'alive') return;
+
+	// Server-side cooldown check (5s)
+	const now = ctx.timestamp.microsSinceUnixEpoch;
+	console.log('ADRENALINE: cooldown check', ps.adrenalineCooldownUntil);
+	if (ps.adrenalineCooldownUntil && ps.adrenalineCooldownUntil.microsSinceUnixEpoch > now) {
+		console.log('ADRENALINE: rejected - on cooldown');
+		return;
+	}
+
+	// Fill stamina to max
+	console.log('ADRENALINE: filling stamina', ps.stamina, '->', ps.maxStamina);
+
+	const cooldownUntil = ts(now + 5_000_000n);
+	ctx.db.playerState.id.update({
+		...ps,
+		stamina: ps.maxStamina,
+		lastMoveAt: ctx.timestamp,
+		adrenalineCooldownUntil: cooldownUntil
+	});
+	console.log('ADRENALINE: success!');
+});
+
 export const shield_bash = spacetimedb.reducer(
 	{
 		sessionId: t.u64(),
@@ -1672,7 +1713,7 @@ export const shield_bash = spacetimedb.reducer(
 
 			const dx = enemy.posX - ps.posX;
 			const dz = enemy.posZ - ps.posZ;
-			const mag = bigintSqrt(dx * dx + dz * dz);
+			const mag = bs(dx * dx + dz * dz);
 			const knockback = 4000n;
 			const newX = mag > 0n ? enemy.posX + (dx * knockback) / mag : enemy.posX + knockback;
 			const newZ = mag > 0n ? enemy.posZ + (dz * knockback) / mag : enemy.posZ + knockback;
@@ -1857,7 +1898,8 @@ spacetimedb.clientDisconnected((ctx) => {
 	for (const p of ctx.db.lobbyPlayer.lobby_player_identity.filter(ctx.sender)) {
 		const lobby = ctx.db.lobby.id.find(p.lobbyId);
 		// Public: kick on disconnect unless game is active. Private: only kick if waiting.
-		const shouldKick = lobby && (lobby.isPublic ? lobby.status !== 'active' : lobby.status === 'waiting');
+		const shouldKick =
+			lobby && (lobby.isPublic ? lobby.status !== 'active' : lobby.status === 'waiting');
 		if (shouldKick) {
 			ctx.db.lobbyPlayer.id.delete(p.id);
 			const remaining = [...ctx.db.lobbyPlayer.lobby_player_lobby_id.filter(p.lobbyId)];
@@ -1885,7 +1927,8 @@ spacetimedb.clientDisconnected((ctx) => {
 	for (const ps of ctx.db.playerState.player_state_identity.filter(ctx.sender)) {
 		if (ps.status !== 'alive' && ps.status !== 'downed') continue;
 		const others = [...ctx.db.playerState.player_state_session_id.filter(ps.sessionId)].filter(
-			(p) => !p.playerIdentity.isEqual(ctx.sender) && (p.status === 'alive' || p.status === 'downed')
+			(p) =>
+				!p.playerIdentity.isEqual(ctx.sender) && (p.status === 'alive' || p.status === 'downed')
 		);
 		if (others.length === 0) {
 			end_session(ctx, ps.sessionId);

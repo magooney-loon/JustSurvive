@@ -203,6 +203,7 @@ export const PlayerState = __t.object("PlayerState", {
   markCooldownUntil: __t.option(__t.timestamp()),
   pingCooldownUntil: __t.option(__t.timestamp()),
   bashCooldownUntil: __t.option(__t.timestamp()),
+  adrenalineCooldownUntil: __t.option(__t.timestamp()),
 });
 export type PlayerState = __Infer<typeof PlayerState>;
 

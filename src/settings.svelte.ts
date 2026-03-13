@@ -50,6 +50,8 @@ const createLogger = (prefix: string, enabled: boolean) => ({
 });
 
 export const log = createLogger('spaceplate', import.meta.env.VITE_GAME_ENGINE_LOGS === 'true');
+export const logEnemy = createLogger('enemy', import.meta.env.VITE_ENEMY_LOGS === 'true');
+export const logAbility = createLogger('ability', import.meta.env.VITE_ABILITY_LOGS === 'true');
 
 // ─── localStorage helpers ────────────────────────────────────────────────────
 
@@ -109,7 +111,10 @@ export const settingsState = $state<SettingsState>({
 		uiVisible: fromStorage(UI_VISIBLE_KEY, 'true') !== 'false'
 	},
 	controls: {
-		mouseSensitivity: Math.min(3, Math.max(0.1, parseFloat(fromStorage(MOUSE_SENSITIVITY_KEY, '1')) || 1)),
+		mouseSensitivity: Math.min(
+			3,
+			Math.max(0.1, parseFloat(fromStorage(MOUSE_SENSITIVITY_KEY, '1')) || 1)
+		),
 		cameraMode: (fromStorage(CAMERA_MODE_KEY, 'tps') === 'fps' ? 'fps' : 'tps') as CameraMode
 	}
 });

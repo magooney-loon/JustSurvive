@@ -121,10 +121,10 @@
 					cdFrac: 0
 				},
 				{
-					label: 'Dash Back',
+					label: 'Adrenaline',
 					input: 'RMB',
 					color: '#ff8822',
-					cdFrac: Math.max(0, (abilityState.dashCooldownUntil - now) / 5000),
+					cdFrac: Math.max(0, (abilityState.adrenalineCooldownUntil - now) / 5000),
 					cdMs: 5000
 				}
 			];
@@ -401,7 +401,8 @@
 					YOU'RE DOWN
 				</h2>
 				<p style="font-size: 1.1rem; color: rgba(255,255,255,0.6); margin: 0;">
-					{hasAliveHealer ? 'Waiting for Healer...' : 'No healer available.'} {downedSecondsLeft}s
+					{hasAliveHealer ? 'Waiting for Healer...' : 'No healer available.'}
+					{downedSecondsLeft}s
 				</p>
 			</div>
 		</div>

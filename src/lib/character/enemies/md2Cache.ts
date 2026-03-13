@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { MD2Loader } from 'three/addons/loaders/MD2Loader.js';
+import { logEnemy } from '$root/settings.svelte.js';
 
 export type EnemyType = 'basic' | 'fast' | 'brute' | 'spitter' | 'caster';
 
@@ -67,10 +68,7 @@ function loadWeaponData(
 			(result: any) => {
 				const geo: THREE.BufferGeometry = result.geometry || result;
 				const anims: THREE.AnimationClip[] =
-					result.animations ||
-					(geo as any).animations ||
-					(geo as any).userData?.animations ||
-					[];
+					result.animations || (geo as any).animations || (geo as any).userData?.animations || [];
 				resolve({ geometry: geo, animations: anims });
 			},
 			undefined,
@@ -81,7 +79,7 @@ function loadWeaponData(
 
 export async function loadEnemyModel(enemyType: EnemyType): Promise<LoadedMD2> {
 	if (_loaded.has(enemyType)) {
-		console.log(`[MD2] Cache hit: ${enemyType}`);
+		logEnemy.info(`Cache hit: ${enemyType}`);
 		return _loaded.get(enemyType)!;
 	}
 
@@ -90,7 +88,7 @@ export async function loadEnemyModel(enemyType: EnemyType): Promise<LoadedMD2> {
 	}
 
 	const promise = (async () => {
-		console.log(`[MD2] Loading enemy model: ${enemyType}`);
+		logEnemy.info(`Loading enemy model: ${enemyType}`);
 
 		const skinName = SKIN_MAP[enemyType];
 		const weaponName = WEAPON_MAP[enemyType];
@@ -115,8 +113,8 @@ export async function loadEnemyModel(enemyType: EnemyType): Promise<LoadedMD2> {
 			const weaponData = await loadWeaponData(weaponName);
 			weaponGeometries.set(weaponName, weaponData.geometry);
 			weaponAnimations.set(weaponName, weaponData.animations);
-			console.log(
-				`[MD2] Weapon anims for ${enemyType}: ${weaponData.animations.map((a) => a.name).join(', ')}`
+			logEnemy.info(
+				`Weapon anims for ${enemyType}: ${weaponData.animations.map((a) => a.name).join(', ')}`
 			);
 		}
 
@@ -129,9 +127,7 @@ export async function loadEnemyModel(enemyType: EnemyType): Promise<LoadedMD2> {
 		};
 
 		_loaded.set(enemyType, result);
-		console.log(
-			`[MD2] Loaded: ${enemyType}, animations: ${animations.map((a) => a.name).join(', ')}`
-		);
+		logEnemy.info(`Loaded: ${enemyType}, animations: ${animations.map((a) => a.name).join(', ')}`);
 
 		return result;
 	})();

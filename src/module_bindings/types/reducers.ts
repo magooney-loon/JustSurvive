@@ -6,6 +6,7 @@
 import { type Infer as __Infer } from "spacetimedb";
 
 // Import all reducer arg schemas
+import AdrenalineReducer from "../adrenaline_reducer";
 import AttackEnemyReducer from "../attack_enemy_reducer";
 import BraceEndReducer from "../brace_end_reducer";
 import BraceStartReducer from "../brace_start_reducer";
@@ -27,6 +28,7 @@ import ShieldBashReducer from "../shield_bash_reducer";
 import SpotterFlashReducer from "../spotter_flash_reducer";
 import StartCountdownReducer from "../start_countdown_reducer";
 
+export type AdrenalineParams = __Infer<typeof AdrenalineReducer>;
 export type AttackEnemyParams = __Infer<typeof AttackEnemyReducer>;
 export type BraceEndParams = __Infer<typeof BraceEndReducer>;
 export type BraceStartParams = __Infer<typeof BraceStartReducer>;

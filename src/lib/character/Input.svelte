@@ -14,8 +14,8 @@
 		spotterFlash,
 		SPOTTER_FLASH_MS
 	} from '$lib/stores/abilities.svelte.js';
-	import { ARENA_PLAY_RADIUS, TORCH_POSITIONS, TORCH_COLLISION_R } from '$lib/map/arenaConfig.js';
 	import { soundActions } from '$root/Sound.svelte';
+	import { logAbility } from '$root/settings.svelte.js';
 
 	const keyMap: Record<string, keyof typeof input> = {
 		KeyW: 'forward',
@@ -165,6 +165,7 @@
 	}
 
 	function onMouseDown(e: MouseEvent) {
+		logAbility.info('MOUSE DOWN: myState=', myState?.classChoice, 'status=', myState?.status);
 		if (!myState || myState.status !== 'alive') return;
 		const sid = lobbyState.currentSessionId;
 		if (!sid) return;
@@ -176,6 +177,7 @@
 					combatActions.markEnemy(sid, enemy.id);
 					soundActions.playSpotterMark();
 					abilityState.markCooldownUntil = Date.now() + 5000;
+					logAbility.info('SPOTTER: mark enemy', enemy.id);
 				}
 			} else if (e.button === 2) {
 				if (abilityState.flashCooldownUntil > Date.now()) return;
@@ -185,6 +187,7 @@
 				spotterFlash.active = true;
 				spotterFlash.yaw = fpsCamera.yaw;
 				spotterFlash.until = Date.now() + SPOTTER_FLASH_MS;
+				logAbility.info('SPOTTER: flash');
 			}
 			return;
 		}
@@ -203,35 +206,20 @@
 				combatActions.attackEnemy(sid, enemy.id, suppress);
 				soundActions.playGunnerShot();
 				shotFlash.until = Date.now() + SHOT_FLASH_MS;
+				logAbility.info('GUNNER: attack enemy', enemy.id, 'suppress=', suppress);
 			} else if (e.button === 2) {
-				if (abilityState.dashCooldownUntil > Date.now()) return;
-				// Dash backward: opposite of camera facing direction
-				const DASH_DIST = 6;
-				const bx = -Math.sin(fpsCamera.yaw) * DASH_DIST;
-				const bz = -Math.cos(fpsCamera.yaw) * DASH_DIST;
-				let nx = localPos.x + bx;
-				let nz = localPos.z + bz;
-				// Clamp to arena
-				const rSq = nx * nx + nz * nz;
-				if (rSq > ARENA_PLAY_RADIUS * ARENA_PLAY_RADIUS) {
-					const r = Math.sqrt(rSq);
-					nx = (nx / r) * ARENA_PLAY_RADIUS;
-					nz = (nz / r) * ARENA_PLAY_RADIUS;
-				}
-				// Resolve any torch overlap after dash
-				for (const torch of TORCH_POSITIONS) {
-					const tdx = nx - torch.x;
-					const tdz = nz - torch.z;
-					const dSq = tdx * tdx + tdz * tdz;
-					if (dSq < TORCH_COLLISION_R * TORCH_COLLISION_R) {
-						const d = Math.sqrt(dSq) || 0.001;
-						nx = torch.x + (tdx / d) * TORCH_COLLISION_R;
-						nz = torch.z + (tdz / d) * TORCH_COLLISION_R;
-					}
-				}
-				localPos.x = nx;
-				localPos.z = nz;
-				abilityState.dashCooldownUntil = Date.now() + 5000;
+				logAbility.info(
+					'GUNNER: adrenaline attempt, cooldown=',
+					abilityState.adrenalineCooldownUntil,
+					'now=',
+					Date.now()
+				);
+				if (abilityState.adrenalineCooldownUntil > Date.now()) return;
+				// Server fills stamina - just trigger the adrenaline
+				combatActions.adrenaline(sid);
+				abilityState.adrenalineCooldownUntil = Date.now() + 5000;
+				abilityState.adrenalineUntil = Date.now() + 180;
+				logAbility.info('GUNNER: adrenaline triggered');
 			}
 			return;
 		}
@@ -243,11 +231,13 @@
 				combatActions.shieldBash(sid, enemy?.id);
 				soundActions.playTankBash();
 				abilityState.bashCooldownUntil = Date.now() + 1500;
+				logAbility.info('TANK: bash enemy', enemy?.id);
 			} else if (e.button === 2) {
 				if (abilityState.braceCooldownUntil > Date.now()) return;
 				combatActions.braceStart(sid);
 				soundActions.playTankBrace();
 				startBraceTimer();
+				logAbility.info('TANK: brace start');
 			}
 			return;
 		}
@@ -264,12 +254,14 @@
 					healBeam.toX = Number(target.posX) / 1000;
 					healBeam.toZ = Number(target.posZ) / 1000;
 					healBeam.until = Date.now() + HEAL_BEAM_MS;
+					logAbility.info('HEALER: heal target', target.playerIdentity.toHexString());
 				}
 			} else if (e.button === 2) {
 				const target = nearestDowned(3_000);
 				if (target) {
 					combatActions.reviveStart(sid, target.playerIdentity);
 					soundActions.playHealerRevive();
+					logAbility.info('HEALER: revive target', target.playerIdentity.toHexString());
 				}
 			}
 			return;
