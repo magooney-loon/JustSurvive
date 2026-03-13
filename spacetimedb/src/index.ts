@@ -36,8 +36,32 @@ import {
 	HEAL_AMOUNT,
 	HEAL_RANGE_SQ,
 	REVIVE_COOLDOWN_US,
-	REVIVE_CHANNEL_US
+	REVIVE_CHANNEL_US,
+	TORCH_RINGS_SRV,
+	TORCH_COLLISION_SQ,
+	SPAWN_POINT_COUNT,
+	WALL_SPAWN_RADIUS
 } from './constants.js';
+
+// Precomputed torch positions (computed once at module load)
+const TORCH_POSITIONS: Array<{ x: bigint; z: bigint }> = TORCH_RINGS_SRV.flatMap(({ count, r }) =>
+	Array.from({ length: count }, (_, i) => {
+		const angle = (i / count) * Math.PI * 2;
+		return {
+			x: BigInt(Math.round(Math.cos(angle) * r)),
+			z: BigInt(Math.round(Math.sin(angle) * r))
+		};
+	})
+);
+
+function hitsTorch(x: bigint, z: bigint): boolean {
+	for (const tp of TORCH_POSITIONS) {
+		const dx = x - tp.x;
+		const dz = z - tp.z;
+		if (dx * dx + dz * dz < TORCH_COLLISION_SQ) return true;
+	}
+	return false;
+}
 import { generateCode, classMaxHp, classMaxStamina, ts, bigintSqrt } from './helpers.js';
 
 // ─── Scheduled Tables ─────────────────────────────────────────────────────────
@@ -944,6 +968,9 @@ export const move_player = spacetimedb.reducer(
 		const ARENA_RADIUS_SRV = 50_000n;
 		if (posX * posX + posZ * posZ > ARENA_RADIUS_SRV * ARENA_RADIUS_SRV) return;
 
+		// Reject positions inside torch posts
+		if (hitsTorch(posX, posZ)) return;
+
 		// Reject positions implying faster-than-possible movement (anti-cheat)
 		if (dtMicros > 0n && ps.lastMoveAt) {
 			const CLASS_WALK: Record<string, bigint> = {
@@ -1136,11 +1163,9 @@ export const enemy_tick = spacetimedb.reducer(
 					const magnitude = bigintSqrt(chosenDist);
 					if (magnitude > 0n) {
 						const dir = chosenDist < SPITTER_MIN_DIST_SQ ? -1n : 1n;
-						ctx.db.enemy.id.update({
-							...enemy,
-							posX: enemy.posX + (dir * dx * moveAmount) / magnitude,
-							posZ: enemy.posZ + (dir * dz * moveAmount) / magnitude
-						});
+						const nx = enemy.posX + (dir * dx * moveAmount) / magnitude;
+						const nz = enemy.posZ + (dir * dz * moveAmount) / magnitude;
+						if (!hitsTorch(nx, nz)) ctx.db.enemy.id.update({ ...enemy, posX: nx, posZ: nz });
 					}
 				} else if (
 					enemy.dazedUntil &&
@@ -1171,11 +1196,9 @@ export const enemy_tick = spacetimedb.reducer(
 					const magnitude = bigintSqrt(chosenDist);
 					if (magnitude > 0n) {
 						const dir = chosenDist < CASTER_MIN_DIST_SQ ? -1n : 1n;
-						ctx.db.enemy.id.update({
-							...enemy,
-							posX: enemy.posX + (dir * dx * moveAmount) / magnitude,
-							posZ: enemy.posZ + (dir * dz * moveAmount) / magnitude
-						});
+						const nx = enemy.posX + (dir * dx * moveAmount) / magnitude;
+						const nz = enemy.posZ + (dir * dz * moveAmount) / magnitude;
+						if (!hitsTorch(nx, nz)) ctx.db.enemy.id.update({ ...enemy, posX: nx, posZ: nz });
 					}
 				} else if (
 					enemy.dazedUntil &&
@@ -1237,18 +1260,14 @@ export const enemy_tick = spacetimedb.reducer(
 						// Diagonal strafe: 55% forward + 55% lateral
 						const fwd = BigInt(Math.round(Number(moveAmount) * 0.55));
 						const side = BigInt(Math.round(strafeBias * Number(moveAmount) * 0.55));
-						ctx.db.enemy.id.update({
-							...enemy,
-							posX: enemy.posX + (dx * fwd) / magnitude + (perpX * side) / magnitude,
-							posZ: enemy.posZ + (dz * fwd) / magnitude + (perpZ * side) / magnitude
-						});
+						const nx = enemy.posX + (dx * fwd) / magnitude + (perpX * side) / magnitude;
+						const nz = enemy.posZ + (dz * fwd) / magnitude + (perpZ * side) / magnitude;
+						if (!hitsTorch(nx, nz)) ctx.db.enemy.id.update({ ...enemy, posX: nx, posZ: nz });
 					} else {
 						// Direct charge
-						ctx.db.enemy.id.update({
-							...enemy,
-							posX: enemy.posX + (dx * moveAmount) / magnitude,
-							posZ: enemy.posZ + (dz * moveAmount) / magnitude
-						});
+						const nx = enemy.posX + (dx * moveAmount) / magnitude;
+						const nz = enemy.posZ + (dz * moveAmount) / magnitude;
+						if (!hitsTorch(nx, nz)) ctx.db.enemy.id.update({ ...enemy, posX: nx, posZ: nz });
 					}
 				}
 			} else {
@@ -1311,26 +1330,13 @@ export const spawn_enemy = spacetimedb.reducer(
 		);
 		if (players.length === 0) return;
 
-		// Spawn 360 degrees around a random player
-		const targetPlayer =
-			players[Number(ctx.timestamp.microsSinceUnixEpoch % BigInt(players.length))];
+		// Pick a fixed wall spawn point — cycle through them with some pressure toward
+		// the spawn point closest to the most threatened player
 		const seedBase = ctx.timestamp.microsSinceUnixEpoch + session.mapSeed;
-		const angle = Number(seedBase % 360n); // 0-359 degrees
-		const angleRad = (angle * Math.PI) / 180;
-		const SPAWN_DISTANCE = 35_000n; // 35 units from player
-		const spread = Number((seedBase / 360n) % 10_000n) - 5000; // +-5 units random
-		const dist = Number(SPAWN_DISTANCE) + spread;
-		let spawnX = targetPlayer.posX + BigInt(Math.round(Math.sin(angleRad) * dist));
-		let spawnZ = targetPlayer.posZ + BigInt(Math.round(Math.cos(angleRad) * dist));
-
-		// Clamp spawn to within arena boundary (50 units = 50_000 in backend coords)
-		const ARENA_RADIUS_UNITS = 50_000n;
-		const spawnRSq = spawnX * spawnX + spawnZ * spawnZ;
-		if (spawnRSq > ARENA_RADIUS_UNITS * ARENA_RADIUS_UNITS) {
-			const spawnR = bigintSqrt(spawnRSq);
-			spawnX = (spawnX * ARENA_RADIUS_UNITS) / spawnR;
-			spawnZ = (spawnZ * ARENA_RADIUS_UNITS) / spawnR;
-		}
+		const spawnIdx = Number(seedBase % BigInt(SPAWN_POINT_COUNT));
+		const spawnAngle = ((spawnIdx + 0.5) / SPAWN_POINT_COUNT) * Math.PI * 2; // +0.5 offset matches frontend portal positions
+		const spawnX = BigInt(Math.round(Math.cos(spawnAngle) * WALL_SPAWN_RADIUS));
+		const spawnZ = BigInt(Math.round(Math.sin(spawnAngle) * WALL_SPAWN_RADIUS));
 
 		const baseMultiplier = 100n + session.cycleNumber * 5n;
 		const hpBonus = session.cycleNumber * ENEMY_HP_CYCLE_BONUS;

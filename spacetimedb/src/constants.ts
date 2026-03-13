@@ -54,3 +54,16 @@ export const HEAL_RANGE_SQ = 100_000_000n; // 10 units
 
 export const REVIVE_COOLDOWN_US = 15_000_000n;
 export const REVIVE_CHANNEL_US = 2_000_000n;
+
+// ─── Torch Collision ──────────────────────────────────────────────────────────
+// Must match frontend TORCH_RINGS in GameGround.svelte (radius × 1000 = srv units)
+export const TORCH_RINGS_SRV = [
+	{ count: 12, r: 48_500 },
+	{ count: 7,  r: 33_000 },
+	{ count: 4,  r: 18_000 }
+] as const;
+export const TORCH_COLLISION_SQ = 360_000n; // 0.6 world units radius
+
+// ─── Spawn Points ─────────────────────────────────────────────────────────────
+export const SPAWN_POINT_COUNT = 8;
+export const WALL_SPAWN_RADIUS = 48_500; // world units × 1000, just inside arena wall
