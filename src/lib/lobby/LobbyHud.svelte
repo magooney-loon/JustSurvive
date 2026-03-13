@@ -10,6 +10,7 @@
 	const [lobbies] = useTable(tables.lobby);
 	const [lobbyPlayers] = useTable(tables.lobbyPlayer);
 	const [sessions] = useTable(tables.gameSession);
+	const [lobbyMessages] = useTable(tables.lobbyMessage);
 
 	const myEntry = $derived(
 		$lobbyPlayers.find((p) => p.playerIdentity.toHexString() === $conn.identity?.toHexString())
@@ -486,6 +487,48 @@
 		}, 5000);
 		return () => clearInterval(id);
 	});
+
+	const chatMessages = $derived(
+		currentLobby
+			? [...$lobbyMessages]
+					.filter((m) => m.lobbyId === currentLobby.id)
+					.sort((a, b) => Number(a.id - b.id))
+			: []
+	);
+
+	let chatInput = $state('');
+	let chatEl = $state<HTMLDivElement | null>(null);
+
+	$effect(() => {
+		chatMessages;
+		if (chatEl) chatEl.scrollTop = chatEl.scrollHeight;
+	});
+
+	function sendChat() {
+		const msg = chatInput.trim();
+		if (!msg || !currentLobby) return;
+		lobbyActions.sendMessage(currentLobby.id, msg);
+		chatInput = '';
+	}
+
+	const READY_DEADLINE_MS = 2 * 60 * 1000;
+	let readySecondsLeft = $state(0);
+
+	$effect(() => {
+		if (!currentLobby?.isPublic || myEntry?.isReady) {
+			readySecondsLeft = 0;
+			return;
+		}
+		const joinedAt = myEntry?.joinedAt;
+		if (!joinedAt) return;
+		const deadline = Number(joinedAt.microsSinceUnixEpoch / 1000n) + READY_DEADLINE_MS;
+		function update() {
+			readySecondsLeft = Math.max(0, Math.ceil((deadline - Date.now()) / 1000));
+		}
+		update();
+		const id = setInterval(update, 500);
+		return () => clearInterval(id);
+	});
 </script>
 
 <div
@@ -493,8 +536,10 @@
 	style="position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,0.5); backdrop-filter: blur(8px)"
 >
 	<div
-		style="background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15); border-radius: 1rem; padding: 2rem; min-width: 720px; color: white;"
+		style="background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15); border-radius: 1rem; padding: 2rem; color: white; display: flex; gap: 1.5rem; align-items: flex-start;"
 	>
+		<!-- Left: Lobby panel -->
+		<div style="min-width: 400px; flex: 1;">
 		{#if !currentLobby}
 			<p style="color: rgba(255,255,255,0.6); margin: 0 0 0.5rem;">Connecting to lobby...</p>
 			<p style="color: rgba(255,255,255,0.4); margin: 0 0 1rem; font-size: 0.85rem;">
@@ -783,54 +828,109 @@
 				Leave Lobby
 			</button>
 
-			<div
-				style="margin-top: 0.75rem; padding-top: 0.75rem; border-top: 1px solid rgba(255,255,255,0.1);"
-			>
-				<p
-					style="margin: 0 0 0.35rem; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.08em; opacity: 0.5; text-align: center;"
-				>
-					Controls
-				</p>
-				<div style="display: flex; flex-wrap: wrap; gap: 0.35rem; justify-content: center;">
-					<span
-						style="font-size: 0.65rem; padding: 0.2rem 0.4rem; background: rgba(255,255,255,0.1); border-radius: 0.25rem;"
-						>WASD - Move</span
-					>
-					<span
-						style="font-size: 0.65rem; padding: 0.2rem 0.4rem; background: rgba(255,255,255,0.1); border-radius: 0.25rem;"
-						>Shift - Sprint</span
-					>
-					<span
-						style="font-size: 0.65rem; padding: 0.2rem 0.4rem; background: rgba(255,255,255,0.1); border-radius: 0.25rem;"
-						>Mouse - Aim</span
-					>
-				</div>
-			</div>
-
-			<!-- Cycling tips -->
-			<div
-				style="margin-top: 0.6rem; padding: 0.55rem 0.75rem; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); border-radius: 0.5rem; min-height: 2.8rem; position: relative; overflow: hidden;"
-			>
-				{#key tipIndex}
-					{@const tip = TIPS[tipIndex]}
-					<div
-						in:fade={{ duration: 350 }}
-						style="display: flex; flex-direction: column; gap: 0.15rem;"
-					>
-						<span
-							style="font-size: 0.6rem; text-transform: uppercase; letter-spacing: 0.08em; font-weight: 700; color: {tip.color}; opacity: 0.9;"
-							>{tip.tag}</span
-						>
-						<span style="font-size: 0.73rem; color: rgba(255,255,255,0.6); line-height: 1.4;"
-							>{tip.text}</span
-						>
-					</div>
-				{/key}
-			</div>
 
 			{#if lobbyState.error}
 				<p style="color: #f66; margin: 0.75rem 0 0; font-size: 0.875rem;">{lobbyState.error}</p>
 			{/if}
+		{/if}
+		</div>
+
+		<!-- Right: Chat panel -->
+		{#if currentLobby}
+			<div style="width: 260px; flex-shrink: 0; display: flex; flex-direction: column; gap: 0.5rem;">
+				<p style="margin: 0; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.08em; opacity: 0.5;">
+					Lobby Chat
+				</p>
+
+				<!-- Messages -->
+				<div
+					bind:this={chatEl}
+					style="flex: 1; min-height: 200px; max-height: 420px; overflow-y: auto; display: flex; flex-direction: column; gap: 0.35rem; background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.08); border-radius: 0.5rem; padding: 0.6rem;"
+				>
+					{#if chatMessages.length === 0}
+						<p style="margin: 0; color: rgba(255,255,255,0.25); font-size: 0.75rem; text-align: center; padding-top: 0.5rem;">
+							No messages yet
+						</p>
+					{:else}
+						{#each chatMessages as msg (msg.id)}
+							<div style="display: flex; flex-direction: column; gap: 0.1rem;">
+								<span
+									style="font-size: 0.65rem; font-weight: 700; color: {CLASS_COLORS[players.find((p) => p.playerIdentity.toHexString() === msg.playerIdentity.toHexString())?.classChoice ?? ''] ?? 'rgba(255,255,255,0.55)'};"
+								>
+									{msg.playerName}
+								</span>
+								<span style="font-size: 0.78rem; color: rgba(255,255,255,0.8); word-break: break-word; line-height: 1.35;">
+									{msg.message}
+								</span>
+							</div>
+						{/each}
+					{/if}
+				</div>
+
+				<!-- Input -->
+				<div style="display: flex; gap: 0.4rem;">
+					<input
+						type="text"
+						maxlength="200"
+						placeholder="Say something..."
+						bind:value={chatInput}
+						onkeydown={(e) => { if (e.key === 'Enter') sendChat(); }}
+						style="flex: 1; background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.15); border-radius: 0.375rem; padding: 0.4rem 0.6rem; color: white; font-size: 0.8rem; outline: none;"
+					/>
+					<button
+						onclick={sendChat}
+						disabled={!chatInput.trim()}
+						style="padding: 0.4rem 0.7rem; background: rgba(255,255,255,0.12); border: 1px solid rgba(255,255,255,0.2); border-radius: 0.375rem; color: white; cursor: pointer; font-size: 0.8rem; opacity: {chatInput.trim() ? '1' : '0.35'};"
+					>
+						Send
+					</button>
+				</div>
+
+				<!-- Controls -->
+				<div style="padding-top: 0.5rem; border-top: 1px solid rgba(255,255,255,0.08);">
+					<p style="margin: 0 0 0.35rem; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.08em; opacity: 0.5; text-align: center;">Controls</p>
+					<div style="display: flex; flex-wrap: wrap; gap: 0.35rem; justify-content: center;">
+						<span style="font-size: 0.65rem; padding: 0.2rem 0.4rem; background: rgba(255,255,255,0.1); border-radius: 0.25rem;">WASD - Move</span>
+						<span style="font-size: 0.65rem; padding: 0.2rem 0.4rem; background: rgba(255,255,255,0.1); border-radius: 0.25rem;">Shift - Sprint</span>
+						<span style="font-size: 0.65rem; padding: 0.2rem 0.4rem; background: rgba(255,255,255,0.1); border-radius: 0.25rem;">Mouse - Aim</span>
+					</div>
+				</div>
+
+				<!-- Cycling tips -->
+				<div style="padding: 0.55rem 0.6rem; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); border-radius: 0.5rem; min-height: 3.2rem; position: relative; overflow: hidden;">
+					{#key tipIndex}
+						{@const tip = TIPS[tipIndex]}
+						<div in:fade={{ duration: 350 }} style="display: flex; flex-direction: column; gap: 0.15rem;">
+							<span style="font-size: 0.6rem; text-transform: uppercase; letter-spacing: 0.08em; font-weight: 700; color: {tip.color}; opacity: 0.9;">{tip.tag}</span>
+							<span style="font-size: 0.72rem; color: rgba(255,255,255,0.6); line-height: 1.4;">{tip.text}</span>
+						</div>
+					{/key}
+				</div>
+			{#if currentLobby?.isPublic && myEntry && !myEntry.isReady && readySecondsLeft > 0}
+				{@const urgent = readySecondsLeft <= 30}
+				<div
+					style="padding: 0.65rem 0.75rem; border-radius: 0.5rem; border: 1px solid {urgent
+						? 'rgba(255,80,80,0.5)'
+						: 'rgba(255,180,50,0.35)'}; background: {urgent
+						? 'rgba(255,50,50,0.12)'
+						: 'rgba(255,160,30,0.08)'}; display: flex; flex-direction: column; gap: 0.2rem;"
+				>
+					<p
+						style="margin: 0; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.08em; font-weight: 700; color: {urgent
+							? '#f66'
+							: '#ffa530'};"
+					>
+						{urgent ? '⚠ Ready up now!' : '⏱ Ready up deadline'}
+					</p>
+					<p style="margin: 0; font-size: 1.5rem; font-weight: 800; color: {urgent ? '#f55' : '#ffb84d'}; line-height: 1;">
+						{Math.floor(readySecondsLeft / 60)}:{String(readySecondsLeft % 60).padStart(2, '0')}
+					</p>
+					<p style="margin: 0; font-size: 0.68rem; color: rgba(255,255,255,0.45); line-height: 1.3;">
+						You'll be removed if you don't ready up in time.
+					</p>
+				</div>
+			{/if}
+			</div>
 		{/if}
 	</div>
 </div>

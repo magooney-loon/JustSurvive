@@ -115,6 +115,10 @@ export const lobbyActions = {
 			setError(e);
 		}
 	},
+	sendMessage(lobbyId: bigint, message: string) {
+		if (!conn) return;
+		conn.reducers.sendLobbyMessage({ lobbyId, message });
+	},
 	clearError() {
 		lobbyState.error = null;
 	}

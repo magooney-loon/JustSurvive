@@ -78,10 +78,7 @@
 				})
 			: $acidPools.filter((p) => p.sessionId === lobbyState.currentSessionId)
 	);
-	const alivePlayers = $derived(
-		$players.filter((p) => p.sessionId === lobbyState.currentSessionId && p.status === 'alive')
-	);
-	const phase = $derived(devSky.forcedPhase ?? session?.dayPhase ?? 'sunset');
+const phase = $derived(devSky.forcedPhase ?? session?.dayPhase ?? 'sunset');
 
 	const PHASE_SKY = {
 		sunset: {
