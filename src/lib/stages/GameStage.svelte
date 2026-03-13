@@ -19,7 +19,6 @@
 	import { onMount } from 'svelte';
 	import PlayerEntity from '$lib/character/PlayerEntity.svelte';
 	import EnemyEntity from '$lib/character/EnemyEntity.svelte';
-	import EnemyProxyInstances from '$lib/character/enemies/EnemyProxyInstances.svelte';
 	import AcidPoolEntity from '$lib/character/enemies/AcidPoolEntity.svelte';
 	import MarkOverlay from '$lib/character/ui/MarkOverlay.svelte';
 	import GameGround from '$lib/map/GameGround.svelte';
@@ -50,31 +49,24 @@
 		)
 	);
 	const MAX_RENDER_DIST = 80; // world units
-	const NEAR_RENDER_DIST = 40; // world units
-	const NEAR_DIST_SQ = NEAR_RENDER_DIST * NEAR_RENDER_DIST;
 	const MAX_DIST_SQ = MAX_RENDER_DIST * MAX_RENDER_DIST;
 
-	// Single pass over $enemies — avoids two O(n) scans and duplicate BigInt conversions
-	const enemyGroups = $derived.by(() => {
-		const near: (typeof $enemies)[number][] = [];
-		const far: (typeof $enemies)[number][] = [];
+	const visibleEnemies = $derived.by(() => {
+		const result: (typeof $enemies)[number][] = [];
 		for (const e of $enemies) {
 			if (e.sessionId !== lobbyState.currentSessionId) continue;
 			if (!myState) {
-				// No local player yet — show all as near (EnemyEntity handles death anim)
-				near.push(e);
+				result.push(e);
 				continue;
 			}
 			const dx = Number(e.posX) / 1000 - localPos.x;
 			const dz = Number(e.posZ) / 1000 - localPos.z;
 			const d2 = dx * dx + dz * dz;
-			if (d2 <= NEAR_DIST_SQ) {
-				near.push(e);
-			} else if (e.isAlive && d2 <= MAX_DIST_SQ) {
-				far.push(e);
+			if (e.isAlive && d2 <= MAX_DIST_SQ) {
+				result.push(e);
 			}
 		}
-		return { near, far };
+		return result;
 	});
 
 	const livePools = $derived(
@@ -290,12 +282,9 @@
 {/each}
 
 <!-- Enemies (interpolated) -->
-{#each enemyGroups.near as enemy (enemy.id)}
+{#each visibleEnemies as enemy (enemy.id)}
 	<EnemyEntity {enemy} />
 {/each}
-{#if enemyGroups.far.length > 0}
-	<EnemyProxyInstances enemies={enemyGroups.far} />
-{/if}
 
 <!-- Acid pools -->
 {#each livePools as pool (pool.id)}

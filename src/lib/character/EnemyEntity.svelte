@@ -25,7 +25,6 @@
 	let displayX = $state(untrack(() => Number(enemy.posX) / 1000));
 	let displayZ = $state(untrack(() => Number(enemy.posZ) / 1000));
 	let facing = $state(0);
-	let walkPhase = $state(0);
 	let speed = $state(0);
 	let nowMs = $state(Date.now());
 	let deathAt = $state<number | null>(null);
@@ -43,14 +42,6 @@
 
 	const targetX = $derived(Number(enemy.posX) / 1000);
 	const targetZ = $derived(Number(enemy.posZ) / 1000);
-
-	const ENEMY_COLORS: Record<string, string> = {
-		basic: '#c33',
-		fast: '#a4f',
-		brute: '#833',
-		spitter: '#3c3',
-		caster: '#7733cc'
-	};
 
 	let pulse = $state(1);
 	let attackPhase = $state(0);
@@ -82,7 +73,7 @@
 		if (moveSpeed > 0.02) {
 			facing = Math.atan2(dx, dz) + Math.PI;
 		}
-		if (!deathAt) walkPhase += dt * (1.2 + moveSpeed * 2.4);
+		if (!deathAt) speed = moveSpeed;
 		if (!deathAt && speed < 0.8) {
 			attackCycle += dt * 0.85;
 		} else {
@@ -134,41 +125,15 @@
 		/>
 		<T.Group position={[0, downedYOffset, 0]} rotation={[downedTilt, 0, 0]}>
 			{#if enemy.enemyType === 'brute'}
-				<BruteRig
-					color={ENEMY_COLORS[enemy.enemyType] ?? '#c33'}
-					{walkPhase}
-					{speed}
-					{attackPhase}
-				/>
+				<BruteRig {speed} {attackPhase} isDead={dead} />
 			{:else if enemy.enemyType === 'fast'}
-				<FastRig
-					color={ENEMY_COLORS[enemy.enemyType] ?? '#c33'}
-					{walkPhase}
-					{speed}
-					{attackPhase}
-				/>
+				<FastRig {speed} {attackPhase} isDead={dead} />
 			{:else if enemy.enemyType === 'spitter'}
-				<SpitterRig
-					color={ENEMY_COLORS[enemy.enemyType] ?? '#c33'}
-					{walkPhase}
-					{speed}
-					{attackPhase}
-				/>
+				<SpitterRig {speed} {attackPhase} isDead={dead} />
 			{:else if enemy.enemyType === 'caster'}
-				<CasterRig
-					color={ENEMY_COLORS[enemy.enemyType] ?? '#c33'}
-					{walkPhase}
-					{speed}
-					{attackPhase}
-					{beamTimer}
-				/>
+				<CasterRig {speed} {attackPhase} {beamTimer} isDead={dead} />
 			{:else}
-				<BasicRig
-					color={ENEMY_COLORS[enemy.enemyType] ?? '#c33'}
-					{walkPhase}
-					{speed}
-					{attackPhase}
-				/>
+				<BasicRig {speed} {attackPhase} isDead={dead} />
 			{/if}
 		</T.Group>
 
