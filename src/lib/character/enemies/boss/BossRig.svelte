@@ -4,7 +4,10 @@
 	import * as THREE from 'three';
 	import { localPos, bossShake } from '$lib/stores/movement.svelte.js';
 
-	type BossAction = 'zbs_walk' | 'zbs_attack_justiceSwing' | 'gutshot';
+	type BossAction =
+		| 'zbs_phobos.qc_skeleton|zbs_walk'
+		| 'zbs_phobos.qc_skeleton|zbs_attack_justiceSwing'
+		| 'zbs_phobos.qc_skeleton|gutshot';
 
 	type Props = {
 		speed: number;
@@ -20,45 +23,55 @@
 	const SHAKE_FREQ = Math.PI * 1.4;
 	const SHAKE_AMPLITUDE = 0.14;
 
-	const { gltf, actions } = useGltfAnimations<BossAction>();
+	const { gltf, actions, mixer } = useGltfAnimations<BossAction>();
 
-	let currentAction: BossAction = 'zbs_walk';
+	let currentAction: BossAction = 'zbs_phobos.qc_skeleton|zbs_walk';
 	let shakeTimer = 0;
 
-	// Configure one-shots and start walk as soon as actions are ready.
-	// Reading $actions here means this effect re-runs when GLTF finishes loading.
 	$effect(() => {
-		const death = $actions['gutshot'];
-		if (!death) return;
-		death.setLoop(THREE.LoopOnce, 1);
-		death.clampWhenFinished = true;
-
-		const walk = $actions['zbs_walk'];
-		if (!walk) return;
-		walk.play();
+		if (!$gltf) return;
+		console.log('GLTF loaded');
+		console.log('Actions:', $actions);
+		console.log('Keys:', $actions ? Object.keys($actions) : 'none');
 	});
 
-	// Transition between animations whenever isDead / attackPhase / actions change.
-	// IMPORTANT: always read from $actions before any early-return so that this
-	// effect tracks $actions as a dependency and re-runs when the GLTF loads.
+	$effect(() => {
+		for (const key of ['zbs_phobos.qc_skeleton|gutshot'] as BossAction[]) {
+			const action = $actions[key];
+			if (!action) continue;
+			action.setLoop(THREE.LoopOnce, 1);
+			action.clampWhenFinished = true;
+		}
+	});
+
+	$effect(() => {
+		if (!$actions?.['zbs_phobos.qc_skeleton|zbs_walk']) return;
+		$actions['zbs_phobos.qc_skeleton|zbs_walk'].play();
+	});
+
 	$effect(() => {
 		const next: BossAction = isDead
-			? 'gutshot'
+			? 'zbs_phobos.qc_skeleton|gutshot'
 			: attackPhase > 0.3
-				? 'zbs_attack_justiceSwing'
-				: 'zbs_walk';
-		const from = $actions[currentAction];
-		const to = $actions[next];
-		if (!to || from === to) return;
-		to.enabled = true;
-		if (next === 'gutshot') to.reset();
-		if (from) from.crossFadeTo(to, 0.25, true);
-		to.play();
+				? 'zbs_phobos.qc_skeleton|zbs_attack_justiceSwing'
+				: 'zbs_phobos.qc_skeleton|zbs_walk';
+
+		const current = $actions[currentAction];
+		const nextAction = $actions[next];
+		if (!nextAction || current === nextAction) return;
+
+		nextAction.enabled = true;
+		if (next === 'zbs_phobos.qc_skeleton|gutshot') nextAction.reset();
+		if (current) current.crossFadeTo(nextAction, 0.25, true);
+		nextAction.play();
 		currentAction = next;
 	});
 
 	useTask((dt) => {
-		// Camera shake — boss footsteps felt through the ground
+		if (mixer) {
+			mixer.update(dt);
+		}
+
 		const isWalking = !isDead && speed > 0.05;
 		if (isWalking) {
 			shakeTimer += dt;
