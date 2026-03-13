@@ -20,6 +20,7 @@ import {
 	ENEMY_BASE_SPEED,
 	ENEMY_CAP_BY_PLAYERS,
 	MELEE_RANGE,
+	BOSS_MELEE_RANGE,
 	SPITTER_RANGE_SQ,
 	SPITTER_MIN_DIST_SQ,
 	CASTER_RANGE_SQ,
@@ -117,7 +118,6 @@ const DayPhaseJob = table(
 		sessionId: t.u64()
 	}
 );
-
 
 const LobbyAfkJob = table(
 	{
@@ -1292,7 +1292,8 @@ export const enemy_tick = spacetimedb.reducer(
 			}
 
 			// Normal: melee damage or move toward player
-			if (chosenDist <= MELEE_RANGE * MELEE_RANGE && !enemy.isDazed) {
+			const enemyRange = enemy.enemyType === 'boss' ? BOSS_MELEE_RANGE : MELEE_RANGE;
+			if (chosenDist <= enemyRange * enemyRange && !enemy.isDazed) {
 				const damage = enemy.enemyType === 'boss' ? 5n : enemy.enemyType === 'brute' ? 3n : 1n;
 				damageAccum.set(chosen.id, (damageAccum.get(chosen.id) ?? 0n) + damage);
 			} else if (!enemy.isDazed) {
@@ -1478,7 +1479,6 @@ export const advance_day_phase = spacetimedb.reducer(
 		});
 	}
 );
-
 
 // ─── Boss Reducer ─────────────────────────────────────────────────────────────
 

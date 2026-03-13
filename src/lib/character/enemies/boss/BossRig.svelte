@@ -5,19 +5,29 @@
 	import { localPos, bossShake } from '$lib/stores/movement.svelte.js';
 
 	type BossAction =
+		| 'zbs_phobos.qc_skeleton|zbs_idle1'
 		| 'zbs_phobos.qc_skeleton|zbs_walk'
 		| 'zbs_phobos.qc_skeleton|zbs_attack_justiceSwing'
+		| 'zbs_phobos.qc_skeleton|zbs_attack_mahadash'
 		| 'zbs_phobos.qc_skeleton|gutshot';
 
 	type Props = {
 		speed: number;
 		attackPhase?: number;
 		isDead?: boolean;
+		isDazed?: boolean;
 		bossX?: number;
 		bossZ?: number;
 	};
 
-	let { speed, attackPhase = 0, isDead = false, bossX = 0, bossZ = 0 }: Props = $props();
+	let {
+		speed,
+		attackPhase = 0,
+		isDead = false,
+		isDazed = false,
+		bossX = 0,
+		bossZ = 0
+	}: Props = $props();
 
 	const SHAKE_MAX_DIST = 28;
 	const SHAKE_FREQ = Math.PI * 1.4;
@@ -25,15 +35,8 @@
 
 	const { gltf, actions, mixer } = useGltfAnimations<BossAction>();
 
-	let currentAction: BossAction = 'zbs_phobos.qc_skeleton|zbs_walk';
+	let currentAction: BossAction | null = null;
 	let shakeTimer = 0;
-
-	$effect(() => {
-		if (!$gltf) return;
-		console.log('GLTF loaded');
-		console.log('Actions:', $actions);
-		console.log('Keys:', $actions ? Object.keys($actions) : 'none');
-	});
 
 	$effect(() => {
 		for (const key of ['zbs_phobos.qc_skeleton|gutshot'] as BossAction[]) {
@@ -42,26 +45,45 @@
 			action.setLoop(THREE.LoopOnce, 1);
 			action.clampWhenFinished = true;
 		}
+		for (const key of ['zbs_phobos.qc_skeleton|zbs_attack_mahadash'] as BossAction[]) {
+			const action = $actions[key];
+			if (!action) continue;
+			action.setLoop(THREE.LoopOnce, 1);
+			action.clampWhenFinished = true;
+		}
 	});
 
 	$effect(() => {
-		if (!$actions?.['zbs_phobos.qc_skeleton|zbs_walk']) return;
-		$actions['zbs_phobos.qc_skeleton|zbs_walk'].play();
+		if (!currentAction && $actions?.['zbs_phobos.qc_skeleton|zbs_idle1']) {
+			$actions['zbs_phobos.qc_skeleton|zbs_idle1'].play();
+			currentAction = 'zbs_phobos.qc_skeleton|zbs_idle1';
+		}
 	});
 
 	$effect(() => {
 		const next: BossAction = isDead
 			? 'zbs_phobos.qc_skeleton|gutshot'
-			: attackPhase > 0.3
-				? 'zbs_phobos.qc_skeleton|zbs_attack_justiceSwing'
-				: 'zbs_phobos.qc_skeleton|zbs_walk';
+			: isDazed
+				? 'zbs_phobos.qc_skeleton|zbs_attack_mahadash'
+				: attackPhase > 0.3
+					? 'zbs_phobos.qc_skeleton|zbs_attack_justiceSwing'
+					: speed < 0.1
+						? 'zbs_phobos.qc_skeleton|zbs_idle1'
+						: 'zbs_phobos.qc_skeleton|zbs_walk';
 
-		const current = $actions[currentAction];
+		if (currentAction === next) return;
+
+		const current = currentAction ? $actions[currentAction] : null;
 		const nextAction = $actions[next];
-		if (!nextAction || current === nextAction) return;
+		if (!nextAction) return;
 
 		nextAction.enabled = true;
-		if (next === 'zbs_phobos.qc_skeleton|gutshot') nextAction.reset();
+		if (
+			next === 'zbs_phobos.qc_skeleton|gutshot' ||
+			next === 'zbs_phobos.qc_skeleton|zbs_attack_mahadash'
+		) {
+			nextAction.reset();
+		}
 		if (current) current.crossFadeTo(nextAction, 0.25, true);
 		nextAction.play();
 		currentAction = next;

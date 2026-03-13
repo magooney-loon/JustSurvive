@@ -100,6 +100,10 @@
 
 	const DEAD_PERSIST_MS = 4000;
 	const dead = $derived(deathAt !== null);
+	const dazed = $derived(
+		enemy.isDazed &&
+			(enemy.dazedUntil ? Number(enemy.dazedUntil.microsSinceUnixEpoch) / 1000 > nowMs : true)
+	);
 
 	let killedAudio = $state.raw<ThreePosAudio | undefined>(undefined);
 	$effect(() => {
@@ -116,7 +120,11 @@
 </script>
 
 {#if !expired}
-	<T.Group position={[displayX, bossDropY, displayZ]} rotation={[0, facing, 0]} scale={cubicOut(spawnT)}>
+	<T.Group
+		position={[displayX, bossDropY, displayZ]}
+		rotation={[0, facing, 0]}
+		scale={cubicOut(spawnT)}
+	>
 		<PositionalAudio
 			src={`${import.meta.env.BASE_URL}sounds/enemy_killed.mp3`}
 			refDistance={5}
@@ -128,7 +136,14 @@
 		/>
 		<T.Group rotation={[downedTilt, 0, 0]}>
 			{#if enemy.enemyType === 'boss'}
-				<BossRig {speed} {attackPhase} isDead={dead} bossX={displayX} bossZ={displayZ} />
+				<BossRig
+					{speed}
+					{attackPhase}
+					isDead={dead}
+					isDazed={dazed}
+					bossX={displayX}
+					bossZ={displayZ}
+				/>
 			{:else if enemy.enemyType === 'brute'}
 				<BruteRig {speed} {attackPhase} isDead={dead} />
 			{:else if enemy.enemyType === 'fast'}

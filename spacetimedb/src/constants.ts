@@ -12,6 +12,7 @@ export const ENEMY_BASE_SPEED: Record<string, bigint> = {
 export const ENEMY_CAP = 36; // 4-player cap; scales down per player count
 export const ENEMY_CAP_BY_PLAYERS: Record<number, number> = { 1: 12, 2: 18, 3: 27, 4: 36 };
 export const MELEE_RANGE = 2000n;
+export const BOSS_MELEE_RANGE = 8000n; // Boss stops 8 units away (doesn't get behind player)
 export const SPITTER_RANGE_SQ = 144_000_000n; // 12 world units squared
 export const SPITTER_MIN_DIST_SQ = 36_000_000n; // 6 world units — flee closer than this
 export const CASTER_RANGE_SQ = 64_000_000n; // 8 world units squared
@@ -64,39 +65,39 @@ export const REVIVE_CHANNEL_US = 2_000_000n;
 // Must match frontend TORCH_RINGS in GameGround.svelte (radius × 1000 = srv units)
 export const TORCH_RINGS_SRV = [
 	{ count: 12, r: 48_500 },
-	{ count: 7,  r: 33_000 },
-	{ count: 4,  r: 18_000 }
+	{ count: 7, r: 33_000 },
+	{ count: 4, r: 18_000 }
 ] as const;
 export const TORCH_COLLISION_SQ = 640_000n; // 0.8 world units radius
 
 // Fixed torch positions (server units = world × 1000) — hardcoded to avoid float drift
 export const TORCH_POSITIONS_SRV: ReadonlyArray<{ x: bigint; z: bigint }> = [
 	// Wall ring — 12 torches at r=48500
-	{ x:  48500n, z:      0n },
-	{ x:  42002n, z:  24250n },
-	{ x:  24250n, z:  42002n },
-	{ x:      0n, z:  48500n },
-	{ x: -24250n, z:  42002n },
-	{ x: -42002n, z:  24250n },
-	{ x: -48500n, z:      0n },
+	{ x: 48500n, z: 0n },
+	{ x: 42002n, z: 24250n },
+	{ x: 24250n, z: 42002n },
+	{ x: 0n, z: 48500n },
+	{ x: -24250n, z: 42002n },
+	{ x: -42002n, z: 24250n },
+	{ x: -48500n, z: 0n },
 	{ x: -42002n, z: -24250n },
 	{ x: -24250n, z: -42002n },
-	{ x:      0n, z: -48500n },
-	{ x:  24250n, z: -42002n },
-	{ x:  42002n, z: -24250n },
+	{ x: 0n, z: -48500n },
+	{ x: 24250n, z: -42002n },
+	{ x: 42002n, z: -24250n },
 	// Mid ring — 7 torches at r=33000
-	{ x:  33000n, z:      0n },
-	{ x:  20575n, z:  25800n },
-	{ x:  -7343n, z:  32173n },
-	{ x: -29732n, z:  14318n },
+	{ x: 33000n, z: 0n },
+	{ x: 20575n, z: 25800n },
+	{ x: -7343n, z: 32173n },
+	{ x: -29732n, z: 14318n },
 	{ x: -29732n, z: -14318n },
-	{ x:  -7343n, z: -32173n },
-	{ x:  20575n, z: -25800n },
+	{ x: -7343n, z: -32173n },
+	{ x: 20575n, z: -25800n },
 	// Inner ring — 4 torches at r=18000
-	{ x:  18000n, z:      0n },
-	{ x:      0n, z:  18000n },
-	{ x: -18000n, z:      0n },
-	{ x:      0n, z: -18000n },
+	{ x: 18000n, z: 0n },
+	{ x: 0n, z: 18000n },
+	{ x: -18000n, z: 0n },
+	{ x: 0n, z: -18000n }
 ];
 
 // ─── Spawn Points ─────────────────────────────────────────────────────────────
