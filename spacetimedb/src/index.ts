@@ -20,7 +20,9 @@ import {
 	ENEMY_CAP,
 	MELEE_RANGE,
 	SPITTER_RANGE_SQ,
+	SPITTER_MIN_DIST_SQ,
 	CASTER_RANGE_SQ,
+	CASTER_MIN_DIST_SQ,
 	TICK_MS,
 	MAX_ENEMIES_PER_PLAYER,
 	TARGET_JITTER,
@@ -1133,11 +1135,11 @@ export const enemy_tick = spacetimedb.reducer(
 					const moveAmount = (speed * TICK_MS) / 1000n;
 					const magnitude = bigintSqrt(chosenDist);
 					if (magnitude > 0n) {
-						// Spitter always moves straight toward player
+						const dir = chosenDist < SPITTER_MIN_DIST_SQ ? -1n : 1n;
 						ctx.db.enemy.id.update({
 							...enemy,
-							posX: enemy.posX + (dx * moveAmount) / magnitude,
-							posZ: enemy.posZ + (dz * moveAmount) / magnitude
+							posX: enemy.posX + (dir * dx * moveAmount) / magnitude,
+							posZ: enemy.posZ + (dir * dz * moveAmount) / magnitude
 						});
 					}
 				} else if (
@@ -1168,10 +1170,11 @@ export const enemy_tick = spacetimedb.reducer(
 					const moveAmount = (speed * TICK_MS) / 1000n;
 					const magnitude = bigintSqrt(chosenDist);
 					if (magnitude > 0n) {
+						const dir = chosenDist < CASTER_MIN_DIST_SQ ? -1n : 1n;
 						ctx.db.enemy.id.update({
 							...enemy,
-							posX: enemy.posX + (dx * moveAmount) / magnitude,
-							posZ: enemy.posZ + (dz * moveAmount) / magnitude
+							posX: enemy.posX + (dir * dx * moveAmount) / magnitude,
+							posZ: enemy.posZ + (dir * dz * moveAmount) / magnitude
 						});
 					}
 				} else if (
