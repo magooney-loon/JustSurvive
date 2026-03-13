@@ -45,10 +45,21 @@
 		}
 	});
 
+	const hasAliveHealer = $derived(
+		$players.some(
+			(p) =>
+				p.sessionId === lobbyState.currentSessionId &&
+				p.classChoice === 'healer' &&
+				p.status === 'alive' &&
+				p.playerIdentity.toHexString() !== $conn.identity?.toHexString()
+		)
+	);
+	const downerDuration = $derived(hasAliveHealer ? 30 : 5);
+
 	let downedSecondsLeft = $state(30);
 	$effect(() => {
 		if (myState?.status !== 'downed') return;
-		downedSecondsLeft = 30;
+		downedSecondsLeft = downerDuration;
 		const interval = setInterval(() => {
 			downedSecondsLeft = Math.max(0, downedSecondsLeft - 1);
 		}, 1000);
@@ -384,7 +395,7 @@
 					YOU'RE DOWN
 				</h2>
 				<p style="font-size: 1.1rem; color: rgba(255,255,255,0.6); margin: 0;">
-					Waiting for Healer... {downedSecondsLeft}s
+					{hasAliveHealer ? 'Waiting for Healer...' : 'No healer available.'} {downedSecondsLeft}s
 				</p>
 			</div>
 		</div>

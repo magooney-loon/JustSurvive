@@ -184,14 +184,21 @@ function clearLobbyMessages(ctx: any, lobbyId: bigint) {
 function apply_player_damage(ctx: any, sessionId: bigint, ps: any, damage: bigint) {
 	const newHp = ps.hp > damage ? ps.hp - damage : 0n;
 	if (newHp <= 0n && ps.status === 'alive') {
+		const sessionPlayers = [...ctx.db.playerState.player_state_session_id.filter(sessionId)];
+		const hasLiveHealer = sessionPlayers.some(
+			(p) => p.classChoice === 'healer' && p.status === 'alive' && !p.playerIdentity.isEqual(ps.playerIdentity)
+		);
+		const downerDelay = hasLiveHealer ? 30_000_000n : 5_000_000n;
+
 		ctx.db.playerState.id.update({ ...ps, hp: 0n, status: 'downed' });
-		const eliminateAt = ctx.timestamp.microsSinceUnixEpoch + 30_000_000n;
+		const eliminateAt = ctx.timestamp.microsSinceUnixEpoch + downerDelay;
 		ctx.db.eliminateJob.insert({
 			scheduledId: 0n,
 			scheduledAt: ScheduleAt.time(eliminateAt),
 			sessionId,
 			targetIdentity: ps.playerIdentity
 		});
+
 		// Interrupt revive if this player was healing someone
 		for (const c of ctx.db.reviveChannel.revive_channel_session_id.filter(sessionId)) {
 			if (c.healerIdentity.isEqual(ps.playerIdentity)) {

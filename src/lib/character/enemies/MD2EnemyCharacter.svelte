@@ -37,7 +37,7 @@
 		fast: {
 			idle: ['stand'],
 			move: ['run'],
-			attack: ['attack'],
+			attack: ['jump'],
 			death: ['crdeath']
 		},
 		spitter: {
