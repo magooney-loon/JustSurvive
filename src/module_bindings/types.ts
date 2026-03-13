@@ -20,20 +20,26 @@ export const AcidPool = __t.object("AcidPool", {
 });
 export type AcidPool = __Infer<typeof AcidPool>;
 
+export const BossSpawnJob = __t.object("BossSpawnJob", {
+  scheduledId: __t.u64(),
+  scheduledAt: __t.scheduleAt(),
+  sessionId: __t.u64(),
+});
+export type BossSpawnJob = __Infer<typeof BossSpawnJob>;
+
+export const BossTimer = __t.object("BossTimer", {
+  id: __t.u64(),
+  sessionId: __t.u64(),
+  spawnAt: __t.timestamp(),
+});
+export type BossTimer = __Infer<typeof BossTimer>;
+
 export const DayPhaseJob = __t.object("DayPhaseJob", {
   scheduledId: __t.u64(),
   scheduledAt: __t.scheduleAt(),
   sessionId: __t.u64(),
 });
 export type DayPhaseJob = __Infer<typeof DayPhaseJob>;
-
-export const EliminateJob = __t.object("EliminateJob", {
-  scheduledId: __t.u64(),
-  scheduledAt: __t.scheduleAt(),
-  sessionId: __t.u64(),
-  targetIdentity: __t.identity(),
-});
-export type EliminateJob = __Infer<typeof EliminateJob>;
 
 export const Enemy = __t.object("Enemy", {
   id: __t.u64(),
@@ -104,9 +110,16 @@ export const Lobby = __t.object("Lobby", {
   playerCount: __t.u64(),
   maxPlayers: __t.u64(),
   createdAt: __t.timestamp(),
-  hostIdleDeadline: __t.timestamp(),
 });
 export type Lobby = __Infer<typeof Lobby>;
+
+export const LobbyAfkJob = __t.object("LobbyAfkJob", {
+  scheduledId: __t.u64(),
+  scheduledAt: __t.scheduleAt(),
+  lobbyId: __t.u64(),
+  playerIdentity: __t.identity(),
+});
+export type LobbyAfkJob = __Infer<typeof LobbyAfkJob>;
 
 export const LobbyCountdown = __t.object("LobbyCountdown", {
   scheduledId: __t.u64(),
@@ -115,12 +128,15 @@ export const LobbyCountdown = __t.object("LobbyCountdown", {
 });
 export type LobbyCountdown = __Infer<typeof LobbyCountdown>;
 
-export const LobbyIdleJob = __t.object("LobbyIdleJob", {
-  scheduledId: __t.u64(),
-  scheduledAt: __t.scheduleAt(),
+export const LobbyMessage = __t.object("LobbyMessage", {
+  id: __t.u64(),
   lobbyId: __t.u64(),
+  playerIdentity: __t.identity(),
+  playerName: __t.string(),
+  message: __t.string(),
+  sentAt: __t.timestamp(),
 });
-export type LobbyIdleJob = __Infer<typeof LobbyIdleJob>;
+export type LobbyMessage = __Infer<typeof LobbyMessage>;
 
 export const LobbyPlayer = __t.object("LobbyPlayer", {
   id: __t.u64(),
@@ -193,6 +209,10 @@ export const PlayerState = __t.object("PlayerState", {
   markCooldownUntil: __t.option(__t.timestamp()),
   pingCooldownUntil: __t.option(__t.timestamp()),
   bashCooldownUntil: __t.option(__t.timestamp()),
+  adrenalineCooldownUntil: __t.option(__t.timestamp()),
+  lastHealAt: __t.option(__t.timestamp()),
+  healTargetIdentity: __t.option(__t.identity()),
+  lastFlashAt: __t.option(__t.timestamp()),
 });
 export type PlayerState = __Infer<typeof PlayerState>;
 

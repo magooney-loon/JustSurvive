@@ -6,6 +6,7 @@
 import { type Infer as __Infer } from "spacetimedb";
 
 // Import all reducer arg schemas
+import AdrenalineReducer from "../adrenaline_reducer";
 import AttackEnemyReducer from "../attack_enemy_reducer";
 import BraceEndReducer from "../brace_end_reducer";
 import BraceStartReducer from "../brace_start_reducer";
@@ -20,12 +21,14 @@ import MarkEnemyReducer from "../mark_enemy_reducer";
 import MovePlayerReducer from "../move_player_reducer";
 import QuickJoinReducer from "../quick_join_reducer";
 import ReviveStartReducer from "../revive_start_reducer";
+import SendLobbyMessageReducer from "../send_lobby_message_reducer";
 import SetClassReducer from "../set_class_reducer";
 import SetReadyReducer from "../set_ready_reducer";
 import ShieldBashReducer from "../shield_bash_reducer";
 import SpotterFlashReducer from "../spotter_flash_reducer";
 import StartCountdownReducer from "../start_countdown_reducer";
 
+export type AdrenalineParams = __Infer<typeof AdrenalineReducer>;
 export type AttackEnemyParams = __Infer<typeof AttackEnemyReducer>;
 export type BraceEndParams = __Infer<typeof BraceEndReducer>;
 export type BraceStartParams = __Infer<typeof BraceStartReducer>;
@@ -40,6 +43,7 @@ export type MarkEnemyParams = __Infer<typeof MarkEnemyReducer>;
 export type MovePlayerParams = __Infer<typeof MovePlayerReducer>;
 export type QuickJoinParams = __Infer<typeof QuickJoinReducer>;
 export type ReviveStartParams = __Infer<typeof ReviveStartReducer>;
+export type SendLobbyMessageParams = __Infer<typeof SendLobbyMessageReducer>;
 export type SetClassParams = __Infer<typeof SetClassReducer>;
 export type SetReadyParams = __Infer<typeof SetReadyReducer>;
 export type ShieldBashParams = __Infer<typeof ShieldBashReducer>;

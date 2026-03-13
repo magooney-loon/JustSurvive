@@ -19,7 +19,14 @@
 		spotterMark: 0,
 		spotterPing: 0,
 		tankBash: 0,
-		tankBrace: 0
+		tankBrace: 0,
+		// Boss SFX — handled by BossRig.svelte
+		bossFootstep: 0,
+		bossAttack: 0,
+		bossDead: 0,
+		bossDaze: 0,
+		// Boss spawn — global sound
+		bossIntro: 0
 	});
 
 	export const soundActions = {
@@ -71,6 +78,21 @@
 		},
 		playTankBrace() {
 			soundTriggers.tankBrace++;
+		},
+		playBossFootstep() {
+			soundTriggers.bossFootstep++;
+		},
+		playBossAttack() {
+			soundTriggers.bossAttack++;
+		},
+		playBossDead() {
+			soundTriggers.bossDead++;
+		},
+		playBossDaze() {
+			soundTriggers.bossDaze++;
+		},
+		playBossIntro() {
+			soundTriggers.bossIntro++;
 		}
 	};
 </script>
@@ -78,8 +100,8 @@
 <script lang="ts">
 	import { Audio } from '@threlte/extras';
 	import { Audio as ThreeAudio } from 'three';
-	import { settingsState, log } from './settings.svelte.js';
-	import { skyState } from './localGameState.svelte.js';
+	import { settingsState, log } from '$root/settings.svelte.js';
+	import { skyState } from '$lib/stores/sky.svelte.js';
 
 	// Place your audio files in /public/sounds/
 	const base = import.meta.env.BASE_URL;
@@ -97,6 +119,7 @@
 	const SPREE_GODLIKE_URL = `${base}sounds/spree_godlike.mp3`;
 	const SPREE_HUMILIATION_URL = `${base}sounds/spree_humiliation.mp3`;
 	const RAINSTORM_URL = `${base}sounds/rainstorm.mp3`;
+	const BOSS_INTRO_URL = `${base}sounds/boss_intro.mp3`;
 
 	// $state.raw — prevents Svelte 5 from wrapping class instances in a Proxy
 	let ostAudio = $state.raw<ThreeAudio>();
@@ -118,6 +141,7 @@
 	let spreeGodlikeAudio = $state.raw<ThreeAudio>();
 	let spreeHumiliationAudio = $state.raw<ThreeAudio>();
 	let rainstormAudio = $state.raw<ThreeAudio>();
+	let bossIntroAudio = $state.raw<ThreeAudio>();
 
 	// ─── Playback helpers ─────────────────────────────────────────────────────
 
@@ -313,6 +337,10 @@
 		if (soundTriggers.spreeHumiliation > 0 && settingsState.audio.effectsEnabled)
 			playOneShot(spreeHumiliationAudio);
 	});
+	$effect(() => {
+		if (soundTriggers.bossIntro > 0 && settingsState.audio.effectsEnabled)
+			playOneShot(bossIntroAudio);
+	});
 
 	// ─── Animation sounds — single effect handles stop-then-play atomically ──
 
@@ -466,6 +494,14 @@
 	src={SPREE_HUMILIATION_URL}
 	oncreate={(a) => {
 		spreeHumiliationAudio = a;
+	}}
+	userData={{ hideInTree: true, selectable: false }}
+/>
+<Audio
+	src={BOSS_INTRO_URL}
+	oncreate={(a) => {
+		bossIntroAudio = a;
+		log.info('Audio loaded: Boss Intro');
 	}}
 	userData={{ hideInTree: true, selectable: false }}
 />
