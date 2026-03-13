@@ -48,6 +48,7 @@ import MarkEnemyReducer from "./mark_enemy_reducer";
 import MovePlayerReducer from "./move_player_reducer";
 import QuickJoinReducer from "./quick_join_reducer";
 import ReviveStartReducer from "./revive_start_reducer";
+import SendLobbyMessageReducer from "./send_lobby_message_reducer";
 import SetClassReducer from "./set_class_reducer";
 import SetReadyReducer from "./set_ready_reducer";
 import ShieldBashReducer from "./shield_bash_reducer";
@@ -62,6 +63,7 @@ import EnemyRow from "./enemy_table";
 import GameSessionRow from "./game_session_table";
 import GlobalStatsRow from "./global_stats_table";
 import LobbyRow from "./lobby_table";
+import LobbyMessageRow from "./lobby_message_table";
 import LobbyPlayerRow from "./lobby_player_table";
 import LobbyResultRow from "./lobby_result_table";
 import LobbyResultPlayerRow from "./lobby_result_player_table";
@@ -144,6 +146,20 @@ const tablesSchema = __schema({
       { name: 'lobby_id_key', constraint: 'unique', columns: ['id'] },
     ],
   }, LobbyRow),
+  lobbyMessage: __table({
+    name: 'lobby_message',
+    indexes: [
+      { name: 'id', algorithm: 'btree', columns: [
+        'id',
+      ] },
+      { name: 'lobby_message_lobby_id', algorithm: 'btree', columns: [
+        'lobbyId',
+      ] },
+    ],
+    constraints: [
+      { name: 'lobby_message_id_key', constraint: 'unique', columns: ['id'] },
+    ],
+  }, LobbyMessageRow),
   lobbyPlayer: __table({
     name: 'lobby_player',
     indexes: [
@@ -275,6 +291,7 @@ const reducersSchema = __reducers(
   __reducerSchema("move_player", MovePlayerReducer),
   __reducerSchema("quick_join", QuickJoinReducer),
   __reducerSchema("revive_start", ReviveStartReducer),
+  __reducerSchema("send_lobby_message", SendLobbyMessageReducer),
   __reducerSchema("set_class", SetClassReducer),
   __reducerSchema("set_ready", SetReadyReducer),
   __reducerSchema("shield_bash", ShieldBashReducer),

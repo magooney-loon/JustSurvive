@@ -12,11 +12,9 @@ import {
 
 export default __t.row({
   id: __t.u64().primaryKey(),
-  hostIdentity: __t.identity().name("host_identity"),
-  code: __t.string(),
-  isPublic: __t.bool().name("is_public"),
-  status: __t.string(),
-  playerCount: __t.u64().name("player_count"),
-  maxPlayers: __t.u64().name("max_players"),
-  createdAt: __t.timestamp().name("created_at"),
+  lobbyId: __t.u64().name("lobby_id"),
+  playerIdentity: __t.identity().name("player_identity"),
+  playerName: __t.string().name("player_name"),
+  message: __t.string(),
+  sentAt: __t.timestamp().name("sent_at"),
 });

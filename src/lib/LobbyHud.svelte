@@ -22,7 +22,9 @@
 		currentLobby?.hostIdentity.toHexString() === $conn.identity?.toHexString()
 	);
 	const allReady = $derived(
-		players.length >= 1 && players.every((p) => p.isReady && p.classChoice)
+		currentLobby?.isPublic
+			? players.length >= 2 && players.every((p) => p.isReady && p.classChoice)
+			: players.length >= 1 && players.every((p) => p.isReady && p.classChoice)
 	);
 	const gameStarting = $derived(
 		currentLobby?.status === 'countdown' || currentLobby?.status === 'in_progress'
@@ -311,30 +313,6 @@
 
 	let countdownValue = $state(3);
 	let connectingCountdown = $state(10);
-	let idleSecsLeft = $state(120);
-
-	const hostEntry = $derived(
-		currentLobby
-			? players.find(
-					(p) => p.playerIdentity.toHexString() === currentLobby.hostIdentity.toHexString()
-				)
-			: null
-	);
-	const hostNotReady = $derived(
-		!!currentLobby && currentLobby.status === 'waiting' && !hostEntry?.isReady
-	);
-	const isSolo = $derived(players.length <= 1);
-
-	$effect(() => {
-		if (!hostNotReady || !currentLobby) return;
-		const deadline = Number(currentLobby.hostIdleDeadline.microsSinceUnixEpoch / 1000n);
-		const update = () => {
-			idleSecsLeft = Math.max(0, Math.ceil((deadline - Date.now()) / 1000));
-		};
-		update();
-		const interval = setInterval(update, 1000);
-		return () => clearInterval(interval);
-	});
 
 	$effect(() => {
 		if (!currentLobby && gameState.currentLobbyId === null) {
@@ -574,20 +552,22 @@
 						>
 							{player.isReady ? '✓ Ready' : 'Not Ready'}
 						</span>
-						{#if player.playerIdentity.toHexString() === currentLobby?.hostIdentity.toHexString()}
-							<span title="Host" style="font-size: 0.85rem;">👑</span>
-						{:else if isHost}
-							<button
-								onclick={() => {
-									soundActions.playClick();
-									gameActions.kickPlayer(currentLobby.id, player.playerIdentity);
-								}}
-								disabled={gameStarting}
-								title="Kick player"
-								style="padding: 0.15rem 0.4rem; font-size: 0.7rem; background: rgba(220,50,50,0.2); border: 1px solid rgba(220,50,50,0.4); border-radius: 0.25rem; color: #f88; cursor: {gameStarting
-									? 'not-allowed'
-									: 'pointer'}; opacity: {gameStarting ? '0.4' : '1'};">Kick</button
-							>
+						{#if !currentLobby?.isPublic}
+							{#if player.playerIdentity.toHexString() === currentLobby?.hostIdentity.toHexString()}
+								<span title="Host" style="font-size: 0.85rem;">👑</span>
+							{:else if isHost}
+								<button
+									onclick={() => {
+										soundActions.playClick();
+										gameActions.kickPlayer(currentLobby.id, player.playerIdentity);
+									}}
+									disabled={gameStarting}
+									title="Kick player"
+									style="padding: 0.15rem 0.4rem; font-size: 0.7rem; background: rgba(220,50,50,0.2); border: 1px solid rgba(220,50,50,0.4); border-radius: 0.25rem; color: #f88; cursor: {gameStarting
+										? 'not-allowed'
+										: 'pointer'}; opacity: {gameStarting ? '0.4' : '1'};">Kick</button
+								>
+							{/if}
 						{/if}
 					</div>
 				{/each}
@@ -600,46 +580,6 @@
 				{/each}
 			</div>
 
-			<!-- Idle host warning -->
-			{#if hostNotReady}
-				{@const urgent = idleSecsLeft <= 30}
-				{@const critical = idleSecsLeft <= 10}
-				<div
-					style="margin-bottom: 1rem; padding: 0.6rem 0.85rem; border-radius: 0.5rem;
-					background: {critical
-						? 'rgba(220,50,50,0.18)'
-						: urgent
-							? 'rgba(220,120,30,0.18)'
-							: 'rgba(255,255,255,0.06)'};
-					border: 1px solid {critical
-						? 'rgba(220,50,50,0.4)'
-						: urgent
-							? 'rgba(220,120,30,0.4)'
-							: 'rgba(255,255,255,0.1)'};
-					display: flex; align-items: center; justify-content: space-between; gap: 0.5rem;"
-				>
-					<span
-						style="font-size: 0.78rem; color: {critical
-							? '#f88'
-							: urgent
-								? '#fc8'
-								: 'rgba(255,255,255,0.5)'};"
-					>
-						{#if isHost}
-							{isSolo ? '⚠ Ready up or lobby will close' : '⚠ Ready up or host will transfer'}
-						{:else}
-							{isSolo ? '⚠ Host idle — lobby will close' : '⚠ Host idle — will be reassigned'}
-						{/if}
-					</span>
-					<span
-						style="font-size: 0.85rem; font-weight: 700; font-variant-numeric: tabular-nums;
-						color: {critical ? '#f66' : urgent ? '#fa0' : 'rgba(255,255,255,0.4)'};"
-					>
-						{idleSecsLeft}s
-					</span>
-				</div>
-			{/if}
-
 			<!-- Class selector -->
 			<div style="margin-bottom: 1.25rem;">
 				<p
@@ -651,14 +591,15 @@
 					{#each CLASSES as cls}
 						{@const isFull = classCounts[cls] >= 2}
 						{@const isSelected = myEntry?.classChoice === cls}
+						{@const classLocked = isFull || currentLobby?.status !== 'waiting' || (currentLobby?.isPublic && !!myEntry?.isReady)}
 						<button
 							onclick={() => {
-								if (!isFull) {
+								if (!classLocked) {
 									soundActions.playClick();
 									gameActions.setClass(cls, currentLobby.id);
 								}
 							}}
-							disabled={isFull || currentLobby?.status !== 'waiting'}
+							disabled={classLocked}
 							style="flex: 1; padding: 0.5rem 0.4rem; border-radius: 0.375rem; border: 1px solid rgba(255,255,255,{isSelected
 								? '0.6'
 								: isFull
@@ -671,7 +612,7 @@
 								? CLASS_COLORS[cls]
 								: isFull
 									? 'rgba(255,255,255,0.3)'
-									: 'white'}; cursor: {isFull || currentLobby?.status !== 'waiting'
+									: 'white'}; cursor: {classLocked
 								? 'not-allowed'
 								: 'pointer'}; transition: background 0.15s, border-color 0.15s; display: flex; flex-direction: column; align-items: center; gap: 0.12rem;"
 						>
@@ -757,26 +698,32 @@
 			</div>
 
 			<!-- Ready toggle -->
+			{@const readyLocked = !myEntry?.classChoice || currentLobby?.status !== 'waiting' || (currentLobby?.isPublic && !!myEntry?.isReady)}
 			<button
 				onclick={() => {
 					soundActions.playClick();
 					gameActions.setReady(currentLobby.id, !myEntry?.isReady);
 				}}
-				disabled={!myEntry?.classChoice || currentLobby?.status !== 'waiting'}
+				disabled={readyLocked}
 				style="width: 100%; padding: 0.65rem; margin-bottom: 0.75rem; border-radius: 0.5rem; border: 1px solid rgba(255,255,255,{myEntry?.isReady
 					? '0.45'
 					: '0.2'}); background: {myEntry?.isReady
 					? 'rgba(74,170,136,0.3)'
-					: 'rgba(255,255,255,0.1)'}; color: white; cursor: {!myEntry?.classChoice ||
-				currentLobby?.status !== 'waiting'
+					: 'rgba(255,255,255,0.1)'}; color: white; cursor: {readyLocked
 					? 'not-allowed'
 					: 'pointer'}; font-weight: 600; font-size: 0.95rem; transition: background 0.15s;"
 			>
-				{myEntry?.isReady ? '✓ Ready' : 'Ready Up'}
+				{myEntry?.isReady ? '✓ Locked In' : 'Ready Up'}
 			</button>
 
-			<!-- Host start button -->
-			{#if isHost}
+			<!-- Start area -->
+			{#if currentLobby?.isPublic}
+				<p
+					style="text-align: center; color: rgba(255,255,255,0.45); font-size: 0.875rem; margin: 0 0 0.5rem;"
+				>
+					{gameStarting ? 'Starting...' : allReady ? 'Starting soon...' : 'Game starts when 2+ players are ready'}
+				</p>
+			{:else if isHost}
 				<button
 					onclick={() => {
 						soundActions.playClick();

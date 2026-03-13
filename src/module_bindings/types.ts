@@ -104,9 +104,16 @@ export const Lobby = __t.object("Lobby", {
   playerCount: __t.u64(),
   maxPlayers: __t.u64(),
   createdAt: __t.timestamp(),
-  hostIdleDeadline: __t.timestamp(),
 });
 export type Lobby = __Infer<typeof Lobby>;
+
+export const LobbyAfkJob = __t.object("LobbyAfkJob", {
+  scheduledId: __t.u64(),
+  scheduledAt: __t.scheduleAt(),
+  lobbyId: __t.u64(),
+  playerIdentity: __t.identity(),
+});
+export type LobbyAfkJob = __Infer<typeof LobbyAfkJob>;
 
 export const LobbyCountdown = __t.object("LobbyCountdown", {
   scheduledId: __t.u64(),
@@ -115,12 +122,15 @@ export const LobbyCountdown = __t.object("LobbyCountdown", {
 });
 export type LobbyCountdown = __Infer<typeof LobbyCountdown>;
 
-export const LobbyIdleJob = __t.object("LobbyIdleJob", {
-  scheduledId: __t.u64(),
-  scheduledAt: __t.scheduleAt(),
+export const LobbyMessage = __t.object("LobbyMessage", {
+  id: __t.u64(),
   lobbyId: __t.u64(),
+  playerIdentity: __t.identity(),
+  playerName: __t.string(),
+  message: __t.string(),
+  sentAt: __t.timestamp(),
 });
-export type LobbyIdleJob = __Infer<typeof LobbyIdleJob>;
+export type LobbyMessage = __Infer<typeof LobbyMessage>;
 
 export const LobbyPlayer = __t.object("LobbyPlayer", {
   id: __t.u64(),
