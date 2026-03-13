@@ -5,7 +5,8 @@ export const ENEMY_BASE_SPEED: Record<string, bigint> = {
 	fast: 5200n,
 	brute: 2100n,
 	spitter: 1700n,
-	caster: 1400n
+	caster: 1400n,
+	boss: 600n
 };
 
 export const ENEMY_CAP = 36; // 4-player cap; scales down per player count
@@ -33,8 +34,11 @@ export const ENEMY_HP: Record<string, bigint> = {
 	fast: 50n,
 	brute: 250n,
 	spitter: 100n,
-	caster: 80n
+	caster: 80n,
+	boss: 1500n
 };
+
+export const BOSS_SPAWN_INTERVAL_US = 10_000_000n; // 10 seconds (testing)
 
 export const ENEMY_HP_CYCLE_BONUS = 5n; // +5 HP per cycle
 export const ENEMY_HP_MAX_MULTIPLIER = 300n; // Hard cap at 3x base HP

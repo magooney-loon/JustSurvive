@@ -29,11 +29,12 @@
 	let nowMs = $state(Date.now());
 	let deathAt = $state<number | null>(null);
 
+	const spawnDuration = $derived(enemy.enemyType === 'boss' ? 1800 : 400);
 	let spawnT = $state(
 		untrack(() => {
 			if (!enemy.spawnedAt) return 1;
 			const age = Date.now() - Number(enemy.spawnedAt.microsSinceUnixEpoch) / 1000;
-			return age >= 400 ? 1 : Math.max(0, age / 400);
+			return age >= spawnDuration ? 1 : Math.max(0, age / spawnDuration);
 		})
 	);
 	const spawnTimeMs = $derived(
@@ -52,8 +53,8 @@
 	useTask((dt) => {
 		nowMs = Date.now();
 		const age = nowMs - spawnTimeMs;
-		if (age < 400) {
-			spawnT = Math.min(1, age / 400);
+		if (age < spawnDuration) {
+			spawnT = Math.min(1, age / spawnDuration);
 		} else {
 			spawnT = 1;
 		}
@@ -94,6 +95,8 @@
 		}
 	});
 
+	const bossDropY = $derived(enemy.enemyType === 'boss' ? (1 - spawnT) * 18 : 0);
+
 	const DEAD_PERSIST_MS = 4000;
 	const dead = $derived(deathAt !== null);
 
@@ -112,7 +115,7 @@
 </script>
 
 {#if !expired}
-	<T.Group position={[displayX, 0, displayZ]} rotation={[0, facing, 0]} scale={cubicOut(spawnT)}>
+	<T.Group position={[displayX, bossDropY, displayZ]} rotation={[0, facing, 0]} scale={cubicOut(spawnT)}>
 		<PositionalAudio
 			src={`${import.meta.env.BASE_URL}sounds/enemy_killed.mp3`}
 			refDistance={5}
@@ -123,7 +126,37 @@
 			}}
 		/>
 		<T.Group rotation={[downedTilt, 0, 0]}>
-			{#if enemy.enemyType === 'brute'}
+			{#if enemy.enemyType === 'boss'}
+				<!-- Boss: simple geometry stub — large dark monolith -->
+				<T.Mesh position={[0, 2, 0]} castShadow>
+					<T.BoxGeometry args={[2.4, 4, 2.4]} />
+					<T.MeshStandardMaterial
+						color={dead ? '#1a0000' : '#1e0a2a'}
+						emissive={dead ? '#000' : '#5a0020'}
+						emissiveIntensity={dead ? 0 : 0.4 + attackPhase * 0.5}
+						roughness={0.3}
+						metalness={0.6}
+					/>
+				</T.Mesh>
+				<T.Mesh position={[-1.4, 3.2, 0]} castShadow>
+					<T.ConeGeometry args={[0.5, 1.4, 6]} />
+					<T.MeshStandardMaterial color="#2a0a3a" emissive="#3a001a" emissiveIntensity={0.3} />
+				</T.Mesh>
+				<T.Mesh position={[1.4, 3.2, 0]} castShadow>
+					<T.ConeGeometry args={[0.5, 1.4, 6]} />
+					<T.MeshStandardMaterial color="#2a0a3a" emissive="#3a001a" emissiveIntensity={0.3} />
+				</T.Mesh>
+				{#if !dead}
+					<T.Mesh position={[-0.45, 3.6, 1.21]}>
+						<T.SphereGeometry args={[0.18, 8, 8]} />
+						<T.MeshBasicMaterial color="#ff2244" />
+					</T.Mesh>
+					<T.Mesh position={[0.45, 3.6, 1.21]}>
+						<T.SphereGeometry args={[0.18, 8, 8]} />
+						<T.MeshBasicMaterial color="#ff2244" />
+					</T.Mesh>
+				{/if}
+			{:else if enemy.enemyType === 'brute'}
 				<BruteRig {speed} {attackPhase} isDead={dead} />
 			{:else if enemy.enemyType === 'fast'}
 				<FastRig {speed} {attackPhase} isDead={dead} />

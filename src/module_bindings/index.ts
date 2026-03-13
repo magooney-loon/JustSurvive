@@ -60,6 +60,7 @@ import StartCountdownReducer from "./start_countdown_reducer";
 
 // Import all table schema definitions
 import AcidPoolRow from "./acid_pool_table";
+import BossTimerRow from "./boss_timer_table";
 import EnemyRow from "./enemy_table";
 import GameSessionRow from "./game_session_table";
 import GlobalStatsRow from "./global_stats_table";
@@ -91,6 +92,20 @@ const tablesSchema = __schema({
       { name: 'acid_pool_id_key', constraint: 'unique', columns: ['id'] },
     ],
   }, AcidPoolRow),
+  bossTimer: __table({
+    name: 'boss_timer',
+    indexes: [
+      { name: 'id', algorithm: 'btree', columns: [
+        'id',
+      ] },
+      { name: 'boss_timer_session_id', algorithm: 'btree', columns: [
+        'sessionId',
+      ] },
+    ],
+    constraints: [
+      { name: 'boss_timer_id_key', constraint: 'unique', columns: ['id'] },
+    ],
+  }, BossTimerRow),
   enemy: __table({
     name: 'enemy',
     indexes: [

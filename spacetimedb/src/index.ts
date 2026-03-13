@@ -13,7 +13,8 @@ import {
 	LobbyResult,
 	LobbyResultPlayer,
 	GlobalStats,
-	SquadRecord
+	SquadRecord,
+	BossTimer
 } from './tables.js';
 import {
 	ENEMY_BASE_SPEED,
@@ -40,7 +41,8 @@ import {
 	TORCH_POSITIONS_SRV,
 	TORCH_COLLISION_SQ,
 	SPAWN_POINT_COUNT,
-	WALL_SPAWN_RADIUS
+	WALL_SPAWN_RADIUS,
+	BOSS_SPAWN_INTERVAL_US
 } from './constants.js';
 
 // Precomputed torch positions (computed once at module load)
@@ -130,6 +132,18 @@ const LobbyAfkJob = table(
 	}
 );
 
+const BossSpawnJob = table(
+	{
+		name: 'boss_spawn_job',
+		scheduled: (): any => fire_boss_spawn
+	},
+	{
+		scheduledId: t.u64().primaryKey().autoInc(),
+		scheduledAt: t.scheduleAt(),
+		sessionId: t.u64()
+	}
+);
+
 const ReviveCompleteJob = table(
 	{
 		name: 'revive_complete_job',
@@ -165,6 +179,7 @@ const spacetimedb = schema({
 	enemyTickJob: EnemyTickJob,
 	enemySpawnJob: EnemySpawnJob,
 	dayPhaseJob: DayPhaseJob,
+	bossSpawnJob: BossSpawnJob,
 	mark: Mark,
 	acidPool: AcidPool,
 	reviveChannel: ReviveChannel,
@@ -173,7 +188,8 @@ const spacetimedb = schema({
 	lobbyResult: LobbyResult,
 	lobbyResultPlayer: LobbyResultPlayer,
 	globalStats: GlobalStats,
-	squadRecord: SquadRecord
+	squadRecord: SquadRecord,
+	bossTimer: BossTimer
 });
 
 export default spacetimedb;
@@ -278,6 +294,9 @@ function end_session(ctx: any, sessionId: bigint) {
 	}
 	for (const c of ctx.db.reviveChannel.revive_channel_session_id.filter(sessionId)) {
 		ctx.db.reviveChannel.id.delete(c.id);
+	}
+	for (const bt of ctx.db.bossTimer.boss_timer_session_id.filter(sessionId)) {
+		ctx.db.bossTimer.id.delete(bt.id);
 	}
 	// Note: PlayerState rows kept until next game starts (game over screen needs them)
 
@@ -865,6 +884,17 @@ export const fire_start_game = spacetimedb.reducer(
 			scheduledAt: ScheduleAt.time(now + 60_000_000n),
 			sessionId: session.id
 		});
+		const bossSpawnAt = now + BOSS_SPAWN_INTERVAL_US;
+		ctx.db.bossSpawnJob.insert({
+			scheduledId: 0n,
+			scheduledAt: ScheduleAt.time(bossSpawnAt),
+			sessionId: session.id
+		});
+		ctx.db.bossTimer.insert({
+			id: 0n,
+			sessionId: session.id,
+			spawnAt: ts(bossSpawnAt)
+		});
 	}
 );
 
@@ -1077,6 +1107,19 @@ export const enemy_tick = spacetimedb.reducer(
 		for (const e of ctx.db.enemy.enemy_session_id.filter(arg.sessionId)) {
 			if (!e.isAlive && e.diedAt && now - e.diedAt.microsSinceUnixEpoch >= DEAD_CLEANUP_MS) {
 				ctx.db.enemy.id.delete(e.id);
+				if (e.enemyType === 'boss') {
+					const nextBossAt = now + BOSS_SPAWN_INTERVAL_US;
+					ctx.db.bossSpawnJob.insert({
+						scheduledId: 0n,
+						scheduledAt: ScheduleAt.time(nextBossAt),
+						sessionId: arg.sessionId
+					});
+					ctx.db.bossTimer.insert({
+						id: 0n,
+						sessionId: arg.sessionId,
+						spawnAt: ts(nextBossAt)
+					});
+				}
 			}
 		}
 		const BRACE_MAX_US = 5_000_000n;
@@ -1250,7 +1293,7 @@ export const enemy_tick = spacetimedb.reducer(
 
 			// Normal: melee damage or move toward player
 			if (chosenDist <= MELEE_RANGE * MELEE_RANGE && !enemy.isDazed) {
-				const damage = enemy.enemyType === 'brute' ? 3n : 1n;
+				const damage = enemy.enemyType === 'boss' ? 5n : enemy.enemyType === 'brute' ? 3n : 1n;
 				damageAccum.set(chosen.id, (damageAccum.get(chosen.id) ?? 0n) + damage);
 			} else if (!enemy.isDazed) {
 				const ageSec = enemy.spawnedAt
@@ -1436,6 +1479,56 @@ export const advance_day_phase = spacetimedb.reducer(
 	}
 );
 
+
+// ─── Boss Reducer ─────────────────────────────────────────────────────────────
+
+export const fire_boss_spawn = spacetimedb.reducer(
+	{ arg: BossSpawnJob.rowType },
+	(ctx, { arg }) => {
+		const session = ctx.db.gameSession.id.find(arg.sessionId);
+		if (!session || session.status !== 'active') return;
+
+		// Only spawn if no boss is currently alive
+		for (const e of ctx.db.enemy.enemy_session_id.filter(arg.sessionId)) {
+			if (e.enemyType === 'boss' && e.isAlive) return;
+		}
+
+		// Kill all existing non-boss enemies
+		const now = ctx.timestamp.microsSinceUnixEpoch;
+		for (const e of ctx.db.enemy.enemy_session_id.filter(arg.sessionId)) {
+			if (e.isAlive && e.enemyType !== 'boss') {
+				ctx.db.enemy.id.update({ ...e, isAlive: false, diedAt: ts(now) });
+			}
+		}
+
+		// Delete the countdown timer
+		for (const bt of ctx.db.bossTimer.boss_timer_session_id.filter(arg.sessionId)) {
+			ctx.db.bossTimer.id.delete(bt.id);
+		}
+
+		const bossHp = ENEMY_HP['boss'];
+		const bossSpeed = ENEMY_BASE_SPEED['boss'];
+
+		ctx.db.enemy.insert({
+			id: 0n,
+			sessionId: arg.sessionId,
+			enemyType: 'boss',
+			hp: bossHp,
+			maxHp: bossHp,
+			posX: 0n,
+			posZ: 0n,
+			speedMultiplier: bossSpeed,
+			isDazed: false,
+			dazedUntil: undefined,
+			isAlive: true,
+			isMarked: false,
+			markedUntil: undefined,
+			lastSpitAt: undefined,
+			diedAt: undefined,
+			spawnedAt: ts(ctx.timestamp.microsSinceUnixEpoch)
+		});
+	}
+);
 
 // ─── Phase 4 Reducers ─────────────────────────────────────────────────────────
 

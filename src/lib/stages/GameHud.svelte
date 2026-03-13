@@ -2,15 +2,17 @@
 	import { fly } from 'svelte/transition';
 	import { useSpacetimeDB, useTable } from 'spacetimedb/svelte';
 	import { tables } from '$bindings/index.js';
+	import type { Enemy } from '$bindings/types.js';
 	import { lobbyState } from '$lib/stores/lobby.svelte.js';
 	import { stageActions } from '$root/stage.svelte.js';
-	import { soundActions } from '$root/Sound.svelte';
 	import { abilityState } from '$lib/stores/abilities.svelte.js';
 	import ReviveChannelHud from '$lib/character/ui/ReviveChannelHud.svelte';
 
 	const conn = useSpacetimeDB();
 	const [players] = useTable(tables.playerState);
 	const [sessions] = useTable(tables.gameSession);
+	const [enemies] = useTable(tables.enemy);
+	const [bossTimers] = useTable(tables.bossTimer);
 
 	const session = $derived($sessions.find((s) => s.id === lobbyState.currentSessionId));
 	const myState = $derived(
@@ -27,6 +29,19 @@
 				p.sessionId === lobbyState.currentSessionId
 		)
 	);
+	const boss = $derived(
+		$enemies.find(
+			(e) => e.sessionId === lobbyState.currentSessionId && e.enemyType === 'boss' && e.isAlive
+		) as Enemy | undefined
+	);
+	const bossTimer = $derived(
+		$bossTimers.find((bt) => bt.sessionId === lobbyState.currentSessionId)
+	);
+	const bossSecsLeft = $derived(() => {
+		if (!bossTimer) return 0;
+		const spawnMs = Number(bossTimer.spawnAt.microsSinceUnixEpoch) / 1000;
+		return Math.max(0, Math.ceil((spawnMs - now) / 1000));
+	});
 
 	const DAY_PHASE_LABELS: Record<string, string> = {
 		sunset: 'Sunset',
@@ -150,29 +165,13 @@
 </script>
 
 <div transition:fly={{ x: -20, duration: 300 }}>
-	<!-- Settings button — top left -->
-	<button
-		onclick={() => {
-			soundActions.playClick();
-			stageActions.setStage('settings');
-		}}
-		style="position: absolute; top: 1.25rem; left: 1.25rem; padding: 0.35rem 0.75rem;
-		       background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.15);
-		       border-radius: 0.5rem; color: rgba(255,255,255,0.6); font-size: 0.8rem;
-		       cursor: pointer; backdrop-filter: blur(6px); transition: background 0.15s;"
-		onmouseenter={(e) => (e.currentTarget.style.background = 'rgba(255,255,255,0.14)')}
-		onmouseleave={(e) => (e.currentTarget.style.background = 'rgba(255,255,255,0.07)')}
-	>
-		Settings
-	</button>
-
-	<!-- Day phase indicator — top center -->
+	<!-- Day phase indicator — top left -->
 	<div
 		style="
-		position: absolute; top: 1.25rem; left: 50%; transform: translateX(-50%);
+		position: absolute; top: 1.25rem; left: 1.25rem;
 		background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15);
-		padding: 0.4rem 1.25rem; border-radius: 999px; color: white;
-		font-size: 0.9rem; font-weight: 500; white-space: nowrap;
+		padding: 0.5rem 1.1rem; border-radius: 999px; color: white;
+		font-size: 1rem; font-weight: 500; white-space: nowrap;
 		backdrop-filter: blur(6px);
 	"
 	>
@@ -184,19 +183,61 @@
 		{/if}
 	</div>
 
+	<!-- Boss — top center: countdown or HP bar -->
+	{#if boss}
+		<div
+			style="
+			position: absolute; top: 1.25rem; left: 50%; transform: translateX(-50%);
+			background: rgba(20,0,10,0.85); border: 2px solid #aa1133;
+			padding: 0.6rem 1.5rem; border-radius: 0.75rem; min-width: 280px;
+			backdrop-filter: blur(8px); text-align: center;
+			box-shadow: 0 0 24px #aa113366;
+		"
+		>
+			<div style="font-size: 0.8rem; color: #ff4466; font-weight: 700; letter-spacing: 0.1em; margin-bottom: 0.35rem; text-transform: uppercase;">
+				BOSS
+			</div>
+			<div style="background: rgba(0,0,0,0.5); border-radius: 4px; height: 14px; overflow: hidden;">
+				<div
+					style="background: linear-gradient(90deg, #aa1133, #ff2255); border-radius: 4px; height: 100%;
+					       width: {hpPercent(boss.hp, boss.maxHp)}%; transition: width 0.2s;"
+				></div>
+			</div>
+			<div style="font-size: 0.75rem; color: rgba(255,255,255,0.55); margin-top: 0.25rem;">
+				{Number(boss.hp)} / {Number(boss.maxHp)}
+			</div>
+		</div>
+	{:else if bossTimer}
+		<div
+			style="
+			position: absolute; top: 1.25rem; left: 50%; transform: translateX(-50%);
+			background: rgba(10,0,20,0.75); border: 1.5px solid rgba(180,50,80,0.5);
+			padding: 0.5rem 1.4rem; border-radius: 0.75rem;
+			backdrop-filter: blur(8px); text-align: center; white-space: nowrap;
+		"
+		>
+			<span style="font-size: 0.75rem; color: rgba(255,100,130,0.7); font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase;">
+				Boss in
+			</span>
+			<span style="font-size: 1.4rem; font-weight: 800; color: #ff4466; margin-left: 0.5rem; font-variant-numeric: tabular-nums;">
+				{bossSecsLeft()}s
+			</span>
+		</div>
+	{/if}
+
 	<!-- Ability bar — bottom center -->
 	{#if myState && myState.status === 'alive'}
 		{@const slots = abilities()}
 		<div
 			style="
 			position: absolute; bottom: 2.5rem; left: 50%; transform: translateX(-50%);
-			display: flex; gap: 0.75rem; pointer-events: none;
+			display: flex; gap: 0.9rem; pointer-events: none;
 		"
 		>
 			{#each slots as slot}
 				<div
 					style="
-					position: relative; width: 90px; height: 90px;
+					position: relative; width: 110px; height: 110px;
 					background: rgba(255,255,255,0.07);
 					border: 1.5px solid {slot.active ? slot.color : 'rgba(255,255,255,0.18)'};
 					border-radius: 0.625rem; overflow: hidden;
@@ -235,7 +276,7 @@
 					"
 					>
 						<span
-							style="font-size: 0.875rem; font-weight: 600; color: {slot.cdFrac > 0
+							style="font-size: 1rem; font-weight: 600; color: {slot.cdFrac > 0
 								? '#888'
 								: slot.color}; text-align: center; line-height: 1.1;"
 						>
@@ -263,7 +304,7 @@
 	{#if myState}
 		<div
 			style="
-			position: absolute; bottom: 2.5rem; left: 2rem; width: 240px;
+			position: absolute; bottom: 2.5rem; left: 2rem; width: 280px;
 			background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.12);
 			border-radius: 0.75rem; padding: 0.875rem 1rem;
 			backdrop-filter: blur(6px);
@@ -283,7 +324,7 @@
 					>
 				</div>
 				<div
-					style="background: rgba(0,0,0,0.4); border-radius: 4px; height: 10px; overflow: hidden;"
+					style="background: rgba(0,0,0,0.4); border-radius: 4px; height: 12px; overflow: hidden;"
 				>
 					<div
 						style="background: #e44; border-radius: 4px; height: 100%; width: {hpPercent(
@@ -304,7 +345,7 @@
 					>
 				</div>
 				<div
-					style="background: rgba(0,0,0,0.4); border-radius: 4px; height: 7px; overflow: hidden;"
+					style="background: rgba(0,0,0,0.4); border-radius: 4px; height: 9px; overflow: hidden;"
 				>
 					<div
 						style="background: #4af; border-radius: 4px; height: 100%; width: {hpPercent(
@@ -315,7 +356,7 @@
 				</div>
 			</div>
 			<!-- Score -->
-			<div style="font-size: 1rem; font-weight: 700; color: #ffd060;">
+			<div style="font-size: 1.15rem; font-weight: 700; color: #ffd060;">
 				{Number(myState.score).toLocaleString()} pts
 			</div>
 		</div>
@@ -329,9 +370,9 @@
 			<div
 				style="
 				background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.12);
-				padding: 0.5rem 0.75rem; border-radius: 0.5rem; font-size: 0.85rem;
+				padding: 0.5rem 0.75rem; border-radius: 0.5rem; font-size: 1rem;
 				color: {p.status === 'downed' ? '#f66' : 'rgba(255,255,255,0.85)'};
-				backdrop-filter: blur(6px); min-width: 160px;
+				backdrop-filter: blur(6px); min-width: 200px;
 			"
 			>
 				<div style="display: flex; align-items: center; gap: 0.5rem;">

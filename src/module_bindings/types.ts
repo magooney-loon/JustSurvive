@@ -20,6 +20,20 @@ export const AcidPool = __t.object("AcidPool", {
 });
 export type AcidPool = __Infer<typeof AcidPool>;
 
+export const BossSpawnJob = __t.object("BossSpawnJob", {
+  scheduledId: __t.u64(),
+  scheduledAt: __t.scheduleAt(),
+  sessionId: __t.u64(),
+});
+export type BossSpawnJob = __Infer<typeof BossSpawnJob>;
+
+export const BossTimer = __t.object("BossTimer", {
+  id: __t.u64(),
+  sessionId: __t.u64(),
+  spawnAt: __t.timestamp(),
+});
+export type BossTimer = __Infer<typeof BossTimer>;
+
 export const DayPhaseJob = __t.object("DayPhaseJob", {
   scheduledId: __t.u64(),
   scheduledAt: __t.scheduleAt(),

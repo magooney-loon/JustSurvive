@@ -267,6 +267,28 @@ export const LobbyMessage = table(
 	}
 );
 
+// ─── Boss Tables ──────────────────────────────────────────────────────────────
+
+export const BossTimer = table(
+	{
+		name: 'boss_timer',
+		public: true,
+		indexes: [
+			{
+				name: 'boss_timer_session_id',
+				accessor: 'boss_timer_session_id',
+				algorithm: 'btree',
+				columns: ['sessionId']
+			}
+		]
+	},
+	{
+		id: t.u64().primaryKey().autoInc(),
+		sessionId: t.u64(),
+		spawnAt: t.timestamp()
+	}
+);
+
 // ─── Leaderboard Tables ───────────────────────────────────────────────────────
 
 export const LobbyResult = table(
