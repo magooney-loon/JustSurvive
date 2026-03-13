@@ -3,11 +3,11 @@
 	import { PositionalAudio } from '@threlte/extras';
 	import { PositionalAudio as ThreePosAudio } from 'three';
 	import { useSpacetimeDB, useTable } from 'spacetimedb/svelte';
-	import { tables } from '../module_bindings/index.js';
-	import { gameState } from '../game.svelte.js';
-	import { localPos } from '../localGameState.svelte.js';
-	import { soundTriggers, soundActions } from '../Sound.svelte';
-	import { settingsState } from '../settings.svelte.js';
+	import { tables } from '../../module_bindings/index.js';
+	import { gameState } from '../stores/game.svelte.js';
+	import { localPos } from '../stores/localGameState.svelte.js';
+	import { soundTriggers, soundActions } from '../../Sound.svelte';
+	import { settingsState } from '../../settings.svelte.js';
 
 	const conn = useSpacetimeDB();
 	const [players] = useTable(tables.playerState);

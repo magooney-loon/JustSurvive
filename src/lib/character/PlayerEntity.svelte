@@ -12,11 +12,11 @@
 <script lang="ts">
 	import { T, useTask } from '@threlte/core';
 	import { useTexture } from '@threlte/extras';
-	import type { PlayerState } from '../module_bindings/types.js';
+	import type { PlayerState } from '../../module_bindings/types.js';
 	import AimReticle from './AimReticle.svelte';
 	import StickRig from './StickRig.svelte';
 	import { RepeatWrapping } from 'three';
-	import { shotFlash, SHOT_FLASH_MS } from '../localGameState.svelte.js';
+	import { shotFlash, SHOT_FLASH_MS } from '../stores/localGameState.svelte.js';
 
 	const base = import.meta.env.BASE_URL;
 

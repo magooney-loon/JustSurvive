@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { useTable, useSpacetimeDB } from 'spacetimedb/svelte';
-	import { tables } from '../module_bindings/index.js';
-	import { gameState } from '../game.svelte.js';
+	import { tables } from '../../module_bindings/index.js';
+	import { gameState } from '../stores/game.svelte.js';
 
 	const conn = useSpacetimeDB();
 	const [channels] = useTable(tables.reviveChannel);

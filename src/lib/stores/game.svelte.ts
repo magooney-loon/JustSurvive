@@ -1,4 +1,4 @@
-import type { DbConnection } from './module_bindings/index.js';
+import type { DbConnection } from '../../module_bindings/index.js';
 import type { Identity } from 'spacetimedb';
 
 export type PlayerClass = 'spotter' | 'gunner' | 'tank' | 'healer';

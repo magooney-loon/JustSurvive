@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { T, useTask, useThrelte } from '@threlte/core';
 	import * as THREE from 'three';
-	import { skyState } from '../localGameState.svelte.js';
+	import { skyState } from '../stores/localGameState.svelte.js';
 
 	const { camera } = useThrelte();
 

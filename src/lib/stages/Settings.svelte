@@ -1,9 +1,9 @@
 <script lang="ts">
 	import { fly } from 'svelte/transition';
-	import { stageActions } from '../stage.svelte.js';
-	import { settingsState, graphicsActions, audioActions, controlsActions } from '../settings.svelte.js';
-	import type { QualityLevel } from '../settings.svelte.js';
-	import { soundActions } from '../Sound.svelte';
+	import { stageActions } from '../../stage.svelte.js';
+	import { settingsState, graphicsActions, audioActions, controlsActions } from '../../settings.svelte.js';
+	import type { QualityLevel } from '../../settings.svelte.js';
+	import { soundActions } from '../../Sound.svelte';
 </script>
 
 <!-- Example: Settings overlay -->

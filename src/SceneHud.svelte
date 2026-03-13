@@ -2,12 +2,12 @@
 	import { fade } from 'svelte/transition';
 	import { stageState } from './stage.svelte.js';
 	import { settingsState } from './settings.svelte.js';
-	import MenuHud from '$lib/MenuHud.svelte';
-	import LobbyHud from '$lib/LobbyHud.svelte';
-	import GameHud from '$lib/GameHud.svelte';
-	import GameOverHud from '$lib/GameOverHud.svelte';
-	import LeaderboardHud from '$lib/LeaderboardHud.svelte';
-	import Settings from '$lib/Settings.svelte';
+	import MenuHud from '$lib/stages/MenuHud.svelte';
+	import LobbyHud from '$lib/lobby/LobbyHud.svelte';
+	import GameHud from '$lib/stages/GameHud.svelte';
+	import GameOverHud from '$lib/stages/GameOverHud.svelte';
+	import LeaderboardHud from '$lib/stages/LeaderboardHud.svelte';
+	import Settings from '$lib/stages/Settings.svelte';
 </script>
 
 <!-- HTML overlay — rendered as a sibling to <Canvas> in App.svelte -->

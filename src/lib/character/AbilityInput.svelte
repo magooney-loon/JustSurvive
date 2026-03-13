@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { useTable, useSpacetimeDB } from 'spacetimedb/svelte';
-	import { tables } from '../module_bindings/index.js';
-	import { gameState, gameActions } from '../game.svelte.js';
+	import { tables } from '../../module_bindings/index.js';
+	import { gameState, gameActions } from '../stores/game.svelte.js';
 	import {
 		localPos,
 		localAim,
@@ -13,8 +13,8 @@
 		spotterFlash,
 		SPOTTER_FLASH_MS,
 		fpsCamera
-	} from '../localGameState.svelte.js';
-	import { soundActions } from '../Sound.svelte';
+	} from '../stores/localGameState.svelte.js';
+	import { soundActions } from '../../Sound.svelte';
 
 	const conn = useSpacetimeDB();
 	const [players] = useTable(tables.playerState);

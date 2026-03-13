@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { T } from '@threlte/core';
 	import { InstancedMesh, Instance } from '@threlte/extras';
-	import type { Enemy } from '../module_bindings/types.js';
+	import type { Enemy } from '../../module_bindings/types.js';
 
 	type Props = { enemies: Enemy[] };
 	let { enemies }: Props = $props();

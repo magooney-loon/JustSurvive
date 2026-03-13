@@ -79,7 +79,7 @@
 	import { Audio } from '@threlte/extras';
 	import { Audio as ThreeAudio } from 'three';
 	import { settingsState, log } from './settings.svelte.js';
-	import { skyState } from './localGameState.svelte.js';
+	import { skyState } from './lib/stores/localGameState.svelte.js';
 
 	// Place your audio files in /public/sounds/
 	const base = import.meta.env.BASE_URL;

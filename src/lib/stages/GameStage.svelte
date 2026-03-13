@@ -1,8 +1,8 @@
 <script lang="ts">
 	import { useTask } from '@threlte/core';
 	import { useSpacetimeDB, useTable } from 'spacetimedb/svelte';
-	import { tables } from '../module_bindings/index.js';
-	import { gameState, gameActions } from '../game.svelte.js';
+	import { tables } from '../../module_bindings/index.js';
+	import { gameState, gameActions } from '../stores/game.svelte.js';
 	import {
 		localPos,
 		localVelocity,
@@ -15,18 +15,18 @@
 		localHealthState,
 		skyState,
 		devSky
-	} from '../localGameState.svelte.js';
+	} from '../stores/localGameState.svelte.js';
 	import { onMount } from 'svelte';
-	import PlayerEntity from './PlayerEntity.svelte';
-	import EnemyEntity from './EnemyEntity.svelte';
-	import EnemyProxyInstances from './EnemyProxyInstances.svelte';
-	import AcidPoolEntity from './AcidPoolEntity.svelte';
-	import MarkOverlay from './MarkOverlay.svelte';
-	import GameGround from './GameGround.svelte';
-	import HealBeam from './HealBeam.svelte';
+	import PlayerEntity from '../character/PlayerEntity.svelte';
+	import EnemyEntity from '../character/EnemyEntity.svelte';
+	import EnemyProxyInstances from '../character/EnemyProxyInstances.svelte';
+	import AcidPoolEntity from '../character/AcidPoolEntity.svelte';
+	import MarkOverlay from '../character/MarkOverlay.svelte';
+	import GameGround from '../map/GameGround.svelte';
+	import HealBeam from '../character/HealBeam.svelte';
 	import GameSounds from './GameSounds.svelte';
-	import RainEffect from './RainEffect.svelte';
-	import SpotterFlashEffect from './SpotterFlashEffect.svelte';
+	import RainEffect from '../map/RainEffect.svelte';
+	import SpotterFlashEffect from '../character/SpotterFlashEffect.svelte';
 
 	const conn = useSpacetimeDB();
 	const [players] = useTable(tables.playerState);

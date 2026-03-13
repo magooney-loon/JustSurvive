@@ -4,7 +4,7 @@
 	import { DbConnection, type ErrorContext } from './module_bindings';
 	import App from './App.svelte';
 	import { log } from './settings.svelte.js';
-	import { gameActions } from './game.svelte.js';
+	import { gameActions } from './lib/stores/game.svelte.js';
 
 	const HOST = import.meta.env.VITE_SPACETIMEDB_HOST ?? 'ws://localhost:3000';
 	const DB_NAME = import.meta.env.VITE_SPACETIMEDB_DB_NAME ?? 'justsurvive-6769';

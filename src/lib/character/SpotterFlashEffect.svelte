@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { T, useTask } from '@threlte/core';
 	import * as THREE from 'three';
-	import { localPos, spotterFlash, SPOTTER_FLASH_MS } from '../localGameState.svelte.js';
+	import { localPos, spotterFlash, SPOTTER_FLASH_MS } from '../stores/localGameState.svelte.js';
 
 	// Build a flat sector geometry (pizza slice): origin + arc vertices
 	function makeSector(radius: number, halfAngle: number, segments: number): THREE.BufferGeometry {

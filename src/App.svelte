@@ -10,8 +10,8 @@
 	import * as THREE from 'three';
 	import { settingsState, generalActions } from './settings.svelte.js';
 	import { stageState } from './stage.svelte.js';
-	import InputHandler from './lib/InputHandler.svelte';
-	import AbilityInput from './lib/AbilityInput.svelte';
+	import InputHandler from './lib/character/InputHandler.svelte';
+	import AbilityInput from './lib/character/AbilityInput.svelte';
 
 	function handleKeydown(e: KeyboardEvent) {
 		// Ctrl+H — toggle HUD visibility

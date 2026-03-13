@@ -7,7 +7,7 @@
 
 <script lang="ts">
 	import { T } from '@threlte/core';
-	import type { AcidPool } from '../module_bindings/types.js';
+	import type { AcidPool } from '../../module_bindings/types.js';
 
 	type Props = { pool: AcidPool };
 	let { pool }: Props = $props();

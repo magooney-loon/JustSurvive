@@ -1,4 +1,4 @@
-import { ARENA_PLAY_RADIUS } from './lib/arenaConfig.js';
+import { ARENA_PLAY_RADIUS } from '../map/arenaConfig.js';
 
 export type InputState = {
 	forward: boolean;

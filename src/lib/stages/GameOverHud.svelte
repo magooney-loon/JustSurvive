@@ -1,10 +1,10 @@
 <script lang="ts">
 	import { fly } from 'svelte/transition';
 	import { useTable } from 'spacetimedb/svelte';
-	import { tables } from '../module_bindings/index.js';
-	import { gameState, gameActions } from '../game.svelte.js';
-	import { stageActions } from '../stage.svelte.js';
-	import { soundActions } from '../Sound.svelte';
+	import { tables } from '../../module_bindings/index.js';
+	import { gameState, gameActions } from '../stores/game.svelte.js';
+	import { stageActions } from '../../stage.svelte.js';
+	import { soundActions } from '../../Sound.svelte';
 
 	const [players] = useTable(tables.playerState);
 

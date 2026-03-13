@@ -12,7 +12,7 @@
 		VignetteEffect
 	} from 'postprocessing';
 	import { settingsState, log } from './settings.svelte.js';
-	import { localHealthState } from './localGameState.svelte.js';
+	import { localHealthState } from './lib/stores/localGameState.svelte.js';
 
 	const { scene, renderer, camera, size, autoRender, renderStage } = useThrelte();
 

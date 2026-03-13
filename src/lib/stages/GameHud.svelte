@@ -1,13 +1,13 @@
 <script lang="ts">
 	import { fly } from 'svelte/transition';
 	import { useSpacetimeDB, useTable } from 'spacetimedb/svelte';
-	import { tables } from '../module_bindings/index.js';
-	import { gameState } from '../game.svelte.js';
-	import { stageActions } from '../stage.svelte.js';
-	import { soundActions } from '../Sound.svelte';
-	import { abilityState } from '../localGameState.svelte.js';
-	import { settingsState } from '../settings.svelte.js';
-	import ReviveChannelHud from './ReviveChannelHud.svelte';
+	import { tables } from '../../module_bindings/index.js';
+	import { gameState } from '../stores/game.svelte.js';
+	import { stageActions } from '../../stage.svelte.js';
+	import { soundActions } from '../../Sound.svelte';
+	import { abilityState } from '../stores/localGameState.svelte.js';
+	import { settingsState } from '../../settings.svelte.js';
+	import ReviveChannelHud from '../character/ReviveChannelHud.svelte';
 
 	const conn = useSpacetimeDB();
 	const [players] = useTable(tables.playerState);

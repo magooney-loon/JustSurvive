@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { input } from '../localGameState.svelte.js';
+	import { input } from '../stores/localGameState.svelte.js';
 
 	const keyMap: Record<string, keyof typeof input> = {
 		KeyW: 'forward',

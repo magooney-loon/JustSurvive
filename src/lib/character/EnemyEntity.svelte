@@ -38,9 +38,9 @@
 	import { PositionalAudio as ThreePosAudio } from 'three';
 	import { untrack } from 'svelte';
 	import { cubicOut } from 'svelte/easing';
-	import type { Enemy } from '../module_bindings/types.js';
+	import type { Enemy } from '../../module_bindings/types.js';
 	import StickRig from './StickRig.svelte';
-	import { settingsState } from '../settings.svelte.js';
+	import { settingsState } from '../../settings.svelte.js';
 
 	type Props = { enemy: Enemy };
 	let { enemy }: Props = $props();
