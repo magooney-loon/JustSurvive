@@ -37,22 +37,14 @@ import {
 	HEAL_RANGE_SQ,
 	REVIVE_COOLDOWN_US,
 	REVIVE_CHANNEL_US,
-	TORCH_RINGS_SRV,
+	TORCH_POSITIONS_SRV,
 	TORCH_COLLISION_SQ,
 	SPAWN_POINT_COUNT,
 	WALL_SPAWN_RADIUS
 } from './constants.js';
 
 // Precomputed torch positions (computed once at module load)
-const TORCH_POSITIONS: Array<{ x: bigint; z: bigint }> = TORCH_RINGS_SRV.flatMap(({ count, r }) =>
-	Array.from({ length: count }, (_, i) => {
-		const angle = (i / count) * Math.PI * 2;
-		return {
-			x: BigInt(Math.round(Math.cos(angle) * r)),
-			z: BigInt(Math.round(Math.sin(angle) * r))
-		};
-	})
-);
+const TORCH_POSITIONS = TORCH_POSITIONS_SRV;
 
 function hitsTorch(x: bigint, z: bigint): boolean {
 	for (const tp of TORCH_POSITIONS) {
@@ -61,6 +53,15 @@ function hitsTorch(x: bigint, z: bigint): boolean {
 		if (dx * dx + dz * dz < TORCH_COLLISION_SQ) return true;
 	}
 	return false;
+}
+
+// Try direct move; if blocked by torch, slide along X or Z axis instead.
+// Returns [newX, newZ] — may equal current pos if fully blocked.
+function enemyMoveAvoid(curX: bigint, curZ: bigint, nx: bigint, nz: bigint): [bigint, bigint] {
+	if (!hitsTorch(nx, nz)) return [nx, nz];
+	if (!hitsTorch(nx, curZ)) return [nx, curZ];
+	if (!hitsTorch(curX, nz)) return [curX, nz];
+	return [curX, curZ];
 }
 import { generateCode, classMaxHp, classMaxStamina, ts, bigintSqrt } from './helpers.js';
 
@@ -968,7 +969,7 @@ export const move_player = spacetimedb.reducer(
 		const ARENA_RADIUS_SRV = 50_000n;
 		if (posX * posX + posZ * posZ > ARENA_RADIUS_SRV * ARENA_RADIUS_SRV) return;
 
-		// Reject positions inside torch posts
+		// Reject positions inside torch collision zones (anti-cheat — client enforces this too)
 		if (hitsTorch(posX, posZ)) return;
 
 		// Reject positions implying faster-than-possible movement (anti-cheat)
@@ -1165,7 +1166,8 @@ export const enemy_tick = spacetimedb.reducer(
 						const dir = chosenDist < SPITTER_MIN_DIST_SQ ? -1n : 1n;
 						const nx = enemy.posX + (dir * dx * moveAmount) / magnitude;
 						const nz = enemy.posZ + (dir * dz * moveAmount) / magnitude;
-						if (!hitsTorch(nx, nz)) ctx.db.enemy.id.update({ ...enemy, posX: nx, posZ: nz });
+						const [ax, az] = enemyMoveAvoid(enemy.posX, enemy.posZ, nx, nz);
+						if (ax !== enemy.posX || az !== enemy.posZ) ctx.db.enemy.id.update({ ...enemy, posX: ax, posZ: az });
 					}
 				} else if (
 					enemy.dazedUntil &&
@@ -1198,7 +1200,8 @@ export const enemy_tick = spacetimedb.reducer(
 						const dir = chosenDist < CASTER_MIN_DIST_SQ ? -1n : 1n;
 						const nx = enemy.posX + (dir * dx * moveAmount) / magnitude;
 						const nz = enemy.posZ + (dir * dz * moveAmount) / magnitude;
-						if (!hitsTorch(nx, nz)) ctx.db.enemy.id.update({ ...enemy, posX: nx, posZ: nz });
+						const [ax, az] = enemyMoveAvoid(enemy.posX, enemy.posZ, nx, nz);
+						if (ax !== enemy.posX || az !== enemy.posZ) ctx.db.enemy.id.update({ ...enemy, posX: ax, posZ: az });
 					}
 				} else if (
 					enemy.dazedUntil &&
@@ -1262,12 +1265,14 @@ export const enemy_tick = spacetimedb.reducer(
 						const side = BigInt(Math.round(strafeBias * Number(moveAmount) * 0.55));
 						const nx = enemy.posX + (dx * fwd) / magnitude + (perpX * side) / magnitude;
 						const nz = enemy.posZ + (dz * fwd) / magnitude + (perpZ * side) / magnitude;
-						if (!hitsTorch(nx, nz)) ctx.db.enemy.id.update({ ...enemy, posX: nx, posZ: nz });
+						const [ax, az] = enemyMoveAvoid(enemy.posX, enemy.posZ, nx, nz);
+						if (ax !== enemy.posX || az !== enemy.posZ) ctx.db.enemy.id.update({ ...enemy, posX: ax, posZ: az });
 					} else {
 						// Direct charge
 						const nx = enemy.posX + (dx * moveAmount) / magnitude;
 						const nz = enemy.posZ + (dz * moveAmount) / magnitude;
-						if (!hitsTorch(nx, nz)) ctx.db.enemy.id.update({ ...enemy, posX: nx, posZ: nz });
+						const [ax, az] = enemyMoveAvoid(enemy.posX, enemy.posZ, nx, nz);
+						if (ax !== enemy.posX || az !== enemy.posZ) ctx.db.enemy.id.update({ ...enemy, posX: ax, posZ: az });
 					}
 				}
 			} else {

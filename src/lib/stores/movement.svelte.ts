@@ -1,4 +1,4 @@
-import { ARENA_PLAY_RADIUS } from '../map/arenaConfig.js';
+import { ARENA_PLAY_RADIUS, TORCH_POSITIONS, TORCH_COLLISION_R } from '../map/arenaConfig.js';
 
 export type InputState = {
 	forward: boolean;
@@ -116,13 +116,32 @@ export function updateLocalMovement(
 		const r = Math.sqrt(rSq);
 		localPos.x = (localPos.x / r) * ARENA_PLAY_RADIUS;
 		localPos.z = (localPos.z / r) * ARENA_PLAY_RADIUS;
-		// Cancel outward velocity component so the player doesn't slide along the wall
 		const nx = localPos.x / ARENA_PLAY_RADIUS;
 		const nz = localPos.z / ARENA_PLAY_RADIUS;
 		const dot = localVelocity.x * nx + localVelocity.z * nz;
 		if (dot > 0) {
 			localVelocity.x -= dot * nx;
 			localVelocity.z -= dot * nz;
+		}
+	}
+
+	// Push player out of torch collision cylinders (slide along surface)
+	for (const torch of TORCH_POSITIONS) {
+		const tdx = localPos.x - torch.x;
+		const tdz = localPos.z - torch.z;
+		const distSq = tdx * tdx + tdz * tdz;
+		if (distSq < TORCH_COLLISION_R * TORCH_COLLISION_R) {
+			const dist = Math.sqrt(distSq) || 0.001;
+			localPos.x = torch.x + (tdx / dist) * TORCH_COLLISION_R;
+			localPos.z = torch.z + (tdz / dist) * TORCH_COLLISION_R;
+			// Cancel inward velocity so player slides around the torch
+			const nx = tdx / dist;
+			const nz = tdz / dist;
+			const dot = localVelocity.x * nx + localVelocity.z * nz;
+			if (dot < 0) {
+				localVelocity.x -= dot * nx;
+				localVelocity.z -= dot * nz;
+			}
 		}
 	}
 }

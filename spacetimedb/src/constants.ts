@@ -62,7 +62,37 @@ export const TORCH_RINGS_SRV = [
 	{ count: 7,  r: 33_000 },
 	{ count: 4,  r: 18_000 }
 ] as const;
-export const TORCH_COLLISION_SQ = 360_000n; // 0.6 world units radius
+export const TORCH_COLLISION_SQ = 640_000n; // 0.8 world units radius
+
+// Fixed torch positions (server units = world × 1000) — hardcoded to avoid float drift
+export const TORCH_POSITIONS_SRV: ReadonlyArray<{ x: bigint; z: bigint }> = [
+	// Wall ring — 12 torches at r=48500
+	{ x:  48500n, z:      0n },
+	{ x:  42002n, z:  24250n },
+	{ x:  24250n, z:  42002n },
+	{ x:      0n, z:  48500n },
+	{ x: -24250n, z:  42002n },
+	{ x: -42002n, z:  24250n },
+	{ x: -48500n, z:      0n },
+	{ x: -42002n, z: -24250n },
+	{ x: -24250n, z: -42002n },
+	{ x:      0n, z: -48500n },
+	{ x:  24250n, z: -42002n },
+	{ x:  42002n, z: -24250n },
+	// Mid ring — 7 torches at r=33000
+	{ x:  33000n, z:      0n },
+	{ x:  20575n, z:  25800n },
+	{ x:  -7343n, z:  32173n },
+	{ x: -29732n, z:  14318n },
+	{ x: -29732n, z: -14318n },
+	{ x:  -7343n, z: -32173n },
+	{ x:  20575n, z: -25800n },
+	// Inner ring — 4 torches at r=18000
+	{ x:  18000n, z:      0n },
+	{ x:      0n, z:  18000n },
+	{ x: -18000n, z:      0n },
+	{ x:      0n, z: -18000n },
+];
 
 // ─── Spawn Points ─────────────────────────────────────────────────────────────
 export const SPAWN_POINT_COUNT = 8;
