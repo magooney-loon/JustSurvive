@@ -180,10 +180,10 @@
 					logAbility.info('SPOTTER: mark enemy', enemy.id);
 				}
 			} else if (e.button === 2) {
-				if (abilityState.flashCooldownUntil > Date.now()) return;
+				if (abilityState.pingCooldownUntil > Date.now()) return;
 				combatActions.spotterFlash(sid);
 				soundActions.playSpotterPing();
-				abilityState.flashCooldownUntil = Date.now() + 1500;
+				abilityState.pingCooldownUntil = Date.now() + 1500;
 				spotterFlash.active = true;
 				spotterFlash.yaw = fpsCamera.yaw;
 				spotterFlash.until = Date.now() + SPOTTER_FLASH_MS;

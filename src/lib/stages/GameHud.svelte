@@ -101,14 +101,14 @@
 					label: 'Mark',
 					input: 'LMB',
 					color: '#22d4ff',
-					cdFrac: Math.max(0, (abilityState.markCooldownUntil - now) / 2000),
+					cdFrac: Math.max(0, (abilityState.markCooldownUntil - now) / 5000),
 					cdMs: 2000
 				},
 				{
 					label: 'Flash',
 					input: 'RMB',
 					color: '#22d4ff',
-					cdFrac: Math.max(0, (abilityState.flashCooldownUntil - now) / 1500),
+					cdFrac: Math.max(0, (abilityState.pingCooldownUntil - now) / 1500),
 					cdMs: 1500
 				}
 			];

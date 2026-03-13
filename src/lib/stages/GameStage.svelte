@@ -22,10 +22,8 @@
 	import AcidPoolEntity from '$lib/character/enemies/AcidPoolEntity.svelte';
 	import MarkOverlay from '$lib/character/ui/MarkOverlay.svelte';
 	import GameGround from '$lib/map/GameGround.svelte';
-	import HealBeam from '$lib/character/healer/HealBeam.svelte';
 	import GameSounds from '$lib/stages/GameSounds.svelte';
 	import RainEffect from '$lib/map/RainEffect.svelte';
-	import SpotterFlashEffect from '$lib/character/enemies/spotter/SpotterFlashEffect.svelte';
 
 	const conn = useSpacetimeDB();
 	const [players] = useTable(tables.playerState);
@@ -292,7 +290,5 @@
 {/each}
 
 <!-- Mark / ping overlays -->
-<HealBeam />
-<SpotterFlashEffect />
 <GameSounds />
 <MarkOverlay />

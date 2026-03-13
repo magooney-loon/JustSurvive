@@ -6,7 +6,7 @@ export const abilityState = $state({
 	bashCooldownUntil: 0, // ms timestamp (tank bash, 1.5s)
 	healCooldownUntil: 0, // ms timestamp (healer heal shot, 2s)
 	braceCooldownUntil: 0, // ms timestamp (tank brace, 1s between activations)
-	flashCooldownUntil: 0, // ms timestamp (spotter flash stun, 1.5s)
+	pingCooldownUntil: 0, // ms timestamp (spotter flash stun, 1.5s)
 	adrenalineCooldownUntil: 0, // ms timestamp (gunner adrenaline, 5s)
 	adrenalineUntil: 0 // ms timestamp — visual effect active during adrenaline
 });
@@ -31,7 +31,7 @@ export function resetAbilities() {
 	abilityState.bashCooldownUntil = 0;
 	abilityState.healCooldownUntil = 0;
 	abilityState.braceCooldownUntil = 0;
-	abilityState.flashCooldownUntil = 0;
+	abilityState.pingCooldownUntil = 0;
 	abilityState.adrenalineCooldownUntil = 0;
 	abilityState.adrenalineUntil = 0;
 	shotFlash.until = 0;
