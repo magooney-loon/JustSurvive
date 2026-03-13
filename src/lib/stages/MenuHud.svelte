@@ -260,7 +260,7 @@
 				<p
 					style="text-align: center; color: rgba(255,255,255,0.5); margin: 0; font-size: 0.875rem;"
 				>
-					Connecting or Kicked...
+					Connecting...
 				</p>
 			{:else if lobbyState.error}
 				<p style="text-align: center; color: #f66; margin: 0; font-size: 0.875rem;">

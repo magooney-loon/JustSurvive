@@ -393,7 +393,7 @@
 		{
 			tag: 'Tip',
 			color: '#adf',
-			text: "If you go down, wait for a teammate to revive you. If all players are downed at once, the game ends."
+			text: 'If you go down, wait for a teammate to revive you. If all players are downed at once, the game ends.'
 		},
 		{
 			tag: 'Tip',
@@ -540,305 +540,310 @@
 	>
 		<!-- Left: Lobby panel -->
 		<div style="min-width: 400px; flex: 1;">
-		{#if !currentLobby}
-			<p style="color: rgba(255,255,255,0.6); margin: 0 0 0.5rem;">Connecting to lobby...</p>
-			<p style="color: rgba(255,255,255,0.4); margin: 0 0 1rem; font-size: 0.85rem;">
-				Canceling in {connectingCountdown}s...
-			</p>
-			<button
-				onclick={() => {
-					soundActions.playClick();
-					lobbyState.currentLobbyId = null;
-					stageActions.setStage('menu');
-				}}
-				style="padding: 0.5rem 1.5rem; background: rgba(255,255,255,0.1); color: white; border: 1px solid rgba(255,255,255,0.2); border-radius: 0.5rem; cursor: pointer;"
-				>Back</button
-			>
-		{:else}
-			<!-- Header -->
-			<div
-				style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;"
-			>
-				<h2 style="margin: 0; font-size: 1.5rem; font-weight: 600;">Lobby</h2>
-				{#if currentLobby?.isPublic}
-					<span
-						style="background: rgba(42,170,85,0.25); border: 1px solid rgba(42,170,85,0.4); padding: 0.2rem 0.7rem; border-radius: 999px; font-size: 0.75rem; color: #4f4; font-weight: 600; letter-spacing: 0.05em;"
-						>PUBLIC</span
-					>
-				{:else}
-					<button
-						onclick={() => {
-							soundActions.playClick();
-							copyCode();
-						}}
-						style="background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.2); color: rgba(255,255,255,0.8); padding: 0.3rem 0.8rem; border-radius: 0.375rem; cursor: pointer; font-family: monospace; letter-spacing: 0.15em; font-size: 0.9rem;"
-					>
-						{currentLobby?.code} 📋
-					</button>
-				{/if}
-			</div>
-
-			<!-- Player list -->
-			<div style="display: flex; flex-direction: column; gap: 0.4rem; margin-bottom: 1.5rem;">
-				{#each players as player (player.id)}
-					<div
-						style="display: flex; align-items: center; gap: 0.75rem; padding: 0.6rem 0.75rem; background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.1); border-radius: 0.5rem;"
-					>
-						<span style="flex: 1; font-size: 0.95rem;">{player.playerName}</span>
-						<span
-							style="font-size: 0.8rem; font-weight: 600; text-transform: capitalize; color: {player.classChoice
-								? CLASS_COLORS[player.classChoice]
-								: 'rgba(255,255,255,0.45)'};">{player.classChoice || '—'}</span
-						>
-						<span
-							style="font-size: 0.8rem; font-weight: 600; color: {player.isReady
-								? '#4f4'
-								: '#f66'};"
-						>
-							{player.isReady ? '✓ Ready' : 'Not Ready'}
-						</span>
-						{#if !currentLobby?.isPublic}
-							{#if player.playerIdentity.toHexString() === currentLobby?.hostIdentity.toHexString()}
-								<span title="Host" style="font-size: 0.85rem;">👑</span>
-							{:else if isHost}
-								<button
-									onclick={() => {
-										soundActions.playClick();
-										lobbyActions.kickPlayer(currentLobby.id, player.playerIdentity);
-									}}
-									disabled={gameStarting}
-									title="Kick player"
-									style="padding: 0.15rem 0.4rem; font-size: 0.7rem; background: rgba(220,50,50,0.2); border: 1px solid rgba(220,50,50,0.4); border-radius: 0.25rem; color: #f88; cursor: {gameStarting
-										? 'not-allowed'
-										: 'pointer'}; opacity: {gameStarting ? '0.4' : '1'};">Kick</button
-								>
-							{/if}
-						{/if}
-					</div>
-				{/each}
-				{#each { length: Math.max(0, 4 - players.length) } as _}
-					<div
-						style="padding: 0.6rem 0.75rem; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.07); border-radius: 0.5rem; color: rgba(255,255,255,0.25); font-size: 0.875rem;"
-					>
-						Waiting for player...
-					</div>
-				{/each}
-			</div>
-
-			<!-- Class selector -->
-			<div style="margin-bottom: 1.25rem;">
-				<p
-					style="margin: 0 0 0.5rem; font-size: 0.8rem; opacity: 0.6; text-transform: uppercase; letter-spacing: 0.08em;"
-				>
-					Select class
+			{#if !currentLobby}
+				<p style="color: rgba(255,255,255,0.6); margin: 0 0 0.5rem;">
+					Connecting to lobby... or kicked...
 				</p>
-				<div style="display: flex; gap: 0.4rem; flex-wrap: wrap;">
-					{#each CLASSES as cls}
-						{@const isFull = classCounts[cls] >= 2}
-						{@const isSelected = myEntry?.classChoice === cls}
-						{@const classLocked =
-							isFull ||
-							currentLobby?.status !== 'waiting' ||
-							(currentLobby?.isPublic && !!myEntry?.isReady)}
-						<button
-							onclick={() => {
-								if (!classLocked) {
-									soundActions.playClick();
-									lobbyActions.setClass(cls, currentLobby.id);
-								}
-							}}
-							disabled={classLocked}
-							style="flex: 1; padding: 0.5rem 0.4rem; border-radius: 0.375rem; border: 1px solid rgba(255,255,255,{isSelected
-								? '0.6'
-								: isFull
-									? '0.1'
-									: '0.15'}); background: {isSelected
-								? 'rgba(0,0,0,0.4)'
-								: isFull
-									? 'rgba(0,0,0,0.2)'
-									: 'rgba(255,255,255,0.06)'}; color: {isSelected
-								? CLASS_COLORS[cls]
-								: isFull
-									? 'rgba(255,255,255,0.3)'
-									: 'white'}; cursor: {classLocked
-								? 'not-allowed'
-								: 'pointer'}; transition: background 0.15s, border-color 0.15s; display: flex; flex-direction: column; align-items: center; gap: 0.12rem;"
-						>
-							<span
-								style="font-size: 0.82rem; font-weight: 700; text-transform: capitalize; line-height: 1;"
-								>{cls}</span
-							>
-							<span style="font-size: 0.58rem; opacity: 0.5; line-height: 1;"
-								>{CLASS_STATS[cls].role}</span
-							>
-							<span style="font-size: 0.6rem; opacity: 0.55; line-height: 1;"
-								>❤ {CLASS_STATS[cls].hp} · ⚡ {CLASS_STATS[cls].stamina}</span
-							>
-							<span style="font-size: 0.55rem; opacity: 0.4; line-height: 1;"
-								>({classCounts[cls]}/2)</span
-							>
-						</button>
-					{/each}
-				</div>
-
-				{#if myEntry?.classChoice}
-					<div
-						style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 0.5rem; padding: 0.75rem; margin-bottom: 1rem;"
-					>
-						<p
-							style="margin: 0 0 0.5rem; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.08em; font-weight: 600; color: {CLASS_COLORS[
-								myEntry.classChoice
-							]};"
-						>
-							{myEntry.classChoice} Abilities
-						</p>
-						{#if myEntry.classChoice === 'spotter'}
-							<p style="margin: 0 0 0.25rem; font-size: 0.8rem;">
-								<span style="opacity: 0.7;">LMB:</span> Mark enemy (2s cooldown)
-							</p>
-							<p style="margin: 0; font-size: 0.8rem;">
-								<span style="opacity: 0.7;">RMB:</span> Flash stun (1.5s cooldown)
-							</p>
-						{:else if myEntry.classChoice === 'gunner'}
-							<p style="margin: 0 0 0.25rem; font-size: 0.8rem;">
-								<span style="opacity: 0.7;">LMB:</span> Shoot enemy
-							</p>
-							<p style="margin: 0; font-size: 0.8rem;">
-								<span style="opacity: 0.7;">Every 3rd shot:</span> Suppresses enemy
-							</p>
-						{:else if myEntry.classChoice === 'tank'}
-							<p style="margin: 0 0 0.25rem; font-size: 0.8rem;">
-								<span style="opacity: 0.7;">LMB:</span> Shield bash (1.5s cooldown)
-							</p>
-							<p style="margin: 0; font-size: 0.8rem;">
-								<span style="opacity: 0.7;">RMB hold:</span> Brace (5s, reduces damage)
-							</p>
-						{:else if myEntry.classChoice === 'healer'}
-							<p style="margin: 0 0 0.25rem; font-size: 0.8rem;">
-								<span style="opacity: 0.7;">LMB:</span> Heal teammate (2s cooldown)
-							</p>
-							<p style="margin: 0; font-size: 0.8rem;">
-								<span style="opacity: 0.7;">RMB:</span> Revive downed teammate
-							</p>
-						{/if}
-					</div>
-				{/if}
-
-				<!-- Synergy -->
-				{#if activeSynergy}
-					{@const syn = activeSynergy}
-					<div
-						style="background: rgba(255,255,255,0.04); border: 1px solid {syn.color}44; border-radius: 0.5rem; padding: 0.6rem 0.75rem; margin-top: 0.5rem;"
-					>
-						<p
-							style="margin: 0 0 0.2rem; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.08em; opacity: 0.5;"
-						>
-							Squad Synergy
-						</p>
-						<p
-							style="margin: 0 0 0.2rem; font-size: 0.85rem; font-weight: 700; color: {syn.color};"
-						>
-							{syn.label}
-						</p>
-						<p style="margin: 0; font-size: 0.75rem; opacity: 0.65;">{syn.desc}</p>
-					</div>
-				{/if}
-			</div>
-
-			<!-- Ready toggle -->
-			{@const readyLocked =
-				!myEntry?.classChoice ||
-				currentLobby?.status !== 'waiting' ||
-				(currentLobby?.isPublic && !!myEntry?.isReady)}
-			<button
-				onclick={() => {
-					soundActions.playClick();
-					lobbyActions.setReady(currentLobby.id, !myEntry?.isReady);
-				}}
-				disabled={readyLocked}
-				style="width: 100%; padding: 0.65rem; margin-bottom: 0.75rem; border-radius: 0.5rem; border: 1px solid rgba(255,255,255,{myEntry?.isReady
-					? '0.45'
-					: '0.2'}); background: {myEntry?.isReady
-					? 'rgba(74,170,136,0.3)'
-					: 'rgba(255,255,255,0.1)'}; color: white; cursor: {readyLocked
-					? 'not-allowed'
-					: 'pointer'}; font-weight: 600; font-size: 0.95rem; transition: background 0.15s;"
-			>
-				{myEntry?.isReady ? '✓ Locked In' : 'Ready Up'}
-			</button>
-
-			<!-- Start area -->
-			{#if currentLobby?.isPublic}
-				<p
-					style="text-align: center; color: rgba(255,255,255,0.45); font-size: 0.875rem; margin: 0 0 0.5rem;"
-				>
-					{gameStarting
-						? 'Starting...'
-						: allReady
-							? 'Starting soon...'
-							: 'Game starts when 2+ players are ready'}
+				<p style="color: rgba(255,255,255,0.4); margin: 0 0 1rem; font-size: 0.85rem;">
+					Canceling in {connectingCountdown}s...
 				</p>
-			{:else if isHost}
 				<button
 					onclick={() => {
 						soundActions.playClick();
-						lobbyActions.startCountdown(currentLobby.id);
+						lobbyState.currentLobbyId = null;
+						stageActions.setStage('menu');
 					}}
-					disabled={!canStart}
-					style="width: 100%; padding: 0.75rem; font-size: 1rem; font-weight: 600; border-radius: 0.5rem; border: 1px solid rgba(255,255,255,{canStart
-						? '0.5'
-						: '0.12'}); background: {canStart
-						? 'rgba(74,170,136,0.35)'
-						: 'rgba(255,255,255,0.05)'}; color: {canStart
-						? 'white'
-						: 'rgba(255,255,255,0.3)'}; cursor: {canStart
-						? 'pointer'
-						: 'not-allowed'}; margin-bottom: 0.5rem; transition: background 0.15s;"
+					style="padding: 0.5rem 1.5rem; background: rgba(255,255,255,0.1); color: white; border: 1px solid rgba(255,255,255,0.2); border-radius: 0.5rem; cursor: pointer;"
+					>Back</button
 				>
-					{!allReady ? 'Waiting for all players' : gameStarting ? 'Starting...' : 'Start Game'}
-				</button>
 			{:else}
-				<p
-					style="text-align: center; color: rgba(255,255,255,0.45); font-size: 0.875rem; margin: 0 0 0.5rem;"
+				<!-- Header -->
+				<div
+					style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;"
 				>
-					Waiting for host to start...
-				</p>
-			{/if}
+					<h2 style="margin: 0; font-size: 1.5rem; font-weight: 600;">Lobby</h2>
+					{#if currentLobby?.isPublic}
+						<span
+							style="background: rgba(42,170,85,0.25); border: 1px solid rgba(42,170,85,0.4); padding: 0.2rem 0.7rem; border-radius: 999px; font-size: 0.75rem; color: #4f4; font-weight: 600; letter-spacing: 0.05em;"
+							>PUBLIC</span
+						>
+					{:else}
+						<button
+							onclick={() => {
+								soundActions.playClick();
+								copyCode();
+							}}
+							style="background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.2); color: rgba(255,255,255,0.8); padding: 0.3rem 0.8rem; border-radius: 0.375rem; cursor: pointer; font-family: monospace; letter-spacing: 0.15em; font-size: 0.9rem;"
+						>
+							{currentLobby?.code} 📋
+						</button>
+					{/if}
+				</div>
 
-			{#if currentLobby?.status === 'countdown'}
-				<p
-					style="text-align: center; font-size: 2rem; color: #ff8; margin: 0.5rem 0; font-weight: 700;"
+				<!-- Player list -->
+				<div style="display: flex; flex-direction: column; gap: 0.4rem; margin-bottom: 1.5rem;">
+					{#each players as player (player.id)}
+						<div
+							style="display: flex; align-items: center; gap: 0.75rem; padding: 0.6rem 0.75rem; background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.1); border-radius: 0.5rem;"
+						>
+							<span style="flex: 1; font-size: 0.95rem;">{player.playerName}</span>
+							<span
+								style="font-size: 0.8rem; font-weight: 600; text-transform: capitalize; color: {player.classChoice
+									? CLASS_COLORS[player.classChoice]
+									: 'rgba(255,255,255,0.45)'};">{player.classChoice || '—'}</span
+							>
+							<span
+								style="font-size: 0.8rem; font-weight: 600; color: {player.isReady
+									? '#4f4'
+									: '#f66'};"
+							>
+								{player.isReady ? '✓ Ready' : 'Not Ready'}
+							</span>
+							{#if !currentLobby?.isPublic}
+								{#if player.playerIdentity.toHexString() === currentLobby?.hostIdentity.toHexString()}
+									<span title="Host" style="font-size: 0.85rem;">👑</span>
+								{:else if isHost}
+									<button
+										onclick={() => {
+											soundActions.playClick();
+											lobbyActions.kickPlayer(currentLobby.id, player.playerIdentity);
+										}}
+										disabled={gameStarting}
+										title="Kick player"
+										style="padding: 0.15rem 0.4rem; font-size: 0.7rem; background: rgba(220,50,50,0.2); border: 1px solid rgba(220,50,50,0.4); border-radius: 0.25rem; color: #f88; cursor: {gameStarting
+											? 'not-allowed'
+											: 'pointer'}; opacity: {gameStarting ? '0.4' : '1'};">Kick</button
+									>
+								{/if}
+							{/if}
+						</div>
+					{/each}
+					{#each { length: Math.max(0, 4 - players.length) } as _}
+						<div
+							style="padding: 0.6rem 0.75rem; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.07); border-radius: 0.5rem; color: rgba(255,255,255,0.25); font-size: 0.875rem;"
+						>
+							Waiting for player...
+						</div>
+					{/each}
+				</div>
+
+				<!-- Class selector -->
+				<div style="margin-bottom: 1.25rem;">
+					<p
+						style="margin: 0 0 0.5rem; font-size: 0.8rem; opacity: 0.6; text-transform: uppercase; letter-spacing: 0.08em;"
+					>
+						Select class
+					</p>
+					<div style="display: flex; gap: 0.4rem; flex-wrap: wrap;">
+						{#each CLASSES as cls}
+							{@const isFull = classCounts[cls] >= 2}
+							{@const isSelected = myEntry?.classChoice === cls}
+							{@const classLocked =
+								isFull ||
+								currentLobby?.status !== 'waiting' ||
+								(currentLobby?.isPublic && !!myEntry?.isReady)}
+							<button
+								onclick={() => {
+									if (!classLocked) {
+										soundActions.playClick();
+										lobbyActions.setClass(cls, currentLobby.id);
+									}
+								}}
+								disabled={classLocked}
+								style="flex: 1; padding: 0.5rem 0.4rem; border-radius: 0.375rem; border: 1px solid rgba(255,255,255,{isSelected
+									? '0.6'
+									: isFull
+										? '0.1'
+										: '0.15'}); background: {isSelected
+									? 'rgba(0,0,0,0.4)'
+									: isFull
+										? 'rgba(0,0,0,0.2)'
+										: 'rgba(255,255,255,0.06)'}; color: {isSelected
+									? CLASS_COLORS[cls]
+									: isFull
+										? 'rgba(255,255,255,0.3)'
+										: 'white'}; cursor: {classLocked
+									? 'not-allowed'
+									: 'pointer'}; transition: background 0.15s, border-color 0.15s; display: flex; flex-direction: column; align-items: center; gap: 0.12rem;"
+							>
+								<span
+									style="font-size: 0.82rem; font-weight: 700; text-transform: capitalize; line-height: 1;"
+									>{cls}</span
+								>
+								<span style="font-size: 0.58rem; opacity: 0.5; line-height: 1;"
+									>{CLASS_STATS[cls].role}</span
+								>
+								<span style="font-size: 0.6rem; opacity: 0.55; line-height: 1;"
+									>❤ {CLASS_STATS[cls].hp} · ⚡ {CLASS_STATS[cls].stamina}</span
+								>
+								<span style="font-size: 0.55rem; opacity: 0.4; line-height: 1;"
+									>({classCounts[cls]}/2)</span
+								>
+							</button>
+						{/each}
+					</div>
+
+					{#if myEntry?.classChoice}
+						<div
+							style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 0.5rem; padding: 0.75rem; margin-bottom: 1rem;"
+						>
+							<p
+								style="margin: 0 0 0.5rem; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.08em; font-weight: 600; color: {CLASS_COLORS[
+									myEntry.classChoice
+								]};"
+							>
+								{myEntry.classChoice} Abilities
+							</p>
+							{#if myEntry.classChoice === 'spotter'}
+								<p style="margin: 0 0 0.25rem; font-size: 0.8rem;">
+									<span style="opacity: 0.7;">LMB:</span> Mark enemy (2s cooldown)
+								</p>
+								<p style="margin: 0; font-size: 0.8rem;">
+									<span style="opacity: 0.7;">RMB:</span> Flash stun (1.5s cooldown)
+								</p>
+							{:else if myEntry.classChoice === 'gunner'}
+								<p style="margin: 0 0 0.25rem; font-size: 0.8rem;">
+									<span style="opacity: 0.7;">LMB:</span> Shoot enemy
+								</p>
+								<p style="margin: 0; font-size: 0.8rem;">
+									<span style="opacity: 0.7;">Every 3rd shot:</span> Suppresses enemy
+								</p>
+							{:else if myEntry.classChoice === 'tank'}
+								<p style="margin: 0 0 0.25rem; font-size: 0.8rem;">
+									<span style="opacity: 0.7;">LMB:</span> Shield bash (1.5s cooldown)
+								</p>
+								<p style="margin: 0; font-size: 0.8rem;">
+									<span style="opacity: 0.7;">RMB hold:</span> Brace (5s, reduces damage)
+								</p>
+							{:else if myEntry.classChoice === 'healer'}
+								<p style="margin: 0 0 0.25rem; font-size: 0.8rem;">
+									<span style="opacity: 0.7;">LMB:</span> Heal teammate (2s cooldown)
+								</p>
+								<p style="margin: 0; font-size: 0.8rem;">
+									<span style="opacity: 0.7;">RMB:</span> Revive downed teammate
+								</p>
+							{/if}
+						</div>
+					{/if}
+
+					<!-- Synergy -->
+					{#if activeSynergy}
+						{@const syn = activeSynergy}
+						<div
+							style="background: rgba(255,255,255,0.04); border: 1px solid {syn.color}44; border-radius: 0.5rem; padding: 0.6rem 0.75rem; margin-top: 0.5rem;"
+						>
+							<p
+								style="margin: 0 0 0.2rem; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.08em; opacity: 0.5;"
+							>
+								Squad Synergy
+							</p>
+							<p
+								style="margin: 0 0 0.2rem; font-size: 0.85rem; font-weight: 700; color: {syn.color};"
+							>
+								{syn.label}
+							</p>
+							<p style="margin: 0; font-size: 0.75rem; opacity: 0.65;">{syn.desc}</p>
+						</div>
+					{/if}
+				</div>
+
+				<!-- Ready toggle -->
+				{@const readyLocked =
+					!myEntry?.classChoice ||
+					currentLobby?.status !== 'waiting' ||
+					(currentLobby?.isPublic && !!myEntry?.isReady)}
+				<button
+					onclick={() => {
+						soundActions.playClick();
+						lobbyActions.setReady(currentLobby.id, !myEntry?.isReady);
+					}}
+					disabled={readyLocked}
+					style="width: 100%; padding: 0.65rem; margin-bottom: 0.75rem; border-radius: 0.5rem; border: 1px solid rgba(255,255,255,{myEntry?.isReady
+						? '0.45'
+						: '0.2'}); background: {myEntry?.isReady
+						? 'rgba(74,170,136,0.3)'
+						: 'rgba(255,255,255,0.1)'}; color: white; cursor: {readyLocked
+						? 'not-allowed'
+						: 'pointer'}; font-weight: 600; font-size: 0.95rem; transition: background 0.15s;"
 				>
-					Starting in {countdownValue}...
-				</p>
+					{myEntry?.isReady ? '✓ Locked In' : 'Ready Up'}
+				</button>
+
+				<!-- Start area -->
+				{#if currentLobby?.isPublic}
+					<p
+						style="text-align: center; color: rgba(255,255,255,0.45); font-size: 0.875rem; margin: 0 0 0.5rem;"
+					>
+						{gameStarting
+							? 'Starting...'
+							: allReady
+								? 'Starting soon...'
+								: 'Game starts when 2+ players are ready'}
+					</p>
+				{:else if isHost}
+					<button
+						onclick={() => {
+							soundActions.playClick();
+							lobbyActions.startCountdown(currentLobby.id);
+						}}
+						disabled={!canStart}
+						style="width: 100%; padding: 0.75rem; font-size: 1rem; font-weight: 600; border-radius: 0.5rem; border: 1px solid rgba(255,255,255,{canStart
+							? '0.5'
+							: '0.12'}); background: {canStart
+							? 'rgba(74,170,136,0.35)'
+							: 'rgba(255,255,255,0.05)'}; color: {canStart
+							? 'white'
+							: 'rgba(255,255,255,0.3)'}; cursor: {canStart
+							? 'pointer'
+							: 'not-allowed'}; margin-bottom: 0.5rem; transition: background 0.15s;"
+					>
+						{!allReady ? 'Waiting for all players' : gameStarting ? 'Starting...' : 'Start Game'}
+					</button>
+				{:else}
+					<p
+						style="text-align: center; color: rgba(255,255,255,0.45); font-size: 0.875rem; margin: 0 0 0.5rem;"
+					>
+						Waiting for host to start...
+					</p>
+				{/if}
+
+				{#if currentLobby?.status === 'countdown'}
+					<p
+						style="text-align: center; font-size: 2rem; color: #ff8; margin: 0.5rem 0; font-weight: 700;"
+					>
+						Starting in {countdownValue}...
+					</p>
+				{/if}
+
+				<button
+					onclick={() => {
+						soundActions.playClick();
+						lobbyActions.leaveLobby(currentLobby.id);
+						stageActions.setStage('menu');
+					}}
+					disabled={currentLobby?.status !== 'waiting'}
+					style="width: 100%; margin-top: 0.25rem; padding: 0.5rem; background: rgba(220,50,50,0.15); border: 1px solid rgba(220,50,50,0.3); border-radius: 0.5rem; color: rgba(255,120,120,0.9); cursor: {currentLobby?.status !==
+					'waiting'
+						? 'not-allowed'
+						: 'pointer'}; font-size: 0.875rem;"
+				>
+					Leave Lobby
+				</button>
+
+				{#if lobbyState.error}
+					<p style="color: #f66; margin: 0.75rem 0 0; font-size: 0.875rem;">{lobbyState.error}</p>
+				{/if}
 			{/if}
-
-			<button
-				onclick={() => {
-					soundActions.playClick();
-					lobbyActions.leaveLobby(currentLobby.id);
-					stageActions.setStage('menu');
-				}}
-				disabled={currentLobby?.status !== 'waiting'}
-				style="width: 100%; margin-top: 0.25rem; padding: 0.5rem; background: rgba(220,50,50,0.15); border: 1px solid rgba(220,50,50,0.3); border-radius: 0.5rem; color: rgba(255,120,120,0.9); cursor: {currentLobby?.status !==
-				'waiting'
-					? 'not-allowed'
-					: 'pointer'}; font-size: 0.875rem;"
-			>
-				Leave Lobby
-			</button>
-
-
-			{#if lobbyState.error}
-				<p style="color: #f66; margin: 0.75rem 0 0; font-size: 0.875rem;">{lobbyState.error}</p>
-			{/if}
-		{/if}
 		</div>
 
 		<!-- Right: Chat panel -->
 		{#if currentLobby}
-			<div style="width: 260px; flex-shrink: 0; display: flex; flex-direction: column; gap: 0.5rem;">
-				<p style="margin: 0; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.08em; opacity: 0.5;">
+			<div
+				style="width: 260px; flex-shrink: 0; display: flex; flex-direction: column; gap: 0.5rem;"
+			>
+				<p
+					style="margin: 0; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.08em; opacity: 0.5;"
+				>
 					Lobby Chat
 				</p>
 
@@ -848,18 +853,26 @@
 					style="flex: 1; min-height: 200px; max-height: 420px; overflow-y: auto; display: flex; flex-direction: column; gap: 0.35rem; background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.08); border-radius: 0.5rem; padding: 0.6rem;"
 				>
 					{#if chatMessages.length === 0}
-						<p style="margin: 0; color: rgba(255,255,255,0.25); font-size: 0.75rem; text-align: center; padding-top: 0.5rem;">
+						<p
+							style="margin: 0; color: rgba(255,255,255,0.25); font-size: 0.75rem; text-align: center; padding-top: 0.5rem;"
+						>
 							No messages yet
 						</p>
 					{:else}
 						{#each chatMessages as msg (msg.id)}
 							<div style="display: flex; flex-direction: column; gap: 0.1rem;">
 								<span
-									style="font-size: 0.65rem; font-weight: 700; color: {CLASS_COLORS[players.find((p) => p.playerIdentity.toHexString() === msg.playerIdentity.toHexString())?.classChoice ?? ''] ?? 'rgba(255,255,255,0.55)'};"
+									style="font-size: 0.65rem; font-weight: 700; color: {CLASS_COLORS[
+										players.find(
+											(p) => p.playerIdentity.toHexString() === msg.playerIdentity.toHexString()
+										)?.classChoice ?? ''
+									] ?? 'rgba(255,255,255,0.55)'};"
 								>
 									{msg.playerName}
 								</span>
-								<span style="font-size: 0.78rem; color: rgba(255,255,255,0.8); word-break: break-word; line-height: 1.35;">
+								<span
+									style="font-size: 0.78rem; color: rgba(255,255,255,0.8); word-break: break-word; line-height: 1.35;"
+								>
 									{msg.message}
 								</span>
 							</div>
@@ -874,13 +887,17 @@
 						maxlength="200"
 						placeholder="Say something..."
 						bind:value={chatInput}
-						onkeydown={(e) => { if (e.key === 'Enter') sendChat(); }}
+						onkeydown={(e) => {
+							if (e.key === 'Enter') sendChat();
+						}}
 						style="flex: 1; background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.15); border-radius: 0.375rem; padding: 0.4rem 0.6rem; color: white; font-size: 0.8rem; outline: none;"
 					/>
 					<button
 						onclick={sendChat}
 						disabled={!chatInput.trim()}
-						style="padding: 0.4rem 0.7rem; background: rgba(255,255,255,0.12); border: 1px solid rgba(255,255,255,0.2); border-radius: 0.375rem; color: white; cursor: pointer; font-size: 0.8rem; opacity: {chatInput.trim() ? '1' : '0.35'};"
+						style="padding: 0.4rem 0.7rem; background: rgba(255,255,255,0.12); border: 1px solid rgba(255,255,255,0.2); border-radius: 0.375rem; color: white; cursor: pointer; font-size: 0.8rem; opacity: {chatInput.trim()
+							? '1'
+							: '0.35'};"
 					>
 						Send
 					</button>
@@ -888,48 +905,77 @@
 
 				<!-- Controls -->
 				<div style="padding-top: 0.5rem; border-top: 1px solid rgba(255,255,255,0.08);">
-					<p style="margin: 0 0 0.35rem; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.08em; opacity: 0.5; text-align: center;">Controls</p>
+					<p
+						style="margin: 0 0 0.35rem; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.08em; opacity: 0.5; text-align: center;"
+					>
+						Controls
+					</p>
 					<div style="display: flex; flex-wrap: wrap; gap: 0.35rem; justify-content: center;">
-						<span style="font-size: 0.65rem; padding: 0.2rem 0.4rem; background: rgba(255,255,255,0.1); border-radius: 0.25rem;">WASD - Move</span>
-						<span style="font-size: 0.65rem; padding: 0.2rem 0.4rem; background: rgba(255,255,255,0.1); border-radius: 0.25rem;">Shift - Sprint</span>
-						<span style="font-size: 0.65rem; padding: 0.2rem 0.4rem; background: rgba(255,255,255,0.1); border-radius: 0.25rem;">Mouse - Aim</span>
+						<span
+							style="font-size: 0.65rem; padding: 0.2rem 0.4rem; background: rgba(255,255,255,0.1); border-radius: 0.25rem;"
+							>WASD - Move</span
+						>
+						<span
+							style="font-size: 0.65rem; padding: 0.2rem 0.4rem; background: rgba(255,255,255,0.1); border-radius: 0.25rem;"
+							>Shift - Sprint</span
+						>
+						<span
+							style="font-size: 0.65rem; padding: 0.2rem 0.4rem; background: rgba(255,255,255,0.1); border-radius: 0.25rem;"
+							>Mouse - Aim</span
+						>
 					</div>
 				</div>
 
 				<!-- Cycling tips -->
-				<div style="padding: 0.55rem 0.6rem; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); border-radius: 0.5rem; min-height: 3.2rem; position: relative; overflow: hidden;">
+				<div
+					style="padding: 0.55rem 0.6rem; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); border-radius: 0.5rem; min-height: 3.2rem; position: relative; overflow: hidden;"
+				>
 					{#key tipIndex}
 						{@const tip = TIPS[tipIndex]}
-						<div in:fade={{ duration: 350 }} style="display: flex; flex-direction: column; gap: 0.15rem;">
-							<span style="font-size: 0.6rem; text-transform: uppercase; letter-spacing: 0.08em; font-weight: 700; color: {tip.color}; opacity: 0.9;">{tip.tag}</span>
-							<span style="font-size: 0.72rem; color: rgba(255,255,255,0.6); line-height: 1.4;">{tip.text}</span>
+						<div
+							in:fade={{ duration: 350 }}
+							style="display: flex; flex-direction: column; gap: 0.15rem;"
+						>
+							<span
+								style="font-size: 0.6rem; text-transform: uppercase; letter-spacing: 0.08em; font-weight: 700; color: {tip.color}; opacity: 0.9;"
+								>{tip.tag}</span
+							>
+							<span style="font-size: 0.72rem; color: rgba(255,255,255,0.6); line-height: 1.4;"
+								>{tip.text}</span
+							>
 						</div>
 					{/key}
 				</div>
-			{#if currentLobby?.isPublic && myEntry && !myEntry.isReady && readySecondsLeft > 0}
-				{@const urgent = readySecondsLeft <= 30}
-				<div
-					style="padding: 0.65rem 0.75rem; border-radius: 0.5rem; border: 1px solid {urgent
-						? 'rgba(255,80,80,0.5)'
-						: 'rgba(255,180,50,0.35)'}; background: {urgent
-						? 'rgba(255,50,50,0.12)'
-						: 'rgba(255,160,30,0.08)'}; display: flex; flex-direction: column; gap: 0.2rem;"
-				>
-					<p
-						style="margin: 0; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.08em; font-weight: 700; color: {urgent
-							? '#f66'
-							: '#ffa530'};"
+				{#if currentLobby?.isPublic && myEntry && !myEntry.isReady && readySecondsLeft > 0}
+					{@const urgent = readySecondsLeft <= 30}
+					<div
+						style="padding: 0.65rem 0.75rem; border-radius: 0.5rem; border: 1px solid {urgent
+							? 'rgba(255,80,80,0.5)'
+							: 'rgba(255,180,50,0.35)'}; background: {urgent
+							? 'rgba(255,50,50,0.12)'
+							: 'rgba(255,160,30,0.08)'}; display: flex; flex-direction: column; gap: 0.2rem;"
 					>
-						{urgent ? '⚠ Ready up now!' : '⏱ Ready up deadline'}
-					</p>
-					<p style="margin: 0; font-size: 1.5rem; font-weight: 800; color: {urgent ? '#f55' : '#ffb84d'}; line-height: 1;">
-						{Math.floor(readySecondsLeft / 60)}:{String(readySecondsLeft % 60).padStart(2, '0')}
-					</p>
-					<p style="margin: 0; font-size: 0.68rem; color: rgba(255,255,255,0.45); line-height: 1.3;">
-						You'll be removed if you don't ready up in time.
-					</p>
-				</div>
-			{/if}
+						<p
+							style="margin: 0; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.08em; font-weight: 700; color: {urgent
+								? '#f66'
+								: '#ffa530'};"
+						>
+							{urgent ? '⚠ Ready up now!' : '⏱ Ready up deadline'}
+						</p>
+						<p
+							style="margin: 0; font-size: 1.5rem; font-weight: 800; color: {urgent
+								? '#f55'
+								: '#ffb84d'}; line-height: 1;"
+						>
+							{Math.floor(readySecondsLeft / 60)}:{String(readySecondsLeft % 60).padStart(2, '0')}
+						</p>
+						<p
+							style="margin: 0; font-size: 0.68rem; color: rgba(255,255,255,0.45); line-height: 1.3;"
+						>
+							You'll be removed if you don't ready up in time.
+						</p>
+					</div>
+				{/if}
 			</div>
 		{/if}
 	</div>
