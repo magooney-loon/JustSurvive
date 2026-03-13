@@ -8,6 +8,7 @@ export interface LoadedMD2 {
 	animations: THREE.AnimationClip[];
 	skins: THREE.Texture[];
 	weaponGeometries: Map<string, THREE.BufferGeometry>;
+	weaponAnimations: Map<string, THREE.AnimationClip[]>;
 }
 
 const _cache = new Map<EnemyType, Promise<LoadedMD2>>();
@@ -21,7 +22,7 @@ const SKIN_MAP: Record<EnemyType, string> = {
 	caster: 'caster.png'
 };
 
-const WEAPON_MAP: Record<EnemyType, string | null> = {
+export const WEAPON_MAP: Record<EnemyType, string | null> = {
 	basic: null,
 	fast: null,
 	brute: null,
@@ -57,13 +58,20 @@ function loadSkin(skinName: string): Promise<THREE.Texture> {
 	});
 }
 
-function loadWeaponGeometry(weaponPath: string): Promise<THREE.BufferGeometry> {
+function loadWeaponData(
+	weaponPath: string
+): Promise<{ geometry: THREE.BufferGeometry; animations: THREE.AnimationClip[] }> {
 	return new Promise((resolve, reject) => {
 		md2Loader.load(
 			`${BASE_URL}${weaponPath}`,
 			(result: any) => {
-				const geo = result.geometry || result;
-				resolve(geo);
+				const geo: THREE.BufferGeometry = result.geometry || result;
+				const anims: THREE.AnimationClip[] =
+					result.animations ||
+					(geo as any).animations ||
+					(geo as any).userData?.animations ||
+					[];
+				resolve({ geometry: geo, animations: anims });
 			},
 			undefined,
 			reject
@@ -95,23 +103,29 @@ export async function loadEnemyModel(enemyType: EnemyType): Promise<LoadedMD2> {
 		]);
 
 		const geometry = md2Result.geometry || md2Result;
-
-		const weaponGeometries = new Map<string, THREE.BufferGeometry>();
-		if (weaponName) {
-			const weaponGeo = await loadWeaponGeometry(weaponName);
-			weaponGeometries.set(weaponName, weaponGeo);
-		}
 		const animations: THREE.AnimationClip[] =
 			md2Result.animations ||
 			(geometry as any).animations ||
 			(geometry as any).userData?.animations ||
 			[];
 
+		const weaponGeometries = new Map<string, THREE.BufferGeometry>();
+		const weaponAnimations = new Map<string, THREE.AnimationClip[]>();
+		if (weaponName) {
+			const weaponData = await loadWeaponData(weaponName);
+			weaponGeometries.set(weaponName, weaponData.geometry);
+			weaponAnimations.set(weaponName, weaponData.animations);
+			console.log(
+				`[MD2] Weapon anims for ${enemyType}: ${weaponData.animations.map((a) => a.name).join(', ')}`
+			);
+		}
+
 		const result: LoadedMD2 = {
 			geometry,
 			animations,
 			skins: [skinTexture],
-			weaponGeometries
+			weaponGeometries,
+			weaponAnimations
 		};
 
 		_loaded.set(enemyType, result);
@@ -156,6 +170,7 @@ export function createEnemyMesh(
 			map: loaded.skins[0],
 			color: 0xffffff
 		});
+		// Clone geometry for this instance — animations stay in loaded.weaponAnimations (not in cloned geo)
 		const weaponMesh = new THREE.Mesh(weaponGeo.clone(), weaponMat);
 		weaponMesh.scale.setScalar(scale);
 		weaponMesh.castShadow = true;

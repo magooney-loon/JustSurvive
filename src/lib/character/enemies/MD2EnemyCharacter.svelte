@@ -3,7 +3,13 @@
 	import { useTask } from '@threlte/core';
 	import { T } from '@threlte/core';
 	import * as THREE from 'three';
-	import { loadEnemyModel, createEnemyMesh, findAnimation, type LoadedMD2 } from './md2Cache.js';
+	import {
+		loadEnemyModel,
+		createEnemyMesh,
+		findAnimation,
+		WEAPON_MAP,
+		type LoadedMD2
+	} from './md2Cache.js';
 
 	export type MD2EnemyCharacterProps = {
 		enemyType: 'basic' | 'fast' | 'brute' | 'spitter' | 'caster';
@@ -20,6 +26,9 @@
 	let bodyMesh = $state<THREE.Mesh | null>(null);
 	let mixer = $state<THREE.AnimationMixer | null>(null);
 	let currentAction = $state<THREE.AnimationAction | null>(null);
+
+	let weaponMixer = $state<THREE.AnimationMixer | null>(null);
+	let weaponCurrentAction = $state<THREE.AnimationAction | null>(null);
 
 	const ENEMY_ANIMS = {
 		basic: {
@@ -80,24 +89,51 @@
 			return;
 		}
 
-		if (currentAction && currentAction.getClip().name === clip.name) return;
+		const isDeath = ENEMY_ANIMS[enemyType]?.death.includes(name);
 
-		const newAction = mixer.clipAction(clip);
-		newAction.reset();
-
-		if (ENEMY_ANIMS[enemyType]?.death.includes(name)) {
-			newAction.setLoop(THREE.LoopOnce as any, 1);
-			newAction.clampWhenFinished = true;
+		if (currentAction && currentAction.getClip().name === clip.name) {
+			// Still sync weapon if it's out of sync
 		} else {
-			newAction.setLoop(THREE.LoopRepeat as any, Infinity);
+			const newAction = mixer.clipAction(clip);
+			newAction.reset();
+			if (isDeath) {
+				newAction.setLoop(THREE.LoopOnce as any, 1);
+				newAction.clampWhenFinished = true;
+			} else {
+				newAction.setLoop(THREE.LoopRepeat as any, Infinity);
+			}
+			newAction.play();
+			if (currentAction) {
+				currentAction.fadeOut(0.15);
+				newAction.reset().fadeIn(0.15).play();
+			}
+			currentAction = newAction;
 		}
-		newAction.play();
 
-		if (currentAction) {
-			currentAction.fadeOut(0.15);
-			newAction.reset().fadeIn(0.15).play();
+		// Sync weapon animation with same clip name
+		if (weaponMixer && loadedData) {
+			const weaponPath = WEAPON_MAP[enemyType];
+			const weaponAnims = weaponPath ? loadedData.weaponAnimations.get(weaponPath) : undefined;
+			if (weaponAnims && weaponAnims.length > 0) {
+				const weaponClip = findAnimation(weaponAnims, name);
+				if (weaponClip && (!weaponCurrentAction || weaponCurrentAction.getClip().name !== weaponClip.name)) {
+					const newWeaponAction = weaponMixer.clipAction(weaponClip);
+					newWeaponAction.reset();
+					if (isDeath) {
+						newWeaponAction.setLoop(THREE.LoopOnce as any, 1);
+						newWeaponAction.clampWhenFinished = true;
+					} else {
+						newWeaponAction.setLoop(THREE.LoopRepeat as any, Infinity);
+					}
+					newWeaponAction.play();
+					if (weaponCurrentAction) {
+						weaponCurrentAction.fadeOut(0.15);
+						newWeaponAction.reset().fadeIn(0.15).play();
+					}
+					weaponCurrentAction = newWeaponAction;
+				}
+			}
 		}
-		currentAction = newAction;
 	}
 
 	$effect(() => {
@@ -110,6 +146,7 @@
 	useTask((delta) => {
 		if (mixer) {
 			mixer.update(delta);
+			if (weaponMixer) weaponMixer.update(delta);
 
 			cycleTimer += delta;
 			const newCategory = isDead
@@ -146,6 +183,10 @@
 			bodyMesh = result.body;
 
 			mixer = new THREE.AnimationMixer(bodyMesh);
+
+			if (result.weapon) {
+				weaponMixer = new THREE.AnimationMixer(result.weapon);
+			}
 
 			const firstAnim = getAnimationFromState(speed, attackPhase, isDead);
 			setAnimation(firstAnim);
