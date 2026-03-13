@@ -37,20 +37,20 @@
 		fast: {
 			idle: ['stand'],
 			move: ['run'],
-			attack: ['jump'],
-			death: ['death']
+			attack: ['attack'],
+			death: ['crdeath']
 		},
 		spitter: {
 			idle: ['stand'],
 			move: ['run'],
 			attack: ['point'],
-			death: ['death']
+			death: ['crdeath']
 		},
 		caster: {
 			idle: ['stand'],
 			move: ['run'],
 			attack: ['taunt'],
-			death: ['death']
+			death: ['crdeath']
 		}
 	};
 
@@ -84,7 +84,13 @@
 
 		const newAction = mixer.clipAction(clip);
 		newAction.reset();
-		newAction.setLoop(THREE.LoopRepeat as any, Infinity);
+
+		if (ENEMY_ANIMS[enemyType]?.death.includes(name)) {
+			newAction.setLoop(THREE.LoopOnce as any, 1);
+			newAction.clampWhenFinished = true;
+		} else {
+			newAction.setLoop(THREE.LoopRepeat as any, Infinity);
+		}
 		newAction.play();
 
 		if (currentAction) {
@@ -153,5 +159,5 @@
 </script>
 
 {#if loaded && group}
-	<T is={group} position={[0, 0.1, 0]} />
+	<T is={group} position={[0, isDead ? 0.4 : 1.0, 0]} />
 {/if}

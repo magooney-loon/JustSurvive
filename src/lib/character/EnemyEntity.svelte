@@ -104,8 +104,7 @@
 			killedAudio.play();
 		}
 	});
-	const downedTilt = $derived(dead ? -Math.PI / 2 : 0);
-	const downedYOffset = $derived(dead ? -0.35 : 0);
+	const downedTilt = $derived(dead ? 1.35 : 0);
 	const splatAge = $derived(dead ? nowMs - (deathAt ?? nowMs) : 0);
 	const splatT = $derived(dead ? Math.max(0, 1 - splatAge / 2200) : 0);
 	const splatGrow = $derived(dead ? Math.min(1, splatAge / 350) : 0);
@@ -123,7 +122,7 @@
 				killedAudio = a;
 			}}
 		/>
-		<T.Group position={[0, downedYOffset, 0]} rotation={[downedTilt, 0, 0]}>
+		<T.Group rotation={[downedTilt, 0, 0]}>
 			{#if enemy.enemyType === 'brute'}
 				<BruteRig {speed} {attackPhase} isDead={dead} />
 			{:else if enemy.enemyType === 'fast'}
@@ -139,9 +138,10 @@
 
 		{#if dead && splatT > 0}
 			<T.Mesh
-				position={[0, -0.49, 0]}
+				position={[0, 0.01, 0]}
 				rotation={[-Math.PI / 2, 0, 0]}
 				scale={[1.1 + splatGrow * 0.6, 1.1 + splatGrow * 0.6, 1]}
+				renderOrder={1}
 			>
 				<T.CircleGeometry args={[0.45 + (1 - splatT) * 0.55, 16]} />
 				<T.MeshBasicMaterial
@@ -152,9 +152,10 @@
 				/>
 			</T.Mesh>
 			<T.Mesh
-				position={[0.05, -0.491, -0.08]}
+				position={[0.05, 0.011, -0.08]}
 				rotation={[-Math.PI / 2, 0.2, 0]}
 				scale={[1.2 + splatGrow * 0.7, 1.0 + splatGrow * 0.5, 1]}
+				renderOrder={1}
 			>
 				<T.RingGeometry args={[0.35, 0.85, 18]} />
 				<T.MeshBasicMaterial
@@ -165,9 +166,10 @@
 				/>
 			</T.Mesh>
 			<T.Mesh
-				position={[-0.35, -0.485, 0.15]}
+				position={[-0.35, 0.01, 0.15]}
 				rotation={[-Math.PI / 2, 0, 0]}
 				scale={[0.35, 0.25, 1]}
+				renderOrder={1}
 			>
 				<T.CircleGeometry args={[0.25, 12]} />
 				<T.MeshBasicMaterial
@@ -178,9 +180,10 @@
 				/>
 			</T.Mesh>
 			<T.Mesh
-				position={[0.32, -0.485, -0.22]}
+				position={[0.32, 0.01, -0.22]}
 				rotation={[-Math.PI / 2, 0, 0]}
 				scale={[0.28, 0.22, 1]}
+				renderOrder={1}
 			>
 				<T.CircleGeometry args={[0.22, 12]} />
 				<T.MeshBasicMaterial
@@ -191,9 +194,10 @@
 				/>
 			</T.Mesh>
 			<T.Mesh
-				position={[0.18, -0.485, 0.32]}
+				position={[0.18, 0.01, 0.32]}
 				rotation={[-Math.PI / 2, 0, 0]}
 				scale={[0.22, 0.18, 1]}
+				renderOrder={1}
 			>
 				<T.CircleGeometry args={[0.18, 12]} />
 				<T.MeshBasicMaterial
@@ -204,9 +208,10 @@
 				/>
 			</T.Mesh>
 			<T.Mesh
-				position={[0, -0.48, 0]}
+				position={[0, 0.012, 0]}
 				rotation={[-Math.PI / 2, 0, 0]}
 				scale={[1 + splatGrow * 1.2, 1 + splatGrow * 1.2, 1]}
+				renderOrder={1}
 			>
 				<T.RingGeometry args={[0.25, 0.55, 16]} />
 				<T.MeshBasicMaterial

@@ -29,6 +29,14 @@ const WEAPON_MAP: Record<EnemyType, string | null> = {
 	caster: 'caster_weapon.md2'
 };
 
+const SCALE_MAP: Record<EnemyType, number> = {
+	basic: 0.045,
+	fast: 0.04,
+	brute: 0.055,
+	spitter: 0.045,
+	caster: 0.045
+};
+
 const md2Loader = new MD2Loader();
 const textureLoader = new THREE.TextureLoader();
 
@@ -123,7 +131,10 @@ export function createEnemyMesh(
 	enemyType: EnemyType
 ): { group: THREE.Group; body: THREE.Mesh; weapon?: THREE.Mesh } {
 	const group = new THREE.Group();
-	group.rotation.y = Math.PI;
+	group.rotation.y = Math.PI / 2;
+	group.position.y = 0.9;
+
+	const scale = SCALE_MAP[enemyType] || 0.04;
 
 	const material = new THREE.MeshLambertMaterial({
 		map: loaded.skins[0],
@@ -132,7 +143,7 @@ export function createEnemyMesh(
 
 	const bodyGeo = loaded.geometry.clone();
 	const body = new THREE.Mesh(bodyGeo, material);
-	body.scale.setScalar(0.04);
+	body.scale.setScalar(scale);
 	body.castShadow = true;
 	body.receiveShadow = true;
 	group.add(body);
@@ -146,7 +157,7 @@ export function createEnemyMesh(
 			color: 0xffffff
 		});
 		const weaponMesh = new THREE.Mesh(weaponGeo.clone(), weaponMat);
-		weaponMesh.scale.setScalar(0.04);
+		weaponMesh.scale.setScalar(scale);
 		weaponMesh.castShadow = true;
 		weaponMesh.receiveShadow = true;
 		weapon = weaponMesh;

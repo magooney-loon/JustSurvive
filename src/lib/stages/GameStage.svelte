@@ -62,7 +62,7 @@
 			const dx = Number(e.posX) / 1000 - localPos.x;
 			const dz = Number(e.posZ) / 1000 - localPos.z;
 			const d2 = dx * dx + dz * dz;
-			if (e.isAlive && d2 <= MAX_DIST_SQ) {
+			if (d2 <= MAX_DIST_SQ) {
 				result.push(e);
 			}
 		}
