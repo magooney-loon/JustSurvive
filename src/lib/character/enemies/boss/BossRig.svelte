@@ -1,10 +1,10 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
 	import { useTask } from '@threlte/core';
-	import { T } from '@threlte/core';
+	import { GLTF, useGltfAnimations } from '@threlte/extras';
 	import * as THREE from 'three';
-	import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 	import { localPos, bossShake } from '$lib/stores/movement.svelte.js';
+
+	type BossAction = 'zbs_walk' | 'zbs_attack_justiceSwing' | 'gutshot';
 
 	type Props = {
 		speed: number;
@@ -16,55 +16,48 @@
 
 	let { speed, attackPhase = 0, isDead = false, bossX = 0, bossZ = 0 }: Props = $props();
 
-	const ANIM_WALK = 'zbs_walk';
-	const ANIM_ATTACK = 'zbs_attack_justiceSwing';
-	const ANIM_DEATH = 'gutshot';
 	const SHAKE_MAX_DIST = 28;
-	const SHAKE_FREQ = Math.PI * 1.4; // ~0.7 Hz footstep cycle
+	const SHAKE_FREQ = Math.PI * 1.4;
 	const SHAKE_AMPLITUDE = 0.14;
 
-	let scene = $state.raw<THREE.Group | null>(null);
-	let mixer = $state.raw<THREE.AnimationMixer | null>(null);
-	let currentAction: THREE.AnimationAction | null = null;
-	let loaded = $state(false);
-	let animations = new Map<string, THREE.AnimationClip>();
+	const { gltf, actions } = useGltfAnimations<BossAction>();
+
+	let currentAction: BossAction = 'zbs_walk';
 	let shakeTimer = 0;
 
-	function targetAnim(): string {
-		if (isDead) return ANIM_DEATH;
-		if (attackPhase > 0.3) return ANIM_ATTACK;
-		return ANIM_WALK;
-	}
-
-	function setAnimation(name: string) {
-		if (!mixer || !animations.size) return;
-		const clip = animations.get(name);
-		if (!clip) return;
-		if (currentAction?.getClip().name === clip.name) return;
-
-		const newAction = mixer.clipAction(clip);
-		newAction.reset();
-		if (name === ANIM_DEATH) {
-			newAction.setLoop(THREE.LoopOnce as any, 1);
-			newAction.clampWhenFinished = true;
-		} else {
-			newAction.setLoop(THREE.LoopRepeat as any, Infinity);
-		}
-		if (currentAction) {
-			currentAction.fadeOut(0.25);
-			newAction.fadeIn(0.25);
-		}
-		newAction.play();
-		currentAction = newAction;
-	}
-
+	// Configure one-shots and start walk as soon as actions are ready.
+	// Reading $actions here means this effect re-runs when GLTF finishes loading.
 	$effect(() => {
-		if (loaded) setAnimation(targetAnim());
+		const death = $actions['gutshot'];
+		if (!death) return;
+		death.setLoop(THREE.LoopOnce, 1);
+		death.clampWhenFinished = true;
+
+		const walk = $actions['zbs_walk'];
+		if (!walk) return;
+		walk.play();
+	});
+
+	// Transition between animations whenever isDead / attackPhase / actions change.
+	// IMPORTANT: always read from $actions before any early-return so that this
+	// effect tracks $actions as a dependency and re-runs when the GLTF loads.
+	$effect(() => {
+		const next: BossAction = isDead
+			? 'gutshot'
+			: attackPhase > 0.3
+				? 'zbs_attack_justiceSwing'
+				: 'zbs_walk';
+		const from = $actions[currentAction];
+		const to = $actions[next];
+		if (!to || from === to) return;
+		to.enabled = true;
+		if (next === 'gutshot') to.reset();
+		if (from) from.crossFadeTo(to, 0.25, true);
+		to.play();
+		currentAction = next;
 	});
 
 	useTask((dt) => {
-		if (mixer) mixer.update(dt);
-
 		// Camera shake — boss footsteps felt through the ground
 		const isWalking = !isDead && speed > 0.05;
 		if (isWalking) {
@@ -73,46 +66,22 @@
 			const dz = bossZ - localPos.z;
 			const dist = Math.sqrt(dx * dx + dz * dz);
 			const proximity = Math.max(0, 1 - dist / SHAKE_MAX_DIST);
-			// Pulse on footstep beat — absolute sine gives two peaks per cycle (left/right foot)
 			bossShake.intensity =
 				Math.abs(Math.sin(shakeTimer * SHAKE_FREQ)) * proximity * SHAKE_AMPLITUDE;
 		} else {
-			// Fade out when idle/dead
 			bossShake.intensity = Math.max(0, bossShake.intensity - dt * 3);
 		}
 	});
-
-	onMount(async () => {
-		const loader = new GLTFLoader();
-		const gltf = await new Promise<any>((resolve, reject) => {
-			loader.load(
-				`${import.meta.env.BASE_URL}models/enemies/boss/scene.gltf`,
-				resolve,
-				undefined,
-				reject
-			);
-		});
-
-		const root = gltf.scene as THREE.Group;
-		// Scale: model exported in cm-scale from Sketchfab — tune if needed
-		root.scale.setScalar(4.5);
-		root.traverse((obj) => {
-			if (obj instanceof THREE.Mesh) {
-				obj.castShadow = true;
-			}
-		});
-
-		for (const clip of gltf.animations as THREE.AnimationClip[]) {
-			animations.set(clip.name, clip);
-		}
-
-		mixer = new THREE.AnimationMixer(root);
-		scene = root;
-		loaded = true;
-		setAnimation(targetAnim());
-	});
 </script>
 
-{#if loaded && scene}
-	<T is={scene} />
-{/if}
+<GLTF
+	bind:gltf={$gltf}
+	url="{import.meta.env.BASE_URL}models/enemies/boss/scene.gltf"
+	rotation.y={Math.PI}
+	oncreate={(scene) => {
+		scene.traverse((child) => {
+			child.castShadow = true;
+		});
+	}}
+	scale={4.5}
+/>
