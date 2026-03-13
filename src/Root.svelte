@@ -1,11 +1,11 @@
 <script lang="ts">
 	import { createSpacetimeDBProvider } from 'spacetimedb/svelte';
 	import type { Identity } from 'spacetimedb';
-	import { DbConnection, type ErrorContext } from './module_bindings';
-	import App from './App.svelte';
-	import { log } from './settings.svelte.js';
-	import { lobbyActions } from './lib/stores/lobby.svelte.js';
-	import { combatActions } from './lib/stores/combat.svelte.js';
+	import { DbConnection, type ErrorContext } from '$bindings';
+	import App from '$root/App.svelte';
+	import { log } from '$root/settings.svelte.js';
+	import { lobbyActions } from '$lib/stores/lobby.svelte.js';
+	import { combatActions } from '$lib/stores/combat.svelte.js';
 
 	const HOST = import.meta.env.VITE_SPACETIMEDB_HOST ?? 'ws://localhost:3000';
 	const DB_NAME = import.meta.env.VITE_SPACETIMEDB_DB_NAME ?? 'justsurvive-6769';

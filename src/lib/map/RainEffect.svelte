@@ -1,13 +1,13 @@
 <script lang="ts">
 	import { T, useTask, useThrelte } from '@threlte/core';
 	import * as THREE from 'three';
-	import { skyState } from '../stores/sky.svelte.js';
+	import { skyState } from '$lib/stores/sky.svelte.js';
 
 	const { camera } = useThrelte();
 
 	const DROP_COUNT = 700;
-	const BOX_W = 30;   // ±15 units around camera in XZ
-	const BOX_H = 16;   // vertical span
+	const BOX_W = 30; // ±15 units around camera in XZ
+	const BOX_H = 16; // vertical span
 	const FALL_SPEED = 22; // units/s
 	const STREAK_LEN = 0.38; // vertical length of each drop
 
@@ -19,8 +19,12 @@
 		const y = Math.random() * BOX_H;
 		const z = (Math.random() - 0.5) * BOX_W;
 		const b = i * 6;
-		positions[b]     = x;  positions[b + 1] = y;              positions[b + 2] = z;
-		positions[b + 3] = x;  positions[b + 4] = y - STREAK_LEN; positions[b + 5] = z;
+		positions[b] = x;
+		positions[b + 1] = y;
+		positions[b + 2] = z;
+		positions[b + 3] = x;
+		positions[b + 4] = y - STREAK_LEN;
+		positions[b + 5] = z;
 	}
 
 	const geo = new THREE.BufferGeometry();

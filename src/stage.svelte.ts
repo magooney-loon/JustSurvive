@@ -1,6 +1,6 @@
 import type { CameraControlsRef } from '@threlte/extras';
-import { soundActions } from './Sound.svelte';
-import { settingsState, log } from './settings.svelte.js';
+import { soundActions } from '$root/Sound.svelte';
+import { settingsState, log } from '$root/settings.svelte.js';
 
 export type StageType = 'menu' | 'lobby' | 'game' | 'game_over' | 'leaderboard' | 'settings';
 

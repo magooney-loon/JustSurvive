@@ -1,9 +1,9 @@
 <script lang="ts">
 	import { useTask } from '@threlte/core';
 	import { useSpacetimeDB, useTable } from 'spacetimedb/svelte';
-	import { tables } from '../../module_bindings/index.js';
-	import { lobbyState } from '../stores/lobby.svelte.js';
-	import { combatActions } from '../stores/combat.svelte.js';
+	import { tables } from '$bindings/index.js';
+	import { lobbyState } from '$lib/stores/lobby.svelte.js';
+	import { combatActions } from '$lib/stores/combat.svelte.js';
 	import {
 		localPos,
 		localVelocity,
@@ -13,20 +13,20 @@
 		localAim,
 		fpsCamera,
 		cameraFollow
-	} from '../stores/movement.svelte.js';
-	import { resetAbilities } from '../stores/abilities.svelte.js';
-	import { localHealthState, skyState, devSky } from '../stores/sky.svelte.js';
+	} from '$lib/stores/movement.svelte.js';
+	import { resetAbilities } from '$lib/stores/abilities.svelte.js';
+	import { localHealthState, skyState, devSky } from '$lib/stores/sky.svelte.js';
 	import { onMount } from 'svelte';
-	import PlayerEntity from '../character/PlayerEntity.svelte';
-	import EnemyEntity from '../character/EnemyEntity.svelte';
-	import EnemyProxyInstances from '../character/EnemyProxyInstances.svelte';
-	import AcidPoolEntity from '../character/AcidPoolEntity.svelte';
-	import MarkOverlay from '../character/MarkOverlay.svelte';
-	import GameGround from '../map/GameGround.svelte';
-	import HealBeam from '../character/HealBeam.svelte';
-	import GameSounds from './GameSounds.svelte';
-	import RainEffect from '../map/RainEffect.svelte';
-	import SpotterFlashEffect from '../character/SpotterFlashEffect.svelte';
+	import PlayerEntity from '$lib/character/player/PlayerEntity.svelte';
+	import EnemyEntity from '$lib/character/enemies/EnemyEntity.svelte';
+	import EnemyProxyInstances from '$lib/character/enemies/EnemyProxyInstances.svelte';
+	import AcidPoolEntity from '$lib/character/enemies/AcidPoolEntity.svelte';
+	import MarkOverlay from '$lib/character/ui/MarkOverlay.svelte';
+	import GameGround from '$lib/map/GameGround.svelte';
+	import HealBeam from '$lib/character/player/HealBeam.svelte';
+	import GameSounds from '$lib/stages/GameSounds.svelte';
+	import RainEffect from '$lib/map/RainEffect.svelte';
+	import SpotterFlashEffect from '$lib/character/enemies/SpotterFlashEffect.svelte';
 
 	const conn = useSpacetimeDB();
 	const [players] = useTable(tables.playerState);
@@ -93,11 +93,76 @@
 	const phase = $derived(devSky.forcedPhase ?? session?.dayPhase ?? 'sunset');
 
 	const PHASE_SKY = {
-		sunset:     { elevation: 3,   azimuth: 260, turbidity: 12, rayleigh: 2.5,  mieC: 0.007, mieG: 0.80, ambient: 0.60, sun: 1.00, sunR: 1.0,  sunG: 0.75, sunB: 0.45, storm: 0.00 },
-		dusk:       { elevation: 0,   azimuth: 255, turbidity: 10, rayleigh: 1.5,  mieC: 0.005, mieG: 0.75, ambient: 0.35, sun: 0.50, sunR: 0.85, sunG: 0.55, sunB: 0.30, storm: 0.00 },
-		twilight:   { elevation: -3,  azimuth: 250, turbidity: 8,  rayleigh: 0.5,  mieC: 0.004, mieG: 0.70, ambient: 0.18, sun: 0.12, sunR: 0.45, sunG: 0.45, sunB: 0.65, storm: 0.20 },
-		night:      { elevation: -8,  azimuth: 180, turbidity: 6,  rayleigh: 0.2,  mieC: 0.003, mieG: 0.70, ambient: 0.07, sun: 0.04, sunR: 0.30, sunG: 0.35, sunB: 0.55, storm: 0.75 },
-		deep_night: { elevation: -15, azimuth: 180, turbidity: 4,  rayleigh: 0.08, mieC: 0.002, mieG: 0.70, ambient: 0.03, sun: 0.01, sunR: 0.20, sunG: 0.25, sunB: 0.40, storm: 1.00 },
+		sunset: {
+			elevation: 3,
+			azimuth: 260,
+			turbidity: 12,
+			rayleigh: 2.5,
+			mieC: 0.007,
+			mieG: 0.8,
+			ambient: 0.6,
+			sun: 1.0,
+			sunR: 1.0,
+			sunG: 0.75,
+			sunB: 0.45,
+			storm: 0.0
+		},
+		dusk: {
+			elevation: 0,
+			azimuth: 255,
+			turbidity: 10,
+			rayleigh: 1.5,
+			mieC: 0.005,
+			mieG: 0.75,
+			ambient: 0.35,
+			sun: 0.5,
+			sunR: 0.85,
+			sunG: 0.55,
+			sunB: 0.3,
+			storm: 0.0
+		},
+		twilight: {
+			elevation: -3,
+			azimuth: 250,
+			turbidity: 8,
+			rayleigh: 0.5,
+			mieC: 0.004,
+			mieG: 0.7,
+			ambient: 0.18,
+			sun: 0.12,
+			sunR: 0.45,
+			sunG: 0.45,
+			sunB: 0.65,
+			storm: 0.2
+		},
+		night: {
+			elevation: -8,
+			azimuth: 180,
+			turbidity: 6,
+			rayleigh: 0.2,
+			mieC: 0.003,
+			mieG: 0.7,
+			ambient: 0.07,
+			sun: 0.04,
+			sunR: 0.3,
+			sunG: 0.35,
+			sunB: 0.55,
+			storm: 0.75
+		},
+		deep_night: {
+			elevation: -15,
+			azimuth: 180,
+			turbidity: 4,
+			rayleigh: 0.08,
+			mieC: 0.002,
+			mieG: 0.7,
+			ambient: 0.03,
+			sun: 0.01,
+			sunR: 0.2,
+			sunG: 0.25,
+			sunB: 0.4,
+			storm: 1.0
+		}
 	} as const;
 
 	const CLASS_RANGE: Record<string, number> = {
@@ -115,9 +180,8 @@
 	$effect(() => {
 		const hp = myState?.hp ?? null;
 		const max = myState?.maxHp ?? null;
-		localHealthState.ratio = hp !== null && max && max > 0n
-			? Math.max(0, Math.min(1, Number(hp) / Number(max)))
-			: 1;
+		localHealthState.ratio =
+			hp !== null && max && max > 0n ? Math.max(0, Math.min(1, Number(hp) / Number(max))) : 1;
 	});
 
 	let spectateIndex = $state(0);
@@ -139,14 +203,14 @@
 		// ── Sky lerp (always runs) ──────────────────────────────────────────
 		const skyTarget = PHASE_SKY[phase as keyof typeof PHASE_SKY] ?? PHASE_SKY.sunset;
 		const t = Math.min(1, dt * 1.5);
-		skyState.elevation        += (skyTarget.elevation - skyState.elevation) * t;
-		skyState.azimuth          += (skyTarget.azimuth   - skyState.azimuth)   * t;
-		skyState.turbidity        += (skyTarget.turbidity - skyState.turbidity) * t;
-		skyState.rayleigh         += (skyTarget.rayleigh  - skyState.rayleigh)  * t;
-		skyState.mieCoefficient   += (skyTarget.mieC      - skyState.mieCoefficient)  * t;
-		skyState.mieDirectionalG  += (skyTarget.mieG      - skyState.mieDirectionalG) * t;
-		skyState.ambientIntensity += (skyTarget.ambient   - skyState.ambientIntensity) * t;
-		skyState.sunIntensity     += (skyTarget.sun       - skyState.sunIntensity)     * t;
+		skyState.elevation += (skyTarget.elevation - skyState.elevation) * t;
+		skyState.azimuth += (skyTarget.azimuth - skyState.azimuth) * t;
+		skyState.turbidity += (skyTarget.turbidity - skyState.turbidity) * t;
+		skyState.rayleigh += (skyTarget.rayleigh - skyState.rayleigh) * t;
+		skyState.mieCoefficient += (skyTarget.mieC - skyState.mieCoefficient) * t;
+		skyState.mieDirectionalG += (skyTarget.mieG - skyState.mieDirectionalG) * t;
+		skyState.ambientIntensity += (skyTarget.ambient - skyState.ambientIntensity) * t;
+		skyState.sunIntensity += (skyTarget.sun - skyState.sunIntensity) * t;
 		skyState.sunR += (skyTarget.sunR - skyState.sunR) * t;
 		skyState.sunG += (skyTarget.sunG - skyState.sunG) * t;
 		skyState.sunB += (skyTarget.sunB - skyState.sunB) * t;
@@ -177,8 +241,8 @@
 
 		// FPS aim: project camera forward ray onto the ground plane
 		const range = CLASS_RANGE[myState?.classChoice ?? 'gunner'] ?? 10;
-		localAim.x = localPos.x + (-Math.sin(fpsCamera.yaw)) * range;
-		localAim.z = localPos.z + (-Math.cos(fpsCamera.yaw)) * range;
+		localAim.x = localPos.x + -Math.sin(fpsCamera.yaw) * range;
+		localAim.z = localPos.z + -Math.cos(fpsCamera.yaw) * range;
 
 		const hasStamina = myState.stamina > 0n;
 		// camYaw for movement: camera forward is (-sin(yaw), -cos(yaw)), so pass yaw+π

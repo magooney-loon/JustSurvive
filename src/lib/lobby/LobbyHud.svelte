@@ -1,10 +1,10 @@
 <script lang="ts">
 	import { fly, fade } from 'svelte/transition';
-	import { stageActions } from '../../stage.svelte.js';
-	import { lobbyActions, lobbyState } from '../stores/lobby.svelte.js';
+	import { stageActions } from '$root/stage.svelte.js';
+	import { lobbyActions, lobbyState } from '$lib/stores/lobby.svelte.js';
 	import { useSpacetimeDB, useTable } from 'spacetimedb/svelte';
-	import { tables } from '../../module_bindings/index.js';
-	import { soundActions } from '../../Sound.svelte';
+	import { tables } from '$bindings/index.js';
+	import { soundActions } from '$root/Sound.svelte';
 
 	const conn = useSpacetimeDB();
 	const [lobbies] = useTable(tables.lobby);
@@ -591,7 +591,10 @@
 					{#each CLASSES as cls}
 						{@const isFull = classCounts[cls] >= 2}
 						{@const isSelected = myEntry?.classChoice === cls}
-						{@const classLocked = isFull || currentLobby?.status !== 'waiting' || (currentLobby?.isPublic && !!myEntry?.isReady)}
+						{@const classLocked =
+							isFull ||
+							currentLobby?.status !== 'waiting' ||
+							(currentLobby?.isPublic && !!myEntry?.isReady)}
 						<button
 							onclick={() => {
 								if (!classLocked) {
@@ -698,7 +701,10 @@
 			</div>
 
 			<!-- Ready toggle -->
-			{@const readyLocked = !myEntry?.classChoice || currentLobby?.status !== 'waiting' || (currentLobby?.isPublic && !!myEntry?.isReady)}
+			{@const readyLocked =
+				!myEntry?.classChoice ||
+				currentLobby?.status !== 'waiting' ||
+				(currentLobby?.isPublic && !!myEntry?.isReady)}
 			<button
 				onclick={() => {
 					soundActions.playClick();
@@ -721,7 +727,11 @@
 				<p
 					style="text-align: center; color: rgba(255,255,255,0.45); font-size: 0.875rem; margin: 0 0 0.5rem;"
 				>
-					{gameStarting ? 'Starting...' : allReady ? 'Starting soon...' : 'Game starts when 2+ players are ready'}
+					{gameStarting
+						? 'Starting...'
+						: allReady
+							? 'Starting soon...'
+							: 'Game starts when 2+ players are ready'}
 				</p>
 			{:else if isHost}
 				<button

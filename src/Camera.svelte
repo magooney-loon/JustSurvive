@@ -1,9 +1,9 @@
 <script lang="ts">
 	import { T, useTask, useThrelte } from '@threlte/core';
 	import { AudioListener } from '@threlte/extras';
-	import { stageState } from './stage.svelte.js';
-	import { log, settingsState } from './settings.svelte.js';
-	import { localPos, localVelocity, fpsCamera, cameraFollow } from './lib/stores/movement.svelte.js';
+	import { stageState } from '$root/stage.svelte.js';
+	import { log, settingsState } from '$root/settings.svelte.js';
+	import { localPos, localVelocity, fpsCamera, cameraFollow } from '$lib/stores/movement.svelte.js';
 	import type { PerspectiveCamera } from 'three';
 
 	const { renderer } = useThrelte();
@@ -73,11 +73,7 @@
 			// "Behind" = opposite of look direction = +sin/+cos when yaw=0
 			const behindX = Math.sin(fpsCamera.yaw) * TPS_Z;
 			const behindZ = Math.cos(fpsCamera.yaw) * TPS_Z;
-			camera.position.set(
-				localPos.x + behindX,
-				localPos.y + TPS_Y,
-				localPos.z + behindZ
-			);
+			camera.position.set(localPos.x + behindX, localPos.y + TPS_Y, localPos.z + behindZ);
 			camera.rotation.y = fpsCamera.yaw;
 			camera.rotation.x = TPS_PITCH;
 		} else {

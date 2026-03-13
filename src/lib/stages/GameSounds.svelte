@@ -3,11 +3,11 @@
 	import { PositionalAudio } from '@threlte/extras';
 	import { PositionalAudio as ThreePosAudio } from 'three';
 	import { useSpacetimeDB, useTable } from 'spacetimedb/svelte';
-	import { tables } from '../../module_bindings/index.js';
-	import { lobbyState } from '../stores/lobby.svelte.js';
-	import { localPos } from '../stores/movement.svelte.js';
-	import { soundTriggers, soundActions } from '../../Sound.svelte';
-	import { settingsState } from '../../settings.svelte.js';
+	import { tables } from '$bindings/index.js';
+	import { lobbyState } from '$lib/stores/lobby.svelte.js';
+	import { localPos } from '$lib/stores/movement.svelte.js';
+	import { soundTriggers, soundActions } from '$root/Sound.svelte';
+	import { settingsState } from '$root/settings.svelte.js';
 
 	const conn = useSpacetimeDB();
 	const [players] = useTable(tables.playerState);
@@ -42,7 +42,9 @@
 	// ─── New cycle sound ──────────────────────────────────────────────────────
 	let prevCycleNumber: bigint | undefined = undefined;
 	$effect(() => {
-		const session = $sessions.find(s => s.id === lobbyState.currentSessionId && s.status === 'active');
+		const session = $sessions.find(
+			(s) => s.id === lobbyState.currentSessionId && s.status === 'active'
+		);
 		if (!session) return;
 		if (prevCycleNumber !== undefined && session.cycleNumber > prevCycleNumber) {
 			soundActions.playNewCycle();
@@ -59,7 +61,7 @@
 		basic: () => soundActions.playSpreeKilling(),
 		fast: () => soundActions.playSpreeeDominating(),
 		brute: () => soundActions.playSpreeGodlike(),
-		spitter: () => soundActions.playSpreeHumiliation(),
+		spitter: () => soundActions.playSpreeHumiliation()
 	};
 
 	$effect(() => {
@@ -82,19 +84,41 @@
 	// ─── Keep volumes synced ──────────────────────────────────────────────────
 	$effect(() => {
 		const vol = settingsState.audio.effectsVolume;
-		for (const a of [gunnerShotAudio, healerHealAudio, healerReviveAudio, spotterMarkAudio, spotterPingAudio, tankBashAudio, tankBraceAudio]) {
+		for (const a of [
+			gunnerShotAudio,
+			healerHealAudio,
+			healerReviveAudio,
+			spotterMarkAudio,
+			spotterPingAudio,
+			tankBashAudio,
+			tankBraceAudio
+		]) {
 			if (a) a.setVolume(vol);
 		}
 	});
 
 	// ─── Ability sound triggers ───────────────────────────────────────────────
-	$effect(() => { if (soundTriggers.gunnerShot > 0) playPos(gunnerShotAudio); });
-	$effect(() => { if (soundTriggers.healerHeal > 0) playPos(healerHealAudio); });
-	$effect(() => { if (soundTriggers.healerRevive > 0) playPos(healerReviveAudio); });
-	$effect(() => { if (soundTriggers.spotterMark > 0) playPos(spotterMarkAudio); });
-	$effect(() => { if (soundTriggers.spotterPing > 0) playPos(spotterPingAudio); });
-	$effect(() => { if (soundTriggers.tankBash > 0) playPos(tankBashAudio); });
-	$effect(() => { if (soundTriggers.tankBrace > 0) playPos(tankBraceAudio); });
+	$effect(() => {
+		if (soundTriggers.gunnerShot > 0) playPos(gunnerShotAudio);
+	});
+	$effect(() => {
+		if (soundTriggers.healerHeal > 0) playPos(healerHealAudio);
+	});
+	$effect(() => {
+		if (soundTriggers.healerRevive > 0) playPos(healerReviveAudio);
+	});
+	$effect(() => {
+		if (soundTriggers.spotterMark > 0) playPos(spotterMarkAudio);
+	});
+	$effect(() => {
+		if (soundTriggers.spotterPing > 0) playPos(spotterPingAudio);
+	});
+	$effect(() => {
+		if (soundTriggers.tankBash > 0) playPos(tankBashAudio);
+	});
+	$effect(() => {
+		if (soundTriggers.tankBrace > 0) playPos(tankBraceAudio);
+	});
 
 	// ─── Player status → global sounds ───────────────────────────────────────
 	let prevStatus = $state<string | undefined>(undefined);
@@ -115,48 +139,62 @@
 		refDistance={4}
 		maxDistance={20}
 		rolloffFactor={1.5}
-		oncreate={(a) => { gunnerShotAudio = a; }}
+		oncreate={(a) => {
+			gunnerShotAudio = a;
+		}}
 	/>
 	<PositionalAudio
 		src={`${base}sounds/healer_heal.mp3`}
 		refDistance={4}
 		maxDistance={20}
 		rolloffFactor={1.5}
-		oncreate={(a) => { healerHealAudio = a; }}
+		oncreate={(a) => {
+			healerHealAudio = a;
+		}}
 	/>
 	<PositionalAudio
 		src={`${base}sounds/healer_revive.mp3`}
 		refDistance={4}
 		maxDistance={20}
 		rolloffFactor={1.5}
-		oncreate={(a) => { healerReviveAudio = a; }}
+		oncreate={(a) => {
+			healerReviveAudio = a;
+		}}
 	/>
 	<PositionalAudio
 		src={`${base}sounds/spotter_location.mp3`}
 		refDistance={4}
 		maxDistance={20}
 		rolloffFactor={1.5}
-		oncreate={(a) => { spotterMarkAudio = a; }}
+		oncreate={(a) => {
+			spotterMarkAudio = a;
+		}}
 	/>
 	<PositionalAudio
 		src={`${base}sounds/spotter_ping.mp3`}
 		refDistance={4}
 		maxDistance={20}
 		rolloffFactor={1.5}
-		oncreate={(a) => { spotterPingAudio = a; }}
+		oncreate={(a) => {
+			spotterPingAudio = a;
+		}}
 	/>
 	<PositionalAudio
 		src={`${base}sounds/tank_bash.mp3`}
 		refDistance={4}
 		maxDistance={20}
 		rolloffFactor={1.5}
-		oncreate={(a) => { tankBashAudio = a; }}
+		oncreate={(a) => {
+			tankBashAudio = a;
+		}}
 	/>
 	<PositionalAudio
 		src={`${base}sounds/tank_brace.mp3`}
 		refDistance={4}
 		maxDistance={20}
 		rolloffFactor={1.5}
-		oncreate={(a) => { tankBraceAudio = a; }}
+		oncreate={(a) => {
+			tankBraceAudio = a;
+		}}
 	/>
 </T.Group>

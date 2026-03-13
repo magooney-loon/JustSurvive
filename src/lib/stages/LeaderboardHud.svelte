@@ -1,9 +1,9 @@
 <script lang="ts">
 	import { fly } from 'svelte/transition';
-	import { stageActions } from '../../stage.svelte.js';
-	import { soundActions } from '../../Sound.svelte';
+	import { stageActions } from '$root/stage.svelte.js';
+	import { soundActions } from '$root/Sound.svelte';
 	import { useTable } from 'spacetimedb/svelte';
-	import { tables } from '../../module_bindings/index.js';
+	import { tables } from '$bindings/index.js';
 
 	const [lobbyResults] = useTable(tables.lobbyResult);
 	const [resultPlayers] = useTable(tables.lobbyResultPlayer);

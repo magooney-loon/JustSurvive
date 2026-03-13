@@ -1,13 +1,13 @@
 <script lang="ts">
 	import { fly } from 'svelte/transition';
 	import { useSpacetimeDB, useTable } from 'spacetimedb/svelte';
-	import { tables } from '../../module_bindings/index.js';
-	import { lobbyState } from '../stores/lobby.svelte.js';
-	import { stageActions } from '../../stage.svelte.js';
-	import { soundActions } from '../../Sound.svelte';
-	import { abilityState } from '../stores/abilities.svelte.js';
-	import { settingsState } from '../../settings.svelte.js';
-	import ReviveChannelHud from '../character/ReviveChannelHud.svelte';
+	import { tables } from '$bindings/index.js';
+	import { lobbyState } from '$lib/stores/lobby.svelte.js';
+	import { stageActions } from '$root/stage.svelte.js';
+	import { soundActions } from '$root/Sound.svelte';
+	import { abilityState } from '$lib/stores/abilities.svelte.js';
+	import { settingsState } from '$root/settings.svelte.js';
+	import ReviveChannelHud from '$lib/character/ui/ReviveChannelHud.svelte';
 
 	const conn = useSpacetimeDB();
 	const [players] = useTable(tables.playerState);
@@ -400,11 +400,17 @@
 		>
 			<div style="position: relative; width: 20px; height: 20px;">
 				<!-- Horizontal bar -->
-				<div style="position: absolute; top: 50%; left: 0; width: 100%; height: 2px; background: rgba(255,255,255,0.85); transform: translateY(-50%);"></div>
+				<div
+					style="position: absolute; top: 50%; left: 0; width: 100%; height: 2px; background: rgba(255,255,255,0.85); transform: translateY(-50%);"
+				></div>
 				<!-- Vertical bar -->
-				<div style="position: absolute; left: 50%; top: 0; width: 2px; height: 100%; background: rgba(255,255,255,0.85); transform: translateX(-50%);"></div>
+				<div
+					style="position: absolute; left: 50%; top: 0; width: 2px; height: 100%; background: rgba(255,255,255,0.85); transform: translateX(-50%);"
+				></div>
 				<!-- Center dot -->
-				<div style="position: absolute; top: 50%; left: 50%; width: 4px; height: 4px; background: white; border-radius: 50%; transform: translate(-50%,-50%);"></div>
+				<div
+					style="position: absolute; top: 50%; left: 50%; width: 4px; height: 4px; background: white; border-radius: 50%; transform: translate(-50%,-50%);"
+				></div>
 			</div>
 		</div>
 	{/if}

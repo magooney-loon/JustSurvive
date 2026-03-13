@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { stageState } from './stage.svelte.js';
+	import { stageState } from '$root/stage.svelte.js';
 	import MenuStage from '$lib/stages/MenuStage.svelte';
 	import GameStage from '$lib/stages/GameStage.svelte';
 	import GameOverStage from '$lib/stages/GameOverStage.svelte';

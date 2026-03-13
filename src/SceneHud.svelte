@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { fade } from 'svelte/transition';
-	import { stageState } from './stage.svelte.js';
-	import { settingsState } from './settings.svelte.js';
+	import { stageState } from '$root/stage.svelte.js';
+	import { settingsState } from '$root/settings.svelte.js';
 	import MenuHud from '$lib/stages/MenuHud.svelte';
 	import LobbyHud from '$lib/lobby/LobbyHud.svelte';
 	import GameHud from '$lib/stages/GameHud.svelte';

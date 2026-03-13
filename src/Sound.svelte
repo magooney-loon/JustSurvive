@@ -78,8 +78,8 @@
 <script lang="ts">
 	import { Audio } from '@threlte/extras';
 	import { Audio as ThreeAudio } from 'three';
-	import { settingsState, log } from './settings.svelte.js';
-	import { skyState } from './lib/stores/sky.svelte.js';
+	import { settingsState, log } from '$root/settings.svelte.js';
+	import { skyState } from '$lib/stores/sky.svelte.js';
 
 	// Place your audio files in /public/sounds/
 	const base = import.meta.env.BASE_URL;

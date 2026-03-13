@@ -2,8 +2,8 @@
 	import { T, useTask, useThrelte } from '@threlte/core';
 	import { Stars as StarsComponent, Sky } from '@threlte/extras';
 	import * as THREE from 'three';
-	import { settingsState } from './settings.svelte.js';
-	import { skyState } from './lib/stores/sky.svelte.js';
+	import { settingsState } from '$root/settings.svelte.js';
+	import { skyState } from '$lib/stores/sky.svelte.js';
 
 	const { camera } = useThrelte();
 	let skyGroup = $state<THREE.Group | undefined>(undefined);
@@ -49,7 +49,13 @@
 	let lTimer = 0;
 	let lNext = 6 + Math.random() * 10;
 	// durations and intensities randomised per strike
-	let lF1 = 0, lG1 = 0, lF2 = 0, lI2 = 0, lG2 = 0, lF3 = 0, lI3 = 0;
+	let lF1 = 0,
+		lG1 = 0,
+		lF2 = 0,
+		lI2 = 0,
+		lG2 = 0,
+		lF3 = 0,
+		lI3 = 0;
 	let lExtra = 0; // 0, 1, or 2 extra flashes
 
 	useTask((dt) => {
@@ -66,34 +72,53 @@
 			if (storm > 0.05) lNext -= dt;
 			if (lNext <= 0) {
 				// Randomise entire strike profile
-				lF1    = 0.04 + Math.random() * 0.07;
+				lF1 = 0.04 + Math.random() * 0.07;
 				lExtra = Math.random() < 0.55 ? (Math.random() < 0.45 ? 2 : 1) : 0;
-				lG1    = 0.06 + Math.random() * 0.14;
-				lI2    = 0.25 + Math.random() * 0.3;
-				lF2    = 0.03 + Math.random() * 0.05;
-				lG2    = 0.05 + Math.random() * 0.10;
-				lI3    = 0.10 + Math.random() * 0.15;
-				lF3    = 0.02 + Math.random() * 0.04;
-				lNext  = (4 + Math.random() * 14 + Math.random() * 8) / storm;
-				lPhase = 'f1'; lTimer = 0;
+				lG1 = 0.06 + Math.random() * 0.14;
+				lI2 = 0.25 + Math.random() * 0.3;
+				lF2 = 0.03 + Math.random() * 0.05;
+				lG2 = 0.05 + Math.random() * 0.1;
+				lI3 = 0.1 + Math.random() * 0.15;
+				lF3 = 0.02 + Math.random() * 0.04;
+				lNext = (4 + Math.random() * 14 + Math.random() * 8) / storm;
+				lPhase = 'f1';
+				lTimer = 0;
 			}
 		} else {
 			lTimer += dt;
 			if (lPhase === 'f1') {
 				lightningFlash = storm;
-				if (lTimer >= lF1) { lPhase = lExtra > 0 ? 'g1' : 'idle'; lTimer = 0; lightningFlash = 0; }
+				if (lTimer >= lF1) {
+					lPhase = lExtra > 0 ? 'g1' : 'idle';
+					lTimer = 0;
+					lightningFlash = 0;
+				}
 			} else if (lPhase === 'g1') {
 				lightningFlash = 0;
-				if (lTimer >= lG1) { lPhase = 'f2'; lTimer = 0; }
+				if (lTimer >= lG1) {
+					lPhase = 'f2';
+					lTimer = 0;
+				}
 			} else if (lPhase === 'f2') {
 				lightningFlash = storm * lI2;
-				if (lTimer >= lF2) { lPhase = lExtra > 1 ? 'g2' : 'idle'; lTimer = 0; lightningFlash = 0; }
+				if (lTimer >= lF2) {
+					lPhase = lExtra > 1 ? 'g2' : 'idle';
+					lTimer = 0;
+					lightningFlash = 0;
+				}
 			} else if (lPhase === 'g2') {
 				lightningFlash = 0;
-				if (lTimer >= lG2) { lPhase = 'f3'; lTimer = 0; }
+				if (lTimer >= lG2) {
+					lPhase = 'f3';
+					lTimer = 0;
+				}
 			} else if (lPhase === 'f3') {
 				lightningFlash = storm * lI3;
-				if (lTimer >= lF3) { lPhase = 'idle'; lTimer = 0; lightningFlash = 0; }
+				if (lTimer >= lF3) {
+					lPhase = 'idle';
+					lTimer = 0;
+					lightningFlash = 0;
+				}
 			}
 		}
 	});
@@ -120,7 +145,12 @@
 
 <!-- Lightning flash — subtle cold blue-white pulse, scaled way down -->
 <T.AmbientLight color="#c8d8ff" intensity={lightningFlash * 1.8} />
-<T.DirectionalLight position={[15, 60, 25]} color="#ddeeff" intensity={lightningFlash * 3.0} castShadow={false} />
+<T.DirectionalLight
+	position={[15, 60, 25]}
+	color="#ddeeff"
+	intensity={lightningFlash * 3.0}
+	castShadow={false}
+/>
 
 <!-- Stars ───────────────────────────────────────────────────────────── -->
 <T.Group bind:ref={skyGroup}>

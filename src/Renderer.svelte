@@ -11,8 +11,8 @@
 		KernelSize,
 		VignetteEffect
 	} from 'postprocessing';
-	import { settingsState, log } from './settings.svelte.js';
-	import { localHealthState } from './lib/stores/sky.svelte.js';
+	import { settingsState, log } from '$root/settings.svelte.js';
+	import { localHealthState } from '$lib/stores/sky.svelte.js';
 
 	const { scene, renderer, camera, size, autoRender, renderStage } = useThrelte();
 
@@ -23,7 +23,7 @@
 	let vignetteEffect: VignetteEffect | null = null;
 
 	const VIGNETTE_BASE = 0.75;
-	const VIGNETTE_MAX  = 1.8;
+	const VIGNETTE_MAX = 1.8;
 	const VIGNETTE_LERP = 4; // lerp speed (units/sec)
 
 	const setupEffectComposer = () => {
@@ -91,8 +91,10 @@
 	useTask(
 		(delta) => {
 			if (vignetteEffect) {
-				const target = VIGNETTE_BASE + (VIGNETTE_MAX - VIGNETTE_BASE) * (1 - localHealthState.ratio);
-				vignetteEffect.darkness += (target - vignetteEffect.darkness) * Math.min(1, VIGNETTE_LERP * delta);
+				const target =
+					VIGNETTE_BASE + (VIGNETTE_MAX - VIGNETTE_BASE) * (1 - localHealthState.ratio);
+				vignetteEffect.darkness +=
+					(target - vignetteEffect.darkness) * Math.min(1, VIGNETTE_LERP * delta);
 			}
 			composer.render(delta);
 		},

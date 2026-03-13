@@ -1,17 +1,17 @@
 <script lang="ts">
 	import { Canvas } from '@threlte/core';
-	import Scene from './Scene.svelte';
-	import SceneHud from './SceneHud.svelte';
-	import Skybox from './Skybox.svelte';
-	import Camera from './Camera.svelte';
-	import Renderer from './Renderer.svelte';
-	import Sound from './Sound.svelte';
-	import Loader from './Loader.svelte';
+	import Scene from '$root/Scene.svelte';
+	import SceneHud from '$root/SceneHud.svelte';
+	import Skybox from '$root/Skybox.svelte';
+	import Camera from '$root/Camera.svelte';
+	import Renderer from '$root/Renderer.svelte';
+	import Sound from '$root/Sound.svelte';
+	import Loader from '$root/Loader.svelte';
 	import * as THREE from 'three';
-	import { settingsState, generalActions } from './settings.svelte.js';
-	import { stageState } from './stage.svelte.js';
-	import InputHandler from './lib/character/InputHandler.svelte';
-	import AbilityInput from './lib/character/AbilityInput.svelte';
+	import { settingsState, generalActions } from '$root/settings.svelte.js';
+	import { stageState } from '$root/stage.svelte.js';
+	import InputHandler from '$lib/character/player/InputHandler.svelte';
+	import AbilityInput from '$lib/character/player/AbilityInput.svelte';
 
 	function handleKeydown(e: KeyboardEvent) {
 		// Ctrl+H — toggle HUD visibility
@@ -54,7 +54,7 @@
 			{#await import('@threlte/extras') then { PerfMonitor }}
 				<PerfMonitor anchorX="left" anchorY="bottom" logsPerSecond={30} />
 			{/await}
-			{#await Promise.all([import('@threlte/studio'), import('./extensions/StageExtension.svelte'), import('./extensions/SkyExtension.svelte')]) then [{ Studio }, { default: StageExtension }, { default: SkyExtension }]}
+			{#await Promise.all( [import('@threlte/studio'), import('./extensions/StageExtension.svelte'), import('./extensions/SkyExtension.svelte')] ) then [{ Studio }, { default: StageExtension }, { default: SkyExtension }]}
 				<Studio extensions={[StageExtension, SkyExtension]}>
 					<Camera />
 					<Sound />

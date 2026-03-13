@@ -1,10 +1,10 @@
 <script lang="ts">
 	import { fly } from 'svelte/transition';
-	import { stageActions } from '../../stage.svelte.js';
-	import { lobbyActions, lobbyState } from '../stores/lobby.svelte.js';
+	import { stageActions } from '$root/stage.svelte.js';
+	import { lobbyActions, lobbyState } from '$lib/stores/lobby.svelte.js';
 	import { useSpacetimeDB, useTable } from 'spacetimedb/svelte';
-	import { tables } from '../../module_bindings/index.js';
-	import { soundActions } from '../../Sound.svelte';
+	import { tables } from '$bindings/index.js';
+	import { soundActions } from '$root/Sound.svelte';
 
 	const conn = useSpacetimeDB();
 	const [lobbies] = useTable(tables.lobby);
