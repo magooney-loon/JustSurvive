@@ -1,19 +1,18 @@
 <script lang="ts">
 	import { useTable, useSpacetimeDB } from 'spacetimedb/svelte';
 	import { tables } from '../../module_bindings/index.js';
-	import { gameState, gameActions } from '../stores/game.svelte.js';
+	import { lobbyState } from '../stores/lobby.svelte.js';
+	import { combatActions } from '../stores/combat.svelte.js';
+	import { localPos, localAim, fpsCamera } from '../stores/movement.svelte.js';
 	import {
-		localPos,
-		localAim,
 		abilityState,
 		healBeam,
 		HEAL_BEAM_MS,
 		shotFlash,
 		SHOT_FLASH_MS,
 		spotterFlash,
-		SPOTTER_FLASH_MS,
-		fpsCamera
-	} from '../stores/localGameState.svelte.js';
+		SPOTTER_FLASH_MS
+	} from '../stores/abilities.svelte.js';
 	import { soundActions } from '../../Sound.svelte';
 
 	const conn = useSpacetimeDB();
@@ -28,8 +27,8 @@
 			clearTimeout(braceTimer);
 			braceTimer = null;
 		}
-		const sid = gameState.currentSessionId;
-		if (sid) gameActions.braceEnd(sid);
+		const sid = lobbyState.currentSessionId;
+		if (sid) combatActions.braceEnd(sid);
 		abilityState.braceCooldownUntil = Date.now() + 1000;
 	}
 	function startBraceTimer() {
@@ -43,7 +42,7 @@
 		$players.find(
 			(p) =>
 				p.playerIdentity.toHexString() === $conn.identity?.toHexString() &&
-				p.sessionId === gameState.currentSessionId
+				p.sessionId === lobbyState.currentSessionId
 		)
 	);
 
@@ -63,7 +62,7 @@
 		let best: any = null;
 		let bestPerp = Number.POSITIVE_INFINITY;
 		for (const e of $enemies) {
-			if (!e.isAlive || e.sessionId !== gameState.currentSessionId) continue;
+			if (!e.isAlive || e.sessionId !== lobbyState.currentSessionId) continue;
 			const ex = Number(e.posX);
 			const ez = Number(e.posZ);
 			const vx = ex - ox;
@@ -87,7 +86,7 @@
 		let best: any = null;
 		let bestDist = BigInt(Number.MAX_SAFE_INTEGER);
 		for (const p of $players) {
-			if (p.status !== 'alive' || p.hp === 0n || p.sessionId !== gameState.currentSessionId)
+			if (p.status !== 'alive' || p.hp === 0n || p.sessionId !== lobbyState.currentSessionId)
 				continue;
 			if (p.playerIdentity.toHexString() === $conn.identity?.toHexString()) continue;
 			const dx = p.posX - ox;
@@ -108,7 +107,7 @@
 		let best: any = null;
 		let bestDist = BigInt(Number.MAX_SAFE_INTEGER);
 		for (const p of $players) {
-			if (p.status !== 'downed' || p.sessionId !== gameState.currentSessionId) continue;
+			if (p.status !== 'downed' || p.sessionId !== lobbyState.currentSessionId) continue;
 			if (p.playerIdentity.toHexString() === $conn.identity?.toHexString()) continue;
 			const dx = p.posX - ox;
 			const dz = p.posZ - oz;
@@ -128,7 +127,7 @@
 		let best: any = null;
 		let bestDist = BigInt(Number.MAX_SAFE_INTEGER);
 		for (const e of $enemies) {
-			if (!e.isAlive || e.sessionId !== gameState.currentSessionId) continue;
+			if (!e.isAlive || e.sessionId !== lobbyState.currentSessionId) continue;
 			const dx = e.posX - ox;
 			const dz = e.posZ - oz;
 			const d = dx * dx + dz * dz;
@@ -142,7 +141,7 @@
 
 	function onMouseDown(e: MouseEvent) {
 		if (!myState || myState.status !== 'alive') return;
-		const sid = gameState.currentSessionId;
+		const sid = lobbyState.currentSessionId;
 		if (!sid) return;
 
 		// ── SPOTTER ─────────────────────────────────────────────────────────
@@ -151,14 +150,14 @@
 				// LMB: mark nearest enemy at aim
 				const enemy = nearestEnemyToAim(15_000);
 				if (enemy) {
-					gameActions.markEnemy(sid, enemy.id);
+					combatActions.markEnemy(sid, enemy.id);
 					soundActions.playSpotterMark();
 					abilityState.markCooldownUntil = Date.now() + 5000;
 				}
 			} else if (e.button === 2) {
 				// RMB: flash stun — cone in front of player (1.5s cooldown)
 				if (abilityState.flashCooldownUntil > Date.now()) return;
-				gameActions.spotterFlash(sid);
+				combatActions.spotterFlash(sid);
 				soundActions.playSpotterPing();
 				abilityState.flashCooldownUntil = Date.now() + 1500;
 				spotterFlash.active = true;
@@ -180,7 +179,7 @@
 				abilityState.suppressHits = 1;
 			}
 			const suppress = abilityState.suppressHits % 3 === 0;
-			gameActions.attackEnemy(sid, enemy.id, suppress);
+			combatActions.attackEnemy(sid, enemy.id, suppress);
 			soundActions.playGunnerShot();
 			// Optimistic local state - show muzzle flash immediately without waiting for server
 			shotFlash.until = Date.now() + SHOT_FLASH_MS;
@@ -193,13 +192,13 @@
 				// LMB: shield bash (1.5s cooldown)
 				if (abilityState.bashCooldownUntil > Date.now()) return;
 				const enemy = nearestEnemyToPlayer(5_000);
-				gameActions.shieldBash(sid, enemy?.id);
+				combatActions.shieldBash(sid, enemy?.id);
 				soundActions.playTankBash();
 				abilityState.bashCooldownUntil = Date.now() + 1500;
 			} else if (e.button === 2) {
 				// RMB hold: start brace (1s cooldown between activations)
 				if (abilityState.braceCooldownUntil > Date.now()) return;
-				gameActions.braceStart(sid);
+				combatActions.braceStart(sid);
 				soundActions.playTankBrace();
 				startBraceTimer();
 			}
@@ -213,7 +212,7 @@
 				if (abilityState.healCooldownUntil > Date.now()) return;
 				const target = nearestAliveTeammate(10_000);
 				if (target) {
-					gameActions.healPlayer(sid, target.playerIdentity);
+					combatActions.healPlayer(sid, target.playerIdentity);
 					soundActions.playHealerHeal();
 					abilityState.healCooldownUntil = Date.now() + 2000;
 					// Trigger 3D heal beam
@@ -226,7 +225,7 @@
 				// RMB: revive nearest downed teammate
 				const target = nearestDowned(3_000);
 				if (target) {
-					gameActions.reviveStart(sid, target.playerIdentity);
+					combatActions.reviveStart(sid, target.playerIdentity);
 					soundActions.playHealerRevive();
 				}
 			}
@@ -236,7 +235,7 @@
 
 	function onMouseUp(e: MouseEvent) {
 		if (!myState) return;
-		const sid = gameState.currentSessionId;
+		const sid = lobbyState.currentSessionId;
 		if (!sid) return;
 		// RMB release: end tank brace, start cooldown
 		if (e.button === 2 && myState.classChoice === 'tank') {

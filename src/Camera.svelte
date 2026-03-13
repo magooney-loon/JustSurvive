@@ -3,7 +3,7 @@
 	import { AudioListener } from '@threlte/extras';
 	import { stageState } from './stage.svelte.js';
 	import { log, settingsState } from './settings.svelte.js';
-	import { localPos, localVelocity, fpsCamera, cameraFollow } from './lib/stores/localGameState.svelte.js';
+	import { localPos, localVelocity, fpsCamera, cameraFollow } from './lib/stores/movement.svelte.js';
 	import type { PerspectiveCamera } from 'three';
 
 	const { renderer } = useThrelte();

@@ -2,7 +2,7 @@
 	import { fly } from 'svelte/transition';
 	import { useTable } from 'spacetimedb/svelte';
 	import { tables } from '../../module_bindings/index.js';
-	import { gameState, gameActions } from '../stores/game.svelte.js';
+	import { lobbyState, lobbyActions } from '../stores/lobby.svelte.js';
 	import { stageActions } from '../../stage.svelte.js';
 	import { soundActions } from '../../Sound.svelte';
 
@@ -10,12 +10,12 @@
 
 	const sessionPlayers = $derived(
 		$players
-			.filter(p => p.sessionId === gameState.currentSessionId)
+			.filter(p => p.sessionId === lobbyState.currentSessionId)
 			.sort((a, b) => Number(b.score - a.score))
 	);
 
 	function goToMenu() {
-		if (gameState.currentLobbyId) gameActions.leaveLobby(gameState.currentLobbyId);
+		if (lobbyState.currentLobbyId) lobbyActions.leaveLobby(lobbyState.currentLobbyId);
 		stageActions.setStage('menu');
 	}
 </script>

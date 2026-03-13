@@ -2,10 +2,10 @@
 	import { fly } from 'svelte/transition';
 	import { useSpacetimeDB, useTable } from 'spacetimedb/svelte';
 	import { tables } from '../../module_bindings/index.js';
-	import { gameState } from '../stores/game.svelte.js';
+	import { lobbyState } from '../stores/lobby.svelte.js';
 	import { stageActions } from '../../stage.svelte.js';
 	import { soundActions } from '../../Sound.svelte';
-	import { abilityState } from '../stores/localGameState.svelte.js';
+	import { abilityState } from '../stores/abilities.svelte.js';
 	import { settingsState } from '../../settings.svelte.js';
 	import ReviveChannelHud from '../character/ReviveChannelHud.svelte';
 
@@ -13,19 +13,19 @@
 	const [players] = useTable(tables.playerState);
 	const [sessions] = useTable(tables.gameSession);
 
-	const session = $derived($sessions.find((s) => s.id === gameState.currentSessionId));
+	const session = $derived($sessions.find((s) => s.id === lobbyState.currentSessionId));
 	const myState = $derived(
 		$players.find(
 			(p) =>
 				p.playerIdentity.toHexString() === $conn.identity?.toHexString() &&
-				p.sessionId === gameState.currentSessionId
+				p.sessionId === lobbyState.currentSessionId
 		)
 	);
 	const teammates = $derived(
 		$players.filter(
 			(p) =>
 				p.playerIdentity.toHexString() !== $conn.identity?.toHexString() &&
-				p.sessionId === gameState.currentSessionId
+				p.sessionId === lobbyState.currentSessionId
 		)
 	);
 

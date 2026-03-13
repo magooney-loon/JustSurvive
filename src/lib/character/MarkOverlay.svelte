@@ -11,13 +11,13 @@
 	import { T, useTask } from '@threlte/core';
 	import { useTable } from 'spacetimedb/svelte';
 	import { tables } from '../../module_bindings/index.js';
-	import { gameState } from '../stores/game.svelte.js';
+	import { lobbyState } from '../stores/lobby.svelte.js';
 
 	const [marks] = useTable(tables.mark);
 
 	const activePings = $derived(
 		$marks.filter(m =>
-			m.sessionId === gameState.currentSessionId &&
+			m.sessionId === lobbyState.currentSessionId &&
 			m.targetType === 'location' &&
 			m.expiresAt.microsSinceUnixEpoch > BigInt(Date.now()) * 1000n
 		)

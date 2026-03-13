@@ -30,53 +30,14 @@ export const cameraFollow = $state({
 
 export { input, localPos, localVelocity };
 
-// Shared ability state — written by AbilityInput, read by GameHud
-export const abilityState = $state({
-	markCooldownUntil: 0, // ms timestamp (spotter mark, 5s)
-	suppressHits: 0, // gunner suppress counter (resets on enemy change)
-	lastSuppressedEnemyId: null as bigint | null,
-	bashCooldownUntil: 0, // ms timestamp (tank bash, 1.5s)
-	healCooldownUntil: 0, // ms timestamp (healer heal shot, 2s)
-	braceCooldownUntil: 0, // ms timestamp (tank brace, 1s between activations)
-	flashCooldownUntil: 0 // ms timestamp (spotter flash stun, 1.5s)
-});
+export const CLASS_SPEED: Record<string, { walk: number; sprint: number }> = {
+	spotter: { walk: 5, sprint: 9 },
+	gunner: { walk: 4.5, sprint: 7.5 },
+	tank: { walk: 2.5, sprint: 3.5 },
+	healer: { walk: 5, sprint: 8.5 }
+};
 
-// Heal beam — written by AbilityInput, read by HealBeam (3D scene)
-export const healBeam = $state({ active: false, toX: 0, toZ: 0, until: 0 });
-export const HEAL_BEAM_MS = 350;
-
-// Muzzle flash — written by AbilityInput (gunner shot), read by PlayerEntity
-// Uses optimistic local state to avoid latency issues in production
-export const shotFlash = $state({ until: 0 });
-export const SHOT_FLASH_MS = 200;
-
-// Spotter flash stun cone — written by AbilityInput, read by SpotterFlashEffect
-export const spotterFlash = $state({ active: false, yaw: 0, until: 0 });
-export const SPOTTER_FLASH_MS = 500;
-
-// Local player HP ratio [0..1] — written by GameStage, read by Renderer
-export const localHealthState = $state({ ratio: 1 });
-
-// Dev override — set by SkyExtension in studio mode, null = use session phase
-export const devSky = $state({ forcedPhase: null as string | null });
-
-// Sky state — written by GameStage (lerped per phase), read by Skybox
-export const skyState = $state({
-	elevation: 3,
-	azimuth: 260,
-	turbidity: 12,
-	rayleigh: 2.5,
-	mieCoefficient: 0.007,
-	mieDirectionalG: 0.8,
-	ambientIntensity: 0.6,
-	sunIntensity: 1.0,
-	sunR: 1.0,
-	sunG: 0.75,
-	sunB: 0.45,
-	stormIntensity: 0 // 0 = clear, 1 = full storm — drives rain audio + lightning
-});
-
-export function resetLocalState() {
+export function resetMovement() {
 	input.forward = false;
 	input.back = false;
 	input.left = false;
@@ -95,26 +56,7 @@ export function resetLocalState() {
 	cameraFollow.aimZ = 0;
 	fpsCamera.yaw = 0;
 	fpsCamera.pitch = 0;
-	abilityState.markCooldownUntil = 0;
-	abilityState.suppressHits = 0;
-	abilityState.lastSuppressedEnemyId = null;
-	abilityState.bashCooldownUntil = 0;
-	abilityState.healCooldownUntil = 0;
-	abilityState.braceCooldownUntil = 0;
-	abilityState.flashCooldownUntil = 0;
-	shotFlash.until = 0;
-	healBeam.active = false;
-	healBeam.toX = 0;
-	healBeam.toZ = 0;
-	healBeam.until = 0;
 }
-
-const CLASS_SPEED: Record<string, { walk: number; sprint: number }> = {
-	spotter: { walk: 5, sprint: 9 },
-	gunner: { walk: 4.5, sprint: 7.5 },
-	tank: { walk: 2.5, sprint: 3.5 },
-	healer: { walk: 5, sprint: 8.5 }
-};
 
 export function updateLocalMovement(
 	dt: number,

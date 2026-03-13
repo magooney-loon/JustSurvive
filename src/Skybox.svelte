@@ -3,7 +3,7 @@
 	import { Stars as StarsComponent, Sky } from '@threlte/extras';
 	import * as THREE from 'three';
 	import { settingsState } from './settings.svelte.js';
-	import { skyState } from './lib/stores/localGameState.svelte.js';
+	import { skyState } from './lib/stores/sky.svelte.js';
 
 	const { camera } = useThrelte();
 	let skyGroup = $state<THREE.Group | undefined>(undefined);

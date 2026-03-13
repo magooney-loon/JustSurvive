@@ -1,13 +1,13 @@
 <script lang="ts">
 	import { useTable, useSpacetimeDB } from 'spacetimedb/svelte';
 	import { tables } from '../../module_bindings/index.js';
-	import { gameState } from '../stores/game.svelte.js';
+	import { lobbyState } from '../stores/lobby.svelte.js';
 
 	const conn = useSpacetimeDB();
 	const [channels] = useTable(tables.reviveChannel);
 
 	const myChannel = $derived($channels.find(c =>
-		c.sessionId === gameState.currentSessionId &&
+		c.sessionId === lobbyState.currentSessionId &&
 		c.healerIdentity.toHexString() === $conn.identity?.toHexString()
 	));
 

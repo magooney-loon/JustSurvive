@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { useStudio, ToolbarItem, HorizontalButtonGroup, ToolbarButton } from '@threlte/studio/extend';
-	import { devSky } from '../lib/stores/localGameState.svelte.js';
+	import { devSky } from '../lib/stores/sky.svelte.js';
 
 	const { createExtension } = useStudio();
 	createExtension({ scope: 'sky', state() { return {}; }, actions: {} });

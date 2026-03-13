@@ -4,8 +4,8 @@
 	import { PositionalAudio as ThreePosAudio } from 'three';
 	import { useSpacetimeDB, useTable } from 'spacetimedb/svelte';
 	import { tables } from '../../module_bindings/index.js';
-	import { gameState } from '../stores/game.svelte.js';
-	import { localPos } from '../stores/localGameState.svelte.js';
+	import { lobbyState } from '../stores/lobby.svelte.js';
+	import { localPos } from '../stores/movement.svelte.js';
 	import { soundTriggers, soundActions } from '../../Sound.svelte';
 	import { settingsState } from '../../settings.svelte.js';
 
@@ -18,7 +18,7 @@
 		$players.find(
 			(p) =>
 				p.playerIdentity.toHexString() === $conn.identity?.toHexString() &&
-				p.sessionId === gameState.currentSessionId
+				p.sessionId === lobbyState.currentSessionId
 		)
 	);
 
@@ -42,7 +42,7 @@
 	// ─── New cycle sound ──────────────────────────────────────────────────────
 	let prevCycleNumber: bigint | undefined = undefined;
 	$effect(() => {
-		const session = $sessions.find(s => s.id === gameState.currentSessionId && s.status === 'active');
+		const session = $sessions.find(s => s.id === lobbyState.currentSessionId && s.status === 'active');
 		if (!session) return;
 		if (prevCycleNumber !== undefined && session.cycleNumber > prevCycleNumber) {
 			soundActions.playNewCycle();
@@ -63,7 +63,7 @@
 	};
 
 	$effect(() => {
-		const sessionId = gameState.currentSessionId;
+		const sessionId = lobbyState.currentSessionId;
 		if (sessionId !== prevKillSessionId) {
 			killCounts.clear();
 			countedKills.clear();

@@ -4,7 +4,8 @@
 	import { DbConnection, type ErrorContext } from './module_bindings';
 	import App from './App.svelte';
 	import { log } from './settings.svelte.js';
-	import { gameActions } from './lib/stores/game.svelte.js';
+	import { lobbyActions } from './lib/stores/lobby.svelte.js';
+	import { combatActions } from './lib/stores/combat.svelte.js';
 
 	const HOST = import.meta.env.VITE_SPACETIMEDB_HOST ?? 'ws://localhost:3000';
 	const DB_NAME = import.meta.env.VITE_SPACETIMEDB_DB_NAME ?? 'justsurvive-6769';
@@ -13,7 +14,8 @@
 	const onConnect = (conn: DbConnection, identity: Identity, token: string) => {
 		localStorage.setItem(TOKEN_KEY, token);
 		log.info('Connected to SpacetimeDB with identity:', identity.toHexString());
-		gameActions.init(conn);
+		lobbyActions.init(conn);
+		combatActions.init(conn);
 		// Global subscription so all table data is always live — useTable reads from this cache.
 		conn.subscriptionBuilder().subscribeToAllTables();
 	};

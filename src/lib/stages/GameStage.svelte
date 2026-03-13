@@ -2,20 +2,20 @@
 	import { useTask } from '@threlte/core';
 	import { useSpacetimeDB, useTable } from 'spacetimedb/svelte';
 	import { tables } from '../../module_bindings/index.js';
-	import { gameState, gameActions } from '../stores/game.svelte.js';
+	import { lobbyState } from '../stores/lobby.svelte.js';
+	import { combatActions } from '../stores/combat.svelte.js';
 	import {
 		localPos,
 		localVelocity,
 		input,
 		updateLocalMovement,
-		resetLocalState,
+		resetMovement,
 		localAim,
 		fpsCamera,
-		cameraFollow,
-		localHealthState,
-		skyState,
-		devSky
-	} from '../stores/localGameState.svelte.js';
+		cameraFollow
+	} from '../stores/movement.svelte.js';
+	import { resetAbilities } from '../stores/abilities.svelte.js';
+	import { localHealthState, skyState, devSky } from '../stores/sky.svelte.js';
 	import { onMount } from 'svelte';
 	import PlayerEntity from '../character/PlayerEntity.svelte';
 	import EnemyEntity from '../character/EnemyEntity.svelte';
@@ -34,19 +34,19 @@
 	const [sessions] = useTable(tables.gameSession);
 	const [acidPools] = useTable(tables.acidPool);
 
-	const session = $derived($sessions.find((s) => s.id === gameState.currentSessionId));
+	const session = $derived($sessions.find((s) => s.id === lobbyState.currentSessionId));
 	const myState = $derived(
 		$players.find(
 			(p) =>
 				p.playerIdentity.toHexString() === $conn.identity?.toHexString() &&
-				p.sessionId === gameState.currentSessionId
+				p.sessionId === lobbyState.currentSessionId
 		)
 	);
 	const otherPlayers = $derived(
 		$players.filter(
 			(p) =>
 				p.playerIdentity.toHexString() !== $conn.identity?.toHexString() &&
-				p.sessionId === gameState.currentSessionId
+				p.sessionId === lobbyState.currentSessionId
 		)
 	);
 	const MAX_RENDER_DIST = 80; // world units
@@ -59,7 +59,7 @@
 		const near: (typeof $enemies)[number][] = [];
 		const far: (typeof $enemies)[number][] = [];
 		for (const e of $enemies) {
-			if (e.sessionId !== gameState.currentSessionId) continue;
+			if (e.sessionId !== lobbyState.currentSessionId) continue;
 			if (!myState) {
 				// No local player yet — show all as near (EnemyEntity handles death anim)
 				near.push(e);
@@ -80,15 +80,15 @@
 	const livePools = $derived(
 		myState
 			? $acidPools.filter((p) => {
-					if (p.sessionId !== gameState.currentSessionId) return false;
+					if (p.sessionId !== lobbyState.currentSessionId) return false;
 					const dx = Number(p.posX) / 1000 - localPos.x;
 					const dz = Number(p.posZ) / 1000 - localPos.z;
 					return dx * dx + dz * dz <= MAX_DIST_SQ;
 				})
-			: $acidPools.filter((p) => p.sessionId === gameState.currentSessionId)
+			: $acidPools.filter((p) => p.sessionId === lobbyState.currentSessionId)
 	);
 	const alivePlayers = $derived(
-		$players.filter((p) => p.sessionId === gameState.currentSessionId && p.status === 'alive')
+		$players.filter((p) => p.sessionId === lobbyState.currentSessionId && p.status === 'alive')
 	);
 	const phase = $derived(devSky.forcedPhase ?? session?.dayPhase ?? 'sunset');
 
@@ -108,7 +108,8 @@
 	};
 
 	onMount(() => {
-		resetLocalState();
+		resetMovement();
+		resetAbilities();
 	});
 
 	$effect(() => {
@@ -189,8 +190,8 @@
 			sendTimer = 0;
 			const px = BigInt(Math.round(localPos.x * 1000));
 			const pz = BigInt(Math.round(localPos.z * 1000));
-			gameActions.movePlayer({
-				sessionId: gameState.currentSessionId!,
+			combatActions.movePlayer({
+				sessionId: lobbyState.currentSessionId!,
 				posX: px,
 				posY: BigInt(Math.round(localPos.y * 1000)),
 				posZ: pz,

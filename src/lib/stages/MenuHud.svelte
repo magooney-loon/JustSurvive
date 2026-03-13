@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { fly } from 'svelte/transition';
 	import { stageActions } from '../../stage.svelte.js';
-	import { gameActions, gameState } from '../stores/game.svelte.js';
+	import { lobbyActions, lobbyState } from '../stores/lobby.svelte.js';
 	import { useSpacetimeDB, useTable } from 'spacetimedb/svelte';
 	import { tables } from '../../module_bindings/index.js';
 	import { soundActions } from '../../Sound.svelte';
@@ -25,10 +25,10 @@
 
 	$effect(() => {
 		if (!myLobby) {
-			gameState.leavingLobby = false;
+			lobbyState.leavingLobby = false;
 			return;
 		}
-		if (myLobby.status !== 'in_progress' && !gameState.leavingLobby) {
+		if (myLobby.status !== 'in_progress' && !lobbyState.leavingLobby) {
 			stageActions.setStage('lobby');
 		}
 	});
@@ -40,27 +40,27 @@
 
 	async function quickplay() {
 		loading = true;
-		gameActions.setPlayerName(playerName);
-		await gameActions.quickplay();
+		lobbyActions.setPlayerName(playerName);
+		await lobbyActions.quickplay();
 		loading = false;
-		if (!gameState.error) stageActions.setStage('lobby');
+		if (!lobbyState.error) stageActions.setStage('lobby');
 	}
 
 	async function hostPrivate() {
 		loading = true;
-		gameActions.setPlayerName(playerName);
-		await gameActions.hostLobby(false);
+		lobbyActions.setPlayerName(playerName);
+		await lobbyActions.hostLobby(false);
 		loading = false;
-		if (!gameState.error) stageActions.setStage('lobby');
+		if (!lobbyState.error) stageActions.setStage('lobby');
 	}
 
 	async function joinByCode() {
 		if (joinCode.length < 4) return;
 		loading = true;
-		gameActions.setPlayerName(playerName);
-		await gameActions.joinByCode(joinCode);
+		lobbyActions.setPlayerName(playerName);
+		await lobbyActions.joinByCode(joinCode);
 		loading = false;
-		if (!gameState.error) stageActions.setStage('lobby');
+		if (!lobbyState.error) stageActions.setStage('lobby');
 	}
 </script>
 
@@ -191,7 +191,7 @@
 				<button
 					onclick={() => {
 						soundActions.playClick();
-						gameActions.clearError();
+						lobbyActions.clearError();
 						mode = 'join_code';
 					}}
 					disabled={loading}
@@ -247,7 +247,7 @@
 				<button
 					onclick={() => {
 						soundActions.playClick();
-						gameActions.clearError();
+						lobbyActions.clearError();
 						mode = 'main';
 					}}
 					disabled={loading}
@@ -262,9 +262,9 @@
 				>
 					Connecting...
 				</p>
-			{:else if gameState.error}
+			{:else if lobbyState.error}
 				<p style="text-align: center; color: #f66; margin: 0; font-size: 0.875rem;">
-					{gameState.error}
+					{lobbyState.error}
 				</p>
 			{/if}
 		{/if}

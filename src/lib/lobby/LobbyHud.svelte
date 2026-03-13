@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { fly, fade } from 'svelte/transition';
 	import { stageActions } from '../../stage.svelte.js';
-	import { gameActions, gameState } from '../stores/game.svelte.js';
+	import { lobbyActions, lobbyState } from '../stores/lobby.svelte.js';
 	import { useSpacetimeDB, useTable } from 'spacetimedb/svelte';
 	import { tables } from '../../module_bindings/index.js';
 	import { soundActions } from '../../Sound.svelte';
@@ -315,7 +315,7 @@
 	let connectingCountdown = $state(10);
 
 	$effect(() => {
-		if (!currentLobby && gameState.currentLobbyId === null) {
+		if (!currentLobby && lobbyState.currentLobbyId === null) {
 			connectingCountdown = 10;
 			const interval = setInterval(() => {
 				connectingCountdown--;
@@ -342,7 +342,7 @@
 		if (currentLobby?.status === 'in_progress') {
 			const session = $sessions.find((s) => s.lobbyId === currentLobby.id && s.status === 'active');
 			if (session) {
-				gameState.currentSessionId = session.id;
+				lobbyState.currentSessionId = session.id;
 				stageActions.setStage('game');
 			}
 		}
@@ -503,7 +503,7 @@
 			<button
 				onclick={() => {
 					soundActions.playClick();
-					gameState.currentLobbyId = null;
+					lobbyState.currentLobbyId = null;
 					stageActions.setStage('menu');
 				}}
 				style="padding: 0.5rem 1.5rem; background: rgba(255,255,255,0.1); color: white; border: 1px solid rgba(255,255,255,0.2); border-radius: 0.5rem; cursor: pointer;"
@@ -559,7 +559,7 @@
 								<button
 									onclick={() => {
 										soundActions.playClick();
-										gameActions.kickPlayer(currentLobby.id, player.playerIdentity);
+										lobbyActions.kickPlayer(currentLobby.id, player.playerIdentity);
 									}}
 									disabled={gameStarting}
 									title="Kick player"
@@ -596,7 +596,7 @@
 							onclick={() => {
 								if (!classLocked) {
 									soundActions.playClick();
-									gameActions.setClass(cls, currentLobby.id);
+									lobbyActions.setClass(cls, currentLobby.id);
 								}
 							}}
 							disabled={classLocked}
@@ -702,7 +702,7 @@
 			<button
 				onclick={() => {
 					soundActions.playClick();
-					gameActions.setReady(currentLobby.id, !myEntry?.isReady);
+					lobbyActions.setReady(currentLobby.id, !myEntry?.isReady);
 				}}
 				disabled={readyLocked}
 				style="width: 100%; padding: 0.65rem; margin-bottom: 0.75rem; border-radius: 0.5rem; border: 1px solid rgba(255,255,255,{myEntry?.isReady
@@ -727,7 +727,7 @@
 				<button
 					onclick={() => {
 						soundActions.playClick();
-						gameActions.startCountdown(currentLobby.id);
+						lobbyActions.startCountdown(currentLobby.id);
 					}}
 					disabled={!canStart}
 					style="width: 100%; padding: 0.75rem; font-size: 1rem; font-weight: 600; border-radius: 0.5rem; border: 1px solid rgba(255,255,255,{canStart
@@ -761,7 +761,7 @@
 			<button
 				onclick={() => {
 					soundActions.playClick();
-					gameActions.leaveLobby(currentLobby.id);
+					lobbyActions.leaveLobby(currentLobby.id);
 					stageActions.setStage('menu');
 				}}
 				disabled={currentLobby?.status !== 'waiting'}
@@ -818,8 +818,8 @@
 				{/key}
 			</div>
 
-			{#if gameState.error}
-				<p style="color: #f66; margin: 0.75rem 0 0; font-size: 0.875rem;">{gameState.error}</p>
+			{#if lobbyState.error}
+				<p style="color: #f66; margin: 0.75rem 0 0; font-size: 0.875rem;">{lobbyState.error}</p>
 			{/if}
 		{/if}
 	</div>

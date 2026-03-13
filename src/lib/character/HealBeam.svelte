@@ -32,7 +32,8 @@
 
 <script lang="ts">
 	import { T, useTask } from '@threlte/core';
-	import { localPos, healBeam, HEAL_BEAM_MS } from '../stores/localGameState.svelte.js';
+	import { localPos } from '../stores/movement.svelte.js';
+	import { healBeam, HEAL_BEAM_MS } from '../stores/abilities.svelte.js';
 
 	let beamRef = $state.raw<THREE.Mesh | undefined>(undefined);
 	let glowRef = $state.raw<THREE.Mesh | undefined>(undefined);

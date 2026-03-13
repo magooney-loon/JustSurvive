@@ -16,7 +16,7 @@
 	import AimReticle from './AimReticle.svelte';
 	import StickRig from './StickRig.svelte';
 	import { RepeatWrapping } from 'three';
-	import { shotFlash, SHOT_FLASH_MS } from '../stores/localGameState.svelte.js';
+	import { shotFlash, SHOT_FLASH_MS } from '../stores/abilities.svelte.js';
 
 	const base = import.meta.env.BASE_URL;
 
