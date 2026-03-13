@@ -1,36 +1,8 @@
 <script module lang="ts">
 	import * as THREE from 'three';
-	export const bruteBodyGeo = new THREE.BoxGeometry(0.7, 0.18, 0.32);
-	export const bruteSpikeGeo = new THREE.ConeGeometry(0.08, 0.26, 6);
-	export const fastCrestGeo = new THREE.ConeGeometry(0.06, 0.36, 6);
-	export const fastFinGeo = new THREE.ConeGeometry(0.05, 0.4, 6);
-	export const spitterBulbGeo = new THREE.SphereGeometry(0.18, 8, 6);
-	export const spitterSacGeo = new THREE.CylinderGeometry(0.08, 0.14, 0.5, 6);
-	export const basicHornGeo = new THREE.ConeGeometry(0.05, 0.2, 6);
 	export const markRingGeo = new THREE.TorusGeometry(0.4, 0.07, 6, 4);
 	export const markStemGeo = new THREE.CylinderGeometry(0.03, 0.03, 1, 4);
-	export const casterOrbGeo = new THREE.SphereGeometry(0.16, 8, 6);
-	export const casterStaffGeo = new THREE.CylinderGeometry(0.03, 0.04, 0.9, 6);
-	export const casterRingGeo = new THREE.TorusGeometry(0.12, 0.025, 6, 12);
-	export const casterBeamGeo = new THREE.CylinderGeometry(0.04, 0.07, 8, 6);
-	export const bruteBodyMat = new THREE.MeshStandardMaterial({ color: '#4a1f1f' });
-	export const bruteSpikeMat = new THREE.MeshStandardMaterial({ color: '#5c2a2a' });
-	export const fastCrestMat = new THREE.MeshStandardMaterial({ color: '#f99' });
-	export const fastFinMat = new THREE.MeshStandardMaterial({ color: '#f77' });
-	export const spitterBulbMat = new THREE.MeshStandardMaterial({ color: '#2f7a2f' });
-	export const spitterSacMat = new THREE.MeshStandardMaterial({ color: '#2b6a2b' });
-	export const basicHornMat = new THREE.MeshStandardMaterial({ color: '#c77' });
 	export const markMat = new THREE.MeshBasicMaterial({ color: '#f84' });
-	export const casterOrbMat = new THREE.MeshStandardMaterial({
-		color: '#8844ff',
-		emissive: '#6622cc',
-		emissiveIntensity: 1.4
-	});
-	export const casterStaffMat = new THREE.MeshStandardMaterial({
-		color: '#2a1a3a',
-		roughness: 0.7
-	});
-	export const casterRingMat = new THREE.MeshBasicMaterial({ color: '#aa66ff' });
 </script>
 
 <script lang="ts">
@@ -40,7 +12,11 @@
 	import { untrack } from 'svelte';
 	import { cubicOut } from 'svelte/easing';
 	import type { Enemy } from '$bindings/types.js';
-	import StickRig from '$lib/character/player/StickRig.svelte';
+	import BasicRig from '$lib/character/enemies/basic/BasicRig.svelte';
+	import FastRig from '$lib/character/enemies/fast/FastRig.svelte';
+	import BruteRig from '$lib/character/enemies/brute/BruteRig.svelte';
+	import SpitterRig from '$lib/character/enemies/spitter/SpitterRig.svelte';
+	import CasterRig from '$lib/character/enemies/caster/CasterRig.svelte';
 	import { settingsState } from '$root/settings.svelte.js';
 
 	type Props = { enemy: Enemy };
@@ -127,17 +103,6 @@
 		}
 	});
 
-	const rigClass = $derived(
-		enemy.enemyType === 'brute'
-			? 'tank'
-			: enemy.enemyType === 'fast'
-				? 'gunner'
-				: enemy.enemyType === 'spitter'
-					? 'spotter'
-					: enemy.enemyType === 'caster'
-						? 'healer'
-						: 'healer'
-	);
 	const DEAD_PERSIST_MS = 4000;
 	const dead = $derived(deathAt !== null);
 
@@ -168,132 +133,41 @@
 			}}
 		/>
 		<T.Group position={[0, downedYOffset, 0]} rotation={[downedTilt, 0, 0]}>
-			<T.Group
-				scale={[
-					enemy.enemyType === 'brute' ? 1.2 : enemy.enemyType === 'fast' ? 0.9 : 1.0,
-					enemy.enemyType === 'brute' ? 1.1 : enemy.enemyType === 'fast' ? 1.05 : 1.0,
-					enemy.enemyType === 'brute' ? 1.15 : enemy.enemyType === 'fast' ? 0.8 : 1.0
-				]}
-			>
-				<StickRig
-					classChoice={rigClass}
+			{#if enemy.enemyType === 'brute'}
+				<BruteRig
 					color={ENEMY_COLORS[enemy.enemyType] ?? '#c33'}
 					{walkPhase}
 					{speed}
-					shotPulse={0}
-					isEnemy={true}
 					{attackPhase}
 				/>
-			</T.Group>
-			{#if enemy.enemyType === 'brute'}
-				<T.Mesh position={[0, 1.35, -0.05]} geometry={bruteBodyGeo} material={bruteBodyMat} />
-				<T.Mesh
-					position={[-0.25, 1.55, -0.05]}
-					rotation={[0, 0.2, 0]}
-					geometry={bruteSpikeGeo}
-					material={bruteSpikeMat}
-				/>
-				<T.Mesh
-					position={[0.25, 1.55, -0.05]}
-					rotation={[0, -0.2, 0]}
-					geometry={bruteSpikeGeo}
-					material={bruteSpikeMat}
-				/>
 			{:else if enemy.enemyType === 'fast'}
-				<T.Mesh
-					position={[0, 1.52, -0.02]}
-					rotation={[0.2, 0, 0]}
-					geometry={fastCrestGeo}
-					material={fastCrestMat}
-				/>
-				<T.Mesh
-					position={[0, 1.15, 0.2]}
-					rotation={[Math.PI / 2, 0, 0]}
-					geometry={fastFinGeo}
-					material={fastFinMat}
+				<FastRig
+					color={ENEMY_COLORS[enemy.enemyType] ?? '#c33'}
+					{walkPhase}
+					{speed}
+					{attackPhase}
 				/>
 			{:else if enemy.enemyType === 'spitter'}
-				<T.Mesh position={[0, 1.3, 0.22]} geometry={spitterBulbGeo} material={spitterBulbMat} />
-				<T.Mesh
-					position={[0, 1.0, 0.25]}
-					rotation={[Math.PI / 2, 0, 0]}
-					geometry={spitterSacGeo}
-					material={spitterSacMat}
+				<SpitterRig
+					color={ENEMY_COLORS[enemy.enemyType] ?? '#c33'}
+					{walkPhase}
+					{speed}
+					{attackPhase}
 				/>
 			{:else if enemy.enemyType === 'caster'}
-				<T.Mesh
-					position={[0.3, 0.95, 0]}
-					rotation={[0, 0, 0.15]}
-					geometry={casterStaffGeo}
-					material={casterStaffMat}
+				<CasterRig
+					color={ENEMY_COLORS[enemy.enemyType] ?? '#c33'}
+					{walkPhase}
+					{speed}
+					{attackPhase}
+					{beamTimer}
 				/>
-				<T.Mesh
-					position={[0.3, 1.45, 0]}
-					geometry={casterOrbGeo}
-					material={casterOrbMat}
-					scale={[1 + attackPhase * 0.28, 1 + attackPhase * 0.28, 1 + attackPhase * 0.28]}
-				/>
-				<T.Mesh
-					position={[0.3, 1.45, 0]}
-					rotation={[0, 0, Math.PI / 2]}
-					geometry={casterRingGeo}
-					material={casterRingMat}
-				/>
-				<T.Mesh
-					position={[0.3, 1.45, 0]}
-					rotation={[Math.PI / 4, 0, 0]}
-					geometry={casterRingGeo}
-					material={casterRingMat}
-				/>
-				{#if beamTimer > 0}
-					{@const beamOpacity = Math.min(1, (0.65 - beamTimer) * 12) * Math.min(1, beamTimer * 6)}
-					<T.Mesh
-						position={[0.3, 1.45, -4]}
-						rotation={[Math.PI / 2, 0, 0]}
-						geometry={casterBeamGeo}
-					>
-						<T.MeshBasicMaterial
-							color="#dd99ff"
-							transparent
-							opacity={beamOpacity * 0.9}
-							depthWrite={false}
-						/>
-					</T.Mesh>
-					<T.Mesh
-						position={[0.3, 1.45, -4]}
-						rotation={[Math.PI / 2, 0, 0]}
-						scale={[2.8, 1, 2.8]}
-						geometry={casterBeamGeo}
-					>
-						<T.MeshBasicMaterial
-							color="#9933ff"
-							transparent
-							opacity={beamOpacity * 0.22}
-							depthWrite={false}
-						/>
-					</T.Mesh>
-					<T.Mesh position={[0.3, 1.45, -8]} scale={[beamOpacity, beamOpacity, beamOpacity]}>
-						<T.SphereGeometry args={[0.35, 8, 6]} />
-						<T.MeshBasicMaterial
-							color="#ffffff"
-							transparent
-							opacity={beamOpacity * 0.6}
-							depthWrite={false}
-						/>
-					</T.Mesh>
-				{/if}
 			{:else}
-				<T.Mesh
-					position={[-0.14, 1.64, 0]}
-					rotation={[0, 0, -0.3]}
-					geometry={basicHornGeo}
-					material={basicHornMat}
-				/>
-				<T.Mesh
-					position={[0.14, 1.64, 0]}
-					rotation={[0, 0, 0.3]}
-					geometry={basicHornGeo}
-					material={basicHornMat}
+				<BasicRig
+					color={ENEMY_COLORS[enemy.enemyType] ?? '#c33'}
+					{walkPhase}
+					{speed}
+					{attackPhase}
 				/>
 			{/if}
 		</T.Group>

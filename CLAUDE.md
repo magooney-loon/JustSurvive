@@ -32,9 +32,27 @@ src/
     Settings.svelte    — Settings overlay
     WelcomeModal.svelte — First-visit welcome modal
     character/         — Player, enemy, and UI entities
-      player/          — PlayerEntity, StickRig, InputHandler, AbilityInput, HealBeam
-      enemies/          — EnemyEntity, EnemyProxyInstances, AcidPoolEntity, SpotterFlashEffect
-      ui/              — AimReticle, MarkOverlay, ReviveChannelHud
+      StickRig.svelte  — Base stick figure (shared by player & enemies)
+      PlayerEntity.svelte
+      EnemyEntity.svelte
+      Input.svelte     — Combined InputHandler + AbilityInput
+      player/          — Player-specific (empty, for future class rigs)
+      healer/
+        HealBeam.svelte
+      enemies/
+        EnemyProxyInstances.svelte
+        AcidPoolEntity.svelte
+        spotter/
+          SpotterFlashEffect.svelte
+        basic/
+        fast/
+        brute/
+        spitter/
+        caster/
+      ui/
+        AimReticle.svelte
+        MarkOverlay.svelte
+        ReviveChannelHud.svelte
 
   extensions/
     StageExtension.svelte — Threlte Studio toolbar buttons for stage switching

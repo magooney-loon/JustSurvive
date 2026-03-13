@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { input } from '$lib/stores/movement.svelte.js';
 	import { useTable, useSpacetimeDB } from 'spacetimedb/svelte';
 	import { tables } from '$bindings/index.js';
 	import { lobbyState } from '$lib/stores/lobby.svelte.js';
@@ -14,6 +15,29 @@
 		SPOTTER_FLASH_MS
 	} from '$lib/stores/abilities.svelte.js';
 	import { soundActions } from '$root/Sound.svelte';
+
+	const keyMap: Record<string, keyof typeof input> = {
+		KeyW: 'forward',
+		ArrowUp: 'forward',
+		KeyS: 'back',
+		ArrowDown: 'back',
+		KeyA: 'left',
+		ArrowLeft: 'left',
+		KeyD: 'right',
+		ArrowRight: 'right',
+		ShiftLeft: 'sprint',
+		ShiftRight: 'sprint'
+	};
+
+	function onKeyDown(e: KeyboardEvent) {
+		const key = keyMap[e.code];
+		if (key) input[key] = true;
+	}
+
+	function onKeyUp(e: KeyboardEvent) {
+		const key = keyMap[e.code];
+		if (key) input[key] = false;
+	}
 
 	const conn = useSpacetimeDB();
 	const [players] = useTable(tables.playerState);
@@ -231,4 +255,9 @@
 	}
 </script>
 
-<svelte:window onmousedown={onMouseDown} onmouseup={onMouseUp} />
+<svelte:window
+	onkeydown={onKeyDown}
+	onkeyup={onKeyUp}
+	onmousedown={onMouseDown}
+	onmouseup={onMouseUp}
+/>

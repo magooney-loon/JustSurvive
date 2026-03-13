@@ -17,16 +17,16 @@
 	import { resetAbilities } from '$lib/stores/abilities.svelte.js';
 	import { localHealthState, skyState, devSky } from '$lib/stores/sky.svelte.js';
 	import { onMount } from 'svelte';
-	import PlayerEntity from '$lib/character/player/PlayerEntity.svelte';
-	import EnemyEntity from '$lib/character/enemies/EnemyEntity.svelte';
+	import PlayerEntity from '$lib/character/PlayerEntity.svelte';
+	import EnemyEntity from '$lib/character/EnemyEntity.svelte';
 	import EnemyProxyInstances from '$lib/character/enemies/EnemyProxyInstances.svelte';
 	import AcidPoolEntity from '$lib/character/enemies/AcidPoolEntity.svelte';
 	import MarkOverlay from '$lib/character/ui/MarkOverlay.svelte';
 	import GameGround from '$lib/map/GameGround.svelte';
-	import HealBeam from '$lib/character/player/HealBeam.svelte';
+	import HealBeam from '$lib/character/healer/HealBeam.svelte';
 	import GameSounds from '$lib/stages/GameSounds.svelte';
 	import RainEffect from '$lib/map/RainEffect.svelte';
-	import SpotterFlashEffect from '$lib/character/enemies/SpotterFlashEffect.svelte';
+	import SpotterFlashEffect from '$lib/character/enemies/spotter/SpotterFlashEffect.svelte';
 
 	const conn = useSpacetimeDB();
 	const [players] = useTable(tables.playerState);

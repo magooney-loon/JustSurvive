@@ -14,7 +14,10 @@
 	import { useTexture } from '@threlte/extras';
 	import type { PlayerState } from '$bindings/types.js';
 	import AimReticle from '$lib/character/ui/AimReticle.svelte';
-	import StickRig from '$lib/character/player/StickRig.svelte';
+	import SpotterRig from '$lib/character/player/spotter/SpotterRig.svelte';
+	import GunnerRig from '$lib/character/player/gunner/GunnerRig.svelte';
+	import TankRig from '$lib/character/player/tank/TankRig.svelte';
+	import HealerRig from '$lib/character/player/healer/HealerRig.svelte';
 	import { RepeatWrapping } from 'three';
 	import { shotFlash, SHOT_FLASH_MS } from '$lib/stores/abilities.svelte.js';
 
@@ -154,27 +157,90 @@
 		position={[displayX, displayY + downedYOffset, displayZ]}
 		rotation={[downedTilt, facing, 0]}
 	>
-		{#if classTexture}
-			<StickRig
-				classChoice={player.classChoice}
-				color={CLASS_COLORS[player.classChoice] ?? '#fff'}
-				{walkPhase}
-				{speed}
-				{shotPulse}
-				{phase}
-				isBracing={player.isBracing}
-				texture={classTexture}
-			/>
-		{:else}
-			<StickRig
-				classChoice={player.classChoice}
-				color={CLASS_COLORS[player.classChoice] ?? '#fff'}
-				{walkPhase}
-				{speed}
-				{shotPulse}
-				{phase}
-				isBracing={player.isBracing}
-			/>
+		{#if player.classChoice === 'spotter'}
+			{#if classTexture}
+				<SpotterRig
+					color={CLASS_COLORS[player.classChoice] ?? '#fff'}
+					{walkPhase}
+					{speed}
+					{shotPulse}
+					{phase}
+					isBracing={player.isBracing}
+					texture={classTexture}
+				/>
+			{:else}
+				<SpotterRig
+					color={CLASS_COLORS[player.classChoice] ?? '#fff'}
+					{walkPhase}
+					{speed}
+					{shotPulse}
+					{phase}
+					isBracing={player.isBracing}
+				/>
+			{/if}
+		{:else if player.classChoice === 'gunner'}
+			{#if classTexture}
+				<GunnerRig
+					color={CLASS_COLORS[player.classChoice] ?? '#fff'}
+					{walkPhase}
+					{speed}
+					{shotPulse}
+					{phase}
+					isBracing={player.isBracing}
+					texture={classTexture}
+				/>
+			{:else}
+				<GunnerRig
+					color={CLASS_COLORS[player.classChoice] ?? '#fff'}
+					{walkPhase}
+					{speed}
+					{shotPulse}
+					{phase}
+					isBracing={player.isBracing}
+				/>
+			{/if}
+		{:else if player.classChoice === 'tank'}
+			{#if classTexture}
+				<TankRig
+					color={CLASS_COLORS[player.classChoice] ?? '#fff'}
+					{walkPhase}
+					{speed}
+					{shotPulse}
+					{phase}
+					isBracing={player.isBracing}
+					texture={classTexture}
+				/>
+			{:else}
+				<TankRig
+					color={CLASS_COLORS[player.classChoice] ?? '#fff'}
+					{walkPhase}
+					{speed}
+					{shotPulse}
+					{phase}
+					isBracing={player.isBracing}
+				/>
+			{/if}
+		{:else if player.classChoice === 'healer'}
+			{#if classTexture}
+				<HealerRig
+					color={CLASS_COLORS[player.classChoice] ?? '#fff'}
+					{walkPhase}
+					{speed}
+					{shotPulse}
+					{phase}
+					isBracing={player.isBracing}
+					texture={classTexture}
+				/>
+			{:else}
+				<HealerRig
+					color={CLASS_COLORS[player.classChoice] ?? '#fff'}
+					{walkPhase}
+					{speed}
+					{shotPulse}
+					{phase}
+					isBracing={player.isBracing}
+				/>
+			{/if}
 		{/if}
 	</T.Group>
 	{#if isDowned}
