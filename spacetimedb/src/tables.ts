@@ -130,7 +130,10 @@ export const PlayerState = table(
 		markCooldownUntil: t.timestamp().optional(),
 		pingCooldownUntil: t.timestamp().optional(),
 		bashCooldownUntil: t.timestamp().optional(),
-		adrenalineCooldownUntil: t.timestamp().optional()
+		adrenalineCooldownUntil: t.timestamp().optional(),
+		lastHealAt: t.timestamp().optional(),
+		healTargetIdentity: t.identity().optional(),
+		lastFlashAt: t.timestamp().optional()
 	}
 );
 

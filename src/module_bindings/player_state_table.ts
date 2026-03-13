@@ -39,4 +39,7 @@ export default __t.row({
   pingCooldownUntil: __t.option(__t.timestamp()).name("ping_cooldown_until"),
   bashCooldownUntil: __t.option(__t.timestamp()).name("bash_cooldown_until"),
   adrenalineCooldownUntil: __t.option(__t.timestamp()).name("adrenaline_cooldown_until"),
+  lastHealAt: __t.option(__t.timestamp()).name("last_heal_at"),
+  healTargetIdentity: __t.option(__t.identity()).name("heal_target_identity"),
+  lastFlashAt: __t.option(__t.timestamp()).name("last_flash_at"),
 });

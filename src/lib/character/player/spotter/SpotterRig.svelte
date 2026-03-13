@@ -9,10 +9,9 @@
 </script>
 
 <script lang="ts">
-	import { T, useTask } from '@threlte/core';
+	import { T } from '@threlte/core';
 	import { AdditiveBlending, Object3D, type Texture } from 'three';
 	import PlayerRig from '$lib/character/PlayerRig.svelte';
-	import { spotterFlash } from '$lib/stores/abilities.svelte.js';
 
 	export type SpotterRigProps = {
 		color: string;
@@ -53,15 +52,6 @@
 	const beamBoost = $derived(phase === 'deep_night' ? 1.9 : phase === 'night' ? 1.4 : 1);
 
 	let spotTarget = $state<Object3D | undefined>(undefined);
-
-	let flashT = $state(0);
-	useTask((dt) => {
-		if (spotterFlash.active && spotterFlash.until > Date.now()) {
-			flashT = 1;
-		} else {
-			flashT = Math.max(0, flashT - dt * 4);
-		}
-	});
 </script>
 
 <PlayerRig
@@ -182,19 +172,4 @@
 			/>
 		</T.Mesh>
 	</T.Group>
-
-	<!-- Spotter Flash Cone Effect -->
-	{#if flashT > 0}
-		<T.Mesh position={[0, 1.0, -5]} rotation={[Math.PI / 2 + 0.15, 0, 0]}>
-			<T.ConeGeometry args={[4, 12, 16, 1, true]} />
-			<T.MeshBasicMaterial
-				color="#22ddff"
-				transparent
-				opacity={flashT * 0.5}
-				side={2}
-				depthWrite={false}
-				blending={AdditiveBlending}
-			/>
-		</T.Mesh>
-	{/if}
 </T.Group>

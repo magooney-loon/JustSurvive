@@ -24,6 +24,7 @@
 	import GameGround from '$lib/map/GameGround.svelte';
 	import GameSounds from '$lib/stages/GameSounds.svelte';
 	import RainEffect from '$lib/map/RainEffect.svelte';
+	import AbilityEffects from '$lib/character/AbilityEffects.svelte';
 
 	const conn = useSpacetimeDB();
 	const [players] = useTable(tables.playerState);
@@ -290,5 +291,6 @@
 {/each}
 
 <!-- Mark / ping overlays -->
+<AbilityEffects />
 <GameSounds />
 <MarkOverlay />

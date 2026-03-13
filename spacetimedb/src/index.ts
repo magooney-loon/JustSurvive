@@ -818,7 +818,10 @@ export const fire_start_game = spacetimedb.reducer(
 				markCooldownUntil: undefined,
 				pingCooldownUntil: undefined,
 				bashCooldownUntil: undefined,
-				adrenalineCooldownUntil: undefined
+				adrenalineCooldownUntil: undefined,
+				lastHealAt: undefined,
+				healTargetIdentity: undefined,
+				lastFlashAt: undefined
 			});
 		}
 
@@ -1535,7 +1538,8 @@ export const spotter_flash = spacetimedb.reducer({ sessionId: t.u64() }, (ctx, {
 	ctx.db.playerState.id.update({
 		...ps,
 		score: ps.score + stunned * 10n,
-		pingCooldownUntil: ts(ctx.timestamp.microsSinceUnixEpoch + COOLDOWN_US)
+		pingCooldownUntil: ts(ctx.timestamp.microsSinceUnixEpoch + COOLDOWN_US),
+		lastFlashAt: ctx.timestamp
 	});
 });
 
@@ -1639,7 +1643,9 @@ export const heal_player = spacetimedb.reducer(
 			hp: healerNewHp,
 			lastShotAt: shotAt,
 			score: healer.score + scoreAdd,
-			healCooldownUntil: cooldownUntil
+			healCooldownUntil: cooldownUntil,
+			lastHealAt: shotAt,
+			healTargetIdentity: targetIdentity
 		});
 	}
 );
