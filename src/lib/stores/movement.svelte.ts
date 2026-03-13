@@ -30,6 +30,8 @@ export const cameraFollow = $state({
 
 export { input, localPos, localVelocity };
 
+export const bossShake = $state({ intensity: 0 });
+
 export const CLASS_SPEED: Record<string, { walk: number; sprint: number }> = {
 	spotter: { walk: 5, sprint: 9 },
 	gunner: { walk: 4.5, sprint: 7.5 },

@@ -17,6 +17,7 @@
 	import BruteRig from '$lib/character/enemies/brute/BruteRig.svelte';
 	import SpitterRig from '$lib/character/enemies/spitter/SpitterRig.svelte';
 	import CasterRig from '$lib/character/enemies/caster/CasterRig.svelte';
+	import BossRig from '$lib/character/enemies/boss/BossRig.svelte';
 	import { settingsState } from '$root/settings.svelte.js';
 
 	type Props = { enemy: Enemy };
@@ -127,35 +128,7 @@
 		/>
 		<T.Group rotation={[downedTilt, 0, 0]}>
 			{#if enemy.enemyType === 'boss'}
-				<!-- Boss: simple geometry stub — large dark monolith -->
-				<T.Mesh position={[0, 2, 0]} castShadow>
-					<T.BoxGeometry args={[2.4, 4, 2.4]} />
-					<T.MeshStandardMaterial
-						color={dead ? '#1a0000' : '#1e0a2a'}
-						emissive={dead ? '#000' : '#5a0020'}
-						emissiveIntensity={dead ? 0 : 0.4 + attackPhase * 0.5}
-						roughness={0.3}
-						metalness={0.6}
-					/>
-				</T.Mesh>
-				<T.Mesh position={[-1.4, 3.2, 0]} castShadow>
-					<T.ConeGeometry args={[0.5, 1.4, 6]} />
-					<T.MeshStandardMaterial color="#2a0a3a" emissive="#3a001a" emissiveIntensity={0.3} />
-				</T.Mesh>
-				<T.Mesh position={[1.4, 3.2, 0]} castShadow>
-					<T.ConeGeometry args={[0.5, 1.4, 6]} />
-					<T.MeshStandardMaterial color="#2a0a3a" emissive="#3a001a" emissiveIntensity={0.3} />
-				</T.Mesh>
-				{#if !dead}
-					<T.Mesh position={[-0.45, 3.6, 1.21]}>
-						<T.SphereGeometry args={[0.18, 8, 8]} />
-						<T.MeshBasicMaterial color="#ff2244" />
-					</T.Mesh>
-					<T.Mesh position={[0.45, 3.6, 1.21]}>
-						<T.SphereGeometry args={[0.18, 8, 8]} />
-						<T.MeshBasicMaterial color="#ff2244" />
-					</T.Mesh>
-				{/if}
+				<BossRig {speed} {attackPhase} isDead={dead} bossX={displayX} bossZ={displayZ} />
 			{:else if enemy.enemyType === 'brute'}
 				<BruteRig {speed} {attackPhase} isDead={dead} />
 			{:else if enemy.enemyType === 'fast'}

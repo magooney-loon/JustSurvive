@@ -3,7 +3,7 @@
 	import { AudioListener } from '@threlte/extras';
 	import { stageState } from '$root/stage.svelte.js';
 	import { log, settingsState } from '$root/settings.svelte.js';
-	import { localPos, fpsCamera, cameraFollow } from '$lib/stores/movement.svelte.js';
+	import { localPos, fpsCamera, cameraFollow, bossShake } from '$lib/stores/movement.svelte.js';
 	import type { PerspectiveCamera } from 'three';
 
 	const { renderer } = useThrelte();
@@ -62,7 +62,13 @@
 			// TPS: hover above and behind the player, orbiting via yaw
 			const behindX = Math.sin(fpsCamera.yaw) * TPS_Z;
 			const behindZ = Math.cos(fpsCamera.yaw) * TPS_Z;
-			camera.position.set(localPos.x + behindX, localPos.y + TPS_Y, localPos.z + behindZ);
+			const shakeY = bossShake.intensity;
+			const shakeX = bossShake.intensity * Math.sin(Date.now() * 0.031) * 0.4;
+			camera.position.set(
+				localPos.x + behindX + shakeX,
+				localPos.y + TPS_Y + shakeY,
+				localPos.z + behindZ
+			);
 			camera.rotation.y = fpsCamera.yaw;
 			camera.rotation.x = TPS_PITCH;
 		}
