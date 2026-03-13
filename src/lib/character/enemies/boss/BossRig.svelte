@@ -6,6 +6,7 @@
 
 	type BossAction =
 		| 'zbs_phobos.qc_skeleton|zbs_idle1'
+		| 'zbs_phobos.qc_skeleton|zbs_run'
 		| 'zbs_phobos.qc_skeleton|zbs_walk'
 		| 'zbs_phobos.qc_skeleton|zbs_attack_justiceSwing'
 		| 'zbs_phobos.qc_skeleton|zbs_attack_mahadash'
@@ -38,6 +39,25 @@
 	let currentAction: BossAction | null = null;
 	let shakeTimer = 0;
 
+	useTask((dt) => {
+		if (mixer) {
+			mixer.update(dt);
+		}
+
+		const isWalking = !isDead && speed > 0.05;
+		if (isWalking) {
+			shakeTimer += dt;
+			const dx = bossX - localPos.x;
+			const dz = bossZ - localPos.z;
+			const dist = Math.sqrt(dx * dx + dz * dz);
+			const proximity = Math.max(0, 1 - dist / SHAKE_MAX_DIST);
+			bossShake.intensity =
+				Math.abs(Math.sin(shakeTimer * SHAKE_FREQ)) * proximity * SHAKE_AMPLITUDE;
+		} else {
+			bossShake.intensity = Math.max(0, bossShake.intensity - dt * 3);
+		}
+	});
+
 	$effect(() => {
 		for (const key of ['zbs_phobos.qc_skeleton|gutshot'] as BossAction[]) {
 			const action = $actions[key];
@@ -50,6 +70,11 @@
 			if (!action) continue;
 			action.setLoop(THREE.LoopOnce, 1);
 			action.clampWhenFinished = true;
+		}
+		for (const key of ['zbs_phobos.qc_skeleton|zbs_run'] as BossAction[]) {
+			const action = $actions[key];
+			if (!action) continue;
+			action.setLoop(THREE.LoopPingPong, Infinity);
 		}
 	});
 
@@ -69,7 +94,7 @@
 					? 'zbs_phobos.qc_skeleton|zbs_attack_justiceSwing'
 					: speed < 0.1
 						? 'zbs_phobos.qc_skeleton|zbs_idle1'
-						: 'zbs_phobos.qc_skeleton|zbs_walk';
+						: 'zbs_phobos.qc_skeleton|zbs_run';
 
 		if (currentAction === next) return;
 
@@ -87,25 +112,6 @@
 		if (current) current.crossFadeTo(nextAction, 0.25, true);
 		nextAction.play();
 		currentAction = next;
-	});
-
-	useTask((dt) => {
-		if (mixer) {
-			mixer.update(dt);
-		}
-
-		const isWalking = !isDead && speed > 0.05;
-		if (isWalking) {
-			shakeTimer += dt;
-			const dx = bossX - localPos.x;
-			const dz = bossZ - localPos.z;
-			const dist = Math.sqrt(dx * dx + dz * dz);
-			const proximity = Math.max(0, 1 - dist / SHAKE_MAX_DIST);
-			bossShake.intensity =
-				Math.abs(Math.sin(shakeTimer * SHAKE_FREQ)) * proximity * SHAKE_AMPLITUDE;
-		} else {
-			bossShake.intensity = Math.max(0, bossShake.intensity - dt * 3);
-		}
 	});
 </script>
 
