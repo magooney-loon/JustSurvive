@@ -175,14 +175,6 @@
 			hp !== null && max && max > 0n ? Math.max(0, Math.min(1, Number(hp) / Number(max))) : 1;
 	});
 
-	let spectateIndex = $state(0);
-
-	function onMouseDownSpectate(e: MouseEvent) {
-		if (!myState || myState.status !== 'eliminated') return;
-		if (e.button !== 0) return;
-		if (alivePlayers.length === 0) return;
-		spectateIndex = (spectateIndex + 1) % alivePlayers.length;
-	}
 
 	// Angle to rotate player group so its -Z faces the aim point
 	const aimAngle = $derived(Math.atan2(localPos.x - localAim.x, localPos.z - localAim.z));
@@ -206,26 +198,6 @@
 		skyState.sunG += (skyTarget.sunG - skyState.sunG) * t;
 		skyState.sunB += (skyTarget.sunB - skyState.sunB) * t;
 		skyState.stormIntensity += (skyTarget.storm - skyState.stormIntensity) * t;
-
-		if (myState?.status === 'eliminated') {
-			if (alivePlayers.length > 0) {
-				if (spectateIndex >= alivePlayers.length) spectateIndex = 0;
-				const target = alivePlayers[spectateIndex];
-				const tx = Number(target.posX) / 1000;
-				const ty = Number(target.posY) / 1000;
-				const tz = Number(target.posZ) / 1000;
-				const facing = Number(target.facingAngle) / 1000;
-				cameraFollow.active = true;
-				cameraFollow.x = tx;
-				cameraFollow.y = ty;
-				cameraFollow.z = tz;
-				cameraFollow.aimX = tx + -Math.sin(facing);
-				cameraFollow.aimZ = tz + -Math.cos(facing);
-			} else {
-				cameraFollow.active = false;
-			}
-			return;
-		}
 
 		cameraFollow.active = false;
 		if (!myState || myState.status !== 'alive') return;
@@ -257,7 +229,6 @@
 	});
 </script>
 
-<svelte:window onmousedown={onMouseDownSpectate} />
 
 <GameGround />
 <RainEffect />

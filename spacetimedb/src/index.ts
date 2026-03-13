@@ -116,26 +116,6 @@ const DayPhaseJob = table(
 	}
 );
 
-const EliminateJob = table(
-	{
-		name: 'eliminate_job',
-		scheduled: (): any => eliminate_downed,
-		indexes: [
-			{
-				name: 'eliminate_job_session',
-				accessor: 'eliminate_job_session',
-				algorithm: 'btree',
-				columns: ['sessionId']
-			}
-		]
-	},
-	{
-		scheduledId: t.u64().primaryKey().autoInc(),
-		scheduledAt: t.scheduleAt(),
-		sessionId: t.u64(),
-		targetIdentity: t.identity()
-	}
-);
 
 const LobbyAfkJob = table(
 	{
@@ -185,7 +165,6 @@ const spacetimedb = schema({
 	enemyTickJob: EnemyTickJob,
 	enemySpawnJob: EnemySpawnJob,
 	dayPhaseJob: DayPhaseJob,
-	eliminateJob: EliminateJob,
 	mark: Mark,
 	acidPool: AcidPool,
 	reviveChannel: ReviveChannel,
@@ -207,26 +186,12 @@ function clearLobbyMessages(ctx: any, lobbyId: bigint) {
 	}
 }
 
+// Apply damage to a single player (use only when one damage source per transaction, e.g. acid pool in move_player).
+// For enemy_tick (multiple sources per tick), accumulate into damageAccum and use applyAccumulatedDamage instead.
 function apply_player_damage(ctx: any, sessionId: bigint, ps: any, damage: bigint) {
 	const newHp = ps.hp > damage ? ps.hp - damage : 0n;
 	if (newHp <= 0n && ps.status === 'alive') {
-		const sessionPlayers = [...ctx.db.playerState.player_state_session_id.filter(sessionId)];
-		const hasLiveHealer = sessionPlayers.some(
-			(p) =>
-				p.classChoice === 'healer' &&
-				p.status === 'alive' &&
-				!p.playerIdentity.isEqual(ps.playerIdentity)
-		);
-		const downerDelay = hasLiveHealer ? 30_000_000n : 5_000_000n;
-
 		ctx.db.playerState.id.update({ ...ps, hp: 0n, status: 'downed' });
-		const eliminateAt = ctx.timestamp.microsSinceUnixEpoch + downerDelay;
-		ctx.db.eliminateJob.insert({
-			scheduledId: 0n,
-			scheduledAt: ScheduleAt.time(eliminateAt),
-			sessionId,
-			targetIdentity: ps.playerIdentity
-		});
 
 		// Interrupt revive if this player was healing someone
 		for (const c of ctx.db.reviveChannel.revive_channel_session_id.filter(sessionId)) {
@@ -234,6 +199,15 @@ function apply_player_damage(ctx: any, sessionId: bigint, ps: any, damage: bigin
 				ctx.db.reviveChannel.id.delete(c.id);
 				break;
 			}
+		}
+
+		// If all players are now downed, game over
+		const sessionPlayers = [...ctx.db.playerState.player_state_session_id.filter(sessionId)];
+		const anyStillAlive = sessionPlayers.some(
+			(p) => !p.playerIdentity.isEqual(ps.playerIdentity) && p.status === 'alive'
+		);
+		if (!anyStillAlive) {
+			end_session(ctx, sessionId);
 		}
 	} else {
 		ctx.db.playerState.id.update({ ...ps, hp: newHp });
@@ -244,6 +218,45 @@ function apply_player_damage(ctx: any, sessionId: bigint, ps: any, damage: bigin
 				break;
 			}
 		}
+	}
+}
+
+// Apply all accumulated damage after the enemy loop — avoids snapshot isolation issues
+// where multiple enemies hitting the same player in one tick each see the original HP.
+function applyAccumulatedDamage(
+	ctx: any,
+	sessionId: bigint,
+	alivePlayers: any[],
+	damageAccum: Map<bigint, bigint>
+) {
+	if (damageAccum.size === 0) return;
+	const newlyDownedIds = new Set<bigint>();
+
+	for (const [playerId, totalDamage] of damageAccum) {
+		const ps = alivePlayers.find((p) => p.id === playerId);
+		if (!ps) continue;
+		const newHp = ps.hp > totalDamage ? ps.hp - totalDamage : 0n;
+		const willDown = newHp <= 0n;
+		ctx.db.playerState.id.update({
+			...ps,
+			hp: willDown ? 0n : newHp,
+			status: willDown ? 'downed' : ps.status
+		});
+		if (willDown) newlyDownedIds.add(playerId);
+		// Interrupt revive if this player was a healer mid-revive
+		for (const c of ctx.db.reviveChannel.revive_channel_session_id.filter(sessionId)) {
+			if (c.healerIdentity.isEqual(ps.playerIdentity)) {
+				ctx.db.reviveChannel.id.delete(c.id);
+				break;
+			}
+		}
+	}
+
+	if (newlyDownedIds.size === 0) return;
+	// Game over if every alive player is being downed this tick
+	const anyStillAlive = alivePlayers.some((p) => !newlyDownedIds.has(p.id));
+	if (!anyStillAlive) {
+		end_session(ctx, sessionId);
 	}
 }
 
@@ -1099,6 +1112,7 @@ export const enemy_tick = spacetimedb.reducer(
 			return;
 		}
 
+		const damageAccum = new Map<bigint, bigint>();
 		const targetCounts = new Map<bigint, number>();
 		for (const enemy of enemies) {
 			let chosen = players[0];
@@ -1193,7 +1207,7 @@ export const enemy_tick = spacetimedb.reducer(
 					ctx.timestamp.microsSinceUnixEpoch >=
 						enemy.lastSpitAt.microsSinceUnixEpoch + BEAM_COOLDOWN_US;
 				if (chosenDist <= CASTER_RANGE_SQ && !enemy.isDazed && canBeam) {
-					apply_player_damage(ctx, arg.sessionId, chosen, 2n);
+					damageAccum.set(chosen.id, (damageAccum.get(chosen.id) ?? 0n) + 2n);
 					ctx.db.enemy.id.update({ ...enemy, lastSpitAt: ts(now) });
 				} else if (!enemy.isDazed) {
 					const ageSec = enemy.spawnedAt
@@ -1237,7 +1251,7 @@ export const enemy_tick = spacetimedb.reducer(
 			// Normal: melee damage or move toward player
 			if (chosenDist <= MELEE_RANGE * MELEE_RANGE && !enemy.isDazed) {
 				const damage = enemy.enemyType === 'brute' ? 3n : 1n;
-				apply_player_damage(ctx, arg.sessionId, chosen, damage);
+				damageAccum.set(chosen.id, (damageAccum.get(chosen.id) ?? 0n) + damage);
 			} else if (!enemy.isDazed) {
 				const ageSec = enemy.spawnedAt
 					? Number(now - enemy.spawnedAt.microsSinceUnixEpoch) / 1_000_000
@@ -1294,6 +1308,9 @@ export const enemy_tick = spacetimedb.reducer(
 				}
 			}
 		}
+
+		// Apply all damage accumulated this tick — one write per player, correct total
+		applyAccumulatedDamage(ctx, arg.sessionId, players, damageAccum);
 
 		const nextTick = ctx.timestamp.microsSinceUnixEpoch + TICK_MS * 1000n;
 		ctx.db.enemyTickJob.insert({
@@ -1419,31 +1436,6 @@ export const advance_day_phase = spacetimedb.reducer(
 	}
 );
 
-export const eliminate_downed = spacetimedb.reducer(
-	{
-		arg: EliminateJob.rowType
-	},
-	(ctx, { arg }) => {
-		let ps: any;
-		for (const p of ctx.db.playerState.player_state_session_id.filter(arg.sessionId)) {
-			if (p.playerIdentity.isEqual(arg.targetIdentity)) {
-				ps = p;
-				break;
-			}
-		}
-		if (!ps || ps.status !== 'downed') return;
-
-		ctx.db.playerState.id.update({ ...ps, status: 'eliminated' });
-
-		const remaining = [...ctx.db.playerState.player_state_session_id.filter(arg.sessionId)].filter(
-			(p) => p.status === 'alive' || p.status === 'downed'
-		);
-
-		if (remaining.length === 0) {
-			end_session(ctx, arg.sessionId);
-		}
-	}
-);
 
 // ─── Phase 4 Reducers ─────────────────────────────────────────────────────────
 

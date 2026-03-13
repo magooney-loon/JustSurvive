@@ -392,7 +392,7 @@
 		{
 			tag: 'Tip',
 			color: '#adf',
-			text: "If you go down, a teammate has 30 seconds to revive you before you're eliminated."
+			text: "If you go down, wait for a teammate to revive you. If all players are downed at once, the game ends."
 		},
 		{
 			tag: 'Tip',

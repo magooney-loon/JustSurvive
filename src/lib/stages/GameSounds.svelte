@@ -126,7 +126,6 @@
 		const status = myState?.status;
 		if (status !== prevStatus) {
 			if (status === 'downed') soundActions.playPlayerDown();
-			else if (status === 'eliminated') soundActions.playPlayerDead();
 			prevStatus = status;
 		}
 	});

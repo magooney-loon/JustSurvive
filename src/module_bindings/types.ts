@@ -27,14 +27,6 @@ export const DayPhaseJob = __t.object("DayPhaseJob", {
 });
 export type DayPhaseJob = __Infer<typeof DayPhaseJob>;
 
-export const EliminateJob = __t.object("EliminateJob", {
-  scheduledId: __t.u64(),
-  scheduledAt: __t.scheduleAt(),
-  sessionId: __t.u64(),
-  targetIdentity: __t.identity(),
-});
-export type EliminateJob = __Infer<typeof EliminateJob>;
-
 export const Enemy = __t.object("Enemy", {
   id: __t.u64(),
   sessionId: __t.u64(),

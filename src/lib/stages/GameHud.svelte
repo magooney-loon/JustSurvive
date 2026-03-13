@@ -6,7 +6,6 @@
 	import { stageActions } from '$root/stage.svelte.js';
 	import { soundActions } from '$root/Sound.svelte';
 	import { abilityState } from '$lib/stores/abilities.svelte.js';
-	import { settingsState } from '$root/settings.svelte.js';
 	import ReviveChannelHud from '$lib/character/ui/ReviveChannelHud.svelte';
 
 	const conn = useSpacetimeDB();
@@ -45,26 +44,6 @@
 		}
 	});
 
-	const hasAliveHealer = $derived(
-		$players.some(
-			(p) =>
-				p.sessionId === lobbyState.currentSessionId &&
-				p.classChoice === 'healer' &&
-				p.status === 'alive' &&
-				p.playerIdentity.toHexString() !== $conn.identity?.toHexString()
-		)
-	);
-	const downerDuration = $derived(hasAliveHealer ? 30 : 5);
-
-	let downedSecondsLeft = $state(30);
-	$effect(() => {
-		if (myState?.status !== 'downed') return;
-		downedSecondsLeft = downerDuration;
-		const interval = setInterval(() => {
-			downedSecondsLeft = Math.max(0, downedSecondsLeft - 1);
-		}, 1000);
-		return () => clearInterval(interval);
-	});
 
 	let now = $state(Date.now());
 	$effect(() => {
@@ -351,11 +330,7 @@
 				style="
 				background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.12);
 				padding: 0.5rem 0.75rem; border-radius: 0.5rem; font-size: 0.85rem;
-				color: {p.status === 'downed'
-					? '#f66'
-					: p.status === 'eliminated'
-						? 'rgba(255,255,255,0.25)'
-						: 'rgba(255,255,255,0.85)'};
+				color: {p.status === 'downed' ? '#f66' : 'rgba(255,255,255,0.85)'};
 				backdrop-filter: blur(6px); min-width: 160px;
 			"
 			>
@@ -364,15 +339,13 @@
 					>
 					{#if p.status === 'downed'}
 						<span style="color: #f66; font-size: 0.75rem; font-weight: 700;">DOWNED</span>
-					{:else if p.status === 'eliminated'}
-						<span style="color: rgba(255,255,255,0.25); font-size: 0.75rem;">OUT</span>
 					{:else}
 						<span style="font-size: 0.75rem; color: rgba(255,255,255,0.5); font-weight: 500;"
 							>{Number(p.hp)}/{Number(p.maxHp)}</span
 						>
 					{/if}
 				</div>
-				{#if p.status !== 'downed' && p.status !== 'eliminated'}
+				{#if p.status !== 'downed'}
 					<div
 						style="background: rgba(0,0,0,0.35); border-radius: 3px; height: 5px; margin-top: 0.35rem; overflow: hidden;"
 					>
@@ -401,8 +374,7 @@
 					YOU'RE DOWN
 				</h2>
 				<p style="font-size: 1.1rem; color: rgba(255,255,255,0.6); margin: 0;">
-					{hasAliveHealer ? 'Waiting for Healer...' : 'No healer available.'}
-					{downedSecondsLeft}s
+					Waiting for Healer...
 				</p>
 			</div>
 		</div>
@@ -411,25 +383,4 @@
 	<!-- Revive channel progress (healer only) -->
 	<ReviveChannelHud />
 
-	<!-- FPS crosshair — center of screen, only in FPS mode when alive -->
-	{#if myState?.status === 'alive' && settingsState.controls.cameraMode === 'fps'}
-		<div
-			style="position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; pointer-events: none;"
-		>
-			<div style="position: relative; width: 20px; height: 20px;">
-				<!-- Horizontal bar -->
-				<div
-					style="position: absolute; top: 50%; left: 0; width: 100%; height: 2px; background: rgba(255,255,255,0.85); transform: translateY(-50%);"
-				></div>
-				<!-- Vertical bar -->
-				<div
-					style="position: absolute; left: 50%; top: 0; width: 2px; height: 100%; background: rgba(255,255,255,0.85); transform: translateX(-50%);"
-				></div>
-				<!-- Center dot -->
-				<div
-					style="position: absolute; top: 50%; left: 50%; width: 4px; height: 4px; background: white; border-radius: 50%; transform: translate(-50%,-50%);"
-				></div>
-			</div>
-		</div>
-	{/if}
 </div>

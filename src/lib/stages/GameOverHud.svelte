@@ -44,7 +44,6 @@
 					padding: 0.65rem 0.875rem;
 					background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.1);
 					border-radius: 0.5rem;
-					opacity: {p.status === 'eliminated' ? 0.5 : 1};
 				"
 				>
 					<span style="color: #ffd060; font-weight: 700; width: 1.5rem; font-size: 0.95rem;"
@@ -53,12 +52,8 @@
 					<span style="flex: 1; text-transform: capitalize; font-size: 0.95rem;"
 						>{p.classChoice}</span
 					>
-					<span
-						style="font-size: 0.8rem; font-weight: 600; color: {p.status === 'eliminated'
-							? '#f66'
-							: '#4f4'};"
-					>
-						{p.status === 'eliminated' ? 'Eliminated' : 'Survived'}
+					<span style="font-size: 0.8rem; font-weight: 600; color: {p.status === 'downed' ? '#f66' : '#4f4'};">
+						{p.status === 'downed' ? 'Downed' : 'Survived'}
 					</span>
 					<span style="color: #ffd060; font-weight: 700; font-size: 1rem;"
 						>{Number(p.score).toLocaleString()}</span

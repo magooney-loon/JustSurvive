@@ -177,8 +177,7 @@
 	});
 </script>
 
-{#if player.status !== 'eliminated'}
-	<T.Group
+<T.Group
 		position={[displayX, displayY + downedYOffset, displayZ]}
 		rotation={[downedTilt, facing, 0]}
 	>
@@ -276,5 +275,4 @@
 			material={downedMarkerMat}
 		/>
 	{/if}
-	<AimReticle x={aimX} z={aimZ} color={CLASS_COLORS[player.classChoice] ?? '#fff'} />
-{/if}
+<AimReticle x={aimX} z={aimZ} color={CLASS_COLORS[player.classChoice] ?? '#fff'} />
