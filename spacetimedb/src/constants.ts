@@ -39,7 +39,7 @@ export const ENEMY_HP: Record<string, bigint> = {
 	boss: 1500n
 };
 
-export const BOSS_SPAWN_INTERVAL_US = 10_000_000n; // 10 seconds (testing)
+export const BOSS_SPAWN_INTERVAL_US = 90_000_000n; // 90 seconds
 
 export const ENEMY_HP_CYCLE_BONUS = 5n; // +5 HP per cycle
 export const ENEMY_HP_MAX_MULTIPLIER = 300n; // Hard cap at 3x base HP

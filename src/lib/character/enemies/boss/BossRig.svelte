@@ -1,8 +1,10 @@
 <script lang="ts">
 	import { useTask } from '@threlte/core';
-	import { GLTF, useGltfAnimations } from '@threlte/extras';
+	import { GLTF, useGltfAnimations, PositionalAudio } from '@threlte/extras';
 	import * as THREE from 'three';
 	import { localPos, bossShake } from '$lib/stores/movement.svelte.js';
+	import { settingsState } from '$root/settings.svelte.js';
+	import { soundActions } from '$root/Sound.svelte';
 
 	type BossAction =
 		| 'zbs_phobos.qc_skeleton|zbs_idle1'
@@ -38,6 +40,37 @@
 
 	let currentAction: BossAction | null = null;
 	let shakeTimer = 0;
+	let footstepTimer = 0;
+	let hasPlayedIntro = false;
+
+	let footstepAudio: THREE.PositionalAudio | undefined = $state(undefined);
+	let attackAudio: THREE.PositionalAudio | undefined = $state(undefined);
+	let deadAudio: THREE.PositionalAudio | undefined = $state(undefined);
+	let dazeAudio: THREE.PositionalAudio | undefined = $state(undefined);
+
+	const playFootstep = () => {
+		if (!footstepAudio || !settingsState.audio.effectsEnabled) return;
+		if (footstepAudio.isPlaying) footstepAudio.stop();
+		footstepAudio.play();
+	};
+
+	const playAttack = () => {
+		if (!attackAudio || !settingsState.audio.effectsEnabled) return;
+		if (attackAudio.isPlaying) attackAudio.stop();
+		attackAudio.play();
+	};
+
+	const playDead = () => {
+		if (!deadAudio || !settingsState.audio.effectsEnabled) return;
+		if (deadAudio.isPlaying) deadAudio.stop();
+		deadAudio.play();
+	};
+
+	const playDaze = () => {
+		if (!dazeAudio || !settingsState.audio.effectsEnabled) return;
+		if (dazeAudio.isPlaying) dazeAudio.stop();
+		dazeAudio.play();
+	};
 
 	useTask((dt) => {
 		if (mixer) {
@@ -47,6 +80,11 @@
 		const isWalking = !isDead && speed > 0.05;
 		if (isWalking) {
 			shakeTimer += dt;
+			footstepTimer += dt;
+			if (footstepTimer > 0.5) {
+				footstepTimer = 0;
+				playFootstep();
+			}
 			const dx = bossX - localPos.x;
 			const dz = bossZ - localPos.z;
 			const dist = Math.sqrt(dx * dx + dz * dz);
@@ -55,6 +93,7 @@
 				Math.abs(Math.sin(shakeTimer * SHAKE_FREQ)) * proximity * SHAKE_AMPLITUDE;
 		} else {
 			bossShake.intensity = Math.max(0, bossShake.intensity - dt * 3);
+			footstepTimer = 0;
 		}
 	});
 
@@ -85,6 +124,14 @@
 		}
 	});
 
+	// Play boss intro when GLTF loads
+	$effect(() => {
+		if ($gltf && !hasPlayedIntro) {
+			hasPlayedIntro = true;
+			soundActions.playBossIntro();
+		}
+	});
+
 	$effect(() => {
 		const next: BossAction = isDead
 			? 'zbs_phobos.qc_skeleton|gutshot'
@@ -97,6 +144,15 @@
 						: 'zbs_phobos.qc_skeleton|zbs_run';
 
 		if (currentAction === next) return;
+
+		// Trigger sounds on animation change
+		if (next === 'zbs_phobos.qc_skeleton|gutshot') {
+			playDead();
+		} else if (next === 'zbs_phobos.qc_skeleton|zbs_attack_mahadash') {
+			playDaze();
+		} else if (next === 'zbs_phobos.qc_skeleton|zbs_attack_justiceSwing') {
+			playAttack();
+		}
 
 		const current = currentAction ? $actions[currentAction] : null;
 		const nextAction = $actions[next];
@@ -114,6 +170,44 @@
 		currentAction = next;
 	});
 </script>
+
+<PositionalAudio
+	src="{import.meta.env.BASE_URL}sounds/boss_footstep.mp3"
+	loop
+	refDistance={3}
+	maxDistance={20}
+	rolloffFactor={1.5}
+	oncreate={(a) => {
+		footstepAudio = a;
+	}}
+/>
+<PositionalAudio
+	src="{import.meta.env.BASE_URL}sounds/boss_attack.mp3"
+	refDistance={5}
+	maxDistance={25}
+	rolloffFactor={1.5}
+	oncreate={(a) => {
+		attackAudio = a;
+	}}
+/>
+<PositionalAudio
+	src="{import.meta.env.BASE_URL}sounds/boss_dead.mp3"
+	refDistance={8}
+	maxDistance={30}
+	rolloffFactor={1.5}
+	oncreate={(a) => {
+		deadAudio = a;
+	}}
+/>
+<PositionalAudio
+	src="{import.meta.env.BASE_URL}sounds/boss_daze.mp3"
+	refDistance={5}
+	maxDistance={25}
+	rolloffFactor={1.5}
+	oncreate={(a) => {
+		dazeAudio = a;
+	}}
+/>
 
 <GLTF
 	bind:gltf={$gltf}
