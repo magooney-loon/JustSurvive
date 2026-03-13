@@ -120,7 +120,13 @@
 					color: '#ff8822',
 					cdFrac: 0
 				},
-				{ label: '—', input: '', color: '#555', cdFrac: 0 }
+				{
+					label: 'Dash Back',
+					input: 'RMB',
+					color: '#ff8822',
+					cdFrac: Math.max(0, (abilityState.dashCooldownUntil - now) / 5000),
+					cdMs: 5000
+				}
 			];
 		if (cls === 'tank')
 			return [

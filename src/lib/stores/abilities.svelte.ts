@@ -6,7 +6,8 @@ export const abilityState = $state({
 	bashCooldownUntil: 0, // ms timestamp (tank bash, 1.5s)
 	healCooldownUntil: 0, // ms timestamp (healer heal shot, 2s)
 	braceCooldownUntil: 0, // ms timestamp (tank brace, 1s between activations)
-	flashCooldownUntil: 0 // ms timestamp (spotter flash stun, 1.5s)
+	flashCooldownUntil: 0, // ms timestamp (spotter flash stun, 1.5s)
+	dashCooldownUntil: 0 // ms timestamp (gunner dash back, 5s)
 });
 
 // Heal beam — written by AbilityInput, read by HealBeam (3D scene)
@@ -30,6 +31,7 @@ export function resetAbilities() {
 	abilityState.healCooldownUntil = 0;
 	abilityState.braceCooldownUntil = 0;
 	abilityState.flashCooldownUntil = 0;
+	abilityState.dashCooldownUntil = 0;
 	shotFlash.until = 0;
 	healBeam.active = false;
 	healBeam.toX = 0;

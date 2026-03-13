@@ -8,7 +8,8 @@ export const ENEMY_BASE_SPEED: Record<string, bigint> = {
 	caster: 1400n
 };
 
-export const ENEMY_CAP = 26;
+export const ENEMY_CAP = 36; // 4-player cap; scales down per player count
+export const ENEMY_CAP_BY_PLAYERS: Record<number, number> = { 1: 12, 2: 18, 3: 27, 4: 36 };
 export const MELEE_RANGE = 2000n;
 export const SPITTER_RANGE_SQ = 144_000_000n; // 12 world units squared
 export const SPITTER_MIN_DIST_SQ = 36_000_000n; // 6 world units — flee closer than this

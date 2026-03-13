@@ -14,6 +14,7 @@
 		spotterFlash,
 		SPOTTER_FLASH_MS
 	} from '$lib/stores/abilities.svelte.js';
+	import { ARENA_PLAY_RADIUS, TORCH_POSITIONS, TORCH_COLLISION_R } from '$lib/map/arenaConfig.js';
 	import { soundActions } from '$root/Sound.svelte';
 
 	const keyMap: Record<string, keyof typeof input> = {
@@ -189,19 +190,49 @@
 		}
 
 		if (myState.classChoice === 'gunner') {
-			if (e.button !== 0) return;
-			const enemy = nearestEnemyToAim(10_000);
-			if (!enemy) return;
-			if (enemy.id === abilityState.lastSuppressedEnemyId) {
-				abilityState.suppressHits++;
-			} else {
-				abilityState.lastSuppressedEnemyId = enemy.id;
-				abilityState.suppressHits = 1;
+			if (e.button === 0) {
+				const enemy = nearestEnemyToAim(10_000);
+				if (!enemy) return;
+				if (enemy.id === abilityState.lastSuppressedEnemyId) {
+					abilityState.suppressHits++;
+				} else {
+					abilityState.lastSuppressedEnemyId = enemy.id;
+					abilityState.suppressHits = 1;
+				}
+				const suppress = abilityState.suppressHits % 3 === 0;
+				combatActions.attackEnemy(sid, enemy.id, suppress);
+				soundActions.playGunnerShot();
+				shotFlash.until = Date.now() + SHOT_FLASH_MS;
+			} else if (e.button === 2) {
+				if (abilityState.dashCooldownUntil > Date.now()) return;
+				// Dash backward: opposite of camera facing direction
+				const DASH_DIST = 6;
+				const bx = -Math.sin(fpsCamera.yaw) * DASH_DIST;
+				const bz = -Math.cos(fpsCamera.yaw) * DASH_DIST;
+				let nx = localPos.x + bx;
+				let nz = localPos.z + bz;
+				// Clamp to arena
+				const rSq = nx * nx + nz * nz;
+				if (rSq > ARENA_PLAY_RADIUS * ARENA_PLAY_RADIUS) {
+					const r = Math.sqrt(rSq);
+					nx = (nx / r) * ARENA_PLAY_RADIUS;
+					nz = (nz / r) * ARENA_PLAY_RADIUS;
+				}
+				// Resolve any torch overlap after dash
+				for (const torch of TORCH_POSITIONS) {
+					const tdx = nx - torch.x;
+					const tdz = nz - torch.z;
+					const dSq = tdx * tdx + tdz * tdz;
+					if (dSq < TORCH_COLLISION_R * TORCH_COLLISION_R) {
+						const d = Math.sqrt(dSq) || 0.001;
+						nx = torch.x + (tdx / d) * TORCH_COLLISION_R;
+						nz = torch.z + (tdz / d) * TORCH_COLLISION_R;
+					}
+				}
+				localPos.x = nx;
+				localPos.z = nz;
+				abilityState.dashCooldownUntil = Date.now() + 5000;
 			}
-			const suppress = abilityState.suppressHits % 3 === 0;
-			combatActions.attackEnemy(sid, enemy.id, suppress);
-			soundActions.playGunnerShot();
-			shotFlash.until = Date.now() + SHOT_FLASH_MS;
 			return;
 		}
 

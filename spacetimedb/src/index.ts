@@ -17,7 +17,7 @@ import {
 } from './tables.js';
 import {
 	ENEMY_BASE_SPEED,
-	ENEMY_CAP,
+	ENEMY_CAP_BY_PLAYERS,
 	MELEE_RANGE,
 	SPITTER_RANGE_SQ,
 	SPITTER_MIN_DIST_SQ,
@@ -1302,6 +1302,13 @@ export const spawn_enemy = spacetimedb.reducer(
 		const session = ctx.db.gameSession.id.find(arg.sessionId);
 		if (!session || session.status !== 'active') return;
 
+		const players = [...ctx.db.playerState.player_state_session_id.filter(arg.sessionId)].filter(
+			(p) => p.status === 'alive'
+		);
+		if (players.length === 0) return;
+
+		const dynamicCap = ENEMY_CAP_BY_PLAYERS[Math.min(players.length, 4)] ?? 12;
+
 		const currentEnemies = [...ctx.db.enemy.enemy_session_id.filter(arg.sessionId)].filter(
 			(e) => e.isAlive
 		);
@@ -1309,7 +1316,7 @@ export const spawn_enemy = spacetimedb.reducer(
 		const minInterval = 1_500_000n;
 		const interval = baseInterval - session.cycleNumber * 600_000n;
 		const nextInterval = interval < minInterval ? minInterval : interval;
-		if (currentEnemies.length >= ENEMY_CAP) {
+		if (currentEnemies.length >= dynamicCap) {
 			const nextSpawn = ctx.timestamp.microsSinceUnixEpoch + nextInterval;
 			ctx.db.enemySpawnJob.insert({
 				scheduledId: 0n,
@@ -1329,11 +1336,6 @@ export const spawn_enemy = spacetimedb.reducer(
 				break;
 			}
 		}
-
-		const players = [...ctx.db.playerState.player_state_session_id.filter(arg.sessionId)].filter(
-			(p) => p.status === 'alive'
-		);
-		if (players.length === 0) return;
 
 		// Pick a fixed wall spawn point — cycle through them with some pressure toward
 		// the spawn point closest to the most threatened player

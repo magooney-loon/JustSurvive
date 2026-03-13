@@ -107,20 +107,30 @@
 	let prevX = $state(0);
 	let prevZ = $state(0);
 
+	// Remote shot flash: record local receive time when lastShotAt changes.
+	// Avoids server-client clock drift and subscription delivery latency.
+	const REMOTE_SHOT_FLASH_MS = 500;
+	let remoteFlashUntil = $state(0);
+	let prevLastShotAt = $state<any>(undefined);
+	$effect(() => {
+		if (!isLocal) {
+			const cur = player.lastShotAt;
+			if (cur !== prevLastShotAt && cur != null) {
+				remoteFlashUntil = Date.now() + REMOTE_SHOT_FLASH_MS;
+			}
+			prevLastShotAt = cur;
+		}
+	});
+
 	useTask((dt) => {
 		// For local player, use optimistic local state (immediate, no latency)
-		// For remote players, use server state (we see what they actually did)
+		// For remote players, record when we receive the update and flash from that
 		if (isLocal) {
 			const remainingMs = shotFlash.until - Date.now();
 			shotPulse = remainingMs > 0 ? remainingMs / SHOT_FLASH_MS : 0;
 		} else {
-			const lastShotMicros = (player as any).lastShotAt?.microsSinceUnixEpoch as bigint | undefined;
-			if (lastShotMicros) {
-				const ageMs = Date.now() - Number(lastShotMicros) / 1000;
-				shotPulse = ageMs >= 0 && ageMs < SHOT_FLASH_MS ? 1 - ageMs / SHOT_FLASH_MS : 0;
-			} else {
-				shotPulse = 0;
-			}
+			const remainingMs = remoteFlashUntil - Date.now();
+			shotPulse = remainingMs > 0 ? remainingMs / REMOTE_SHOT_FLASH_MS : 0;
 		}
 
 		if (isLocal && overridePos) {
