@@ -521,7 +521,7 @@
 		}
 		const joinedAt = myEntry?.joinedAt;
 		if (!joinedAt) return;
-		const deadline = Number(joinedAt.microsSinceUnixEpoch / 1000n) + READY_DEADLINE_MS;
+		const deadline = Number(joinedAt.microsSinceUnixEpoch) / 1000 + READY_DEADLINE_MS;
 		function update() {
 			readySecondsLeft = Math.max(0, Math.ceil((deadline - Date.now()) / 1000));
 		}

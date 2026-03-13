@@ -34,14 +34,20 @@
 			(e) => e.sessionId === lobbyState.currentSessionId && e.enemyType === 'boss' && e.isAlive
 		) as Enemy | undefined
 	);
+
+	let now = $state(Date.now());
+
 	const bossTimer = $derived(
 		$bossTimers.find((bt) => bt.sessionId === lobbyState.currentSessionId)
 	);
-	const bossSecsLeft = $derived(() => {
-		if (!bossTimer) return 0;
-		const spawnMs = Number(bossTimer.spawnAt.microsSinceUnixEpoch) / 1000;
-		return Math.max(0, Math.ceil((spawnMs - now) / 1000));
-	});
+	const bossSecsLeft = $derived(
+		bossTimer
+			? Math.max(
+					0,
+					Math.floor(Number(bossTimer.spawnAt.microsSinceUnixEpoch / 1000n - BigInt(now)) / 1000)
+				)
+			: 0
+	);
 
 	const DAY_PHASE_LABELS: Record<string, string> = {
 		sunset: 'Sunset',
@@ -59,8 +65,6 @@
 		}
 	});
 
-
-	let now = $state(Date.now());
 	$effect(() => {
 		const id = setInterval(() => {
 			now = Date.now();
@@ -194,7 +198,9 @@
 			box-shadow: 0 0 24px #aa113366;
 		"
 		>
-			<div style="font-size: 0.8rem; color: #ff4466; font-weight: 700; letter-spacing: 0.1em; margin-bottom: 0.35rem; text-transform: uppercase;">
+			<div
+				style="font-size: 0.8rem; color: #ff4466; font-weight: 700; letter-spacing: 0.1em; margin-bottom: 0.35rem; text-transform: uppercase;"
+			>
 				BOSS
 			</div>
 			<div style="background: rgba(0,0,0,0.5); border-radius: 4px; height: 14px; overflow: hidden;">
@@ -216,11 +222,15 @@
 			backdrop-filter: blur(8px); text-align: center; white-space: nowrap;
 		"
 		>
-			<span style="font-size: 0.75rem; color: rgba(255,100,130,0.7); font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase;">
+			<span
+				style="font-size: 0.75rem; color: rgba(255,100,130,0.7); font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase;"
+			>
 				Boss in
 			</span>
-			<span style="font-size: 1.4rem; font-weight: 800; color: #ff4466; margin-left: 0.5rem; font-variant-numeric: tabular-nums;">
-				{bossSecsLeft()}s
+			<span
+				style="font-size: 1.4rem; font-weight: 800; color: #ff4466; margin-left: 0.5rem; font-variant-numeric: tabular-nums;"
+			>
+				{bossSecsLeft}s
 			</span>
 		</div>
 	{/if}
@@ -423,5 +433,4 @@
 
 	<!-- Revive channel progress (healer only) -->
 	<ReviveChannelHud />
-
 </div>
