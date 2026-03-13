@@ -10,7 +10,7 @@
 
 <script lang="ts">
 	import { T } from '@threlte/core';
-	import type { Texture } from 'three';
+	import { AdditiveBlending, DoubleSide, type Texture } from 'three';
 	import PlayerRig from '$lib/character/PlayerRig.svelte';
 
 	export type GunnerRigProps = {
@@ -68,9 +68,48 @@
 			<T.MeshStandardMaterial color="#2b2b2b" roughness={0.38} metalness={0.42} />
 		</T.Mesh>
 		{#if shotPulse > 0}
-			<T.Mesh position={[0, 0, -0.95 - recoil]} scale={[shotPulse, shotPulse, shotPulse]}>
-				<T.ConeGeometry args={[0.12, 0.3, 6]} />
-				<T.MeshBasicMaterial color="#ffcc55" transparent opacity={shotPulse} />
+			{@const f = shotPulse}
+			{@const mz = -0.85 - recoil}
+			<!-- Perpendicular disc: the bright circular bloom at the muzzle face -->
+			<T.Mesh position={[0, 0, mz]} scale={f * 0.2}>
+				<T.CircleGeometry args={[1, 10]} />
+				<T.MeshBasicMaterial color="#ffffff" transparent opacity={f * 0.95} blending={AdditiveBlending} side={DoubleSide} depthWrite={false} />
+			</T.Mesh>
+			<T.Mesh position={[0, 0, mz]} scale={f * 0.38}>
+				<T.CircleGeometry args={[1, 10]} />
+				<T.MeshBasicMaterial color="#ff8800" transparent opacity={f * 0.4} blending={AdditiveBlending} side={DoubleSide} depthWrite={false} />
+			</T.Mesh>
+			<!-- Forward gas blast: elongated narrow cone -->
+			<T.Mesh position={[0, 0, mz - f * 0.2]} rotation={[-Math.PI / 2, 0, 0]} scale={[f * 0.08, f * 0.5, f * 0.08]}>
+				<T.ConeGeometry args={[1, 1, 7]} />
+				<T.MeshBasicMaterial color="#fff4cc" transparent opacity={f * 0.95} blending={AdditiveBlending} depthWrite={false} />
+			</T.Mesh>
+			<!-- Wider hot base -->
+			<T.Mesh position={[0, 0, mz - f * 0.06]} rotation={[-Math.PI / 2, 0, 0]} scale={[f * 0.18, f * 0.18, f * 0.18]}>
+				<T.ConeGeometry args={[1, 1, 7]} />
+				<T.MeshBasicMaterial color="#ffcc44" transparent opacity={f * 0.7} blending={AdditiveBlending} depthWrite={false} />
+			</T.Mesh>
+			<!-- Hot white core sphere -->
+			<T.Mesh position={[0, 0, mz]} scale={f * 0.09}>
+				<T.SphereGeometry args={[1, 6, 5]} />
+				<T.MeshBasicMaterial color="#ffffff" transparent opacity={f} blending={AdditiveBlending} depthWrite={false} />
+			</T.Mesh>
+			<!-- Star petals: 4 radial jets around barrel axis -->
+			<T.Mesh position={[0, f * 0.07, mz]} scale={[f * 0.055, f * 0.18, f * 0.055]}>
+				<T.ConeGeometry args={[1, 1, 5]} />
+				<T.MeshBasicMaterial color="#ffaa33" transparent opacity={f * 0.8} blending={AdditiveBlending} depthWrite={false} />
+			</T.Mesh>
+			<T.Mesh position={[0, -f * 0.07, mz]} rotation={[Math.PI, 0, 0]} scale={[f * 0.055, f * 0.18, f * 0.055]}>
+				<T.ConeGeometry args={[1, 1, 5]} />
+				<T.MeshBasicMaterial color="#ffaa33" transparent opacity={f * 0.8} blending={AdditiveBlending} depthWrite={false} />
+			</T.Mesh>
+			<T.Mesh position={[f * 0.07, 0, mz]} rotation={[0, 0, -Math.PI / 2]} scale={[f * 0.055, f * 0.18, f * 0.055]}>
+				<T.ConeGeometry args={[1, 1, 5]} />
+				<T.MeshBasicMaterial color="#ffaa33" transparent opacity={f * 0.8} blending={AdditiveBlending} depthWrite={false} />
+			</T.Mesh>
+			<T.Mesh position={[-f * 0.07, 0, mz]} rotation={[0, 0, Math.PI / 2]} scale={[f * 0.055, f * 0.18, f * 0.055]}>
+				<T.ConeGeometry args={[1, 1, 5]} />
+				<T.MeshBasicMaterial color="#ffaa33" transparent opacity={f * 0.8} blending={AdditiveBlending} depthWrite={false} />
 			</T.Mesh>
 		{/if}
 	</T.Group>
@@ -82,9 +121,43 @@
 			<T.MeshStandardMaterial color="#2b2b2b" roughness={0.38} metalness={0.42} />
 		</T.Mesh>
 		{#if shotPulse > 0}
-			<T.Mesh position={[0, 0, -0.95 - recoil]} scale={[shotPulse, shotPulse, shotPulse]}>
-				<T.ConeGeometry args={[0.12, 0.3, 6]} />
-				<T.MeshBasicMaterial color="#ffcc55" transparent opacity={shotPulse} />
+			{@const f = shotPulse}
+			{@const mz = -0.85 - recoil}
+			<T.Mesh position={[0, 0, mz]} scale={f * 0.2}>
+				<T.CircleGeometry args={[1, 10]} />
+				<T.MeshBasicMaterial color="#ffffff" transparent opacity={f * 0.95} blending={AdditiveBlending} side={DoubleSide} depthWrite={false} />
+			</T.Mesh>
+			<T.Mesh position={[0, 0, mz]} scale={f * 0.38}>
+				<T.CircleGeometry args={[1, 10]} />
+				<T.MeshBasicMaterial color="#ff8800" transparent opacity={f * 0.4} blending={AdditiveBlending} side={DoubleSide} depthWrite={false} />
+			</T.Mesh>
+			<T.Mesh position={[0, 0, mz - f * 0.2]} rotation={[-Math.PI / 2, 0, 0]} scale={[f * 0.08, f * 0.5, f * 0.08]}>
+				<T.ConeGeometry args={[1, 1, 7]} />
+				<T.MeshBasicMaterial color="#fff4cc" transparent opacity={f * 0.95} blending={AdditiveBlending} depthWrite={false} />
+			</T.Mesh>
+			<T.Mesh position={[0, 0, mz - f * 0.06]} rotation={[-Math.PI / 2, 0, 0]} scale={[f * 0.18, f * 0.18, f * 0.18]}>
+				<T.ConeGeometry args={[1, 1, 7]} />
+				<T.MeshBasicMaterial color="#ffcc44" transparent opacity={f * 0.7} blending={AdditiveBlending} depthWrite={false} />
+			</T.Mesh>
+			<T.Mesh position={[0, 0, mz]} scale={f * 0.09}>
+				<T.SphereGeometry args={[1, 6, 5]} />
+				<T.MeshBasicMaterial color="#ffffff" transparent opacity={f} blending={AdditiveBlending} depthWrite={false} />
+			</T.Mesh>
+			<T.Mesh position={[0, f * 0.07, mz]} scale={[f * 0.055, f * 0.18, f * 0.055]}>
+				<T.ConeGeometry args={[1, 1, 5]} />
+				<T.MeshBasicMaterial color="#ffaa33" transparent opacity={f * 0.8} blending={AdditiveBlending} depthWrite={false} />
+			</T.Mesh>
+			<T.Mesh position={[0, -f * 0.07, mz]} rotation={[Math.PI, 0, 0]} scale={[f * 0.055, f * 0.18, f * 0.055]}>
+				<T.ConeGeometry args={[1, 1, 5]} />
+				<T.MeshBasicMaterial color="#ffaa33" transparent opacity={f * 0.8} blending={AdditiveBlending} depthWrite={false} />
+			</T.Mesh>
+			<T.Mesh position={[f * 0.07, 0, mz]} rotation={[0, 0, -Math.PI / 2]} scale={[f * 0.055, f * 0.18, f * 0.055]}>
+				<T.ConeGeometry args={[1, 1, 5]} />
+				<T.MeshBasicMaterial color="#ffaa33" transparent opacity={f * 0.8} blending={AdditiveBlending} depthWrite={false} />
+			</T.Mesh>
+			<T.Mesh position={[-f * 0.07, 0, mz]} rotation={[0, 0, Math.PI / 2]} scale={[f * 0.055, f * 0.18, f * 0.055]}>
+				<T.ConeGeometry args={[1, 1, 5]} />
+				<T.MeshBasicMaterial color="#ffaa33" transparent opacity={f * 0.8} blending={AdditiveBlending} depthWrite={false} />
 			</T.Mesh>
 		{/if}
 	</T.Group>

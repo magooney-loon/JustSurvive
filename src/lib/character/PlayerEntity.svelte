@@ -111,14 +111,18 @@
 	// Avoids server-client clock drift and subscription delivery latency.
 	const REMOTE_SHOT_FLASH_MS = 500;
 	let remoteFlashUntil = $state(0);
-	let prevLastShotAt = $state<any>(undefined);
+	// Plain let (not $state) to avoid reactive loop — we only use it as a "last seen" tracker
+	let prevLastShotMicros: bigint | undefined;
 	$effect(() => {
 		if (!isLocal) {
 			const cur = player.lastShotAt;
-			if (cur !== prevLastShotAt && cur != null) {
+			const curMicros = cur?.microsSinceUnixEpoch;
+			if (curMicros !== prevLastShotMicros && curMicros != null) {
 				remoteFlashUntil = Date.now() + REMOTE_SHOT_FLASH_MS;
 			}
-			prevLastShotAt = cur;
+			prevLastShotMicros = curMicros;
+		} else {
+			remoteFlashUntil = 0;
 		}
 	});
 
@@ -130,6 +134,7 @@
 			shotPulse = remainingMs > 0 ? remainingMs / SHOT_FLASH_MS : 0;
 		} else {
 			const remainingMs = remoteFlashUntil - Date.now();
+			// Force reset to 0 if expired
 			shotPulse = remainingMs > 0 ? remainingMs / REMOTE_SHOT_FLASH_MS : 0;
 		}
 

@@ -67,9 +67,27 @@
 			<T.MeshStandardMaterial color="#2b2b2b" roughness={0.38} metalness={0.42} />
 		</T.Mesh>
 		{#if shotPulse > 0}
-			<T.Mesh position={[0, 0, -0.95 - recoil]} scale={[shotPulse, shotPulse, shotPulse]}>
-				<T.ConeGeometry args={[0.12, 0.3, 6]} />
-				<T.MeshBasicMaterial color="#ff88cc" transparent opacity={shotPulse} />
+			{@const flashIntensity = shotPulse}
+			<T.Mesh
+				position={[0, 0, 0.95 + recoil]}
+				scale={[flashIntensity * 1.2, flashIntensity * 1.2, flashIntensity]}
+			>
+				<T.ConeGeometry args={[0.15, 0.35, 8]} />
+				<T.MeshBasicMaterial color="#ffffff" transparent opacity={flashIntensity * 0.9} />
+			</T.Mesh>
+			<T.Mesh
+				position={[0, 0, 0.95 + recoil]}
+				scale={[flashIntensity * 1.8, flashIntensity * 1.8, flashIntensity * 1.5]}
+			>
+				<T.ConeGeometry args={[0.2, 0.4, 8]} />
+				<T.MeshBasicMaterial color="#ff88cc" transparent opacity={flashIntensity * 0.7} />
+			</T.Mesh>
+			<T.Mesh
+				position={[0, 0, 0.9 + recoil]}
+				scale={[flashIntensity * 2.5, flashIntensity * 2.5, flashIntensity * 2]}
+			>
+				<T.ConeGeometry args={[0.25, 0.35, 8]} />
+				<T.MeshBasicMaterial color="#ff44aa" transparent opacity={flashIntensity * 0.4} />
 			</T.Mesh>
 		{/if}
 	</T.Group>
