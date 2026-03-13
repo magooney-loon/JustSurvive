@@ -16,16 +16,59 @@
 
 	let loaded = $state(false);
 	let loadedData = $state<LoadedMD2 | null>(null);
+	let group = $state<THREE.Group | null>(null);
 	let bodyMesh = $state<THREE.Mesh | null>(null);
-	let weaponMesh = $state<THREE.Mesh | null>(null);
 	let mixer = $state<THREE.AnimationMixer | null>(null);
 	let currentAction = $state<THREE.AnimationAction | null>(null);
 
+	const ENEMY_ANIMS = {
+		basic: {
+			idle: ['crstand'],
+			move: ['crwalk'],
+			attack: ['crattack'],
+			death: ['crdeath']
+		},
+		brute: {
+			idle: ['crstand'],
+			move: ['crwalk'],
+			attack: ['crattack'],
+			death: ['crdeath']
+		},
+		fast: {
+			idle: ['stand'],
+			move: ['run'],
+			attack: ['jump'],
+			death: ['death']
+		},
+		spitter: {
+			idle: ['stand'],
+			move: ['run'],
+			attack: ['point'],
+			death: ['death']
+		},
+		caster: {
+			idle: ['stand'],
+			move: ['run'],
+			attack: ['taunt'],
+			death: ['death']
+		}
+	};
+
+	function getAnim(type: typeof enemyType, category: 'idle' | 'move' | 'attack' | 'death'): string {
+		const enemyAnims = ENEMY_ANIMS[type];
+		const anims = enemyAnims?.[category] || ['stand'];
+		return anims[Math.floor(Math.random() * anims.length)];
+	}
+
+	let cycleTimer = $state(0);
+	let currentCategory = $state('idle');
+	let hasCycledOnce = $state(false);
+
 	function getAnimationFromState(s: number, atk: number, dead: boolean): string {
-		if (dead) return 'death';
-		if (s < 0.1) return 'idle';
-		if (atk > 0.3) return 'attack';
-		return 'run';
+		if (dead) return getAnim(enemyType, 'death');
+		if (atk > 0.3) return getAnim(enemyType, 'attack');
+		if (s < 0.1) return getAnim(enemyType, 'idle');
+		return getAnim(enemyType, 'move');
 	}
 
 	function setAnimation(name: string) {
@@ -45,11 +88,10 @@
 		newAction.play();
 
 		if (currentAction) {
-			currentAction.fadeOut(0.2);
-			newAction.reset().fadeIn(0.2).play();
+			currentAction.fadeOut(0.15);
+			newAction.reset().fadeIn(0.15).play();
 		}
 		currentAction = newAction;
-		console.log(`[MD2] Playing animation: ${clip.name}`);
 	}
 
 	$effect(() => {
@@ -62,6 +104,27 @@
 	useTask((delta) => {
 		if (mixer) {
 			mixer.update(delta);
+
+			cycleTimer += delta;
+			const newCategory = isDead
+				? 'death'
+				: attackPhase > 0.3
+					? 'attack'
+					: speed < 0.1
+						? 'idle'
+						: 'move';
+
+			if (newCategory !== currentCategory) {
+				currentCategory = newCategory;
+				cycleTimer = 0;
+				hasCycledOnce = false;
+			}
+
+			if (newCategory === 'idle' && !hasCycledOnce && cycleTimer > 3) {
+				hasCycledOnce = true;
+				const anim = getAnimationFromState(speed, attackPhase, isDead);
+				setAnimation(anim);
+			}
 		}
 	});
 
@@ -72,11 +135,11 @@
 			const data = await loadEnemyModel(enemyType);
 			loadedData = data;
 
-			const { body, weapon } = createEnemyMesh(data, enemyType);
-			bodyMesh = body;
-			weaponMesh = weapon || null;
+			const result = createEnemyMesh(data, enemyType);
+			group = result.group;
+			bodyMesh = result.body;
 
-			mixer = new THREE.AnimationMixer(body);
+			mixer = new THREE.AnimationMixer(bodyMesh);
 
 			const firstAnim = getAnimationFromState(speed, attackPhase, isDead);
 			setAnimation(firstAnim);
@@ -89,11 +152,6 @@
 	});
 </script>
 
-{#if loaded && bodyMesh}
-	<T.Group position={[0, 0.1, 0]}>
-		<T is={bodyMesh} />
-		{#if weaponMesh}
-			<T is={weaponMesh} />
-		{/if}
-	</T.Group>
+{#if loaded && group}
+	<T is={group} position={[0, 0.1, 0]} />
 {/if}

@@ -121,7 +121,10 @@ export async function loadEnemyModel(enemyType: EnemyType): Promise<LoadedMD2> {
 export function createEnemyMesh(
 	loaded: LoadedMD2,
 	enemyType: EnemyType
-): { body: THREE.Mesh; weapon?: THREE.Mesh } {
+): { group: THREE.Group; body: THREE.Mesh; weapon?: THREE.Mesh } {
+	const group = new THREE.Group();
+	group.rotation.y = Math.PI;
+
 	const material = new THREE.MeshLambertMaterial({
 		map: loaded.skins[0],
 		color: 0xffffff
@@ -129,9 +132,10 @@ export function createEnemyMesh(
 
 	const bodyGeo = loaded.geometry.clone();
 	const body = new THREE.Mesh(bodyGeo, material);
-	body.scale.setScalar(0.03);
+	body.scale.setScalar(0.04);
 	body.castShadow = true;
 	body.receiveShadow = true;
+	group.add(body);
 
 	let weapon: THREE.Mesh | undefined;
 	const weaponPath = WEAPON_MAP[enemyType];
@@ -142,13 +146,14 @@ export function createEnemyMesh(
 			color: 0xffffff
 		});
 		const weaponMesh = new THREE.Mesh(weaponGeo.clone(), weaponMat);
-		weaponMesh.scale.setScalar(0.03);
+		weaponMesh.scale.setScalar(0.04);
 		weaponMesh.castShadow = true;
 		weaponMesh.receiveShadow = true;
 		weapon = weaponMesh;
+		group.add(weaponMesh);
 	}
 
-	return { body, weapon };
+	return { group, body, weapon };
 }
 
 export function findAnimation(
