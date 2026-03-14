@@ -1,23 +1,26 @@
 <script lang="ts">
+	import { onDestroy } from 'svelte';
 	import { createSpacetimeDBProvider } from 'spacetimedb/svelte';
 	import type { Identity } from 'spacetimedb';
 	import { DbConnection, type ErrorContext } from '$bindings';
 	import App from '$root/App.svelte';
 	import { log } from '$root/settings.svelte.js';
-	import { lobbyActions } from '$lib/stores/lobby.svelte.js';
+	import { lobbyActions, lobbyState } from '$lib/stores/lobby.svelte.js';
 	import { combatActions } from '$lib/stores/combat.svelte.js';
 
 	const HOST = import.meta.env.VITE_SPACETIMEDB_HOST ?? 'ws://localhost:3000';
 	const DB_NAME = import.meta.env.VITE_SPACETIMEDB_DB_NAME ?? 'justsurvive-6769';
 	const TOKEN_KEY = `${HOST}/${DB_NAME}/auth_token`;
 
-	const onConnect = (conn: DbConnection, identity: Identity, token: string) => {
+	let conn: DbConnection | null = null;
+
+	const onConnect = (dbConn: DbConnection, identity: Identity, token: string) => {
+		conn = dbConn;
 		localStorage.setItem(TOKEN_KEY, token);
 		log.info('Connected to SpacetimeDB with identity:', identity.toHexString());
-		lobbyActions.init(conn);
-		combatActions.init(conn);
-		// Global subscription so all table data is always live — useTable reads from this cache.
-		conn.subscriptionBuilder().subscribeToAllTables();
+		lobbyActions.init(dbConn);
+		combatActions.init(dbConn);
+		dbConn.subscriptionBuilder().subscribeToAllTables();
 	};
 
 	const onDisconnect = () => {
@@ -37,6 +40,12 @@
 		.onConnectError(onConnectError);
 
 	createSpacetimeDBProvider(connectionBuilder);
+
+	onDestroy(() => {
+		if (conn && lobbyState.currentLobbyId) {
+			conn.reducers.leaveLobby({ lobbyId: lobbyState.currentLobbyId });
+		}
+	});
 </script>
 
 <App />

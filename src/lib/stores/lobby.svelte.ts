@@ -101,6 +101,10 @@ export const lobbyActions = {
 		lobbyState.currentLobbyId = null;
 		lobbyState.currentSessionId = null;
 	},
+	leaveCurrentLobby() {
+		if (!conn || !lobbyState.currentLobbyId) return;
+		this.leaveLobby(lobbyState.currentLobbyId);
+	},
 	kickPlayer(lobbyId: bigint, playerIdentity: Identity) {
 		if (!conn) return;
 		conn.reducers.kickPlayer({ lobbyId, playerIdentity });
