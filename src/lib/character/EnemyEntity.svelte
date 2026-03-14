@@ -118,8 +118,8 @@
 	const splatGrow = $derived(dead ? Math.min(1, splatAge / 350) : 0);
 	const expired = $derived(dead && splatAge >= DEAD_PERSIST_MS);
 
-	const PARTICLE_COUNT = 12;
-	const GRAVITY = 12;
+	const PARTICLE_COUNT = 30;
+	const GRAVITY = 14;
 	const bloodParticles = $state.raw<
 		{
 			x: number;
@@ -141,19 +141,21 @@
 			bloodStarted = true;
 			bloodAge = 0;
 			const originY = enemy.enemyType === 'boss' ? 3.5 : 1.2;
-			const INITIAL_SPEED = 4 + Math.random() * 3;
+			const INITIAL_SPEED = 6 + Math.random() * 4;
 			bloodParticles.length = 0;
 			for (let i = 0; i < PARTICLE_COUNT; i++) {
+				const isBig = i < 4;
 				bloodParticles.push({
-					x: (Math.random() - 0.5) * 0.3,
-					y: originY + Math.random() * 0.5,
-					z: (Math.random() - 0.5) * 0.3,
-					vx: (Math.random() - 0.5) * 2.5,
-					vy: INITIAL_SPEED + Math.random() * 2,
-					vz: (Math.random() - 0.5) * 2.5,
-					scale: 0.06 + Math.random() * 0.08,
-					delay: Math.random() * 0.15,
-					color: i % 3 === 0 ? '#8a0a0a' : i % 3 === 1 ? '#6b0808' : '#520606'
+					x: (Math.random() - 0.5) * 0.5,
+					y: originY + Math.random() * 0.6,
+					z: (Math.random() - 0.5) * 0.5,
+					vx: (Math.random() - 0.5) * 5,
+					vy: INITIAL_SPEED + Math.random() * 3,
+					vz: (Math.random() - 0.5) * 5,
+					scale: isBig ? 0.2 + Math.random() * 0.2 : 0.1 + Math.random() * 0.15,
+					delay: Math.random() * 0.12,
+					color:
+						i % 4 === 0 ? '#b80a0a' : i % 4 === 1 ? '#8a0a0a' : i % 4 === 2 ? '#6b0808' : '#520606'
 				});
 			}
 		}
@@ -163,7 +165,7 @@
 		}
 	});
 
-	const bloodOpacity = $derived(bloodStarted ? Math.max(0, 1 - bloodAge / 1.2) : 0);
+	const bloodOpacity = $derived(bloodStarted ? Math.max(0, 1 - bloodAge / 1.8) : 0);
 
 	useTask((dt) => {
 		if (bloodStarted && dead) {
@@ -174,11 +176,11 @@
 				p.x += p.vx * dt;
 				p.y += p.vy * dt;
 				p.z += p.vz * dt;
-				if (p.y < 0.02) {
-					p.y = 0.02;
+				if (p.y < 0.015) {
+					p.y = 0.015;
 					p.vy = 0;
-					p.vx *= 0.3;
-					p.vz *= 0.3;
+					p.vx *= 0.25;
+					p.vz *= 0.25;
 				}
 			}
 		}
@@ -314,12 +316,16 @@
 			{#each bloodParticles as p}
 				{@const localAge = bloodAge - p.delay}
 				{#if localAge >= 0}
-					<T.Mesh position={[p.x, p.y, p.z]} scale={p.scale * Math.max(0.3, 1 - localAge * 0.8)}>
-						<T.SphereGeometry args={[1, 6, 4]} />
+					{@const scaleMult = p.scale * Math.max(0.4, 1 - localAge * 0.6)}
+					<T.Mesh
+						position={[p.x, p.y + scaleMult * 0.3, p.z]}
+						scale={[scaleMult, scaleMult * 0.6, scaleMult]}
+					>
+						<T.SphereGeometry args={[1, 8, 6]} />
 						<T.MeshBasicMaterial
 							color={p.color}
 							transparent
-							opacity={bloodOpacity * (0.7 + Math.random() * 0.3)}
+							opacity={bloodOpacity * (0.75 + Math.random() * 0.25)}
 						/>
 					</T.Mesh>
 				{/if}
