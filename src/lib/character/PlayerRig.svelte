@@ -48,16 +48,10 @@
 	const headTilt = $derived(sinHalf * 0.12 * moveIntensity);
 	const footRoll = $derived(Math.cos(walkPhase) * 0.3 * moveIntensity);
 	const isSprinting = $derived(speed > 6);
-	const holdAim = $derived(classChoice === 'spotter' || classChoice === 'gunner');
-	const armBop = $derived(isSprinting ? sinWalk * 0.2 * moveIntensity : 0);
-	const armPitch = $derived(holdAim ? armBop : 0);
-	const armForwardZ = $derived(holdAim ? -0.55 : -0.2);
+
 	const leanForward = $derived((isSprinting ? 0.22 : 0.08) * moveIntensity);
 
 	const plateTint = $derived(classChoice === 'gunner' ? '#2b2620' : '#2f271f');
-
-	const leftArmRotX = $derived(holdAim ? armPitch : -swing * 0.8);
-	const rightArmRotX = $derived(holdAim ? -armPitch : swing * 0.8);
 
 	const kneeBendL = $derived(0.07 + Math.max(0, sinWalk) * 0.95 * moveIntensity);
 	const kneeBendR = $derived(0.07 + Math.max(0, -sinWalk) * 0.95 * moveIntensity);
@@ -183,19 +177,5 @@
 				</T.Mesh>
 			</T.Group>
 		</T.Group>
-	</T.Group>
-
-	<T.Group position={[-0.24, 1.1, armForwardZ - leanForward * 0.6]} rotation={[leftArmRotX, 0, 0]}>
-		<T.Mesh position={[0, -0.04, -0.22]}>
-			<T.BoxGeometry args={[limbR * 2.0, limbR * 0.5, limbR * 1.2]} />
-			<T.MeshStandardMaterial color={plateTint} roughness={0.38} metalness={0.28} />
-		</T.Mesh>
-	</T.Group>
-
-	<T.Group position={[0.24, 1.1, armForwardZ - leanForward * 0.6]} rotation={[rightArmRotX, 0, 0]}>
-		<T.Mesh position={[0, -0.04, -0.22]}>
-			<T.BoxGeometry args={[limbR * 2.0, limbR * 0.5, limbR * 1.2]} />
-			<T.MeshStandardMaterial color={plateTint} roughness={0.38} metalness={0.28} />
-		</T.Mesh>
 	</T.Group>
 </T.Group>

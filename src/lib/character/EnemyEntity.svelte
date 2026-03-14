@@ -117,6 +117,72 @@
 	const splatT = $derived(dead ? Math.max(0, 1 - splatAge / 2200) : 0);
 	const splatGrow = $derived(dead ? Math.min(1, splatAge / 350) : 0);
 	const expired = $derived(dead && splatAge >= DEAD_PERSIST_MS);
+
+	const PARTICLE_COUNT = 12;
+	const GRAVITY = 12;
+	const bloodParticles = $state.raw<
+		{
+			x: number;
+			y: number;
+			z: number;
+			vx: number;
+			vy: number;
+			vz: number;
+			scale: number;
+			delay: number;
+			color: string;
+		}[]
+	>([]);
+	let bloodAge = $state(0);
+	let bloodStarted = $state(false);
+
+	$effect(() => {
+		if (dead && !bloodStarted) {
+			bloodStarted = true;
+			bloodAge = 0;
+			const originY = enemy.enemyType === 'boss' ? 3.5 : 1.2;
+			const INITIAL_SPEED = 4 + Math.random() * 3;
+			bloodParticles.length = 0;
+			for (let i = 0; i < PARTICLE_COUNT; i++) {
+				bloodParticles.push({
+					x: (Math.random() - 0.5) * 0.3,
+					y: originY + Math.random() * 0.5,
+					z: (Math.random() - 0.5) * 0.3,
+					vx: (Math.random() - 0.5) * 2.5,
+					vy: INITIAL_SPEED + Math.random() * 2,
+					vz: (Math.random() - 0.5) * 2.5,
+					scale: 0.06 + Math.random() * 0.08,
+					delay: Math.random() * 0.15,
+					color: i % 3 === 0 ? '#8a0a0a' : i % 3 === 1 ? '#6b0808' : '#520606'
+				});
+			}
+		}
+		if (!dead) {
+			bloodStarted = false;
+			bloodAge = 0;
+		}
+	});
+
+	const bloodOpacity = $derived(bloodStarted ? Math.max(0, 1 - bloodAge / 1.2) : 0);
+
+	useTask((dt) => {
+		if (bloodStarted && dead) {
+			bloodAge += dt;
+			for (const p of bloodParticles) {
+				if (bloodAge < p.delay) continue;
+				p.vy -= GRAVITY * dt;
+				p.x += p.vx * dt;
+				p.y += p.vy * dt;
+				p.z += p.vz * dt;
+				if (p.y < 0.02) {
+					p.y = 0.02;
+					p.vy = 0;
+					p.vx *= 0.3;
+					p.vz *= 0.3;
+				}
+			}
+		}
+	});
 </script>
 
 {#if !expired}
@@ -242,6 +308,22 @@
 					depthWrite={false}
 				/>
 			</T.Mesh>
+		{/if}
+
+		{#if bloodStarted && bloodOpacity > 0}
+			{#each bloodParticles as p}
+				{@const localAge = bloodAge - p.delay}
+				{#if localAge >= 0}
+					<T.Mesh position={[p.x, p.y, p.z]} scale={p.scale * Math.max(0.3, 1 - localAge * 0.8)}>
+						<T.SphereGeometry args={[1, 6, 4]} />
+						<T.MeshBasicMaterial
+							color={p.color}
+							transparent
+							opacity={bloodOpacity * (0.7 + Math.random() * 0.3)}
+						/>
+					</T.Mesh>
+				{/if}
+			{/each}
 		{/if}
 
 		{#if enemy.isMarked && !dead}
