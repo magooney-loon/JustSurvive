@@ -12,13 +12,25 @@ export function generateCode(seed: bigint): string {
 }
 
 export function classMaxHp(cls: string): bigint {
-	return cls === 'tank' ? 150n : 100n;
+	return cls === 'tank' ? 200n : 100n;
 }
 
 export function classMaxStamina(cls: string): bigint {
-	if (cls === 'spotter') return 450n;
-	if (cls === 'tank') return 200n;
+	if (cls === 'spotter') return 600n;
+	if (cls === 'tank') return 300n;
 	return 80n;
+}
+
+// Base stamina regen per second (before ramp)
+export function classBaseRegen(cls: string): bigint {
+	if (cls === 'spotter' || cls === 'tank') return 4n;
+	return 2n;
+}
+
+// Max ramp-up stamina regen per second (added on top of base after 5s rest)
+export function classRampRegen(cls: string): bigint {
+	if (cls === 'spotter' || cls === 'tank') return 9n;
+	return 6n;
 }
 
 // Shorthand to create a Timestamp-compatible value from raw microseconds

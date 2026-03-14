@@ -34,7 +34,7 @@ export const CLASSES: Record<ClassId, ClassData> = {
 			name: 'Spotter',
 			role: 'Scout',
 			hp: 100,
-			stamina: 450,
+			stamina: 600,
 			walkSpeed: 5.0,
 			sprintSpeed: 9.0,
 			color: '#4af',
@@ -45,24 +45,24 @@ export const CLASSES: Record<ClassId, ClassData> = {
 				name: 'Steady Shot',
 				hudLabel: 'Steady Shot',
 				input: 'LMB',
-				cooldown: '3s',
-				cooldownMs: 3000,
-				desc: 'Fire a high-damage sniper shot at an enemy within 15 units. Deals 45 damage (55 if target is already marked). Marks the target for 5s — marked targets take +10 bonus damage from all sources. +10 score on new marks.'
+				cooldown: '1.5s',
+				cooldownMs: 1500,
+				desc: 'Fire a high-damage sniper shot at an enemy within 23 units. Deals 45 damage (55 if target is already marked). Marks the target for 5s — marked targets take +10 bonus damage from all sources. +10 score on new marks.'
 			},
 			{
 				name: 'Flash Stun',
 				hudLabel: 'Flash',
 				input: 'RMB',
-				cooldown: '1.5s',
-				cooldownMs: 1500,
-				desc: 'Fire a 90° stun cone up to 5 units. Enemies caught are dazed for 2s. +10 score per stunned enemy.'
+				cooldown: '3s',
+				cooldownMs: 3000,
+				desc: 'Fire a 90° flash cone up to 9 units. Deals 10 damage and dazes enemies for 3.5s. +10 score per stunned enemy.'
 			}
 		],
 		tips: [
 			'Steady Shot marks on hit — shoot first, then let your team follow up for the +10 bonus damage.',
-			'Shooting an already-marked target deals 55 damage total. Chain shots on tough enemies like Brutes.',
-			'Flash stun has a 90° cone — use it to buy time for teammates when overwhelmed.',
-			'Your high stamina and speed make you the best scout — stay mobile and keep tagging.'
+			'Shooting an already-marked target deals 55 damage total. With the 1.5s cooldown, chain shots on tough targets like Brutes.',
+			'Flash now reaches 9 units and dazes for 3.5s — use it to lock down a pack before teammates engage.',
+			'Your high stamina and fast regen make you the best scout — stay mobile and keep tagging.'
 		]
 	},
 	gunner: {
@@ -107,8 +107,8 @@ export const CLASSES: Record<ClassId, ClassData> = {
 			id: 'tank',
 			name: 'Tank',
 			role: 'Frontline',
-			hp: 150,
-			stamina: 200,
+			hp: 200,
+			stamina: 300,
 			walkSpeed: 2.5,
 			sprintSpeed: 3.5,
 			color: '#8a4',
@@ -121,7 +121,7 @@ export const CLASSES: Record<ClassId, ClassData> = {
 				input: 'LMB',
 				cooldown: '0.5s',
 				cooldownMs: 500,
-				desc: 'Swing your axe in a 90° cone up to 4 units. Deals 25 damage to all enemies in range, knocks them back, and dazes for 1.5s. +5 score per hit, +2 per kill.'
+				desc: 'Swing your axe in a 90° cone up to 4 units. Deals 25 damage to all enemies in range, knocks them back, dazes for 1.5s, and heals you for 5 HP per enemy hit. +5 score per hit, +2 per kill.'
 			},
 			{
 				name: 'Brace',
@@ -129,14 +129,14 @@ export const CLASSES: Record<ClassId, ClassData> = {
 				input: 'RMB (hold)',
 				cooldown: '1s after release',
 				cooldownMs: 1000,
-				desc: 'Enter a defensive stance. Enemies hitting you are knocked back instead of dealing damage. Lasts up to 5s. Auto-releases at max duration.'
+				desc: 'Enter a defensive stance. Enemies hitting you are knocked back instead of dealing damage. Heals ~30 HP/s while active. Lasts up to 5s. Auto-releases at max duration.'
 			}
 		],
 		tips: [
-			'Axe Swing hits ALL enemies in the cone at 0.5s cooldown — spam it into packs for massive CC.',
+			'Axe Swing hits ALL enemies in the cone at 0.5s cooldown and heals 5 HP per hit — spam into packs to sustain yourself.',
 			'Daze from axe swing lasts 1.5s and the cooldown is only 0.5s — chain swings to keep enemies permanently staggered.',
-			'Bracing reflects enemies when they melee you. Hold RMB when a Brute or boss charges in.',
-			'Your slow speed means you cannot escape — axe swing clears space, brace absorbs the rest.'
+			'Bracing heals ~30 HP/s and reflects enemies when they melee you. Hold RMB when a Brute or boss charges in.',
+			'Your slow speed means you cannot escape — axe swing clears space and sustains you, brace absorbs the rest.'
 		]
 	},
 	healer: {
@@ -166,12 +166,12 @@ export const CLASSES: Record<ClassId, ClassData> = {
 				input: 'RMB',
 				cooldown: '15s after completion',
 				cooldownMs: 15000,
-				desc: 'Channel for 2s to revive a downed ally within 3 units. While channeling, a 50 HP shield protects you — if the shield absorbs 50 damage it breaks and interrupts the revive. On success: ally gets 50 HP + 5s speed boost. +20 score.'
+				desc: 'Channel for 2s to revive a downed ally within 3 units. While channeling, an 80 HP shield protects you — enemies that melee you are knocked back instead of dealing damage. If the shield breaks, the revive is interrupted. On success: ally gets 50 HP + 5s speed boost. +20 score.'
 			}
 		],
 		tips: [
 			'Reviving gives the ally a speed boost — perfect for pulling them out of a pack.',
-			'The revive shield protects YOU, not the downed ally — absorbs 50 damage before the revive is interrupted.',
+			'The revive shield (80 HP) knocks enemies back when they try to melee you during a revive — position yourself to maximize the knockback window.',
 			'You deal 35 damage per shot — use it to finish low-HP enemies between heals.',
 			'Prioritize keeping the Tank alive — they absorb the most damage.'
 		]
@@ -519,7 +519,7 @@ export const TIPS: GameTip[] = [
 	{
 		tag: 'Boss',
 		color: '#f44',
-		text: 'Spawns every 90 seconds if no boss is alive. 2200 HP, 0.6 units/s. Kills all other enemies on spawn. Drops massive score.'
+		text: 'Spawns every 90 seconds if no boss is alive. 2200 HP, 0.6 units/s. Kills all other enemies on spawn. When the boss dies, all remaining enemies are wiped out. Drops massive score.'
 	},
 	...Object.values(CLASSES).flatMap((c) =>
 		c.tips.map((tip) => ({

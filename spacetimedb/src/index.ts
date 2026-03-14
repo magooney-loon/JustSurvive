@@ -54,7 +54,14 @@ import {
 	AXE_SWING_COOLDOWN_US,
 	AXE_SWING_DAZE_US,
 	AXE_SWING_KNOCKBACK,
-	REVIVE_SHIELD_HP
+	AXE_SWING_SELF_HEAL,
+	BRACE_HEAL_PER_TICK,
+	REVIVE_SHIELD_HP,
+	REVIVE_SHIELD_KNOCKBACK,
+	FLASH_CONE_RANGE,
+	FLASH_COOLDOWN_US,
+	FLASH_STUN_US,
+	FLASH_DAMAGE
 } from './constants.js';
 
 // Precomputed torch positions (computed once at module load)
@@ -77,7 +84,7 @@ function enemyMoveAvoid(curX: bigint, curZ: bigint, nx: bigint, nz: bigint): [bi
 	if (!hitsTorch(curX, nz)) return [curX, nz];
 	return [curX, curZ];
 }
-import { generateCode, classMaxHp, classMaxStamina, ts, bigintSqrt as bs } from './helpers.js';
+import { generateCode, classMaxHp, classMaxStamina, classBaseRegen, classRampRegen, ts, bigintSqrt as bs } from './helpers.js';
 
 // ─── Scheduled Tables ─────────────────────────────────────────────────────────
 // These must stay in index.ts — they forward-reference their reducer functions.
@@ -1026,8 +1033,8 @@ export const move_player = spacetimedb.reducer(
 		if (ps.isBracing) return;
 
 		const SPRINT_DRAIN = 3n;
-		const BASE_REGEN_PER_SEC = 2n;
-		const RAMP_REGEN_PER_SEC = 6n;
+		const BASE_REGEN_PER_SEC = classBaseRegen(ps.classChoice);
+		const RAMP_REGEN_PER_SEC = classRampRegen(ps.classChoice);
 		const RAMP_TIME_MICROS = 5_000_000n;
 		const REGEN_DELAY_MICROS = 1_000_000n;
 		const MICROS_PER_SEC = 1_000_000n;
@@ -1153,6 +1160,12 @@ export const enemy_tick = spacetimedb.reducer(
 			if (!e.isAlive && e.diedAt && now - e.diedAt.microsSinceUnixEpoch >= DEAD_CLEANUP_MS) {
 				ctx.db.enemy.id.delete(e.id);
 				if (e.enemyType === 'boss') {
+					// Boss died — kill all remaining alive enemies
+					for (const other of ctx.db.enemy.enemy_session_id.filter(arg.sessionId)) {
+						if (other.isAlive && other.id !== e.id) {
+							ctx.db.enemy.id.update({ ...other, hp: 0n, isAlive: false, diedAt: ts(now) });
+						}
+					}
 					const nextBossAt = now + BOSS_SPAWN_INTERVAL_US;
 					ctx.db.bossSpawnJob.insert({
 						scheduledId: 0n,
@@ -1198,6 +1211,13 @@ export const enemy_tick = spacetimedb.reducer(
 				sessionId: arg.sessionId
 			});
 			return;
+		}
+
+		// Build set of player ids for healers currently channeling a revive (for shield knockback)
+		const revisingHealerPlayerIds = new Set<bigint>();
+		for (const c of ctx.db.reviveChannel.revive_channel_session_id.filter(arg.sessionId)) {
+			const healer = players.find((p) => p.playerIdentity.isEqual(c.healerIdentity));
+			if (healer) revisingHealerPlayerIds.add(healer.id);
 		}
 
 		const damageAccum = new Map<bigint, bigint>();
@@ -1336,8 +1356,19 @@ export const enemy_tick = spacetimedb.reducer(
 				continue;
 			}
 
-			// Normal: melee damage or move toward player
+			// Healer revive shield: knock enemy back when it would melee a reviving healer (no daze)
 			const enemyRange = enemy.enemyType === 'boss' ? BOSS_MELEE_RANGE : MELEE_RANGE;
+			if (chosenDist <= enemyRange * enemyRange && !enemy.isDazed && revisingHealerPlayerIds.has(chosen.id)) {
+				const magnitude = bs(chosenDist);
+				const newX =
+					magnitude > 0n ? enemy.posX - (dx * REVIVE_SHIELD_KNOCKBACK) / magnitude : enemy.posX - REVIVE_SHIELD_KNOCKBACK;
+				const newZ =
+					magnitude > 0n ? enemy.posZ - (dz * REVIVE_SHIELD_KNOCKBACK) / magnitude : enemy.posZ - REVIVE_SHIELD_KNOCKBACK;
+				ctx.db.enemy.id.update({ ...enemy, posX: newX, posZ: newZ });
+				continue;
+			}
+
+			// Normal: melee damage or move toward player
 			if (chosenDist <= enemyRange * enemyRange && !enemy.isDazed) {
 				const damage = enemy.enemyType === 'boss' ? 5n : enemy.enemyType === 'brute' ? 3n : 1n;
 				damageAccum.set(chosen.id, (damageAccum.get(chosen.id) ?? 0n) + damage);
@@ -1400,6 +1431,14 @@ export const enemy_tick = spacetimedb.reducer(
 
 		// Apply all damage accumulated this tick — one write per player, correct total
 		applyAccumulatedDamage(ctx, arg.sessionId, players, damageAccum);
+
+		// Brace heal: tank heals BRACE_HEAL_PER_TICK HP per tick while bracing
+		for (const p of players) {
+			if (p.classChoice === 'tank' && p.isBracing && p.status === 'alive' && p.hp < p.maxHp) {
+				const healedHp = p.hp + BRACE_HEAL_PER_TICK > p.maxHp ? p.maxHp : p.hp + BRACE_HEAL_PER_TICK;
+				ctx.db.playerState.id.update({ ...p, hp: healedHp });
+			}
+		}
 
 		const nextTick = ctx.timestamp.microsSinceUnixEpoch + TICK_MS * 1000n;
 		ctx.db.enemyTickJob.insert({
@@ -1653,17 +1692,14 @@ export const spotter_flash = spacetimedb.reducer({ sessionId: t.u64() }, (ctx, {
 	}
 	if (!ps || ps.classChoice !== 'spotter') throw new SenderError('Not a Spotter');
 	if (ps.status !== 'alive') return;
-	const COOLDOWN_US = 1_500_000n;
 	if (
 		ps.pingCooldownUntil &&
 		ctx.timestamp.microsSinceUnixEpoch < ps.pingCooldownUntil.microsSinceUnixEpoch
 	)
 		throw new SenderError('Flash on cooldown');
 
-	// Cone parameters: 5 unit range, ±45° (90° total)
-	const CONE_RANGE = 5000; // fixed-point (× 1000)
+	// Cone parameters: FLASH_CONE_RANGE units, ±45° (90° total)
 	const HALF_ANGLE = Math.PI / 4;
-	const STUN_US = 2_000_000n;
 
 	const facingRad = Number(ps.facingAngle) / 1000;
 	const fwdX = -Math.sin(facingRad);
@@ -1676,19 +1712,24 @@ export const spotter_flash = spacetimedb.reducer({ sessionId: t.u64() }, (ctx, {
 		const ex = Number(e.posX) - Number(ps.posX);
 		const ez = Number(e.posZ) - Number(ps.posZ);
 		const dist = Math.sqrt(ex * ex + ez * ez);
-		if (dist > CONE_RANGE || dist < 1) continue;
+		if (dist > FLASH_CONE_RANGE || dist < 1) continue;
 		const dot = (ex * fwdX + ez * fwdZ) / dist;
 		if (dot < cosHalf) continue;
-		// Enemy is in cone — stun it
-		const dazedUntil = ts(ctx.timestamp.microsSinceUnixEpoch + STUN_US);
-		ctx.db.enemy.id.update({ ...e, isDazed: true, dazedUntil });
+		// Enemy is in cone — deal damage and stun it
+		const dazedUntil = ts(ctx.timestamp.microsSinceUnixEpoch + FLASH_STUN_US);
+		const newHp = e.hp > FLASH_DAMAGE ? e.hp - FLASH_DAMAGE : 0n;
+		if (newHp <= 0n) {
+			ctx.db.enemy.id.update({ ...e, hp: 0n, isAlive: false, isDazed: true, dazedUntil, diedAt: ts(ctx.timestamp.microsSinceUnixEpoch) });
+		} else {
+			ctx.db.enemy.id.update({ ...e, hp: newHp, isDazed: true, dazedUntil });
+		}
 		stunned += 1n;
 	}
 
 	ctx.db.playerState.id.update({
 		...ps,
 		score: ps.score + stunned * 10n,
-		pingCooldownUntil: ts(ctx.timestamp.microsSinceUnixEpoch + COOLDOWN_US),
+		pingCooldownUntil: ts(ctx.timestamp.microsSinceUnixEpoch + FLASH_COOLDOWN_US),
 		lastFlashAt: ctx.timestamp
 	});
 });
@@ -1871,6 +1912,7 @@ export const axe_swing = spacetimedb.reducer(
 		const cosHalf = Math.cos(HALF_ANGLE);
 
 		let scoreAdd = 0n;
+		let hitsLanded = 0n;
 		for (const e of ctx.db.enemy.enemy_session_id.filter(sessionId)) {
 			if (!e.isAlive) continue;
 			const ex = Number(e.posX) - Number(ps.posX);
@@ -1904,10 +1946,15 @@ export const axe_swing = spacetimedb.reducer(
 				ctx.db.enemy.id.update({ ...e, hp: newHp, posX: newX, posZ: newZ, isDazed: true, dazedUntil });
 				scoreAdd += 5n;
 			}
+			hitsLanded += 1n;
 		}
 
+		// Heal tank for each enemy hit
+		const healGained = hitsLanded * AXE_SWING_SELF_HEAL;
+		const newHp = ps.hp + healGained > ps.maxHp ? ps.maxHp : ps.hp + healGained;
 		ctx.db.playerState.id.update({
 			...ps,
+			hp: newHp,
 			score: ps.score + scoreAdd,
 			lastFlashAt: ctx.timestamp
 		});

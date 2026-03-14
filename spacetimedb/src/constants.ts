@@ -63,10 +63,16 @@ export const REVIVE_CHANNEL_US = 2_000_000n;
 
 // ─── Spotter: Steady Shot ─────────────────────────────────────────────────────
 export const STEADY_SHOT_DAMAGE = 45n;
-export const STEADY_SHOT_RANGE_SQ = 225_000_000n; // 15 units sq
-export const STEADY_SHOT_COOLDOWN_US = 3_000_000n; // 3s
+export const STEADY_SHOT_RANGE_SQ = 529_000_000n; // 23 units sq
+export const STEADY_SHOT_COOLDOWN_US = 1_500_000n; // 1.5s (halved from 3s)
 export const MARK_DURATION_US = 5_000_000n; // 5s mark duration
 export const MARK_DAMAGE_BONUS = 10n; // bonus damage to marked targets from all sources
+
+// ─── Spotter: Flash Cone ─────────────────────────────────────────────────────
+export const FLASH_CONE_RANGE = 9000; // 9 world units (fixed-point × 1000)
+export const FLASH_COOLDOWN_US = 3_000_000n; // 3s cooldown
+export const FLASH_STUN_US = 3_500_000n; // 3.5s daze
+export const FLASH_DAMAGE = 10n; // damage dealt to flashed enemies
 
 // ─── Tank: Axe Swing ─────────────────────────────────────────────────────────
 export const AXE_SWING_DAMAGE = 25n;
@@ -74,9 +80,14 @@ export const AXE_SWING_RANGE = 4000; // 4 world units (fixed-point × 1000)
 export const AXE_SWING_COOLDOWN_US = 500_000n; // 0.5s
 export const AXE_SWING_DAZE_US = 1_500_000n; // 1.5s daze
 export const AXE_SWING_KNOCKBACK = 4000n;
+export const AXE_SWING_SELF_HEAL = 5n; // tank heals 5 HP per enemy hit
+
+// ─── Tank: Brace ─────────────────────────────────────────────────────────────
+export const BRACE_HEAL_PER_TICK = 3n; // 3 HP per 100ms tick while bracing (~30 HP/s)
 
 // ─── Healer: Revive Shield ────────────────────────────────────────────────────
-export const REVIVE_SHIELD_HP = 50n; // shield absorbs 50 damage before revive is interrupted
+export const REVIVE_SHIELD_HP = 80n; // shield absorbs 80 damage before revive is interrupted
+export const REVIVE_SHIELD_KNOCKBACK = 5000n; // knockback applied to enemies that hit revive shield
 
 // ─── Torch Collision ──────────────────────────────────────────────────────────
 // Must match frontend TORCH_RINGS in GameGround.svelte (radius × 1000 = srv units)
