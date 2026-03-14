@@ -61,12 +61,14 @@
 			sessionWasActive = true;
 			lobbyState.gameStartedAt = Date.now();
 			untrack(() => soundActions.playGameStart());
+			document.documentElement.requestFullscreen?.().catch(() => {});
 		}
 		if (session?.status === 'finished' && sessionWasActive) {
 			sessionWasActive = false;
 			lobbyState.gameStartedAt = null;
 			bossShake.intensity = 0;
 			untrack(() => soundActions.playGameEnd());
+			if (document.fullscreenElement) document.exitFullscreen?.().catch(() => {});
 			stageActions.setStage('game_over');
 		}
 	});
