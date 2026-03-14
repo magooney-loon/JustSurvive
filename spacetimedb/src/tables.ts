@@ -77,8 +77,10 @@ export const GameSession = table(
 		dayPhase: t.string(),
 		cycleNumber: t.u64(),
 		phaseStartedAt: t.timestamp(),
-		fogActive: t.bool(),
-		mapSeed: t.u64()
+		fogStartedAt: t.timestamp().optional(),  // VFX: when current fog event began
+		fogEndsAt: t.timestamp().optional(),      // VFX: when current fog event ends
+		mapSeed: t.u64(),
+		bossSpawnCount: t.u64()
 	}
 );
 
@@ -120,20 +122,7 @@ export const PlayerState = table(
 		status: t.string(),
 		score: t.u64(),
 		facingAngle: t.i64(), // milliradians * 1000, e.g. PI = 3142
-		// Phase 4
-		isBracing: t.bool(),
-		braceStartAt: t.timestamp().optional(),
-		braceCooldownUntil: t.timestamp().optional(),
-		speedBoostUntil: t.timestamp().optional(),
-		reviveCooldownUntil: t.timestamp().optional(),
-		healCooldownUntil: t.timestamp().optional(),
-		markCooldownUntil: t.timestamp().optional(),
-		pingCooldownUntil: t.timestamp().optional(),
-		bashCooldownUntil: t.timestamp().optional(),
-		adrenalineCooldownUntil: t.timestamp().optional(),
-		lastHealAt: t.timestamp().optional(),
-		healTargetIdentity: t.identity().optional(),
-		lastFlashAt: t.timestamp().optional()
+		speedBoostUntil: t.timestamp().optional()
 	}
 );
 
@@ -287,6 +276,144 @@ export const BossTimer = table(
 		id: t.u64().primaryKey().autoInc(),
 		sessionId: t.u64(),
 		spawnAt: t.timestamp()
+	}
+);
+
+export const Boss = table(
+	{
+		name: 'boss',
+		public: true,
+		indexes: [
+			{
+				name: 'boss_session_id',
+				accessor: 'boss_session_id',
+				algorithm: 'btree',
+				columns: ['sessionId']
+			}
+		]
+	},
+	{
+		id: t.u64().primaryKey().autoInc(),
+		sessionId: t.u64(),
+		bossType: t.string(), // 'ghost_dragon' | 'root_colossus' | 'shadow_stalker' | 'plague_shaman'
+		hp: t.u64(),
+		maxHp: t.u64(),
+		posX: t.i64(),
+		posZ: t.i64(),
+		phase: t.u64(), // 0 = normal, 1 = enraged (≤50% HP)
+		isAlive: t.bool(),
+		isDazed: t.bool(),
+		dazedUntil: t.timestamp().optional(),
+		isMarked: t.bool(),
+		markedUntil: t.timestamp().optional(),
+		spawnedAt: t.timestamp(),
+		diedAt: t.timestamp().optional(),
+		ability1CooldownUntil: t.timestamp().optional(),
+		ability2CooldownUntil: t.timestamp().optional()
+	}
+);
+
+// ─── Class State Tables ───────────────────────────────────────────────────────
+
+export const SpotterState = table(
+	{
+		name: 'spotter_state',
+		public: true,
+		indexes: [
+			{
+				name: 'spotter_state_session_id',
+				accessor: 'spotter_state_session_id',
+				algorithm: 'btree',
+				columns: ['sessionId']
+			}
+		]
+	},
+	{
+		id: t.u64().primaryKey().autoInc(),
+		sessionId: t.u64(),
+		playerIdentity: t.identity(),
+		steadyShotCooldownUntil: t.timestamp().optional(),
+		flashCooldownUntil: t.timestamp().optional(),
+		lastFlashAt: t.timestamp().optional(),   // VFX: when flash cone was fired
+		ultimateCooldownUntil: t.timestamp().optional(),
+		lastUltimateAt: t.timestamp().optional() // VFX: when ultimate was last fired
+	}
+);
+
+export const GunnerState = table(
+	{
+		name: 'gunner_state',
+		public: true,
+		indexes: [
+			{
+				name: 'gunner_state_session_id',
+				accessor: 'gunner_state_session_id',
+				algorithm: 'btree',
+				columns: ['sessionId']
+			}
+		]
+	},
+	{
+		id: t.u64().primaryKey().autoInc(),
+		sessionId: t.u64(),
+		playerIdentity: t.identity(),
+		adrenalineCooldownUntil: t.timestamp().optional(),
+		ultimateCooldownUntil: t.timestamp().optional(),
+		lastUltimateAt: t.timestamp().optional() // VFX: when ultimate was last fired
+	}
+);
+
+export const TankState = table(
+	{
+		name: 'tank_state',
+		public: true,
+		indexes: [
+			{
+				name: 'tank_state_session_id',
+				accessor: 'tank_state_session_id',
+				algorithm: 'btree',
+				columns: ['sessionId']
+			}
+		]
+	},
+	{
+		id: t.u64().primaryKey().autoInc(),
+		sessionId: t.u64(),
+		playerIdentity: t.identity(),
+		isBracing: t.bool(),
+		braceStartAt: t.timestamp().optional(),
+		braceCooldownUntil: t.timestamp().optional(),
+		axeSwingCooldownUntil: t.timestamp().optional(),
+		lastAxeSwingAt: t.timestamp().optional(),   // VFX: when axe was last swung
+		ultimateCooldownUntil: t.timestamp().optional(),
+		lastUltimateAt: t.timestamp().optional()  // VFX: when ultimate was last fired
+	}
+);
+
+export const HealerState = table(
+	{
+		name: 'healer_state',
+		public: true,
+		indexes: [
+			{
+				name: 'healer_state_session_id',
+				accessor: 'healer_state_session_id',
+				algorithm: 'btree',
+				columns: ['sessionId']
+			}
+		]
+	},
+	{
+		id: t.u64().primaryKey().autoInc(),
+		sessionId: t.u64(),
+		playerIdentity: t.identity(),
+		healCooldownUntil: t.timestamp().optional(),
+		reviveCooldownUntil: t.timestamp().optional(),
+		lastHealAt: t.timestamp().optional(),                // VFX: primary heal beam
+		healTargetIdentity: t.identity().optional(),         // VFX: primary beam target
+		chainHealTargetIdentity: t.identity().optional(),    // VFX: chain beam target
+		ultimateCooldownUntil: t.timestamp().optional(),
+		lastUltimateAt: t.timestamp().optional()             // VFX: when ultimate was last fired
 	}
 );
 

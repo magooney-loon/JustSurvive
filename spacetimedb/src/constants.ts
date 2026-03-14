@@ -5,8 +5,7 @@ export const ENEMY_BASE_SPEED: Record<string, bigint> = {
 	fast: 5200n,
 	brute: 2100n,
 	spitter: 1700n,
-	caster: 1400n,
-	boss: 600n
+	caster: 1400n
 };
 
 export const ENEMY_CAP = 36; // 4-player cap; scales down per player count
@@ -35,11 +34,31 @@ export const ENEMY_HP: Record<string, bigint> = {
 	fast: 75n,
 	brute: 380n,
 	spitter: 150n,
-	caster: 120n,
-	boss: 2200n
+	caster: 120n
 };
 
 export const BOSS_SPAWN_INTERVAL_US = 90_000_000n; // 90 seconds
+
+export const BOSS_HP: Record<string, bigint> = {
+	ghost_dragon: 1800n,
+	root_colossus: 2800n,
+	shadow_stalker: 1200n,
+	plague_shaman: 1500n
+};
+
+export const BOSS_SPEED: Record<string, bigint> = {
+	ghost_dragon: 180n,
+	root_colossus: 80n,
+	shadow_stalker: 250n,
+	plague_shaman: 120n
+};
+
+export const BOSS_DAMAGE: Record<string, bigint> = {
+	ghost_dragon: 7n,
+	root_colossus: 14n,
+	shadow_stalker: 5n,
+	plague_shaman: 4n
+};
 
 export const ENEMY_HP_CYCLE_BONUS = 8n; // +8 HP per cycle
 export const ENEMY_HP_MAX_MULTIPLIER = 300n; // Hard cap at 3x base HP
@@ -51,8 +70,7 @@ export const DAY_PHASES = ['sunset', 'dusk', 'twilight', 'night', 'deep_night'];
 // ─── Combat Constants ─────────────────────────────────────────────────────────
 
 export const WEAPON_DAMAGE: Record<string, bigint> = {
-	gunner: 15n,
-	healer: 35n
+	gunner: 15n
 };
 
 export const HEAL_AMOUNT = 30n;
@@ -84,6 +102,7 @@ export const AXE_SWING_SELF_HEAL = 5n; // tank heals 5 HP per enemy hit
 
 // ─── Tank: Brace ─────────────────────────────────────────────────────────────
 export const BRACE_HEAL_PER_TICK = 3n; // 3 HP per 100ms tick while bracing (~30 HP/s)
+export const ULTIMATE_COOLDOWN_US = 35_000_000n; // 35 seconds
 
 // ─── Healer: Revive Shield ────────────────────────────────────────────────────
 export const REVIVE_SHIELD_HP = 80n; // shield absorbs 80 damage before revive is interrupted
@@ -131,3 +150,4 @@ export const TORCH_POSITIONS_SRV: ReadonlyArray<{ x: bigint; z: bigint }> = [
 // ─── Spawn Points ─────────────────────────────────────────────────────────────
 export const SPAWN_POINT_COUNT = 8;
 export const WALL_SPAWN_RADIUS = 48_500; // world units × 1000, just inside arena wall
+export const ARENA_RADIUS_SRV = 50_000n; // server units — hard wall boundary
