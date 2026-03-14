@@ -63,6 +63,13 @@
 			spawnT = Math.min(1, age / spawnDuration);
 		} else {
 			spawnT = 1;
+			if (!spawnSoundPlayed) {
+				spawnSoundPlayed = true;
+				if (spawnAudio?.buffer && settingsState.audio.effectsEnabled) {
+					if (spawnAudio.isPlaying) spawnAudio.stop();
+					spawnAudio.play();
+				}
+			}
 		}
 
 		if (!enemy.isAlive && deathAt === null) deathAt = nowMs;
@@ -95,6 +102,16 @@
 			}
 		}
 		if (beamTimer > 0) beamTimer = Math.max(0, beamTimer - dt);
+
+		if (enemy.isAlive && growlAudio?.buffer && settingsState.audio.effectsEnabled) {
+			growlTimer -= dt;
+			if (growlTimer <= 0) {
+				if (growlAudio.isPlaying) growlAudio.stop();
+				growlAudio.play();
+				growlTimer = Math.random() * 10 + 8;
+			}
+		}
+
 		if (enemy.isMarked) {
 			t += dt;
 			pulse = 0.85 + Math.sin(t * 6) * 0.15;
@@ -111,11 +128,24 @@
 	);
 
 	let killedAudio = $state.raw<ThreePosAudio | undefined>(undefined);
+	let spawnAudio = $state.raw<ThreePosAudio | undefined>(undefined);
+	let growlAudio = $state.raw<ThreePosAudio | undefined>(undefined);
+	let spawnSoundPlayed = false;
+	let growlTimer = Math.random() * 10 + 8; // first growl after 8–18s
 	$effect(() => {
 		if (dead && killedAudio?.buffer && settingsState.audio.effectsEnabled) {
 			if (killedAudio.isPlaying) killedAudio.stop();
 			killedAudio.play();
 		}
+	});
+
+	// Hit flash — brief white ring when enemy takes damage
+	let hitFlashAt = $state(0);
+	let trackedHp = $state(untrack(() => Number(enemy.hp)));
+	$effect(() => {
+		const curHp = Number(enemy.hp);
+		if (curHp < trackedHp && enemy.isAlive) hitFlashAt = Date.now();
+		trackedHp = curHp;
 	});
 	const downedTilt = $derived(dead ? 1.35 : 0);
 	const splatAge = $derived(dead ? nowMs - (deathAt ?? nowMs) : 0);
@@ -199,12 +229,30 @@
 		scale={cubicOut(spawnT)}
 	>
 		<PositionalAudio
-			src={`${import.meta.env.BASE_URL}sounds/enemy_killed.mp3`}
+			src={`${import.meta.env.BASE_URL}sounds/enemies/enemy_killed.mp3`}
 			refDistance={5}
 			maxDistance={30}
 			rolloffFactor={2}
 			oncreate={(a) => {
 				killedAudio = a;
+			}}
+		/>
+		<PositionalAudio
+			src={`${import.meta.env.BASE_URL}sounds/map/enemy_spawn.wav`}
+			refDistance={3}
+			maxDistance={25}
+			rolloffFactor={2}
+			oncreate={(a) => {
+				spawnAudio = a;
+			}}
+		/>
+		<PositionalAudio
+			src={`${import.meta.env.BASE_URL}sounds/enemies/enemy_growl.wav`}
+			refDistance={5}
+			maxDistance={35}
+			rolloffFactor={2}
+			oncreate={(a) => {
+				growlAudio = a;
 			}}
 		/>
 		<T.Group rotation={[downedTilt, 0, 0]}>
@@ -335,6 +383,34 @@
 					</T.Mesh>
 				{/if}
 			{/each}
+		{/if}
+
+		{@const hitT = Math.max(0, 1 - (nowMs - hitFlashAt) / 160)}
+		{#if hitT > 0 && !dead}
+			<T.Mesh
+				position={[0, 0.05, 0]}
+				rotation={[-Math.PI / 2, 0, 0]}
+				scale={0.3 + (1 - hitT) * 0.7}
+			>
+				<T.RingGeometry args={[0.2, 0.45, 16]} />
+				<T.MeshBasicMaterial
+					color="#ffffff"
+					transparent
+					opacity={hitT * 0.85}
+					blending={THREE.AdditiveBlending}
+					depthWrite={false}
+				/>
+			</T.Mesh>
+			<T.Mesh position={[0, 1.0, 0]} scale={0.05 + (1 - hitT) * 0.12}>
+				<T.SphereGeometry args={[1, 6, 4]} />
+				<T.MeshBasicMaterial
+					color="#ffffff"
+					transparent
+					opacity={hitT * 0.7}
+					blending={THREE.AdditiveBlending}
+					depthWrite={false}
+				/>
+			</T.Mesh>
 		{/if}
 
 		{#if enemy.isMarked && !dead}

@@ -353,8 +353,9 @@
 
 <script lang="ts">
 	import { T, useTask } from '@threlte/core';
-	import { useTexture } from '@threlte/extras';
+	import { useTexture, PositionalAudio } from '@threlte/extras';
 	import { RepeatWrapping } from 'three';
+	import { settingsState } from '$root/settings.svelte.js';
 
 	const base = import.meta.env.BASE_URL;
 
@@ -390,6 +391,8 @@
 	useTask((dt) => {
 		clock += dt;
 	});
+
+	const torchVolume = $derived(settingsState.audio.effectsEnabled ? settingsState.audio.effectsVolume : 0);
 </script>
 
 {#await groundTexture then tex}
@@ -508,6 +511,21 @@
 		<T is={group} />
 	{/each}
 {/await}
+
+<!-- Torch audio: looping positional fire sound at each torch position -->
+{#each torchPositions as torch}
+	<T.Group position={[torch.x, 1.8, torch.z]}>
+		<PositionalAudio
+			src="{base}sounds/map/torch.mp3"
+			loop
+			autoplay
+			volume={torchVolume}
+			refDistance={4}
+			rolloffFactor={2}
+			maxDistance={22}
+		/>
+	</T.Group>
+{/each}
 
 <!-- Spawn portals: 8 gates evenly on the arena wall, facing inward -->
 {#each portalGroups as group, i}

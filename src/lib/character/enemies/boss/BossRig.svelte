@@ -40,7 +40,7 @@
 
 	const SHAKE_MAX_DIST = 28;
 	const SHAKE_FREQ = Math.PI * 1.4;
-	const SHAKE_AMPLITUDE = 0.14;
+	const SHAKE_AMPLITUDE = 0.28;
 
 	const { gltf, actions, mixer } = useGltfAnimations<BossAction>();
 
@@ -52,10 +52,10 @@
 
 	const attackAnimations: BossAction[] = ['attack_3', 'cast_1', 'attack_2', 'attack_4'];
 
-	let footstepAudio: THREE.PositionalAudio | undefined = $state(undefined);
-	let attackAudio: THREE.PositionalAudio | undefined = $state(undefined);
-	let deadAudio: THREE.PositionalAudio | undefined = $state(undefined);
-	let dazeAudio: THREE.PositionalAudio | undefined = $state(undefined);
+	let footstepAudio = $state.raw<THREE.PositionalAudio | undefined>(undefined);
+	let attackAudio = $state.raw<THREE.PositionalAudio | undefined>(undefined);
+	let deadAudio = $state.raw<THREE.PositionalAudio | undefined>(undefined);
+	let dazeAudio = $state.raw<THREE.PositionalAudio | undefined>(undefined);
 
 	const playFootstep = () => {
 		if (!footstepAudio || !settingsState.audio.effectsEnabled) return;
@@ -99,7 +99,7 @@
 			const dist = Math.sqrt(dx * dx + dz * dz);
 			const proximity = Math.max(0, 1 - dist / SHAKE_MAX_DIST);
 			bossShake.intensity =
-				Math.abs(Math.sin(shakeTimer * SHAKE_FREQ)) * proximity * SHAKE_AMPLITUDE;
+				Math.sin(shakeTimer * SHAKE_FREQ) * proximity * SHAKE_AMPLITUDE;
 		} else {
 			bossShake.intensity = Math.max(0, bossShake.intensity - dt * 3);
 			footstepTimer = 0;
@@ -173,7 +173,6 @@
 
 <PositionalAudio
 	src="{import.meta.env.BASE_URL}sounds/boss_footstep.mp3"
-	loop
 	refDistance={3}
 	maxDistance={20}
 	rolloffFactor={1.5}

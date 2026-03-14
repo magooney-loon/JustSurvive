@@ -16,4 +16,5 @@ export default __t.row({
   healerIdentity: __t.identity().name("healer_identity"),
   targetIdentity: __t.identity().name("target_identity"),
   channelStartedAt: __t.timestamp().name("channel_started_at"),
+  shieldHp: __t.u64().name("shield_hp"),
 });

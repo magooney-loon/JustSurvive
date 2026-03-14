@@ -12,7 +12,11 @@
 		shotFlash,
 		SHOT_FLASH_MS,
 		spotterFlash,
-		SPOTTER_FLASH_MS
+		SPOTTER_FLASH_MS,
+		steadyShotFlash,
+		STEADY_SHOT_FLASH_MS,
+		axeSwingFlash,
+		AXE_SWING_FLASH_MS
 	} from '$lib/stores/abilities.svelte.js';
 	import { soundActions } from '$root/Sound.svelte';
 	import { logAbility } from '$root/settings.svelte.js';
@@ -145,25 +149,6 @@
 		return best;
 	}
 
-	function nearestEnemyToPlayer(rangeFP: number) {
-		const ox = BigInt(Math.round(localPos.x * 1000));
-		const oz = BigInt(Math.round(localPos.z * 1000));
-		const rangeSq = BigInt(rangeFP) * BigInt(rangeFP);
-		let best: any = null;
-		let bestDist = BigInt(Number.MAX_SAFE_INTEGER);
-		for (const e of $enemies) {
-			if (!e.isAlive || e.sessionId !== lobbyState.currentSessionId) continue;
-			const dx = e.posX - ox;
-			const dz = e.posZ - oz;
-			const d = dx * dx + dz * dz;
-			if (d < rangeSq && d < bestDist) {
-				best = e;
-				bestDist = d;
-			}
-		}
-		return best;
-	}
-
 	function onMouseDown(e: MouseEvent) {
 		logAbility.info('MOUSE DOWN: myState=', myState?.classChoice, 'status=', myState?.status);
 		if (!myState || myState.status !== 'alive') return;
@@ -172,12 +157,16 @@
 
 		if (myState.classChoice === 'spotter') {
 			if (e.button === 0) {
+				if (abilityState.markCooldownUntil > Date.now()) return;
 				const enemy = nearestEnemyToAim(15_000);
 				if (enemy) {
-					combatActions.markEnemy(sid, enemy.id);
+					combatActions.steadyShot(sid, enemy.id);
 					soundActions.playSpotterMark();
-					abilityState.markCooldownUntil = Date.now() + 5000;
-					logAbility.info('SPOTTER: mark enemy', enemy.id);
+					soundActions.playHitmarker();
+					abilityState.markCooldownUntil = Date.now() + 3000;
+					steadyShotFlash.until = Date.now() + STEADY_SHOT_FLASH_MS;
+					steadyShotFlash.yaw = fpsCamera.yaw;
+					logAbility.info('SPOTTER: steady shot enemy', enemy.id);
 				}
 			} else if (e.button === 2) {
 				if (abilityState.pingCooldownUntil > Date.now()) return;
@@ -205,6 +194,7 @@
 				const suppress = abilityState.suppressHits % 3 === 0;
 				combatActions.attackEnemy(sid, enemy.id, suppress);
 				soundActions.playGunnerShot();
+				soundActions.playHitmarker();
 				shotFlash.until = Date.now() + SHOT_FLASH_MS;
 				logAbility.info('GUNNER: attack enemy', enemy.id, 'suppress=', suppress);
 			} else if (e.button === 2) {
@@ -217,6 +207,7 @@
 				if (abilityState.adrenalineCooldownUntil > Date.now()) return;
 				// Server fills stamina - just trigger the adrenaline
 				combatActions.adrenaline(sid);
+				soundActions.playGunnerAdrenaline();
 				abilityState.adrenalineCooldownUntil = Date.now() + 5000;
 				abilityState.adrenalineUntil = Date.now() + 180;
 				logAbility.info('GUNNER: adrenaline triggered');
@@ -227,11 +218,14 @@
 		if (myState.classChoice === 'tank') {
 			if (e.button === 0) {
 				if (abilityState.bashCooldownUntil > Date.now()) return;
-				const enemy = nearestEnemyToPlayer(5_000);
-				combatActions.shieldBash(sid, enemy?.id);
+				combatActions.axeSwing(sid);
 				soundActions.playTankBash();
-				abilityState.bashCooldownUntil = Date.now() + 1500;
-				logAbility.info('TANK: bash enemy', enemy?.id);
+				soundActions.playHitmarker();
+				abilityState.bashCooldownUntil = Date.now() + 500;
+				axeSwingFlash.active = true;
+				axeSwingFlash.yaw = fpsCamera.yaw;
+				axeSwingFlash.until = Date.now() + AXE_SWING_FLASH_MS;
+				logAbility.info('TANK: axe swing');
 			} else if (e.button === 2) {
 				if (abilityState.braceCooldownUntil > Date.now()) return;
 				combatActions.braceStart(sid);

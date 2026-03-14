@@ -31,17 +31,17 @@ export const ENEMY_WEIGHTS = [
 ];
 
 export const ENEMY_HP: Record<string, bigint> = {
-	basic: 80n,
-	fast: 50n,
-	brute: 250n,
-	spitter: 100n,
-	caster: 80n,
-	boss: 1500n
+	basic: 120n,
+	fast: 75n,
+	brute: 380n,
+	spitter: 150n,
+	caster: 120n,
+	boss: 2200n
 };
 
 export const BOSS_SPAWN_INTERVAL_US = 90_000_000n; // 90 seconds
 
-export const ENEMY_HP_CYCLE_BONUS = 5n; // +5 HP per cycle
+export const ENEMY_HP_CYCLE_BONUS = 8n; // +8 HP per cycle
 export const ENEMY_HP_MAX_MULTIPLIER = 300n; // Hard cap at 3x base HP
 
 // ─── World Constants ──────────────────────────────────────────────────────────
@@ -60,6 +60,23 @@ export const HEAL_RANGE_SQ = 100_000_000n; // 10 units
 
 export const REVIVE_COOLDOWN_US = 15_000_000n;
 export const REVIVE_CHANNEL_US = 2_000_000n;
+
+// ─── Spotter: Steady Shot ─────────────────────────────────────────────────────
+export const STEADY_SHOT_DAMAGE = 45n;
+export const STEADY_SHOT_RANGE_SQ = 225_000_000n; // 15 units sq
+export const STEADY_SHOT_COOLDOWN_US = 3_000_000n; // 3s
+export const MARK_DURATION_US = 5_000_000n; // 5s mark duration
+export const MARK_DAMAGE_BONUS = 10n; // bonus damage to marked targets from all sources
+
+// ─── Tank: Axe Swing ─────────────────────────────────────────────────────────
+export const AXE_SWING_DAMAGE = 25n;
+export const AXE_SWING_RANGE = 4000; // 4 world units (fixed-point × 1000)
+export const AXE_SWING_COOLDOWN_US = 500_000n; // 0.5s
+export const AXE_SWING_DAZE_US = 1_500_000n; // 1.5s daze
+export const AXE_SWING_KNOCKBACK = 4000n;
+
+// ─── Healer: Revive Shield ────────────────────────────────────────────────────
+export const REVIVE_SHIELD_HP = 50n; // shield absorbs 50 damage before revive is interrupted
 
 // ─── Torch Collision ──────────────────────────────────────────────────────────
 // Must match frontend TORCH_RINGS in GameGround.svelte (radius × 1000 = srv units)

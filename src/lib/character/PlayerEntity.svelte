@@ -13,13 +13,23 @@
 	import { T, useTask } from '@threlte/core';
 	import { useTexture } from '@threlte/extras';
 	import type { PlayerState } from '$bindings/types.js';
+	import { useTable } from 'spacetimedb/svelte';
+	import { tables } from '$bindings/index.js';
+	import { lobbyState } from '$lib/stores/lobby.svelte.js';
 	import AimReticle from '$lib/character/ui/AimReticle.svelte';
 	import SpotterRig from '$lib/character/player/spotter/SpotterRig.svelte';
 	import GunnerRig from '$lib/character/player/gunner/GunnerRig.svelte';
 	import TankRig from '$lib/character/player/tank/TankRig.svelte';
 	import HealerRig from '$lib/character/player/healer/HealerRig.svelte';
+	import SpotterEffects from '$lib/character/player/spotter/SpotterEffects.svelte';
+	import TankEffects from '$lib/character/player/tank/TankEffects.svelte';
+	import HealerEffects from '$lib/character/player/healer/HealerEffects.svelte';
+	import GunnerEffects from '$lib/character/player/gunner/GunnerEffects.svelte';
 	import { RepeatWrapping } from 'three';
 	import { shotFlash, SHOT_FLASH_MS, abilityState } from '$lib/stores/abilities.svelte.js';
+
+	const [allPlayers] = useTable(tables.playerState);
+	const [reviveChannels] = useTable(tables.reviveChannel);
 
 	const base = import.meta.env.BASE_URL;
 
@@ -43,6 +53,11 @@
 		overrideAim,
 		overrideVel
 	}: Props = $props();
+
+	const sessionId = $derived(lobbyState.currentSessionId ?? 0n);
+	const isReviving = $derived(
+		$reviveChannels?.some((rc) => rc.healerIdentity.isEqual(player.playerIdentity)) ?? false
+	);
 
 	const CLASS_TEXTURES: Record<string, string> = {
 		spotter: `${base}textures/spotter.webp`,
@@ -275,4 +290,50 @@
 			material={downedMarkerMat}
 		/>
 	{/if}
+
+	<!-- Revive shield bubble on healer while channeling revive -->
+	{#if isReviving}
+		<T.Mesh position={[displayX, displayY + 0.75, displayZ]}>
+			<T.SphereGeometry args={[0.85, 14, 10]} />
+			<T.MeshBasicMaterial
+				color="#88ccff"
+				transparent
+				opacity={0.15}
+				blending={THREE.AdditiveBlending}
+				depthWrite={false}
+				side={THREE.DoubleSide}
+			/>
+		</T.Mesh>
+		<T.Mesh position={[displayX, displayY + 0.75, displayZ]}>
+			<T.SphereGeometry args={[0.88, 14, 10]} />
+			<T.MeshBasicMaterial
+				color="#aaddff"
+				transparent
+				opacity={0.08}
+				blending={THREE.AdditiveBlending}
+				depthWrite={false}
+				side={THREE.BackSide}
+			/>
+		</T.Mesh>
+	{/if}
+
+	<!-- Per-class ability effects (world-space, follow interpolated position) -->
+	{#if player.classChoice === 'spotter'}
+		<SpotterEffects x={displayX} z={displayZ} yaw={facing} {player} {isLocal} />
+	{:else if player.classChoice === 'tank'}
+		<TankEffects x={displayX} z={displayZ} yaw={facing} {player} {isLocal} />
+	{:else if player.classChoice === 'healer'}
+		<HealerEffects
+			x={displayX}
+			z={displayZ}
+			{player}
+			{isLocal}
+			allPlayers={$allPlayers ?? []}
+			{sessionId}
+			{isReviving}
+		/>
+	{:else if player.classChoice === 'gunner'}
+		<GunnerEffects x={displayX} z={displayZ} {isLocal} />
+	{/if}
+
 <AimReticle x={aimX} z={aimZ} color={CLASS_COLORS[player.classChoice] ?? '#fff'} />

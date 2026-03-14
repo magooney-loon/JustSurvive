@@ -18,9 +18,9 @@ export const combatActions = {
 		if (!conn) return;
 		conn.reducers.movePlayer(args);
 	},
-	markEnemy(sessionId: bigint, enemyId: bigint) {
+	steadyShot(sessionId: bigint, enemyId: bigint) {
 		if (!conn) return;
-		conn.reducers.markEnemy({ sessionId, enemyId });
+		conn.reducers.steadyShot({ sessionId, enemyId });
 	},
 	async spotterFlash(sessionId: bigint) {
 		if (!conn) return;
@@ -40,10 +40,10 @@ export const combatActions = {
 			await conn.reducers.healPlayer({ sessionId, targetIdentity });
 		} catch {}
 	},
-	async shieldBash(sessionId: bigint, enemyId?: bigint) {
+	async axeSwing(sessionId: bigint) {
 		if (!conn) return;
 		try {
-			await conn.reducers.shieldBash({ sessionId, enemyId });
+			await conn.reducers.axeSwing({ sessionId });
 		} catch {}
 	},
 	async adrenaline(sessionId: bigint) {

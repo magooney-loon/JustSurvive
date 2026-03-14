@@ -5,9 +5,12 @@
 	import type { Enemy } from '$bindings/types.js';
 	import { lobbyState } from '$lib/stores/lobby.svelte.js';
 	import { abilityState } from '$lib/stores/abilities.svelte.js';
+	import { CLASSES, type ClassId } from '$lib/lobby/classData.js';
 	import { bossShake } from '$lib/stores/movement.svelte.js';
 	import ReviveChannelHud from '$lib/character/ui/ReviveChannelHud.svelte';
 	import { stageActions } from '$root/stage.svelte.js';
+	import { soundActions } from '$root/Sound.svelte';
+	import { untrack } from 'svelte';
 
 	let now = $state(Date.now());
 
@@ -57,10 +60,15 @@
 		if (session?.status === 'active' && !sessionWasActive) {
 			sessionWasActive = true;
 			lobbyState.gameStartedAt = Date.now();
+			untrack(() => soundActions.playGameStart());
+			document.documentElement.requestFullscreen?.().catch(() => {});
 		}
 		if (session?.status === 'finished' && sessionWasActive) {
+			sessionWasActive = false;
 			lobbyState.gameStartedAt = null;
 			bossShake.intensity = 0;
+			untrack(() => soundActions.playGameEnd());
+			if (document.fullscreenElement) document.exitFullscreen?.().catch(() => {});
 			stageActions.setStage('game_over');
 		}
 	});
@@ -92,78 +100,47 @@
 	};
 
 	const abilities = $derived((): [AbilitySlot, AbilitySlot] => {
-		const cls = myState?.classChoice ?? '';
-		if (cls === 'spotter')
-			return [
-				{
-					label: 'Mark',
-					input: 'LMB',
-					color: '#22d4ff',
-					cdFrac: Math.max(0, (abilityState.markCooldownUntil - now) / 5000),
-					cdMs: 2000
-				},
-				{
-					label: 'Flash',
-					input: 'RMB',
-					color: '#22d4ff',
-					cdFrac: Math.max(0, (abilityState.pingCooldownUntil - now) / 1500),
-					cdMs: 1500
-				}
-			];
-		if (cls === 'gunner')
-			return [
-				{
-					label: `Fire${abilityState.suppressHits % 3 > 0 ? ` ${abilityState.suppressHits % 3}/3` : ' ★'}`,
-					input: 'LMB',
-					color: '#ff8822',
-					cdFrac: 0
-				},
-				{
-					label: 'Adrenaline',
-					input: 'RMB',
-					color: '#ff8822',
-					cdFrac: Math.max(0, (abilityState.adrenalineCooldownUntil - now) / 5000),
-					cdMs: 5000
-				}
-			];
-		if (cls === 'tank')
-			return [
-				{
-					label: 'Bash',
-					input: 'LMB',
-					color: '#66ff44',
-					cdFrac: Math.max(0, (abilityState.bashCooldownUntil - now) / 1500),
-					cdMs: 1500
-				},
-				{
-					label: 'Brace',
-					input: 'RMB',
-					color: '#66ff44',
-					cdFrac: Math.max(0, (abilityState.braceCooldownUntil - now) / 1000),
-					cdMs: 1000,
-					active: myState?.isBracing
-				}
-			];
-		if (cls === 'healer')
-			return [
-				{
-					label: 'Heal',
-					input: 'LMB',
-					color: '#ff88cc',
-					cdFrac: Math.max(0, (abilityState.healCooldownUntil - now) / 2000),
-					cdMs: 2000
-				},
-				{
-					label: 'Revive',
-					input: 'RMB',
-					color: '#ff88cc',
-					cdFrac: cdFrac(myState?.reviveCooldownUntil?.microsSinceUnixEpoch, 15000),
-					cdMs: 15000
-				}
-			];
-		return [
+		const cls = myState?.classChoice as ClassId | undefined;
+		const none: [AbilitySlot, AbilitySlot] = [
 			{ label: '—', input: '', color: '#555', cdFrac: 0 },
 			{ label: '—', input: '', color: '#555', cdFrac: 0 }
+		];
+		if (!cls || !CLASSES[cls]) return none;
+
+		const { stats, abilities: ab } = CLASSES[cls];
+		const color = stats.color;
+		const [a0, a1] = ab;
+
+		// Map each class ability to its abilityState cooldown key
+		const cd0: Record<ClassId, number> = {
+			spotter: Math.max(0, (abilityState.markCooldownUntil - now) / a0.cooldownMs),
+			gunner: 0,
+			tank: Math.max(0, (abilityState.bashCooldownUntil - now) / a0.cooldownMs),
+			healer: Math.max(0, (abilityState.healCooldownUntil - now) / a0.cooldownMs)
+		};
+		const cd1: Record<ClassId, number> = {
+			spotter: Math.max(0, (abilityState.pingCooldownUntil - now) / a1.cooldownMs),
+			gunner: Math.max(0, (abilityState.adrenalineCooldownUntil - now) / a1.cooldownMs),
+			tank: Math.max(0, (abilityState.braceCooldownUntil - now) / a1.cooldownMs),
+			healer: cdFrac(myState?.reviveCooldownUntil?.microsSinceUnixEpoch, a1.cooldownMs)
+		};
+
+		// Dynamic label overrides
+		const label0 =
+			cls === 'gunner'
+				? `Fire${abilityState.suppressHits % 3 > 0 ? ` ${abilityState.suppressHits % 3}/3` : ' ★'}`
+				: a0.hudLabel;
+
+		return [
+			{ label: label0, input: a0.input, color, cdFrac: cd0[cls], cdMs: a0.cooldownMs || undefined },
+			{
+				label: a1.hudLabel,
+				input: a1.input,
+				color,
+				cdFrac: cd1[cls],
+				cdMs: a1.cooldownMs || undefined,
+				active: cls === 'tank' ? myState?.isBracing : undefined
+			}
 		];
 	});
 </script>

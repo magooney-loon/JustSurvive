@@ -10,7 +10,7 @@
 
 <script lang="ts">
 	import { T } from '@threlte/core';
-	import { AdditiveBlending, Object3D, type Texture } from 'three';
+	import { type Texture } from 'three';
 	import PlayerRig from '$lib/character/PlayerRig.svelte';
 
 	export type SpotterRigProps = {
@@ -48,10 +48,7 @@
 	const leftArmRotX = $derived(-swing * 0.8);
 	const rightArmRotX = $derived(swing * 0.8);
 
-	const spotlightBoost = $derived(phase === 'deep_night' ? 2.2 : phase === 'night' ? 1.6 : 1);
-	const beamBoost = $derived(phase === 'deep_night' ? 1.9 : phase === 'night' ? 1.4 : 1);
 
-	let spotTarget = $state<Object3D | undefined>(undefined);
 </script>
 
 <PlayerRig
@@ -83,93 +80,37 @@
 		</T.Group>
 	</T.Group>
 
+	<!-- Sniper rifle on right arm -->
 	<T.Group position={[0.24, 1.1, armForwardZ - leanForward * 0.6]} rotation={[rightArmRotX, 0, 0]}>
-		<T.Mesh position={[0, 0, -0.18]} rotation={[-Math.PI / 2, 0, 0]}>
-			<T.ConeGeometry args={[0.12, 0.3, 8]} />
-			<T.MeshStandardMaterial color="#bdbdbd" roughness={0.28} metalness={0.62} />
+		<!-- Stock -->
+		<T.Mesh position={[0, 0, 0.05]}>
+			<T.BoxGeometry args={[0.06, 0.08, 0.16]} />
+			<T.MeshStandardMaterial color="#2a1a0a" roughness={0.7} metalness={0.1} />
 		</T.Mesh>
-		<T.Mesh position={[0, 0, -0.325]}>
-			<T.RingGeometry args={[0.09, 0.132, 14]} />
-			<T.MeshStandardMaterial color="#606060" roughness={0.15} metalness={0.88} />
+		<!-- Receiver / body -->
+		<T.Mesh position={[0, 0.01, -0.12]}>
+			<T.BoxGeometry args={[0.055, 0.075, 0.22]} />
+			<T.MeshStandardMaterial color="#1e1e1e" roughness={0.35} metalness={0.55} />
 		</T.Mesh>
-		<T.SpotLight
-			position={[0, 0, -0.2]}
-			color="#fff2c6"
-			intensity={6.0 * spotlightBoost}
-			distance={20}
-			angle={0.22}
-			penumbra={0.35}
-			decay={1.8}
-			castShadow={false}
-			target={spotTarget}
-		/>
-		<T.Object3D bind:ref={spotTarget} position={[0, 0, -10]} />
-		<T.Mesh position={[0, 0, -0.335]}>
-			<T.SphereGeometry args={[0.048, 8, 6]} />
-			<T.MeshStandardMaterial color="#ffeeaa" emissive="#ffeeaa" emissiveIntensity={3.2} />
+		<!-- Barrel — long and thin -->
+		<T.Mesh position={[0, 0.015, -0.54]} rotation={[Math.PI / 2, 0, 0]}>
+			<T.CylinderGeometry args={[0.012, 0.012, 0.62, 8]} />
+			<T.MeshStandardMaterial color="#3a3a3a" roughness={0.2} metalness={0.85} />
 		</T.Mesh>
-		<T.Mesh position={[0, 0, -0.52]}>
-			<T.SphereGeometry args={[0.3, 8, 6]} />
-			<T.MeshBasicMaterial
-				color="#fff8e0"
-				transparent
-				opacity={0.02 * beamBoost}
-				side={2}
-				depthWrite={false}
-				blending={AdditiveBlending}
-			/>
+		<!-- Muzzle tip -->
+		<T.Mesh position={[0, 0.015, -0.86]} rotation={[Math.PI / 2, 0, 0]}>
+			<T.CylinderGeometry args={[0.018, 0.012, 0.06, 8]} />
+			<T.MeshStandardMaterial color="#555" roughness={0.2} metalness={0.9} />
 		</T.Mesh>
-		<T.Mesh position={[0, 0, -0.34]}>
-			<T.CircleGeometry args={[0.1, 12]} />
-			<T.MeshBasicMaterial
-				color="#fffcf4"
-				transparent
-				opacity={0.5}
-				blending={AdditiveBlending}
-				depthWrite={false}
-			/>
+		<!-- Scope body -->
+		<T.Mesh position={[0, 0.065, -0.14]} rotation={[Math.PI / 2, 0, 0]}>
+			<T.CylinderGeometry args={[0.022, 0.022, 0.24, 10]} />
+			<T.MeshStandardMaterial color="#111" roughness={0.3} metalness={0.7} />
 		</T.Mesh>
-		<T.Mesh position={[0, 0, -0.36]}>
-			<T.CircleGeometry args={[0.28, 12]} />
-			<T.MeshBasicMaterial
-				color="#fff4cc"
-				transparent
-				opacity={0.12}
-				blending={AdditiveBlending}
-				depthWrite={false}
-			/>
-		</T.Mesh>
-		<T.Mesh position={[0, 0, -0.39]}>
-			<T.CircleGeometry args={[0.58, 12]} />
-			<T.MeshBasicMaterial
-				color="#ffe890"
-				transparent
-				opacity={0.025}
-				blending={AdditiveBlending}
-				depthWrite={false}
-			/>
-		</T.Mesh>
-		<T.Mesh position={[0, 0, -5.5]} rotation={[Math.PI / 2, 0, 0]}>
-			<T.ConeGeometry args={[1.3, 11.0, 32, 2, true]} />
-			<T.MeshBasicMaterial
-				color="#fff8e8"
-				transparent
-				opacity={0.006 * beamBoost}
-				side={2}
-				depthWrite={false}
-				blending={AdditiveBlending}
-			/>
-		</T.Mesh>
-		<T.Mesh position={[0, 0, -5.5]} rotation={[Math.PI / 2, 0, 0]}>
-			<T.ConeGeometry args={[0.4, 11.0, 24, 2, true]} />
-			<T.MeshBasicMaterial
-				color="#fffefc"
-				transparent
-				opacity={0.014 * beamBoost}
-				side={2}
-				depthWrite={false}
-				blending={AdditiveBlending}
-			/>
+		<!-- Scope lens (blue tint) -->
+		<T.Mesh position={[0, 0.065, -0.255]}>
+			<T.CircleGeometry args={[0.018, 10]} />
+			<T.MeshStandardMaterial color="#2255aa" emissive="#112244" emissiveIntensity={0.6} roughness={0.1} metalness={0.5} />
 		</T.Mesh>
 	</T.Group>
 </T.Group>

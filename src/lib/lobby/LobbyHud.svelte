@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { fly, fade } from 'svelte/transition';
+	import { untrack } from 'svelte';
 	import { stageActions } from '$root/stage.svelte.js';
 	import { lobbyActions, lobbyState } from '$lib/stores/lobby.svelte.js';
 	import { useSpacetimeDB, useTable } from 'spacetimedb/svelte';
@@ -94,6 +95,7 @@
 	$effect(() => {
 		if (currentLobby?.status === 'countdown') {
 			countdownValue = 3;
+			untrack(() => soundActions.playCountdown());
 			const interval = setInterval(() => {
 				countdownValue = Math.max(0, countdownValue - 1);
 			}, 1000);

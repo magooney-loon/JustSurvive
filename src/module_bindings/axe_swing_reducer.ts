@@ -12,5 +12,4 @@ import {
 
 export default {
   sessionId: __t.u64(),
-  enemyId: __t.option(__t.u64()),
 };

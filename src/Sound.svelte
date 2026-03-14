@@ -3,10 +3,10 @@
 	export const soundTriggers = $state({
 		swoosh: 0,
 		click: 0,
-		currentAnimSound: '' as string,
+		hitmarker: 0,
 		// Global game SFX (non-positional)
-		playerDead: 0,
 		playerDown: 0,
+		playerDamage: 0,
 		newCycle: 0,
 		spreeKilling: 0,
 		spreeDominating: 0,
@@ -14,6 +14,7 @@
 		spreeHumiliation: 0,
 		// Positional ability SFX — handled by GameSounds.svelte
 		gunnerShot: 0,
+		gunnerAdrenaline: 0,
 		healerHeal: 0,
 		healerRevive: 0,
 		spotterMark: 0,
@@ -26,7 +27,15 @@
 		bossDead: 0,
 		bossDaze: 0,
 		// Boss spawn — global sound
-		bossIntro: 0
+		bossIntro: 0,
+		// Weather
+		thunder: 0,
+		// Game flow
+		gameStart: 0,
+		gameEnd: 0,
+		countdown: 0,
+		// Enemy spawn
+		enemySpawn: 0
 	});
 
 	export const soundActions = {
@@ -36,11 +45,14 @@
 		playClick() {
 			soundTriggers.click++;
 		},
-		playPlayerDead() {
-			soundTriggers.playerDead++;
+		playHitmarker() {
+			soundTriggers.hitmarker++;
 		},
 		playPlayerDown() {
 			soundTriggers.playerDown++;
+		},
+		playPlayerDamage() {
+			soundTriggers.playerDamage++;
 		},
 		playNewCycle() {
 			soundTriggers.newCycle++;
@@ -60,6 +72,9 @@
 		// Positional ability sounds
 		playGunnerShot() {
 			soundTriggers.gunnerShot++;
+		},
+		playGunnerAdrenaline() {
+			soundTriggers.gunnerAdrenaline++;
 		},
 		playHealerHeal() {
 			soundTriggers.healerHeal++;
@@ -93,6 +108,21 @@
 		},
 		playBossIntro() {
 			soundTriggers.bossIntro++;
+		},
+		playThunder() {
+			soundTriggers.thunder++;
+		},
+		playGameStart() {
+			soundTriggers.gameStart++;
+		},
+		playCountdown() {
+			soundTriggers.countdown++;
+		},
+		playGameEnd() {
+			soundTriggers.gameEnd++;
+		},
+		playEnemySpawn() {
+			soundTriggers.enemySpawn++;
 		}
 	};
 </script>
@@ -105,21 +135,27 @@
 
 	// Place your audio files in /public/sounds/
 	const base = import.meta.env.BASE_URL;
-	const OST_URL = `${base}sounds/ost.ogg`;
-	const OST1_URL = `${base}sounds/ost1.ogg`;
-	const OST2_URL = `${base}sounds/ost2.ogg`;
-	const AMBIENCE_URL = `${base}sounds/ambience.ogg`;
+	const OST_URL = `${base}sounds/ost/ost.ogg`;
+	const OST1_URL = `${base}sounds/ost/ost1.ogg`;
+	const OST2_URL = `${base}sounds/ost/ost2.ogg`;
+	const AMBIENCE_URL = `${base}sounds/ambience/ambience.ogg`;
 	const CLICK_URL = `${base}sounds/click.mp3`;
 	const SWOOSH_URL = `${base}sounds/swoosh.mp3`;
-	const PLAYER_DEAD_URL = `${base}sounds/player_dead.mp3`;
-	const PLAYER_DOWN_URL = `${base}sounds/player_down.mp3`;
-	const NEW_CYCLE_URL = `${base}sounds/new_cycle.mp3`;
-	const SPREE_KILLING_URL = `${base}sounds/spree_killing.mp3`;
-	const SPREE_DOMINATING_URL = `${base}sounds/spree_dominating.mp3`;
-	const SPREE_GODLIKE_URL = `${base}sounds/spree_godlike.mp3`;
-	const SPREE_HUMILIATION_URL = `${base}sounds/spree_humiliation.mp3`;
-	const RAINSTORM_URL = `${base}sounds/rainstorm.mp3`;
-	const BOSS_INTRO_URL = `${base}sounds/boss_intro.mp3`;
+	const PLAYER_DOWN_URL = `${base}sounds/player/player_down.wav`;
+	const PLAYER_DAMAGE_URL = `${base}sounds/player/damage_impact.wav`;
+	const NEW_CYCLE_URL = `${base}sounds/map/new_cycle.mp3`;
+	const SPREE_KILLING_URL = `${base}sounds/map/spree_killing.mp3`;
+	const SPREE_DOMINATING_URL = `${base}sounds/map/spree_dominating.mp3`;
+	const SPREE_GODLIKE_URL = `${base}sounds/map/spree_godlike.mp3`;
+	const SPREE_HUMILIATION_URL = `${base}sounds/map/spree_humiliation.mp3`;
+	const RAINSTORM_URL = `${base}sounds/ambience/sound_rain.wav`;
+	const THUNDER_URL = `${base}sounds/ambience/sound_thunder.wav`;
+	const BOSS_INTRO_URL = `${base}sounds/enemies/boss_intro.mp3`;
+	const HITMARKER_URL = `${base}sounds/map/hitmarker.ogg`;
+	const GAME_START_URL = `${base}sounds/map/game_start.wav`;
+	const GAME_END_URL = `${base}sounds/map/game_end.wav`;
+	const GUNNER_ADRENALINE_URL = `${base}sounds/classAbility/gunner_adrenaline.wav`;
+	const COUNTDOWN_URL = `${base}sounds/map/countdown.mp3`;
 
 	// $state.raw — prevents Svelte 5 from wrapping class instances in a Proxy
 	let ostAudio = $state.raw<ThreeAudio>();
@@ -128,20 +164,21 @@
 	let ambienceAudio = $state.raw<ThreeAudio>();
 	let clickAudio = $state.raw<ThreeAudio>();
 	let swooshAudio = $state.raw<ThreeAudio>();
-	let animIdleAudio = $state.raw<ThreeAudio>();
-	let animWalkAudio = $state.raw<ThreeAudio>();
-	let animRunAudio = $state.raw<ThreeAudio>();
-	let animAgreeAudio = $state.raw<ThreeAudio>();
-	let animHeadShakeAudio = $state.raw<ThreeAudio>();
-	let playerDeadAudio = $state.raw<ThreeAudio>();
 	let playerDownAudio = $state.raw<ThreeAudio>();
+	let playerDamageAudio = $state.raw<ThreeAudio>();
 	let newCycleAudio = $state.raw<ThreeAudio>();
 	let spreeKillingAudio = $state.raw<ThreeAudio>();
 	let spreeDominatingAudio = $state.raw<ThreeAudio>();
 	let spreeGodlikeAudio = $state.raw<ThreeAudio>();
 	let spreeHumiliationAudio = $state.raw<ThreeAudio>();
 	let rainstormAudio = $state.raw<ThreeAudio>();
+	let thunderAudio = $state.raw<ThreeAudio>();
 	let bossIntroAudio = $state.raw<ThreeAudio>();
+	let hitmarkerAudio = $state.raw<ThreeAudio>();
+	let gameStartAudio = $state.raw<ThreeAudio>();
+	let gameEndAudio = $state.raw<ThreeAudio>();
+	let gunnerAdrenalineAudio = $state.raw<ThreeAudio>();
+	let countdownAudio = $state.raw<ThreeAudio>();
 
 	// ─── Playback helpers ─────────────────────────────────────────────────────
 
@@ -264,9 +301,25 @@
 		}
 	});
 
+	// ─── Thunder — volume synced to ambience ──────────────────────────────────
+	$effect(() => {
+		if (!thunderAudio) return;
+		thunderAudio.setVolume(settingsState.audio.ambienceVolume);
+	});
+
+	$effect(() => {
+		if (soundTriggers.thunder > 0 && settingsState.audio.ambienceEnabled)
+			playOneShot(thunderAudio);
+	});
+
 	$effect(() => {
 		if (!clickAudio) return;
 		clickAudio.setVolume(settingsState.audio.effectsVolume);
+	});
+
+	$effect(() => {
+		if (!hitmarkerAudio) return;
+		hitmarkerAudio.setVolume(settingsState.audio.effectsVolume * 0.6);
 	});
 
 	$effect(() => {
@@ -275,13 +328,13 @@
 	});
 
 	$effect(() => {
-		if (!playerDeadAudio) return;
-		playerDeadAudio.setVolume(settingsState.audio.effectsVolume);
+		if (!playerDownAudio) return;
+		playerDownAudio.setVolume(settingsState.audio.effectsVolume);
 	});
 
 	$effect(() => {
-		if (!playerDownAudio) return;
-		playerDownAudio.setVolume(settingsState.audio.effectsVolume);
+		if (!playerDamageAudio) return;
+		playerDamageAudio.setVolume(settingsState.audio.effectsVolume);
 	});
 
 	$effect(() => {
@@ -297,6 +350,21 @@
 		}
 	});
 
+	$effect(() => {
+		if (!gameStartAudio) return;
+		gameStartAudio.setVolume(settingsState.audio.effectsVolume);
+	});
+
+	$effect(() => {
+		if (!gameEndAudio) return;
+		gameEndAudio.setVolume(settingsState.audio.effectsVolume);
+	});
+
+	$effect(() => {
+		if (!gunnerAdrenalineAudio) return;
+		gunnerAdrenalineAudio.setVolume(settingsState.audio.effectsVolume);
+	});
+
 	// ─── One-shot SFX ────────────────────────────────────────────────────────
 
 	$effect(() => {
@@ -304,17 +372,22 @@
 	});
 
 	$effect(() => {
-		if (soundTriggers.swoosh > 0 && settingsState.audio.effectsEnabled) playPolyphonic(swooshAudio);
+		if (soundTriggers.hitmarker > 0 && settingsState.audio.effectsEnabled)
+			playPolyphonic(hitmarkerAudio);
 	});
 
 	$effect(() => {
-		if (soundTriggers.playerDead > 0 && settingsState.audio.effectsEnabled)
-			playOneShot(playerDeadAudio);
+		if (soundTriggers.swoosh > 0 && settingsState.audio.effectsEnabled) playPolyphonic(swooshAudio);
 	});
 
 	$effect(() => {
 		if (soundTriggers.playerDown > 0 && settingsState.audio.effectsEnabled)
 			playOneShot(playerDownAudio);
+	});
+
+	$effect(() => {
+		if (soundTriggers.playerDamage > 0 && settingsState.audio.effectsEnabled)
+			playOneShot(playerDamageAudio);
 	});
 
 	$effect(() => {
@@ -341,40 +414,21 @@
 		if (soundTriggers.bossIntro > 0 && settingsState.audio.effectsEnabled)
 			playOneShot(bossIntroAudio);
 	});
-
-	// ─── Animation sounds — single effect handles stop-then-play atomically ──
-
 	$effect(() => {
-		const animAudios = [
-			animIdleAudio,
-			animWalkAudio,
-			animRunAudio,
-			animAgreeAudio,
-			animHeadShakeAudio
-		];
-		const vol = settingsState.audio.effectsVolume;
-
-		// Keep volumes in sync
-		for (const audio of animAudios) {
-			if (audio) audio.setVolume(vol);
-		}
-
-		// Stop all, then play the active one
-		for (const audio of animAudios) {
-			if (audio?.isPlaying) audio.stop();
-		}
-
-		if (!soundTriggers.currentAnimSound || !settingsState.audio.effectsEnabled) return;
-
-		const animAudioMap: Record<string, ThreeAudio | undefined> = {
-			idle: animIdleAudio,
-			walk: animWalkAudio,
-			run: animRunAudio,
-			agree: animAgreeAudio,
-			headShake: animHeadShakeAudio
-		};
-		const target = animAudioMap[soundTriggers.currentAnimSound];
-		if (target) playOneShot(target);
+		if (soundTriggers.gameStart > 0 && settingsState.audio.effectsEnabled)
+			playOneShot(gameStartAudio);
+	});
+	$effect(() => {
+		if (soundTriggers.countdown > 0 && settingsState.audio.effectsEnabled)
+			playOneShot(countdownAudio);
+	});
+	$effect(() => {
+		if (soundTriggers.gameEnd > 0 && settingsState.audio.effectsEnabled)
+			playOneShot(gameEndAudio);
+	});
+	$effect(() => {
+		if (soundTriggers.gunnerAdrenaline > 0 && settingsState.audio.effectsEnabled)
+			playOneShot(gunnerAdrenalineAudio);
 	});
 </script>
 
@@ -439,22 +493,20 @@
 	userData={{ hideInTree: true, selectable: false }}
 />
 
-<!-- Global SFX: Player Dead -->
-<Audio
-	src={PLAYER_DEAD_URL}
-	oncreate={(a) => {
-		playerDeadAudio = a;
-		log.info('Audio loaded: Player Dead SFX');
-	}}
-	userData={{ hideInTree: true, selectable: false }}
-/>
-
 <!-- Global SFX: Player Down -->
 <Audio
 	src={PLAYER_DOWN_URL}
 	oncreate={(a) => {
 		playerDownAudio = a;
-		log.info('Audio loaded: Player Down SFX');
+	}}
+	userData={{ hideInTree: true, selectable: false }}
+/>
+
+<!-- Global SFX: Player Damage -->
+<Audio
+	src={PLAYER_DAMAGE_URL}
+	oncreate={(a) => {
+		playerDamageAudio = a;
 	}}
 	userData={{ hideInTree: true, selectable: false }}
 />
@@ -506,6 +558,15 @@
 	userData={{ hideInTree: true, selectable: false }}
 />
 
+<!-- SFX: Hitmarker -->
+<Audio
+	src={HITMARKER_URL}
+	oncreate={(a) => {
+		hitmarkerAudio = a;
+	}}
+	userData={{ hideInTree: true, selectable: false }}
+/>
+
 <!-- Rainstorm — loops during night/storm phases, volume driven by skyState.stormIntensity -->
 <Audio
 	src={RAINSTORM_URL}
@@ -513,6 +574,52 @@
 	oncreate={(a) => {
 		rainstormAudio = a;
 		log.info('Audio loaded: Rainstorm');
+	}}
+	userData={{ hideInTree: true, selectable: false }}
+/>
+
+<!-- Thunder — one-shot, triggered by lightning flash in Skybox.svelte -->
+<Audio
+	src={THUNDER_URL}
+	oncreate={(a) => {
+		thunderAudio = a;
+		log.info('Audio loaded: Thunder');
+	}}
+	userData={{ hideInTree: true, selectable: false }}
+/>
+
+<!-- Game Start / End stings -->
+<Audio
+	src={GAME_START_URL}
+	oncreate={(a) => {
+		gameStartAudio = a;
+		log.info('Audio loaded: Game Start');
+	}}
+	userData={{ hideInTree: true, selectable: false }}
+/>
+<Audio
+	src={GAME_END_URL}
+	oncreate={(a) => {
+		gameEndAudio = a;
+		log.info('Audio loaded: Game End');
+	}}
+	userData={{ hideInTree: true, selectable: false }}
+/>
+
+<!-- Countdown — plays on game start -->
+<Audio
+	src={COUNTDOWN_URL}
+	oncreate={(a) => {
+		countdownAudio = a;
+	}}
+	userData={{ hideInTree: true, selectable: false }}
+/>
+
+<!-- Gunner Adrenaline — global non-positional fallback -->
+<Audio
+	src={GUNNER_ADRENALINE_URL}
+	oncreate={(a) => {
+		gunnerAdrenalineAudio = a;
 	}}
 	userData={{ hideInTree: true, selectable: false }}
 />
