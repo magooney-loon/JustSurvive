@@ -775,33 +775,33 @@
 						<div class="rpgui-container framed-grey" style="margin-top: 0.75rem; padding: 0.75rem;">
 							<p
 								style="margin: 0 0 0.5rem; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.08em; font-weight: 600; color: {CLASS_COLORS[
-									myEntry.classChoice
+									myEntry?.classChoice ?? ''
 								]};"
 							>
-								{myEntry.classChoice} Abilities
+								{myEntry?.classChoice} Abilities
 							</p>
-							{#if myEntry.classChoice === 'spotter'}
+							{#if myEntry?.classChoice === 'spotter'}
 								<p style="margin: 0 0 0.25rem; font-size: 0.75rem;">
 									<span style="opacity: 0.7;">🖱 LMB:</span> Mark enemy
 								</p>
 								<p style="margin: 0; font-size: 0.75rem;">
 									<span style="opacity: 0.7;">🖱 RMB:</span> Flash stun
 								</p>
-							{:else if myEntry.classChoice === 'gunner'}
+							{:else if myEntry?.classChoice === 'gunner'}
 								<p style="margin: 0 0 0.25rem; font-size: 0.75rem;">
 									<span style="opacity: 0.7;">🖱 LMB:</span> Shoot enemy
 								</p>
 								<p style="margin: 0; font-size: 0.75rem;">
 									<span style="opacity: 0.7;">⚡ Every 3rd:</span> Suppress
 								</p>
-							{:else if myEntry.classChoice === 'tank'}
+							{:else if myEntry?.classChoice === 'tank'}
 								<p style="margin: 0 0 0.25rem; font-size: 0.75rem;">
 									<span style="opacity: 0.7;">🖱 LMB:</span> Shield bash
 								</p>
 								<p style="margin: 0; font-size: 0.75rem;">
 									<span style="opacity: 0.7;">🖱 RMB hold:</span> Brace
 								</p>
-							{:else if myEntry.classChoice === 'healer'}
+							{:else if myEntry?.classChoice === 'healer'}
 								<p style="margin: 0 0 0.25rem; font-size: 0.75rem;">
 									<span style="opacity: 0.7;">🖱 LMB:</span> Heal teammate
 								</p>

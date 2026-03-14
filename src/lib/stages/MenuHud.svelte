@@ -77,11 +77,11 @@
 			style="margin: 0.25rem 0 0.5rem; font-size: 2.5rem; font-weight: 900; text-align: center; letter-spacing: 0.15em; color: #fff; text-transform: uppercase; font-family: system-ui, -apple-system, sans-serif; position: relative;"
 		>
 			<span
-				style="display: block; text-shadow: 0 1px 0 #0aa, 0 2px 0 #088, 0 3px 0 #066, 0 4px 0 #044, 0 5px 0 #022, 0 6px 1px rgba(0,0,0,0.1), 0 0 5px rgba(0,255,255,0.1), 0 1px 3px rgba(0,255,255,0.3), 0 3px 5px rgba(0,255,255,0.3), 0 5px 10px rgba(0,255,255,0.35), 0 10px 10px rgba(0,255,255,0.3), 0 20px 20px rgba(0,255,255,0.2);"
+				style="display: block; text-shadow: 0 1px 0 #a60, 0 2px 0 #840, 0 3px 0 #620, 0 4px 0 #410, 0 5px 0 #200, 0 6px 1px rgba(0,0,0,0.1), 0 0 5px rgba(255,165,0,0.1), 0 1px 3px rgba(255,165,0,0.3), 0 3px 5px rgba(255,165,0,0.3), 0 5px 10px rgba(255,165,0,0.35), 0 10px 10px rgba(255,165,0,0.3), 0 20px 20px rgba(255,165,0,0.2);"
 				>Just</span
 			>
 			<span
-				style="display: block; background: linear-gradient(to bottom, #0ff 0%, #06f 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; filter: drop-shadow(0 0 8px rgba(0,255,255,0.6)); animation: glitch-survive 3s infinite;"
+				style="display: block; background: linear-gradient(to bottom, #ffb300 0%, #e05000 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; filter: drop-shadow(0 0 8px rgba(255,165,0,0.6)); animation: glitch-survive 3s infinite;"
 				>Survive</span
 			>
 		</h1>
@@ -265,23 +265,23 @@
 		90%,
 		100% {
 			transform: translate(0);
-			filter: drop-shadow(0 0 8px rgba(0, 255, 255, 0.6));
+			filter: drop-shadow(0 0 8px rgba(255, 165, 0, 0.6));
 		}
 		92% {
 			transform: translate(-2px, 1px);
-			filter: drop-shadow(0 0 15px rgba(0, 255, 255, 0.9)) hue-rotate(90deg);
+			filter: drop-shadow(0 0 15px rgba(255, 165, 0, 0.9)) hue-rotate(30deg);
 		}
 		94% {
 			transform: translate(2px, -1px);
-			filter: drop-shadow(0 0 12px rgba(0, 255, 255, 0.8)) hue-rotate(-90deg);
+			filter: drop-shadow(0 0 12px rgba(255, 165, 0, 0.8)) hue-rotate(-30deg);
 		}
 		96% {
 			transform: translate(-1px, 2px);
-			filter: drop-shadow(0 0 10px rgba(0, 255, 255, 0.7));
+			filter: drop-shadow(0 0 10px rgba(255, 165, 0, 0.7));
 		}
 		98% {
 			transform: translate(1px, -2px);
-			filter: drop-shadow(0 0 14px rgba(0, 255, 255, 0.85)) hue-rotate(45deg);
+			filter: drop-shadow(0 0 14px rgba(255, 165, 0, 0.85)) hue-rotate(15deg);
 		}
 	}
 	/* Only apply block display to non-golden buttons — golden button p is inline-block by design */
