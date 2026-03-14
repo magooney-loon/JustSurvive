@@ -503,6 +503,7 @@
 		}
 	}
 
+	let leaving = $state(false);
 	let chatInput = $state('');
 	let chatEl = $state<HTMLDivElement | null>(null);
 
@@ -551,12 +552,12 @@
 	class="rpgui-content"
 	style="position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;"
 >
-	<!-- Squad Synergy — absolutely positioned at the top center, above everything -->
+	<!-- Squad Synergy — absolutely positioned at the bottom center -->
 	{#if activeSynergy && currentLobby}
 		{@const syn = activeSynergy}
 		<div
 			class="rpgui-container framed-golden"
-			style="position: absolute; top: 0.75rem; left: 50%; transform: translateX(-50%); z-index: 10; padding: 0.4rem 1.25rem; display: flex; align-items: center; gap: 1.25rem; white-space: nowrap;"
+			style="position: absolute; bottom: 0.75rem; left: 50%; transform: translateX(-50%); z-index: 10; padding: 0.4rem 1.25rem; display: flex; align-items: center; gap: 1.25rem; white-space: nowrap;"
 		>
 			<p
 				style="margin: 0; font-size: 0.6rem; text-transform: uppercase; letter-spacing: 0.08em; opacity: 0.5;"
@@ -580,7 +581,7 @@
 	>
 		<!-- Left: Lobby panel -->
 		<div style="width: 560px; flex-shrink: 0;">
-			{#if !currentLobby}
+			{#if !currentLobby && !leaving}
 				<p>Connecting to lobby... or kicked...</p>
 				<p>
 					Canceling in {connectingCountdown}s...
@@ -649,7 +650,7 @@
 									<button
 										onclick={() => {
 											soundActions.playClick();
-											lobbyActions.kickPlayer(currentLobby.id, player.playerIdentity);
+											lobbyActions.kickPlayer(currentLobby!.id, player.playerIdentity);
 										}}
 										disabled={gameStarting}
 										title="Kick player"
@@ -823,7 +824,7 @@
 					style="width: 100%;"
 					onclick={() => {
 						soundActions.playClick();
-						lobbyActions.setReady(currentLobby.id, !myEntry?.isReady);
+						lobbyActions.setReady(currentLobby!.id, !myEntry?.isReady);
 					}}
 					disabled={readyLocked}
 				>
@@ -845,7 +846,7 @@
 						style="width: 100%;"
 						onclick={() => {
 							soundActions.playClick();
-							lobbyActions.startCountdown(currentLobby.id);
+							lobbyActions.startCountdown(currentLobby!.id);
 						}}
 						disabled={!canStart}
 					>
@@ -856,25 +857,6 @@
 				{:else}
 					<p class="rpgui-center">Waiting for host to start...</p>
 				{/if}
-
-				{#if currentLobby?.status === 'countdown'}
-					<p class="rpgui-center" style="font-size: 2rem; color: #ff8;">
-						Starting in {countdownValue}...
-					</p>
-				{/if}
-
-				<button
-					class="rpgui-button"
-					style="width: 100%;"
-					onclick={() => {
-						soundActions.playClick();
-						lobbyActions.leaveLobby(currentLobby.id);
-						stageActions.setStage('menu');
-					}}
-					disabled={currentLobby?.status !== 'waiting'}
-				>
-					<p>Leave Lobby</p>
-				</button>
 
 				{#if lobbyState.error}
 					<p style="color: #f66;">{lobbyState.error}</p>
@@ -1005,9 +987,47 @@
 						</p>
 					</div>
 				{/if}
+				<button
+					class="rpgui-button"
+					style="width: 100%; margin-top: 0.25rem;"
+					onclick={() => {
+						soundActions.playClick();
+						leaving = true;
+						lobbyActions.leaveLobby(currentLobby!.id);
+						stageActions.setStage('menu');
+					}}
+					disabled={currentLobby?.status !== 'waiting'}
+				>
+					<p>Leave Lobby</p>
+				</button>
 			</div>
 		{/if}
 	</div>
+
+	<!-- Countdown overlay — centered above everything -->
+	{#if currentLobby?.status === 'countdown'}
+		<div
+			transition:fade={{ duration: 250 }}
+			style="position: absolute; inset: 0; z-index: 50; display: flex; align-items: center; justify-content: center;
+			       background: rgba(0,0,0,0.6); backdrop-filter: blur(6px);"
+		>
+			<div class="rpgui-container framed-golden" style="padding: 2rem 3.5rem; text-align: center;">
+				<p
+					style="margin: 0 0 0.5rem; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.15em; color: rgba(255,255,255,0.6); font-weight: 600;"
+				>
+					Game Starting
+				</p>
+				{#key countdownValue}
+					<p
+						in:fly={{ y: -20, duration: 220 }}
+						style="margin: 0; font-size: 5rem; font-weight: 900; color: #ff8; line-height: 1; font-variant-numeric: tabular-nums;"
+					>
+						{countdownValue}
+					</p>
+				{/key}
+			</div>
+		</div>
+	{/if}
 </div>
 
 <style>

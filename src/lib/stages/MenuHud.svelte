@@ -216,13 +216,28 @@
 					>
 				</p>
 			{:else}
-				<input
-					type="text"
-					placeholder="Enter Code"
-					bind:value={joinCode}
-					maxlength={6}
-					style="text-align: center; text-transform: uppercase; font-size: 1.75rem; padding: 0.5rem 1rem; letter-spacing: 0.4em; border-radius: 0.5rem; background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.25); color: white; outline: none;"
-				/>
+				<div style="display: flex; gap: 0.4rem; align-items: stretch;">
+					<input
+						type="text"
+						placeholder="Enter Code"
+						bind:value={joinCode}
+						maxlength={6}
+						style="flex: 1; text-align: center; text-transform: uppercase; font-size: 1.75rem; padding: 0.5rem 1rem; letter-spacing: 0.4em; border-radius: 0.5rem; background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.25); color: white; outline: none;"
+					/>
+					<button
+						class="rpgui-button"
+						onclick={async () => {
+							try {
+								const text = await navigator.clipboard.readText();
+								joinCode = text.trim().toUpperCase().slice(0, 6);
+							} catch {}
+						}}
+						disabled={loading}
+						title="Paste from clipboard"
+					>
+						<p>Paste</p>
+					</button>
+				</div>
 				<button
 					class="rpgui-button golden"
 					style="width: 100%;"

@@ -175,136 +175,88 @@
 >
 	<!-- Day phase indicator — top left -->
 	<div
-		style="
-		position: absolute; top: 1.25rem; left: 1.25rem;
-		background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15);
-		padding: 0.5rem 1.1rem; border-radius: 999px; color: white;
-		font-size: 1rem; font-weight: 500; white-space: nowrap;
-		backdrop-filter: blur(6px);
-	"
+		class="rpgui-container framed"
+		style="position: absolute; top: 1rem; left: 1rem; padding: 0.35rem 1rem; display: inline-flex; align-items: center; gap: 0.6rem; white-space: nowrap;"
 	>
-		{DAY_PHASE_LABELS[session?.dayPhase ?? 'sunset'] ?? ''}
+		<span style="font-size: 0.9rem; font-weight: 500;"
+			>{DAY_PHASE_LABELS[session?.dayPhase ?? 'sunset'] ?? ''}</span
+		>
 		{#if session?.cycleNumber && session.cycleNumber > 0n}
-			<span style="margin-left: 0.6rem; color: #ffd060; font-weight: 600;"
+			<span style="color: #ffd060; font-weight: 700; font-size: 0.9rem;"
 				>Day {Number(session.cycleNumber) + 1}</span
 			>
 		{/if}
 	</div>
 
-	<!-- Boss — top center: countdown or HP bar -->
+	<!-- Boss — top right: countdown or HP bar -->
 	{#if boss}
 		<div
-			style="
-			position: absolute; top: 1.25rem; left: 50%; transform: translateX(-50%);
-			background: rgba(20,0,10,0.85); border: 2px solid #aa1133;
-			padding: 0.6rem 1.5rem; border-radius: 0.75rem; min-width: 280px;
-			backdrop-filter: blur(8px); text-align: center;
-			box-shadow: 0 0 24px #aa113366;
-		"
+			class="rpgui-container framed"
+			style="position: absolute; top: 1rem; right: 1rem; min-width: 260px; padding: 0.5rem 1.25rem; text-align: center;"
 		>
-			<div
-				style="font-size: 0.8rem; color: #ff4466; font-weight: 700; letter-spacing: 0.1em; margin-bottom: 0.35rem; text-transform: uppercase;"
+			<p
+				style="margin: 0 0 0.4rem; font-size: 0.75rem; color: #ff4466; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase;"
 			>
-				BOSS
+				⚠ BOSS
+			</p>
+			<div class="boss-bar-track">
+				<div class="boss-bar-fill" style="width: {hpPercent(boss.hp, boss.maxHp)}%;"></div>
 			</div>
-			<div style="background: rgba(0,0,0,0.5); border-radius: 4px; height: 14px; overflow: hidden;">
-				<div
-					style="background: linear-gradient(90deg, #aa1133, #ff2255); border-radius: 4px; height: 100%;
-					       width: {hpPercent(boss.hp, boss.maxHp)}%; transition: width 0.2s;"
-				></div>
-			</div>
-			<div style="font-size: 0.75rem; color: rgba(255,255,255,0.55); margin-top: 0.25rem;">
+			<p style="margin: 0.3rem 0 0; font-size: 0.7rem; color: rgba(255,255,255,0.5);">
 				{Number(boss.hp)} / {Number(boss.maxHp)}
-			</div>
+			</p>
 		</div>
-	{:else if !boss}
+	{:else}
 		<div
-			style="
-			position: absolute; top: 1.25rem; left: 50%; transform: translateX(-50%);
-			background: rgba(10,0,20,0.75); border: 1.5px solid rgba(180,50,80,0.5);
-			padding: 0.5rem 1.4rem; border-radius: 0.75rem;
-			backdrop-filter: blur(8px); text-align: center; white-space: nowrap;
-		"
+			class="rpgui-container framed"
+			style="position: absolute; top: 1rem; right: 1rem; padding: 0.4rem 1.25rem; white-space: nowrap; text-align: center;"
 		>
-			<span
-				style="font-size: 0.75rem; color: rgba(255,100,130,0.7); font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase;"
-			>
-				Boss in
-			</span>
-			<span
-				style="font-size: 1.4rem; font-weight: 800; color: #ff4466; margin-left: 0.5rem; font-variant-numeric: tabular-nums;"
-			>
-				{bossSecsLeft}s
-			</span>
+			<span style="font-size: 0.75rem; color: rgba(255,100,130,0.8); font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em;">Boss in</span>
+			<span style="font-size: 1.5rem; font-weight: 800; color: #ff4466; margin-left: 0.5rem; font-variant-numeric: tabular-nums;">{bossSecsLeft}s</span>
 		</div>
 	{/if}
 
-	<!-- Ability bar — bottom center -->
+	<!-- Ability bar — bottom right -->
 	{#if myState && myState.status === 'alive'}
 		{@const slots = abilities()}
 		<div
-			style="
-			position: absolute; bottom: 2.5rem; left: 50%; transform: translateX(-50%);
-			display: flex; gap: 0.9rem; pointer-events: none;
-		"
+			style="position: absolute; bottom: 2rem; right: 1.25rem; display: flex; gap: 0.75rem; pointer-events: none;"
 		>
 			{#each slots as slot}
 				<div
+					class="rpgui-container framed ability-slot"
 					style="
-					position: relative; width: 110px; height: 110px;
-					background: rgba(255,255,255,0.07);
-					border: 1.5px solid {slot.active ? slot.color : 'rgba(255,255,255,0.18)'};
-					border-radius: 0.625rem; overflow: hidden;
-					box-shadow: {slot.active ? `0 0 14px ${slot.color}55` : 'none'};
-					transition: border-color 0.15s, box-shadow 0.15s;
-					backdrop-filter: blur(6px);
-				"
+						position: relative; min-width: 210px; width: 210px; height: 115px; overflow: hidden;
+						outline: {slot.active ? `2px solid ${slot.color}` : 'none'};
+						outline-offset: -2px;
+						box-shadow: {slot.active ? `0 0 16px ${slot.color}66` : 'none'};
+						transition: box-shadow 0.15s;
+					"
 				>
-					<!-- Cooldown overlay (fills from bottom) -->
+					<!-- Cooldown fill (bottom-up) -->
 					{#if slot.cdFrac > 0}
 						<div
-							style="
-							position: absolute; bottom: 0; left: 0; right: 0;
-							height: {slot.cdFrac * 100}%;
-							background: rgba(0,0,0,0.6);
-							transition: height 0.08s linear;
-						"
+							class="cd-overlay"
+							style="height: {slot.cdFrac * 100}%;"
 						></div>
 					{/if}
-					<!-- Active pulse overlay -->
+					<!-- Active pulse -->
 					{#if slot.active}
-						<div
-							style="
-							position: absolute; inset: 0;
-							background: {slot.color}18;
-							animation: abilityPulse 0.9s ease-in-out infinite alternate;
-						"
-						></div>
+						<div class="active-overlay" style="background: {slot.color}1a;"></div>
 					{/if}
 					<!-- Content -->
-					<div
-						style="
-						position: relative; height: 100%;
-						display: flex; flex-direction: column;
-						align-items: center; justify-content: center; gap: 3px;
-					"
-					>
+					<div class="ability-content">
 						<span
-							style="font-size: 1rem; font-weight: 600; color: {slot.cdFrac > 0
-								? '#888'
-								: slot.color}; text-align: center; line-height: 1.1;"
+							class="ability-label"
+							style="color: {slot.cdFrac > 0 ? '#777' : slot.color};"
 						>
 							{slot.label}
 						</span>
 						{#if slot.input}
-							<span
-								style="font-size: 0.7rem; color: rgba(255,255,255,0.45); background: rgba(255,255,255,0.1); padding: 1px 5px; border-radius: 3px;"
-							>
-								{slot.input}
-							</span>
+							<span class="ability-input">{slot.input}</span>
 						{/if}
 						{#if slot.cdFrac > 0}
-							<span style="font-size: 0.75rem; color: #aaa; font-weight: 500;">
+							<span class="ability-cd">
 								{((slot.cdFrac * (slot.cdMs ?? 5000)) / 1000).toFixed(1)}s
 							</span>
 						{/if}
@@ -317,99 +269,58 @@
 	<!-- Local player HP & stamina — bottom left -->
 	{#if myState}
 		<div
-			style="
-			position: absolute; bottom: 2.5rem; left: 2rem; width: 280px;
-			background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.12);
-			border-radius: 0.75rem; padding: 0.875rem 1rem;
-			backdrop-filter: blur(6px);
-		"
+			class="rpgui-container framed"
+			style="position: absolute; bottom: 2rem; left: 1.25rem; width: 270px; padding: 0.75rem 1rem;"
 		>
 			<!-- HP bar -->
-			<div style="margin-bottom: 0.6rem;">
-				<div
-					style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 4px;"
-				>
-					<span
-						style="font-size: 0.8rem; color: rgba(255,255,255,0.55); font-weight: 500; text-transform: uppercase; letter-spacing: 0.06em;"
-						>HP</span
-					>
-					<span style="font-size: 0.8rem; color: rgba(255,255,255,0.7); font-weight: 600;"
-						>{Number(myState.hp)} / {Number(myState.maxHp)}</span
-					>
+			<div style="margin-bottom: 0.55rem;">
+				<div style="display: flex; justify-content: space-between; margin-bottom: 3px;">
+					<span class="stat-label">HP</span>
+					<span class="stat-value">{Number(myState.hp)} / {Number(myState.maxHp)}</span>
 				</div>
-				<div
-					style="background: rgba(0,0,0,0.4); border-radius: 4px; height: 12px; overflow: hidden;"
-				>
-					<div
-						style="background: #e44; border-radius: 4px; height: 100%; width: {hpPercent(
-							myState.hp,
-							myState.maxHp
-						)}%; transition: width 0.2s;"
-					></div>
+				<div class="bar-track">
+					<div class="bar-fill hp-fill" style="width: {hpPercent(myState.hp, myState.maxHp)}%;"></div>
 				</div>
 			</div>
 			<!-- Stamina bar -->
-			<div style="margin-bottom: 0.6rem;">
-				<div
-					style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 4px;"
-				>
-					<span
-						style="font-size: 0.8rem; color: rgba(255,255,255,0.55); font-weight: 500; text-transform: uppercase; letter-spacing: 0.06em;"
-						>Stamina</span
-					>
+			<div>
+				<div style="display: flex; justify-content: space-between; margin-bottom: 3px;">
+					<span class="stat-label">Stamina</span>
 				</div>
-				<div
-					style="background: rgba(0,0,0,0.4); border-radius: 4px; height: 9px; overflow: hidden;"
-				>
-					<div
-						style="background: #4af; border-radius: 4px; height: 100%; width: {hpPercent(
-							myState.stamina,
-							myState.maxStamina
-						)}%; transition: width 0.1s;"
-					></div>
+				<div class="bar-track" style="height: 9px;">
+					<div class="bar-fill stm-fill" style="width: {hpPercent(myState.stamina, myState.maxStamina)}%;"></div>
 				</div>
 			</div>
-			<!-- Score -->
-			<div style="font-size: 1.15rem; font-weight: 700; color: #ffd060;">
-				{Number(myState.score).toLocaleString()} pts
-			</div>
+		</div>
+		<!-- Score — bottom center -->
+		<div
+			class="rpgui-container framed"
+			style="position: absolute; bottom: 2rem; left: 50%; transform: translateX(-50%); padding: 0.35rem 1.5rem; white-space: nowrap; text-align: center;"
+		>
+			<span style="font-size: 1.2rem; font-weight: 700; color: #ffd060;">{Number(myState.score).toLocaleString()} pts</span>
 		</div>
 	{/if}
 
-	<!-- Teammate status — top right -->
+	<!-- Teammate status — top center -->
 	<div
-		style="position: absolute; top: 1.25rem; right: 1.25rem; display: flex; flex-direction: column; gap: 0.4rem;"
+		style="position: absolute; top: 1rem; left: 50%; transform: translateX(-50%); display: flex; flex-direction: row; gap: 0.5rem;"
 	>
 		{#each teammates as p (p.id)}
 			<div
-				style="
-				background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.12);
-				padding: 0.5rem 0.75rem; border-radius: 0.5rem; font-size: 1rem;
-				color: {p.status === 'downed' ? '#f66' : 'rgba(255,255,255,0.85)'};
-				backdrop-filter: blur(6px); min-width: 200px;
-			"
+				class="rpgui-container framed"
+				style="padding: 0.4rem 0.75rem; min-width: 210px; color: {p.status === 'downed' ? '#f66' : 'inherit'};"
 			>
-				<div style="display: flex; align-items: center; gap: 0.5rem;">
-					<span style="text-transform: capitalize; font-weight: 500; flex: 1;">{p.classChoice}</span
-					>
+				<div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.25rem;">
+					<span style="text-transform: capitalize; font-weight: 600; flex: 1; font-size: 0.9rem;">{p.classChoice}</span>
 					{#if p.status === 'downed'}
-						<span style="color: #f66; font-size: 0.75rem; font-weight: 700;">DOWNED</span>
+						<span style="color: #f66; font-size: 0.7rem; font-weight: 700; letter-spacing: 0.06em;">DOWNED</span>
 					{:else}
-						<span style="font-size: 0.75rem; color: rgba(255,255,255,0.5); font-weight: 500;"
-							>{Number(p.hp)}/{Number(p.maxHp)}</span
-						>
+						<span style="font-size: 0.75rem; color: rgba(255,255,255,0.5);">{Number(p.hp)}/{Number(p.maxHp)}</span>
 					{/if}
 				</div>
 				{#if p.status !== 'downed'}
-					<div
-						style="background: rgba(0,0,0,0.35); border-radius: 3px; height: 5px; margin-top: 0.35rem; overflow: hidden;"
-					>
-						<div
-							style="height: 100%; background: #e44; border-radius: 3px; width: {hpPercent(
-								p.hp,
-								p.maxHp
-							)}%; transition: width 0.2s;"
-						></div>
+					<div class="bar-track" style="height: 6px;">
+						<div class="bar-fill hp-fill" style="width: {hpPercent(p.hp, p.maxHp)}%;"></div>
 					</div>
 				{/if}
 			</div>
@@ -420,15 +331,13 @@
 	{#if myState?.status === 'downed'}
 		<div
 			style="position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
-		            background: rgba(0,0,0,0.55); pointer-events: none; backdrop-filter: blur(3px);"
+			       background: rgba(0,0,0,0.55); pointer-events: none; backdrop-filter: blur(3px);"
 		>
-			<div style="text-align: center; color: white;">
-				<h2
-					style="font-size: 2.5rem; margin: 0 0 0.5rem; color: #f66; font-weight: 800; letter-spacing: 0.05em;"
-				>
+			<div class="rpgui-container framed" style="text-align: center; padding: 2rem 3rem;">
+				<h2 style="font-size: 2rem; margin: 0 0 0.5rem; color: #f66; font-weight: 800; letter-spacing: 0.06em;">
 					YOU'RE DOWN
 				</h2>
-				<p style="font-size: 1.1rem; color: rgba(255,255,255,0.6); margin: 0;">
+				<p style="font-size: 1rem; color: rgba(255,255,255,0.6); margin: 0;">
 					Waiting for Healer...
 				</p>
 			</div>
@@ -438,3 +347,108 @@
 	<!-- Revive channel progress (healer only) -->
 	<ReviveChannelHud />
 </div>
+
+<style>
+	/* Boss HP bar */
+	.boss-bar-track {
+		background: rgba(0, 0, 0, 0.5);
+		border: 1px solid rgba(255, 255, 255, 0.15);
+		border-radius: 3px;
+		height: 14px;
+		overflow: hidden;
+	}
+	.boss-bar-fill {
+		background: linear-gradient(90deg, #aa1133, #ff2255);
+		height: 100%;
+		transition: width 0.2s;
+		border-radius: 3px;
+	}
+
+	/* Generic stat bar */
+	.bar-track {
+		background: rgba(0, 0, 0, 0.45);
+		border: 1px solid rgba(255, 255, 255, 0.12);
+		border-radius: 3px;
+		height: 12px;
+		overflow: hidden;
+	}
+	.bar-fill {
+		height: 100%;
+		border-radius: 3px;
+		transition: width 0.15s;
+	}
+	.hp-fill {
+		background: #e44;
+	}
+	.stm-fill {
+		background: #4af;
+	}
+
+	/* Stat labels */
+	.stat-label {
+		font-size: 0.75rem;
+		color: rgba(255, 255, 255, 0.5);
+		font-weight: 500;
+		text-transform: uppercase;
+		letter-spacing: 0.06em;
+	}
+	.stat-value {
+		font-size: 0.75rem;
+		color: rgba(255, 255, 255, 0.7);
+		font-weight: 600;
+	}
+
+	/* Ability slot */
+	.ability-slot {
+		padding: 0 !important;
+	}
+	.cd-overlay {
+		position: absolute;
+		bottom: 0;
+		left: 0;
+		right: 0;
+		background: rgba(0, 0, 0, 0.62);
+		transition: height 0.08s linear;
+		pointer-events: none;
+	}
+	.active-overlay {
+		position: absolute;
+		inset: 0;
+		animation: abilityPulse 0.9s ease-in-out infinite alternate;
+		pointer-events: none;
+	}
+	.ability-content {
+		position: relative;
+		height: 100%;
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		justify-content: center;
+		gap: 4px;
+		padding: 0.5rem;
+	}
+	.ability-label {
+		font-size: 1.05rem;
+		font-weight: 700;
+		text-align: center;
+		line-height: 1.1;
+		white-space: nowrap;
+	}
+	.ability-input {
+		font-size: 0.68rem;
+		color: rgba(255, 255, 255, 0.45);
+		background: rgba(255, 255, 255, 0.1);
+		padding: 1px 6px;
+		border-radius: 3px;
+	}
+	.ability-cd {
+		font-size: 0.8rem;
+		color: #aaa;
+		font-weight: 600;
+	}
+
+	@keyframes abilityPulse {
+		from { opacity: 0.4; }
+		to { opacity: 1; }
+	}
+</style>

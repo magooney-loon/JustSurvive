@@ -49,14 +49,16 @@
 			{/each}
 		</div>
 
-		<button
-			class="rpgui-button"
-			onclick={() => {
-				soundActions.playClick();
-				goToMenu();
-			}}
-		>
-			<p>Back to Menu</p>
-		</button>
+		<div style="display: flex; justify-content: center;">
+			<button
+				class="rpgui-button"
+				onclick={() => {
+					soundActions.playClick();
+					goToMenu();
+				}}
+			>
+				<p>Back to Menu</p>
+			</button>
+		</div>
 	</div>
 </div>
