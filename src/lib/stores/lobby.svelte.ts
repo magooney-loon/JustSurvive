@@ -9,7 +9,9 @@ const lobbyState = $state({
 	localPlayerClass: null as PlayerClass | null,
 	localPlayerName: 'Player',
 	error: null as string | null,
-	leavingLobby: false
+	leavingLobby: false,
+	gameStartedAt: null as number | null,
+	playerJoinedAt: null as number | null
 });
 
 export { lobbyState };

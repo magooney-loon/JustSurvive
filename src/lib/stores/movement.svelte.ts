@@ -58,6 +58,7 @@ export function resetMovement() {
 	cameraFollow.aimZ = 0;
 	fpsCamera.yaw = 0;
 	fpsCamera.pitch = 0;
+	bossShake.intensity = 0;
 }
 
 export function updateLocalMovement(

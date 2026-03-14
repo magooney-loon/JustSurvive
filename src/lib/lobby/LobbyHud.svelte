@@ -511,19 +511,27 @@
 		chatInput = '';
 	}
 
-	const READY_DEADLINE_MS = 2 * 60 * 1000;
+	const READY_DEADLINE_SECONDS = 120;
 	let readySecondsLeft = $state(0);
+	let playerEnteredAt = $state<number | null>(null);
 
 	$effect(() => {
-		if (!currentLobby?.isPublic || myEntry?.isReady) {
+		if (currentLobby && currentLobby.isPublic && !myEntry?.isReady) {
+			if (!playerEnteredAt) playerEnteredAt = Date.now();
+		} else {
+			playerEnteredAt = null;
 			readySecondsLeft = 0;
-			return;
 		}
-		const joinedAt = myEntry?.joinedAt;
-		if (!joinedAt) return;
-		const deadline = Number(joinedAt.microsSinceUnixEpoch) / 1000 + READY_DEADLINE_MS;
+	});
+
+	$effect(() => {
+		if (!currentLobby?.isPublic || myEntry?.isReady || !playerEnteredAt) return;
+		const enteredAt = playerEnteredAt;
 		function update() {
-			readySecondsLeft = Math.max(0, Math.ceil((deadline - Date.now()) / 1000));
+			readySecondsLeft = Math.max(
+				0,
+				Math.ceil(READY_DEADLINE_SECONDS - (Date.now() - enteredAt) / 1000)
+			);
 		}
 		update();
 		const id = setInterval(update, 500);

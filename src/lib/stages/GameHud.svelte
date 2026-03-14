@@ -4,15 +4,17 @@
 	import { tables } from '$bindings/index.js';
 	import type { Enemy } from '$bindings/types.js';
 	import { lobbyState } from '$lib/stores/lobby.svelte.js';
-	import { stageActions } from '$root/stage.svelte.js';
 	import { abilityState } from '$lib/stores/abilities.svelte.js';
+	import { bossShake } from '$lib/stores/movement.svelte.js';
 	import ReviveChannelHud from '$lib/character/ui/ReviveChannelHud.svelte';
+	import { stageActions } from '$root/stage.svelte.js';
+
+	let now = $state(Date.now());
 
 	const conn = useSpacetimeDB();
 	const [players] = useTable(tables.playerState);
 	const [sessions] = useTable(tables.gameSession);
 	const [enemies] = useTable(tables.enemy);
-	const [bossTimers] = useTable(tables.bossTimer);
 
 	const session = $derived($sessions.find((s) => s.id === lobbyState.currentSessionId));
 	const myState = $derived(
@@ -35,17 +37,10 @@
 		) as Enemy | undefined
 	);
 
-	let now = $state(Date.now());
-
-	const bossTimer = $derived(
-		$bossTimers.find((bt) => bt.sessionId === lobbyState.currentSessionId)
-	);
+	const BOSS_SPAWN_SECONDS = 90;
 	const bossSecsLeft = $derived(
-		bossTimer
-			? Math.max(
-					0,
-					Math.floor(Number(bossTimer.spawnAt.microsSinceUnixEpoch / 1000n - BigInt(now)) / 1000)
-				)
+		lobbyState.gameStartedAt
+			? Math.max(0, BOSS_SPAWN_SECONDS - Math.floor((now - lobbyState.gameStartedAt) / 1000))
 			: 0
 	);
 
@@ -59,8 +54,13 @@
 
 	let sessionWasActive = $state(false);
 	$effect(() => {
-		if (session?.status === 'active') sessionWasActive = true;
+		if (session?.status === 'active' && !sessionWasActive) {
+			sessionWasActive = true;
+			lobbyState.gameStartedAt = Date.now();
+		}
 		if (session?.status === 'finished' && sessionWasActive) {
+			lobbyState.gameStartedAt = null;
+			bossShake.intensity = 0;
 			stageActions.setStage('game_over');
 		}
 	});
@@ -213,7 +213,7 @@
 				{Number(boss.hp)} / {Number(boss.maxHp)}
 			</div>
 		</div>
-	{:else if bossTimer}
+	{:else if !boss}
 		<div
 			style="
 			position: absolute; top: 1.25rem; left: 50%; transform: translateX(-50%);
