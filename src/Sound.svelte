@@ -3,6 +3,7 @@
 	export const soundTriggers = $state({
 		swoosh: 0,
 		click: 0,
+		hitmarker: 0,
 		currentAnimSound: '' as string,
 		// Global game SFX (non-positional)
 		playerDead: 0,
@@ -35,6 +36,9 @@
 		},
 		playClick() {
 			soundTriggers.click++;
+		},
+		playHitmarker() {
+			soundTriggers.hitmarker++;
 		},
 		playPlayerDead() {
 			soundTriggers.playerDead++;
@@ -120,6 +124,7 @@
 	const SPREE_HUMILIATION_URL = `${base}sounds/spree_humiliation.mp3`;
 	const RAINSTORM_URL = `${base}sounds/rainstorm.mp3`;
 	const BOSS_INTRO_URL = `${base}sounds/boss_intro.mp3`;
+	const HITMARKER_URL = `${base}sounds/hitmarker.ogg`;
 
 	// $state.raw — prevents Svelte 5 from wrapping class instances in a Proxy
 	let ostAudio = $state.raw<ThreeAudio>();
@@ -142,6 +147,7 @@
 	let spreeHumiliationAudio = $state.raw<ThreeAudio>();
 	let rainstormAudio = $state.raw<ThreeAudio>();
 	let bossIntroAudio = $state.raw<ThreeAudio>();
+	let hitmarkerAudio = $state.raw<ThreeAudio>();
 
 	// ─── Playback helpers ─────────────────────────────────────────────────────
 
@@ -270,6 +276,11 @@
 	});
 
 	$effect(() => {
+		if (!hitmarkerAudio) return;
+		hitmarkerAudio.setVolume(settingsState.audio.effectsVolume * 0.6);
+	});
+
+	$effect(() => {
 		if (!swooshAudio) return;
 		swooshAudio.setVolume(settingsState.audio.effectsVolume);
 	});
@@ -301,6 +312,11 @@
 
 	$effect(() => {
 		if (soundTriggers.click > 0 && settingsState.audio.effectsEnabled) playOneShot(clickAudio);
+	});
+
+	$effect(() => {
+		if (soundTriggers.hitmarker > 0 && settingsState.audio.effectsEnabled)
+			playPolyphonic(hitmarkerAudio);
 	});
 
 	$effect(() => {
@@ -502,6 +518,15 @@
 	oncreate={(a) => {
 		bossIntroAudio = a;
 		log.info('Audio loaded: Boss Intro');
+	}}
+	userData={{ hideInTree: true, selectable: false }}
+/>
+
+<!-- SFX: Hitmarker -->
+<Audio
+	src={HITMARKER_URL}
+	oncreate={(a) => {
+		hitmarkerAudio = a;
 	}}
 	userData={{ hideInTree: true, selectable: false }}
 />

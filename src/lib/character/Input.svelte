@@ -162,8 +162,10 @@
 				if (enemy) {
 					combatActions.steadyShot(sid, enemy.id);
 					soundActions.playSpotterMark();
+					soundActions.playHitmarker();
 					abilityState.markCooldownUntil = Date.now() + 3000;
 					steadyShotFlash.until = Date.now() + STEADY_SHOT_FLASH_MS;
+					steadyShotFlash.yaw = fpsCamera.yaw;
 					logAbility.info('SPOTTER: steady shot enemy', enemy.id);
 				}
 			} else if (e.button === 2) {
@@ -192,6 +194,7 @@
 				const suppress = abilityState.suppressHits % 3 === 0;
 				combatActions.attackEnemy(sid, enemy.id, suppress);
 				soundActions.playGunnerShot();
+				soundActions.playHitmarker();
 				shotFlash.until = Date.now() + SHOT_FLASH_MS;
 				logAbility.info('GUNNER: attack enemy', enemy.id, 'suppress=', suppress);
 			} else if (e.button === 2) {
@@ -216,6 +219,7 @@
 				if (abilityState.bashCooldownUntil > Date.now()) return;
 				combatActions.axeSwing(sid);
 				soundActions.playTankBash();
+				soundActions.playHitmarker();
 				abilityState.bashCooldownUntil = Date.now() + 500;
 				axeSwingFlash.active = true;
 				axeSwingFlash.yaw = fpsCamera.yaw;

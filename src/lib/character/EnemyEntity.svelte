@@ -117,6 +117,15 @@
 			killedAudio.play();
 		}
 	});
+
+	// Hit flash — brief white ring when enemy takes damage
+	let hitFlashAt = $state(0);
+	let trackedHp = $state(Number(enemy.hp));
+	$effect(() => {
+		const curHp = Number(enemy.hp);
+		if (curHp < trackedHp && enemy.isAlive) hitFlashAt = Date.now();
+		trackedHp = curHp;
+	});
 	const downedTilt = $derived(dead ? 1.35 : 0);
 	const splatAge = $derived(dead ? nowMs - (deathAt ?? nowMs) : 0);
 	const splatT = $derived(dead ? Math.max(0, 1 - splatAge / 2200) : 0);
@@ -337,7 +346,35 @@
 			{/each}
 		{/if}
 
-		{#if enemy.isMarked && !dead}
+		{@const hitT = Math.max(0, 1 - (nowMs - hitFlashAt) / 160)}
+	{#if hitT > 0 && !dead}
+		<T.Mesh
+			position={[0, 0.05, 0]}
+			rotation={[-Math.PI / 2, 0, 0]}
+			scale={0.3 + (1 - hitT) * 0.7}
+		>
+			<T.RingGeometry args={[0.2, 0.45, 16]} />
+			<T.MeshBasicMaterial
+				color="#ffffff"
+				transparent
+				opacity={hitT * 0.85}
+				blending={THREE.AdditiveBlending}
+				depthWrite={false}
+			/>
+		</T.Mesh>
+		<T.Mesh position={[0, 1.0, 0]} scale={0.05 + (1 - hitT) * 0.12}>
+			<T.SphereGeometry args={[1, 6, 4]} />
+			<T.MeshBasicMaterial
+				color="#ffffff"
+				transparent
+				opacity={hitT * 0.7}
+				blending={THREE.AdditiveBlending}
+				depthWrite={false}
+			/>
+		</T.Mesh>
+	{/if}
+
+	{#if enemy.isMarked && !dead}
 			<T.Mesh
 				position={[0, 2.2, 0]}
 				rotation={[Math.PI / 4, 0, 0]}

@@ -25,7 +25,7 @@ export const spotterFlash = $state({ active: false, yaw: 0, until: 0 });
 export const SPOTTER_FLASH_MS = 500;
 
 // Steady shot flash — optimistic local effect for the shooter
-export const steadyShotFlash = $state({ until: 0 });
+export const steadyShotFlash = $state({ until: 0, yaw: 0 });
 export const STEADY_SHOT_FLASH_MS = 250;
 
 // Axe swing cone — optimistic local effect for the tank
@@ -48,6 +48,7 @@ export function resetAbilities() {
 	healBeam.toZ = 0;
 	healBeam.until = 0;
 	steadyShotFlash.until = 0;
+	steadyShotFlash.yaw = 0;
 	axeSwingFlash.active = false;
 	axeSwingFlash.yaw = 0;
 	axeSwingFlash.until = 0;
