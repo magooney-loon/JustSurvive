@@ -300,24 +300,11 @@ function end_session(ctx: any, sessionId: bigint) {
 	}
 	// Note: PlayerState rows kept until next game starts (game over screen needs them)
 
+	// Get lobby reference early (before it's deleted for public lobbies)
 	const lobby = ctx.db.lobby.id.find(session.lobbyId);
-	if (lobby) {
-		if (lobby.isPublic) {
-			// Public lobbies are disbanded after a game — players use quick join for a new one
-			for (const p of ctx.db.lobbyPlayer.lobby_player_lobby_id.filter(lobby.id)) {
-				ctx.db.lobbyPlayer.id.delete(p.id);
-			}
-			clearLobbyMessages(ctx, lobby.id);
-			ctx.db.lobby.id.delete(lobby.id);
-		} else {
-			ctx.db.lobby.id.update({ ...lobby, status: 'waiting' });
-			for (const p of ctx.db.lobbyPlayer.lobby_player_lobby_id.filter(lobby.id)) {
-				ctx.db.lobbyPlayer.id.update({ ...p, isReady: false });
-			}
-		}
-	}
 
 	// ─── Leaderboard ─────────────────────────────────────────────────────────────
+	// MUST run BEFORE cleaning up lobbyPlayers (they're deleted for public lobbies)
 	const sessionPlayers = [...ctx.db.playerState.player_state_session_id.filter(sessionId)];
 	const sessionLobbyPlayers = [...ctx.db.lobbyPlayer.lobby_player_lobby_id.filter(session.lobbyId)];
 	const classes = sessionLobbyPlayers
@@ -428,6 +415,22 @@ function end_session(ctx: any, sessionId: bigint) {
 					playerName: lp.playerName,
 					classChoice: lp.classChoice || 'none'
 				});
+			}
+		}
+	}
+
+	if (lobby) {
+		if (lobby.isPublic) {
+			// Public lobbies are disbanded after a game — players use quick join for a new one
+			for (const p of ctx.db.lobbyPlayer.lobby_player_lobby_id.filter(lobby.id)) {
+				ctx.db.lobbyPlayer.id.delete(p.id);
+			}
+			clearLobbyMessages(ctx, lobby.id);
+			ctx.db.lobby.id.delete(lobby.id);
+		} else {
+			ctx.db.lobby.id.update({ ...lobby, status: 'waiting' });
+			for (const p of ctx.db.lobbyPlayer.lobby_player_lobby_id.filter(lobby.id)) {
+				ctx.db.lobbyPlayer.id.update({ ...p, isReady: false });
 			}
 		}
 	}
