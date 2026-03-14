@@ -3,6 +3,11 @@
 	export const markRingGeo = new THREE.TorusGeometry(0.4, 0.07, 6, 4);
 	export const markStemGeo = new THREE.CylinderGeometry(0.03, 0.03, 1, 4);
 	export const markMat = new THREE.MeshBasicMaterial({ color: '#f84' });
+
+	// Blood splatter - instanced for performance
+	export const bloodGeo = new THREE.SphereGeometry(1, 6, 4);
+	export const bloodMat = new THREE.MeshBasicMaterial({ color: '#8a0a0a' });
+	export const MAX_BLOOD_PER_ENEMY = 15;
 </script>
 
 <script lang="ts">
@@ -118,9 +123,8 @@
 	const splatGrow = $derived(dead ? Math.min(1, splatAge / 350) : 0);
 	const expired = $derived(dead && splatAge >= DEAD_PERSIST_MS);
 
-	const PARTICLE_COUNT = 30;
 	const GRAVITY = 14;
-	const bloodParticles = $state.raw<
+	let bloodParticles = $state.raw<
 		{
 			x: number;
 			y: number;
@@ -142,9 +146,10 @@
 			bloodAge = 0;
 			const originY = enemy.enemyType === 'boss' ? 3.5 : 1.2;
 			const INITIAL_SPEED = 6 + Math.random() * 4;
-			bloodParticles.length = 0;
-			for (let i = 0; i < PARTICLE_COUNT; i++) {
-				const isBig = i < 4;
+			const count = enemy.enemyType === 'boss' ? 24 : 12;
+			bloodParticles = [];
+			for (let i = 0; i < count; i++) {
+				const isBig = i < 3;
 				bloodParticles.push({
 					x: (Math.random() - 0.5) * 0.5,
 					y: originY + Math.random() * 0.6,

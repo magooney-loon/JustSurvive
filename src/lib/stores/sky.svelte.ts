@@ -6,16 +6,16 @@ export const devSky = $state({ forcedPhase: null as string | null });
 
 // Sky state — written by GameStage (lerped per phase), read by Skybox
 export const skyState = $state({
-	elevation: 3,
-	azimuth: 260,
-	turbidity: 12,
-	rayleigh: 2.5,
-	mieCoefficient: 0.007,
-	mieDirectionalG: 0.8,
-	ambientIntensity: 0.6,
-	sunIntensity: 1.0,
-	sunR: 1.0,
-	sunG: 0.75,
-	sunB: 0.45,
-	stormIntensity: 0 // 0 = clear, 1 = full storm — drives rain audio + lightning
+	elevation: -3,
+	azimuth: 250,
+	turbidity: 8,
+	rayleigh: 0.5,
+	mieCoefficient: 0.004,
+	mieDirectionalG: 0.7,
+	ambientIntensity: 0.18,
+	sunIntensity: 0.12,
+	sunR: 0.4,
+	sunG: 0.25,
+	sunB: 0.5,
+	stormIntensity: 0.3
 });

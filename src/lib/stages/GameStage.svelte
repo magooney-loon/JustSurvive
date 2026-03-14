@@ -21,9 +21,7 @@
 	import EnemyEntity from '$lib/character/EnemyEntity.svelte';
 	import AcidPoolEntity from '$lib/character/enemies/AcidPoolEntity.svelte';
 	import MarkOverlay from '$lib/character/ui/MarkOverlay.svelte';
-	import GameGround from '$lib/map/GameGround.svelte';
 	import GameSounds from '$lib/stages/GameSounds.svelte';
-	import RainEffect from '$lib/map/RainEffect.svelte';
 	import AbilityEffects from '$lib/character/AbilityEffects.svelte';
 
 	const conn = useSpacetimeDB();
@@ -78,7 +76,7 @@
 				})
 			: $acidPools.filter((p) => p.sessionId === lobbyState.currentSessionId)
 	);
-const phase = $derived(devSky.forcedPhase ?? session?.dayPhase ?? 'sunset');
+	const phase = $derived(devSky.forcedPhase ?? session?.dayPhase ?? 'sunset');
 
 	const PHASE_SKY = {
 		sunset: {
@@ -172,7 +170,6 @@ const phase = $derived(devSky.forcedPhase ?? session?.dayPhase ?? 'sunset');
 			hp !== null && max && max > 0n ? Math.max(0, Math.min(1, Number(hp) / Number(max))) : 1;
 	});
 
-
 	// Angle to rotate player group so its -Z faces the aim point
 	const aimAngle = $derived(Math.atan2(localPos.x - localAim.x, localPos.z - localAim.z));
 
@@ -225,10 +222,6 @@ const phase = $derived(devSky.forcedPhase ?? session?.dayPhase ?? 'sunset');
 		}
 	});
 </script>
-
-
-<GameGround />
-<RainEffect />
 
 <!-- Local player (predicted position, rotated toward aim) -->
 {#if myState}

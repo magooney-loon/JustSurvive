@@ -177,7 +177,7 @@
 		return {
 			x: Math.cos(angle) * PORTAL_RADIUS,
 			z: Math.sin(angle) * PORTAL_RADIUS,
-			ry: -Math.PI / 2 - angle // correct inward-facing rotation for a Y-axis rotated object
+			ry: Math.PI / 2 - angle // correct inward-facing rotation for a Y-axis rotated object
 		};
 	});
 

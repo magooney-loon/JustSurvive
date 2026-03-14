@@ -17,7 +17,7 @@
 <MD2EnemyCharacter enemyType="caster" {speed} {attackPhase} {isDead} />
 
 {#if beamTimer > 0 && !isDead}
-	<T.Group position={[0.3, 1.45, 0]}>
+	<T.Group position={[-0.3, 1.45, 0]}>
 		<T.Mesh position={[0, 0, -4]} rotation={[Math.PI / 2, 0, 0]}>
 			<T.CylinderGeometry args={[0.04, 0.07, 8, 6]} />
 			<T.MeshBasicMaterial
