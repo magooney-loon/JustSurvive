@@ -5,6 +5,7 @@
 	import { useSpacetimeDB, useTable } from 'spacetimedb/svelte';
 	import { tables } from '$bindings/index.js';
 	import { soundActions } from '$root/Sound.svelte';
+	import { CLASSES, getActiveSynergy, TIPS } from './classData.js';
 
 	const base = import.meta.env.BASE_URL;
 
@@ -41,278 +42,37 @@
 		healer: players.filter((p) => p.classChoice === 'healer').length
 	});
 
-	const CLASSES = ['spotter', 'gunner', 'tank', 'healer'] as const;
+	const activeSynergy = $derived(getActiveSynergy(classCounts));
 
 	const CLASS_COLORS: Record<string, string> = {
-		spotter: '#4af',
-		gunner: '#f84',
-		tank: '#8a4',
-		healer: '#f4a'
+		spotter: CLASSES.spotter.stats.color,
+		gunner: CLASSES.gunner.stats.color,
+		tank: CLASSES.tank.stats.color,
+		healer: CLASSES.healer.stats.color
 	};
 
 	const CLASS_STATS: Record<string, { hp: number; stamina: number; role: string }> = {
-		spotter: { hp: 100, stamina: 450, role: 'Scout' },
-		gunner: { hp: 100, stamina: 80, role: 'DPS' },
-		tank: { hp: 150, stamina: 200, role: 'Frontline' },
-		healer: { hp: 100, stamina: 80, role: 'Support' }
-	};
-
-	type SynergyEntry = { label: string; desc: string; color: string };
-	const SYNERGIES: Record<string, SynergyEntry> = {
-		// ── Solo ──────────────────────────────────────────────────────────────
 		spotter: {
-			label: 'Lone Scout',
-			desc: 'Mark targets and flash stun threats solo. Fast, fragile, flying blind on support.',
-			color: '#4af'
+			hp: CLASSES.spotter.stats.hp,
+			stamina: CLASSES.spotter.stats.stamina,
+			role: CLASSES.spotter.stats.role
 		},
 		gunner: {
-			label: 'One-Man Army',
-			desc: 'Pure DPS with nobody watching your back. Suppression or die.',
-			color: '#f84'
+			hp: CLASSES.gunner.stats.hp,
+			stamina: CLASSES.gunner.stats.stamina,
+			role: CLASSES.gunner.stats.role
 		},
 		tank: {
-			label: 'One-Man Wall',
-			desc: 'Incredible durability, zero intel. Brace and hope for the best.',
-			color: '#8a4'
+			hp: CLASSES.tank.stats.hp,
+			stamina: CLASSES.tank.stats.stamina,
+			role: CLASSES.tank.stats.role
 		},
 		healer: {
-			label: 'Field Medic Alone',
-			desc: 'No frontline to heal. Survive on skill alone.',
-			color: '#f4a'
-		},
-		// ── Double same class ─────────────────────────────────────────────────
-		spotterx2: {
-			label: 'Twin Eyes',
-			desc: 'Double marks, double flash stuns — crowd control everywhere. Zero sustain though.',
-			color: '#4af'
-		},
-		gunnerx2: {
-			label: 'Twin Barrels',
-			desc: 'Maximum suppression. Enemies barely move. Pray nothing reaches you.',
-			color: '#f84'
-		},
-		tankx2: {
-			label: 'Iron Wall',
-			desc: 'Nothing gets through. Bash and brace forever — but who marks the kills?',
-			color: '#8a4'
-		},
-		healerx2: {
-			label: 'Eternal Life',
-			desc: 'You will never die. You will also never do meaningful damage.',
-			color: '#f4a'
-		},
-		// ── 2-class duos ──────────────────────────────────────────────────────
-		'gunner+spotter': {
-			label: 'Marked for Death',
-			desc: 'Spotter reveals, gunner suppresses. Enemies are tagged before they know you exist.',
-			color: '#fa6'
-		},
-		'spotter+tank': {
-			label: 'Scout & Shield',
-			desc: 'Intel meets armor. Spotter calls threats, tank absorbs them.',
-			color: '#6cf'
-		},
-		'healer+spotter': {
-			label: 'Ghost Protocol',
-			desc: 'Eyes and sustain. Spotter scouts ahead, healer keeps the squad breathing.',
-			color: '#adf'
-		},
-		'gunner+tank': {
-			label: 'Shock & Awe',
-			desc: 'Tank bashes to stagger, gunner unloads. Brutal CC chain.',
-			color: '#fa4'
-		},
-		'gunner+healer': {
-			label: 'Fire & Life',
-			desc: 'Healer keeps the gunner fed. Constant suppression with a safety net.',
-			color: '#faf'
-		},
-		'healer+tank': {
-			label: 'Ironclad',
-			desc: 'Tank braces, healer patches. Nearly unkillable duo — just missing a trigger finger.',
-			color: '#8f8'
-		},
-		// ── 3-player with a doubled class ─────────────────────────────────────
-		'gunner+spotterx2': {
-			label: 'Eagle Eye Overwatch',
-			desc: 'Two spotters feed marks to one gunner. Every enemy is a highlighted target.',
-			color: '#6df'
-		},
-		'spotterx2+tank': {
-			label: 'Recon Fortress',
-			desc: 'Double intel feeding a tanky frontline. Nothing surprises this squad.',
-			color: '#6af'
-		},
-		'gunnerx2+spotter': {
-			label: 'Twin Guns, One Eye',
-			desc: 'One spotter directs two shooters. Coordinated suppression at range.',
-			color: '#fb8'
-		},
-		'gunnerx2+tank': {
-			label: 'Breach & Clear',
-			desc: 'Tank smashes in, two gunners finish the job. Aggressive and effective.',
-			color: '#fc6'
-		},
-		'gunnerx2+healer': {
-			label: 'Glass with Backbone',
-			desc: 'Double DPS sustained by a healer. Explode damage, never stop shooting.',
-			color: '#fca'
-		},
-		'spotter+tankx2': {
-			label: 'Armored Recon',
-			desc: 'Two tanks with scout support. Spotter marks; tanks absorb everything.',
-			color: '#9d6'
-		},
-		'gunner+tankx2': {
-			label: 'Battering Ram',
-			desc: 'Two tanks distract and bash, gunner farms suppressed kills.',
-			color: '#bd6'
-		},
-		'healer+tankx2': {
-			label: 'Immortal Frontline',
-			desc: 'Two tanks and a healer. Nothing dies — including you.',
-			color: '#8fc'
-		},
-		'healerx2+spotter': {
-			label: 'Eyes of God',
-			desc: 'Double sustain and full map awareness. Survive forever, see everything.',
-			color: '#cff'
-		},
-		'gunner+healerx2': {
-			label: 'Pampered DPS',
-			desc: 'One gunner with two dedicated healers. Absolute overkill on sustain.',
-			color: '#faf'
-		},
-		// ── 3-class trios ─────────────────────────────────────────────────────
-		'gunner+spotter+tank': {
-			label: 'Warband',
-			desc: 'Mark, bash, suppress. Three damage vectors with zero safety net.',
-			color: '#fa8'
-		},
-		'gunner+healer+spotter': {
-			label: 'Glass Cannon Squad',
-			desc: 'Full intel and firepower with a medic. Win fast or die smart.',
-			color: '#f86'
-		},
-		'healer+spotter+tank': {
-			label: 'The Phalanx',
-			desc: 'Marked threats, tanky frontline, endless heals. Fortress squad.',
-			color: '#8fa'
-		},
-		'gunner+healer+tank': {
-			label: 'The Backbone',
-			desc: 'Core combat trio. DPS, armor, sustain — the classic survival loadout.',
-			color: '#af8'
-		},
-		// ── 4-player with two doubled classes ─────────────────────────────────
-		'gunnerx2+spotterx2': {
-			label: 'Eyes & Firepower',
-			desc: 'Maximum recon and DPS. No defense, but enemies are dead before they arrive.',
-			color: '#fd8'
-		},
-		'spotterx2+tankx2': {
-			label: 'Armored Overwatch',
-			desc: 'Double eyes, double armor. Impenetrable and always aware.',
-			color: '#7cf'
-		},
-		'healerx2+spotterx2': {
-			label: 'Support Fortress',
-			desc: 'Double intel and infinite sustain. You will outlast everything.',
-			color: '#bff'
-		},
-		'gunnerx2+tankx2': {
-			label: 'Steamroller',
-			desc: 'Total offense and defense. Bash, suppress, repeat. Nothing survives.',
-			color: '#fd6'
-		},
-		'gunnerx2+healerx2': {
-			label: 'Sustained Fire',
-			desc: 'Double DPS never stops — two healers make sure of it.',
-			color: '#fcf'
-		},
-		'healerx2+tankx2': {
-			label: 'The Bunker',
-			desc: 'Survive forever, damage nothing. Best defensive quad possible.',
-			color: '#9fc'
-		},
-		// ── 4-player with one doubled class ───────────────────────────────────
-		'gunner+spotterx2+tank': {
-			label: 'Overwatch Formation',
-			desc: 'Two spotters direct tank and gunner. Every move is calculated.',
-			color: '#7df'
-		},
-		'gunner+healer+spotterx2': {
-			label: 'Precision Squad',
-			desc: 'Intel-heavy strike team. Two eyes guide gun and medic.',
-			color: '#aef'
-		},
-		'healer+spotterx2+tank': {
-			label: 'Turtle Watch',
-			desc: 'Observe and survive. Double intel with tank+healer anchor.',
-			color: '#8df'
-		},
-		'gunnerx2+spotter+tank': {
-			label: 'Suppression Front',
-			desc: 'Tank holds the line, two gunners suppress everything behind it.',
-			color: '#fc8'
-		},
-		'gunnerx2+healer+spotter': {
-			label: 'Fire Team Alpha',
-			desc: 'Spotter + double DPS + medic. Aggressive intel-driven strike force.',
-			color: '#fb6'
-		},
-		'gunnerx2+healer+tank': {
-			label: 'Assault Squad',
-			desc: 'Heavy DPS with armor and sustain. Balanced but offense-leaning.',
-			color: '#fba'
-		},
-		'gunner+spotter+tankx2': {
-			label: 'Shield Wall',
-			desc: 'Double tanks absorb chaos while spotter and gunner farm kills behind them.',
-			color: '#ad8'
-		},
-		'healer+spotter+tankx2': {
-			label: 'Fortified Recon',
-			desc: 'Safe scouting from behind double armor with a healer backup.',
-			color: '#9e8'
-		},
-		'gunner+healer+tankx2': {
-			label: 'Siege Mode',
-			desc: 'Slow and unstoppable. Two tanks advance, gunner suppresses, healer sustains.',
-			color: '#be8'
-		},
-		'gunner+healerx2+spotter': {
-			label: 'Pampered Strike',
-			desc: 'One gunner with double heals and full intel. Basically unkillable DPS.',
-			color: '#fce'
-		},
-		'healerx2+spotter+tank': {
-			label: 'Immortal Phalanx',
-			desc: 'Sustained recon frontline. Tank never dies, spotter never misses.',
-			color: '#afa'
-		},
-		'gunner+healerx2+tank': {
-			label: 'Full Combat Support',
-			desc: 'Balanced with maximum sustain. Classic roles, double the healing.',
-			color: '#bfa'
-		},
-		// ── Full squad ────────────────────────────────────────────────────────
-		'gunner+healer+spotter+tank': {
-			label: 'Full Squad',
-			desc: 'Perfect synergy. Every role covered — textbook survival.',
-			color: '#ff8'
+			hp: CLASSES.healer.stats.hp,
+			stamina: CLASSES.healer.stats.stamina,
+			role: CLASSES.healer.stats.role
 		}
 	};
-
-	const activeSynergy = $derived(
-		SYNERGIES[
-			Object.entries(classCounts)
-				.filter(([, n]) => n > 0)
-				.sort(([a], [b]) => a.localeCompare(b))
-				.map(([cls, n]) => (n >= 2 ? `${cls}x2` : cls))
-				.join('+')
-		] ?? null
-	);
 
 	let countdownValue = $state(3);
 	let connectingCountdown = $state(10);
@@ -354,133 +114,6 @@
 	function copyCode() {
 		if (currentLobby) navigator.clipboard.writeText(currentLobby.code);
 	}
-
-	const TIPS = [
-		// Game mechanics
-		{
-			tag: 'Tip',
-			color: '#adf',
-			text: 'Stamina regenerates faster after standing still briefly. Walking is always free.'
-		},
-		{
-			tag: 'Tip',
-			color: '#adf',
-			text: 'Enemies spawn 35 units around a random alive player — you always have a moment to react.'
-		},
-		{
-			tag: 'Tip',
-			color: '#adf',
-			text: 'Each day cycle is 5 minutes (5 phases × 1 minute each). Survive full cycles to score big.'
-		},
-		{
-			tag: 'Tip',
-			color: '#adf',
-			text: 'Spawn rate accelerates every cycle — starts at one enemy every 6s, floors at 1.5s.'
-		},
-		{
-			tag: 'Tip',
-			color: '#adf',
-			text: 'Enemies get +5 HP per cycle completed, capped at 3× their base health.'
-		},
-		{
-			tag: 'Tip',
-			color: '#adf',
-			text: 'Every enemy gets faster the longer it stays alive — up to +50% speed over time. Kill fast.'
-		},
-		{
-			tag: 'Tip',
-			color: '#adf',
-			text: 'Up to 26 enemies can be alive at once. Clearing the field briefly reduces spawn pressure.'
-		},
-		{
-			tag: 'Tip',
-			color: '#adf',
-			text: 'If you go down, wait for a teammate to revive you. If all players are downed at once, the game ends.'
-		},
-		{
-			tag: 'Tip',
-			color: '#adf',
-			text: 'Enemies loosely spread targets — each player gets at most 3 enemies fixated on them.'
-		},
-		// Day cycle
-		{
-			tag: 'Day Cycle',
-			color: '#fa8',
-			text: 'Sunset → Dusk → Twilight → Night → Deep Night, then loops. Each phase is 60 seconds.'
-		},
-		{
-			tag: 'Day Cycle',
-			color: '#fa8',
-			text: 'Night and Deep Night bring storms, lightning, and faster, harder enemies. Brace up.'
-		},
-		{
-			tag: 'Day Cycle',
-			color: '#fa8',
-			text: "Surviving to the next Sunset completes a cycle and increases your squad's score multiplier."
-		},
-		// Enemy types
-		{
-			tag: 'Enemy: Basic',
-			color: '#f88',
-			text: '57% of spawns. Slow and direct. Easy to kite but threatening in large packs.'
-		},
-		{
-			tag: 'Enemy: Fast',
-			color: '#f88',
-			text: '24% of spawns. Low HP (50) but closes gaps instantly at 5.2 units/s. Shoot on sight.'
-		},
-		{
-			tag: 'Enemy: Brute',
-			color: '#f88',
-			text: '10% of spawns. 250 HP base — the tankiest enemy. Bash it, slow it, then pile on.'
-		},
-		{
-			tag: 'Enemy: Spitter',
-			color: '#f88',
-			text: '5% of spawns. Hangs back at 12-unit range and lobs acid pools. Move out of the green.'
-		},
-		{
-			tag: 'Enemy: Caster',
-			color: '#f88',
-			text: '4% of spawns. Fires a beam from 8 units and strafes unpredictably. Suppress it first.'
-		},
-		// Class tips
-		{
-			tag: 'Spotter',
-			color: '#4af',
-			text: 'Marked enemies take bonus damage from all sources — always mark before the gunner shoots.'
-		},
-		{
-			tag: 'Spotter',
-			color: '#4af',
-			text: 'Flash stun stuns enemies in a 90° cone — use it to buy time for teammates when overwhelmed.'
-		},
-		{
-			tag: 'Gunner',
-			color: '#f84',
-			text: 'Every 3rd shot suppresses (dazes) the target. Chain bursts to keep Brutes permanently staggered.'
-		},
-		{
-			tag: 'Tank',
-			color: '#8a4',
-			text: 'Shield Bash has a 1.5s cooldown. Use it to knock enemies off downed teammates.'
-		},
-		{
-			tag: 'Tank',
-			color: '#8a4',
-			text: 'Bracing significantly reduces incoming damage. Hold RMB when a Brute or beam is incoming.'
-		},
-		{
-			tag: 'Healer',
-			color: '#f4a',
-			text: 'Reviving a downed ally gives them a speed boost — use it to pull them out of a pile.'
-		},
-		{
-			tag: 'Healer',
-			color: '#f4a',
-			text: 'Taking damage while channeling a revive interrupts it. Tank should cover the heal.'
-		}
-	];
 
 	let tipIndex = $state(0);
 	$effect(() => {
@@ -582,7 +215,7 @@
 		style="padding: 1.5rem; color: white; display: flex; gap: 1.5rem; align-items: flex-start;"
 	>
 		<!-- Left: Lobby panel -->
-		<div style="width: 560px; flex-shrink: 0;">
+		<div style="width: 630px; flex-shrink: 0;">
 			{#if !currentLobby && !leaving}
 				<p>Connecting to lobby... or kicked...</p>
 				<p>
@@ -677,9 +310,10 @@
 				<div style="margin-bottom: 1.25rem;">
 					<h4>Select class</h4>
 					<div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.5rem;">
-						{#each CLASSES as cls}
-							{@const isFull = classCounts[cls] >= 2}
-							{@const isSelected = myEntry?.classChoice === cls}
+						{#each Object.values(CLASSES) as cls}
+							{@const clsId = cls.stats.id}
+							{@const isFull = classCounts[clsId] >= 2}
+							{@const isSelected = myEntry?.classChoice === clsId}
 							{@const classLocked =
 								isFull ||
 								currentLobby?.status !== 'waiting' ||
@@ -688,37 +322,39 @@
 								onclick={() => {
 									if (!classLocked) {
 										soundActions.playClick();
-										lobbyActions.setClass(cls, currentLobby.id);
+										lobbyActions.setClass(clsId, currentLobby.id);
 									}
 								}}
 								disabled={classLocked}
 								class="rpgui-button"
 								style="width: 100%; min-width: auto; height: auto; padding: 0.6rem 0.25rem; {isSelected &&
 								!isFull
-									? 'background-image: url(' + base + 'css/img/button-down.png); outline: 2px solid ' +
-										CLASS_COLORS[cls] +
+									? 'background-image: url(' +
+										base +
+										'css/img/button-down.png); outline: 2px solid ' +
+										CLASS_COLORS[clsId] +
 										'; outline-offset: -2px;'
 									: ''}"
 							>
 								<div
 									style="display: flex; flex-direction: column; align-items: center; gap: 0.15rem;"
 								>
-									{#if cls === 'spotter'}
+									{#if clsId === 'spotter'}
 										<div
 											class="rpgui-icon"
 											style="width: 32px; height: 32px; background-image: url({base}css/img/icons/sword.png);"
 										></div>
-									{:else if cls === 'gunner'}
+									{:else if clsId === 'gunner'}
 										<div
 											class="rpgui-icon"
 											style="width: 32px; height: 32px; background-image: url({base}css/img/icons/weapon-slot.png);"
 										></div>
-									{:else if cls === 'tank'}
+									{:else if clsId === 'tank'}
 										<div
 											class="rpgui-icon"
 											style="width: 32px; height: 32px; background-image: url({base}css/img/icons/shield.png);"
 										></div>
-									{:else if cls === 'healer'}
+									{:else if clsId === 'healer'}
 										<div
 											class="rpgui-icon"
 											style="width: 32px; height: 32px; background-image: url({base}css/img/icons/potion-red.png);"
@@ -728,12 +364,12 @@
 										style="font-size: 0.7rem; font-weight: 700; text-transform: capitalize; color: {isSelected
 											? isFull
 												? 'rgba(255,255,255,0.3)'
-												: CLASS_COLORS[cls]
+												: CLASS_COLORS[clsId]
 											: isFull
 												? 'rgba(255,255,255,0.3)'
-												: 'white'};">{cls}</span
+												: 'white'};">{clsId}</span
 									>
-									<span style="font-size: 0.5rem; opacity: 0.5;">({classCounts[cls]}/2)</span>
+									<span style="font-size: 0.5rem; opacity: 0.5;">({classCounts[clsId]}/2)</span>
 								</div>
 							</button>
 						{/each}
@@ -743,75 +379,85 @@
 					<div
 						style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.5rem; margin-top: 0.75rem;"
 					>
-						{#each CLASSES as cls}
-							{@const isSelected = myEntry?.classChoice === cls}
+						{#each Object.values(CLASSES) as cls}
+							{@const clsId = cls.stats.id}
+							{@const isSelected = myEntry?.classChoice === clsId}
 							<div
 								class="rpgui-container framed-grey"
 								style="padding: 0.4rem; {isSelected
-									? 'border-color: ' + CLASS_COLORS[cls] + ';'
+									? 'border-color: ' + CLASS_COLORS[clsId] + ';'
 									: ''}"
 							>
 								<div
 									style="font-size: 0.6rem; text-transform: capitalize; text-align: center; color: {CLASS_COLORS[
-										cls
+										clsId
 									]}; margin-bottom: 0.25rem;"
 								>
-									{cls}
+									{clsId}
 								</div>
 								<span style="font-size: 0.5rem;">HP</span>
 								<div
 									class="rpgui-progress red progress-sm"
-									data-value={CLASS_STATS[cls].hp / 150}
+									data-value={CLASS_STATS[clsId].hp / 150}
 									use:rpguiProgress
 								></div>
 								<span style="font-size: 0.5rem;">STM</span>
 								<div
 									class="rpgui-progress green progress-sm"
-									data-value={CLASS_STATS[cls].stamina / 450}
+									data-value={CLASS_STATS[clsId].stamina / 450}
 									use:rpguiProgress
 								></div>
 							</div>
 						{/each}
 					</div>
 
-					{#if myEntry?.classChoice}
-						<div class="rpgui-container framed-grey" style="margin-top: 0.75rem; padding: 0.75rem;">
+					{#if myEntry?.classChoice && CLASSES[myEntry.classChoice as keyof typeof CLASSES]}
+						{@const clsData = CLASSES[myEntry.classChoice as keyof typeof CLASSES]}
+						<div
+							class="rpgui-container framed-grey"
+							style="margin-top: 0.75rem; padding: 0.6rem; background: linear-gradient(180deg, rgba(0,0,0,0.3) 0%, rgba(0,0,0,0.1) 100%);"
+						>
 							<p
-								style="margin: 0 0 0.5rem; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.08em; font-weight: 600; color: {CLASS_COLORS[
-									myEntry?.classChoice ?? ''
-								]};"
+								style="margin: 0 0 0.6rem; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.1em; font-weight: 700; color: {clsData
+									.stats
+									.color}; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 0.4rem;"
 							>
-								{myEntry?.classChoice} Abilities
+								⚡ {clsData.stats.name} Abilities
 							</p>
-							{#if myEntry?.classChoice === 'spotter'}
-								<p style="margin: 0 0 0.25rem; font-size: 0.75rem;">
-									<span style="opacity: 0.7;">🖱 LMB:</span> Mark enemy
-								</p>
-								<p style="margin: 0; font-size: 0.75rem;">
-									<span style="opacity: 0.7;">🖱 RMB:</span> Flash stun
-								</p>
-							{:else if myEntry?.classChoice === 'gunner'}
-								<p style="margin: 0 0 0.25rem; font-size: 0.75rem;">
-									<span style="opacity: 0.7;">🖱 LMB:</span> Shoot enemy
-								</p>
-								<p style="margin: 0; font-size: 0.75rem;">
-									<span style="opacity: 0.7;">⚡ Every 3rd:</span> Suppress
-								</p>
-							{:else if myEntry?.classChoice === 'tank'}
-								<p style="margin: 0 0 0.25rem; font-size: 0.75rem;">
-									<span style="opacity: 0.7;">🖱 LMB:</span> Shield bash
-								</p>
-								<p style="margin: 0; font-size: 0.75rem;">
-									<span style="opacity: 0.7;">🖱 RMB hold:</span> Brace
-								</p>
-							{:else if myEntry?.classChoice === 'healer'}
-								<p style="margin: 0 0 0.25rem; font-size: 0.75rem;">
-									<span style="opacity: 0.7;">🖱 LMB:</span> Heal teammate
-								</p>
-								<p style="margin: 0; font-size: 0.75rem;">
-									<span style="opacity: 0.7;">🖱 RMB:</span> Revive
-								</p>
-							{/if}
+							{#each clsData.abilities as ability}
+								<div
+									style="margin-bottom: 0.6rem; padding: 0.5rem; background: rgba(0,0,0,0.25); border-radius: 0.3rem; border-left: 3px solid {clsData
+										.stats.color};"
+								>
+									<div
+										style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.25rem;"
+									>
+										<span style="font-size: 0.8rem; font-weight: 700; color: {clsData.stats.color};"
+											>{ability.name}</span
+										>
+										<span
+											style="font-size: 0.6rem; padding: 0.15rem 0.4rem; background: rgba(255,255,255,0.1); border-radius: 0.2rem; color: rgba(255,255,255,0.7); font-weight: 600;"
+										>
+											{ability.input}
+										</span>
+									</div>
+									<p
+										style="margin: 0; font-size: 0.65rem; color: rgba(255,255,255,0.6); line-height: 1.35;"
+									>
+										{ability.desc}
+									</p>
+									{#if ability.cooldown !== 'None'}
+										<div
+											style="margin-top: 0.3rem; display: flex; align-items: center; gap: 0.3rem;"
+										>
+											<span style="font-size: 0.55rem; color: rgba(255,255,255,0.35);">⏱</span>
+											<span style="font-size: 0.6rem; color: #fa8; font-weight: 600;"
+												>CD: {ability.cooldown}</span
+											>
+										</div>
+									{/if}
+								</div>
+							{/each}
 						</div>
 					{/if}
 				</div>
