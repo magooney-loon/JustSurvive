@@ -49,7 +49,7 @@ Squad-based survival arena. Up to 4 players pick a class, drop into a circular a
 | Spotter | Scout     | 100 | 450     | 5.0        | 9.0          | Steady Shot (LMB), Flash Stun cone (RMB)     |
 | Gunner  | DPS       | 100 | 80      | 4.5        | 7.5          | Shoot (LMB), Adrenaline (RMB), Suppress      |
 | Tank    | Frontline | 150 | 200     | 2.5        | 3.5          | Axe Swing cone 0.5s (LMB), Brace (RMB hold)  |
-| Healer  | Support   | 100 | 80      | 5.0        | 8.5          | Heal teammate (LMB), Revive + shield (RMB)   |
+| Healer  | Support   | 100 | 80      | 5.0        | 8.5          | Heal teammate (LMB), Revive + self-shield (RMB) |
 
 ### Spotter — Scout
 
@@ -92,10 +92,10 @@ Squad-based survival arena. Up to 4 players pick a class, drop into a circular a
 - **HP:** 100 | **Stamina:** 80 | **Speed:** 5.0 / 8.5
 - **Abilities:**
   - **Heal (LMB)** — Heal an ally within 10 units for 30 HP. You also heal yourself for 8 HP. Cooldown: 2s. +5 score if target was damaged. Deals 35 damage per shot as secondary attack.
-  - **Revive (RMB)** — Channel for 2s to revive a downed ally within 3 units. While channeling, a 50 HP shield protects the downed ally — if the shield absorbs 50 damage it breaks and interrupts the revive. On success: ally gets 50 HP + 5s speed boost. Cooldown: 15s after completion. +20 score.
+  - **Revive (RMB)** — Channel for 2s to revive a downed ally within 3 units. While channeling, a 50 HP shield protects you — if the shield absorbs 50 damage it breaks and interrupts the revive. On success: ally gets 50 HP + 5s speed boost. Cooldown: 15s after completion. +20 score.
 - **Tips:**
   - Reviving gives the ally a speed boost — perfect for pulling them out of a pack.
-  - The revive shield absorbs 50 damage before being interrupted. You now have a window even in a fight.
+  - The revive shield protects YOU, not the downed ally — absorbs 50 damage before the revive is interrupted.
   - You deal 35 damage per shot — use it to finish low-HP enemies between heals.
   - Prioritize keeping the Tank alive — they absorb the most damage.
 
@@ -103,14 +103,14 @@ Squad-based survival arena. Up to 4 players pick a class, drop into a circular a
 
 | Type    | HP   | Base Speed | Abilities                        |
 | ------- | ---- | ---------- | -------------------------------- |
-| Basic   | 80   | 3.2        | Melee attacks                    |
-| Fast    | 50   | 5.2        | Quick melee, hard to hit         |
-| Brute   | 250  | 2.1        | Heavy melee, high damage         |
-| Spitter | 100  | 1.7        | Acid pools (damage over time)    |
-| Caster  | 80   | 1.4        | Beam attack + strafing movement  |
-| Boss    | 1500 | 0.6        | Spawns every 90s, clears enemies |
+| Basic   | 120  | 3.2        | Melee attacks                    |
+| Fast    | 75   | 5.2        | Quick melee, hard to hit         |
+| Brute   | 380  | 2.1        | Heavy melee, high damage         |
+| Spitter | 150  | 1.7        | Acid pools (damage over time)    |
+| Caster  | 120  | 1.4        | Beam attack + strafing movement  |
+| Boss    | 2200 | 0.6        | Spawns every 90s, clears enemies |
 
-_Enemies gain +5 HP per cycle and +2%/s speed (capped at +50%)._
+_Enemies gain +8 HP per cycle and +2%/s speed (capped at +50%)._
 
 ## Squad Synergies
 

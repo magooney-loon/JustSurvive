@@ -31,17 +31,17 @@ export const ENEMY_WEIGHTS = [
 ];
 
 export const ENEMY_HP: Record<string, bigint> = {
-	basic: 80n,
-	fast: 50n,
-	brute: 250n,
-	spitter: 100n,
-	caster: 80n,
-	boss: 1500n
+	basic: 120n,
+	fast: 75n,
+	brute: 380n,
+	spitter: 150n,
+	caster: 120n,
+	boss: 2200n
 };
 
 export const BOSS_SPAWN_INTERVAL_US = 90_000_000n; // 90 seconds
 
-export const ENEMY_HP_CYCLE_BONUS = 5n; // +5 HP per cycle
+export const ENEMY_HP_CYCLE_BONUS = 8n; // +8 HP per cycle
 export const ENEMY_HP_MAX_MULTIPLIER = 300n; // Hard cap at 3x base HP
 
 // ─── World Constants ──────────────────────────────────────────────────────────

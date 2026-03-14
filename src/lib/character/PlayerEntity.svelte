@@ -58,9 +58,6 @@
 	const isReviving = $derived(
 		$reviveChannels?.some((rc) => rc.healerIdentity.isEqual(player.playerIdentity)) ?? false
 	);
-	const isBeingRevived = $derived(
-		$reviveChannels?.some((rc) => rc.targetIdentity.isEqual(player.playerIdentity)) ?? false
-	);
 
 	const CLASS_TEXTURES: Record<string, string> = {
 		spotter: `${base}textures/spotter.webp`,
@@ -294,8 +291,8 @@
 		/>
 	{/if}
 
-	<!-- Revive shield bubble on downed player being revived -->
-	{#if isDowned && isBeingRevived}
+	<!-- Revive shield bubble on healer while channeling revive -->
+	{#if isReviving}
 		<T.Mesh position={[displayX, displayY + 0.75, displayZ]}>
 			<T.SphereGeometry args={[0.85, 14, 10]} />
 			<T.MeshBasicMaterial

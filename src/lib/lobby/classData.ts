@@ -166,12 +166,12 @@ export const CLASSES: Record<ClassId, ClassData> = {
 				input: 'RMB',
 				cooldown: '15s after completion',
 				cooldownMs: 15000,
-				desc: 'Channel for 2s to revive a downed ally within 3 units. While channeling, a 50 HP shield protects the downed ally — if the shield absorbs 50 damage it breaks and interrupts the revive. On success: ally gets 50 HP + 5s speed boost. +20 score.'
+				desc: 'Channel for 2s to revive a downed ally within 3 units. While channeling, a 50 HP shield protects you — if the shield absorbs 50 damage it breaks and interrupts the revive. On success: ally gets 50 HP + 5s speed boost. +20 score.'
 			}
 		],
 		tips: [
 			'Reviving gives the ally a speed boost — perfect for pulling them out of a pack.',
-			'The revive shield absorbs 50 damage before being interrupted. You now have a window even in a fight.',
+			'The revive shield protects YOU, not the downed ally — absorbs 50 damage before the revive is interrupted.',
 			'You deal 35 damage per shot — use it to finish low-HP enemies between heals.',
 			'Prioritize keeping the Tank alive — they absorb the most damage.'
 		]
@@ -499,12 +499,12 @@ export const TIPS: GameTip[] = [
 	{
 		tag: 'Enemy: Fast',
 		color: '#f88',
-		text: '24% of spawns. Low HP (50) but closes gaps instantly at 5.2 units/s. Shoot on sight.'
+		text: '24% of spawns. Low HP (75) but closes gaps instantly at 5.2 units/s. Shoot on sight.'
 	},
 	{
 		tag: 'Enemy: Brute',
 		color: '#f88',
-		text: '10% of spawns. 250 HP base — the tankiest enemy. Bash it, slow it, then pile on.'
+		text: '10% of spawns. 380 HP base — the tankiest enemy. Bash it, slow it, then pile on.'
 	},
 	{
 		tag: 'Enemy: Spitter',
@@ -519,7 +519,7 @@ export const TIPS: GameTip[] = [
 	{
 		tag: 'Boss',
 		color: '#f44',
-		text: 'Spawns every 90 seconds if no boss is alive. 1500 HP, 0.6 units/s. Kills all other enemies on spawn. Drops massive score.'
+		text: 'Spawns every 90 seconds if no boss is alive. 2200 HP, 0.6 units/s. Kills all other enemies on spawn. Drops massive score.'
 	},
 	...Object.values(CLASSES).flatMap((c) =>
 		c.tips.map((tip) => ({
