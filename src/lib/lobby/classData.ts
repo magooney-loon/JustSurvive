@@ -19,6 +19,7 @@ export interface ClassAbility {
 	cooldown: string;
 	cooldownMs: number;
 	desc: string;
+	isUltimate?: boolean;
 }
 
 export interface ClassData {
@@ -47,22 +48,32 @@ export const CLASSES: Record<ClassId, ClassData> = {
 				input: 'LMB',
 				cooldown: '1.5s',
 				cooldownMs: 1500,
-				desc: 'Fire a high-damage sniper shot at an enemy within 23 units. Deals 45 damage (55 if target is already marked). Marks the target for 5s — marked targets take +10 bonus damage from all sources. +10 score on new marks.'
+				desc: 'Fire a piercing sniper shot. Primary target takes 45 damage (55 if already marked) and is always marked. Subsequent enemies on the shot line take 75%→50%→25% falloff damage — only the last pierced enemy gets marked. Score: +1 per kill, +3 on a fresh mark, +1 per pierce.'
 			},
 			{
-				name: 'Flash Stun',
+				name: 'Flash',
 				hudLabel: 'Flash',
 				input: 'RMB',
 				cooldown: '3s',
 				cooldownMs: 3000,
-				desc: 'Fire a 90° flash cone up to 9 units. Deals 10 damage and dazes enemies for 3.5s. +10 score per stunned enemy.'
+				desc: 'Fire a 90° flash cone up to 9 units. Deals 10 damage and dazes all enemies in range for 3.5s. +10 score per stunned enemy.'
+			},
+			{
+				name: 'Barrage',
+				hudLabel: 'BARRAGE',
+				input: 'Q',
+				cooldown: '35s',
+				cooldownMs: 35000,
+				isUltimate: true,
+				desc: 'Instantly fire on every enemy within 23 units — marks them all and deals 20 damage each. Score per kill or mark scales with targets hit.'
 			}
 		],
 		tips: [
-			'Steady Shot marks on hit — shoot first, then let your team follow up for the +10 bonus damage.',
-			'Shooting an already-marked target deals 55 damage total. With the 1.5s cooldown, chain shots on tough targets like Brutes.',
-			'Flash now reaches 9 units and dazes for 3.5s — use it to lock down a pack before teammates engage.',
-			'Your high stamina and fast regen make you the best scout — stay mobile and keep tagging.'
+			'Steady Shot now pierces — line up shots through packs to hit multiple enemies. Only the last target in the chain gets marked.',
+			'Shoot an already-marked target for 55 damage. With 1.5s cooldown, chain two shots on tough enemies like Brutes.',
+			'Flash reaches 9 units and dazes for 3.5s — use it to lock down a charging pack before teammates engage.',
+			'Barrage marks and chips all enemies in range simultaneously — devastating at the start of a boss fight or dense wave.',
+			'Your high stamina and fast regen make you the best kiter — stay mobile and keep tagging targets for your team.'
 		]
 	},
 	gunner: {
@@ -84,7 +95,7 @@ export const CLASSES: Record<ClassId, ClassData> = {
 				input: 'LMB',
 				cooldown: 'None',
 				cooldownMs: 0,
-				desc: 'Fire at enemies within 10 units. Deals 15 damage per shot (25 vs marked). Every 3rd consecutive shot on the same target suppresses (dazes for 1s).'
+				desc: 'Fire at an enemy within 10 units. Deals 15 damage (25 vs marked targets). Every 3rd consecutive shot on the same target suppresses it — dazing for 1s. +2 score on kill.'
 			},
 			{
 				name: 'Adrenaline',
@@ -93,12 +104,22 @@ export const CLASSES: Record<ClassId, ClassData> = {
 				cooldown: '5s',
 				cooldownMs: 5000,
 				desc: 'Instantly restore all stamina. Essential for maintaining suppression chains or escaping danger.'
+			},
+			{
+				name: 'Frenzy',
+				hudLabel: 'FRENZY',
+				input: 'Q',
+				cooldown: '35s',
+				cooldownMs: 35000,
+				isUltimate: true,
+				desc: 'Unleash a burst that hits every enemy within 15 units — deals 15 damage and dazes each for 2s. Score: +2 per kill, +1 per hit.'
 			}
 		],
 		tips: [
-			'Every 3rd shot suppresses (dazes) the target. Chain bursts to keep Brutes permanently staggered.',
-			'Adrenaline is essential when you need to sprint or maintain fire — time it before engagements.',
-			'You have low stamina — use Adrenaline strategically, not on cooldown.',
+			'Every 3rd shot suppresses the target. Chain bursts to keep Brutes and bosses permanently staggered.',
+			'Adrenaline is essential when you need to sprint or maintain fire — time it before engagements, not after.',
+			'You have low stamina — Adrenaline is your lifeline, not a panic button. Use it strategically.',
+			'Frenzy clears melee crowds instantly — use it when enemies close in, not just for DPS.',
 			'Suppressed enemies deal no damage. Prioritize high-threat targets like Brutes and Casters.'
 		]
 	},
@@ -121,22 +142,32 @@ export const CLASSES: Record<ClassId, ClassData> = {
 				input: 'LMB',
 				cooldown: '0.5s',
 				cooldownMs: 500,
-				desc: 'Swing your axe in a 90° cone up to 4 units. Deals 25 damage to all enemies in range, knocks them back, dazes for 1.5s, and heals you for 5 HP per enemy hit. +5 score per hit, +2 per kill.'
+				desc: 'Swing your axe in a 90° cone up to 4 units. Deals 25 damage to all enemies in range, knocks them back, and dazes them for 1.5s. Score: +5 per hit, +2 per kill.'
 			},
 			{
 				name: 'Brace',
 				hudLabel: 'Brace',
 				input: 'RMB (hold)',
-				cooldown: '1s after release',
-				cooldownMs: 1000,
-				desc: 'Enter a defensive stance. Enemies hitting you are knocked back instead of dealing damage. Heals ~30 HP/s while active. Lasts up to 5s. Auto-releases at max duration.'
+				cooldown: '2s after release',
+				cooldownMs: 2000,
+				desc: 'Enter a defensive stance — you can still move while bracing. Enemies that melee you are knocked back instead of dealing damage. Heals ~30 HP/s while active. Release to end; 2s cooldown before you can brace again.'
+			},
+			{
+				name: 'Ground Slam',
+				hudLabel: 'SLAM',
+				input: 'Q',
+				cooldown: '35s',
+				cooldownMs: 35000,
+				isUltimate: true,
+				desc: 'Slam the ground in a full 360° — deals 50 damage to all enemies within 4 units, massive knockback, and dazes them for 2s. Score: +3 per kill, +2 per hit.'
 			}
 		],
 		tips: [
-			'Axe Swing hits ALL enemies in the cone at 0.5s cooldown and heals 5 HP per hit — spam into packs to sustain yourself.',
-			'Daze from axe swing lasts 1.5s and the cooldown is only 0.5s — chain swings to keep enemies permanently staggered.',
-			'Bracing heals ~30 HP/s and reflects enemies when they melee you. Hold RMB when a Brute or boss charges in.',
-			'Your slow speed means you cannot escape — axe swing clears space and sustains you, brace absorbs the rest.'
+			'Axe Swing hits every enemy in the cone at 0.5s cooldown — spam into packs for constant knockback and daze chains.',
+			'Daze from axe swing lasts 1.5s and cooldown is 0.5s — chain swings to keep enemies permanently staggered.',
+			'You can move while bracing. Use it to slowly walk into a mob, absorbing hits, then axe swing as they pile in.',
+			'Ground Slam is 360° with double damage and double knockback — use it when surrounded or opening a boss fight.',
+			'Your slow speed means you cannot escape — axe swing clears space, brace absorbs the rest.'
 		]
 	},
 	healer: {
@@ -153,12 +184,12 @@ export const CLASSES: Record<ClassId, ClassData> = {
 		},
 		abilities: [
 			{
-				name: 'Heal',
+				name: 'Chain Heal',
 				hudLabel: 'Heal',
 				input: 'LMB',
-				cooldown: '2s',
-				cooldownMs: 2000,
-				desc: 'Heal an ally within 10 units for 30 HP. You also heal yourself for 8 HP. +5 score if target was damaged.'
+				cooldown: '3s',
+				cooldownMs: 3000,
+				desc: 'Auto-targets the lowest HP alive teammate within 10 units and heals them for 30 HP. If a second teammate is also in range, they receive a 30% chain heal (9 HP). Score: +5 if target was damaged.'
 			},
 			{
 				name: 'Revive',
@@ -166,14 +197,24 @@ export const CLASSES: Record<ClassId, ClassData> = {
 				input: 'RMB',
 				cooldown: '15s after completion',
 				cooldownMs: 15000,
-				desc: 'Channel for 2s to revive a downed ally within 3 units. While channeling, an 80 HP shield protects you — enemies that melee you are knocked back instead of dealing damage. If the shield breaks, the revive is interrupted. On success: ally gets 50 HP + 5s speed boost. +20 score.'
+				desc: 'Channel for 2s to revive a downed ally within 3 units. While channeling, an 80 HP shield protects you — enemies that melee you are knocked back. If the shield breaks, the revive is interrupted. On success: ally gets 50 HP + 5s speed boost, healer is fully healed. +20 score.'
+			},
+			{
+				name: 'Revitalize',
+				hudLabel: 'REVITALIZE',
+				input: 'Q',
+				cooldown: '35s',
+				cooldownMs: 35000,
+				isUltimate: true,
+				desc: 'Surge healing energy to all alive teammates within 10 units — heals each for 30 HP and grants a 3s speed boost. Score: +3 per teammate healed.'
 			}
 		],
 		tips: [
-			'Reviving gives the ally a speed boost — perfect for pulling them out of a pack.',
-			'The revive shield (80 HP) knocks enemies back when they try to melee you during a revive — position yourself to maximize the knockback window.',
-			'You deal 35 damage per shot — use it to finish low-HP enemies between heals.',
-			'Prioritize keeping the Tank alive — they absorb the most damage.'
+			'Chain Heal auto-targets the lowest HP teammate — no need to aim. Stay mobile and keep your position between your team.',
+			'The chain heal bounces 30% (9 HP) to a second ally in range — position yourself between two players to double the value.',
+			'Reviving fully heals you on success — risky channel, huge payoff. The 80 HP shield lets you tank incoming hits while channeling.',
+			'Revitalize gives everyone a 3s speed boost — powerful during boss fights or when the team is getting swarmed.',
+			'Prioritize keeping the Tank alive — they absorb the most damage and free you up to heal others.'
 		]
 	}
 };
@@ -219,7 +260,7 @@ export const SYNERGIES: Record<SynergyKey, SynergyData> = {
 	},
 	tankx2: {
 		label: 'Iron Wall',
-		desc: 'Nothing gets through. Bash and brace forever — but who marks the kills?',
+		desc: 'Nothing gets through. Slam and brace forever — but who marks the kills?',
 		color: '#8a4'
 	},
 	healerx2: {
@@ -244,7 +285,7 @@ export const SYNERGIES: Record<SynergyKey, SynergyData> = {
 	},
 	'gunner+tank': {
 		label: 'Shock & Awe',
-		desc: 'Tank bashes to stagger, gunner unloads. Brutal CC chain.',
+		desc: 'Tank slams to stagger, gunner unloads. Brutal CC chain.',
 		color: '#fa4'
 	},
 	'gunner+healer': {
@@ -289,7 +330,7 @@ export const SYNERGIES: Record<SynergyKey, SynergyData> = {
 	},
 	'gunner+tankx2': {
 		label: 'Battering Ram',
-		desc: 'Two tanks distract and bash, gunner farms suppressed kills.',
+		desc: 'Two tanks distract and slam, gunner farms suppressed kills.',
 		color: '#bd6'
 	},
 	'healer+tankx2': {
@@ -309,7 +350,7 @@ export const SYNERGIES: Record<SynergyKey, SynergyData> = {
 	},
 	'gunner+spotter+tank': {
 		label: 'Warband',
-		desc: 'Mark, bash, suppress. Three damage vectors with zero safety net.',
+		desc: 'Mark, slam, suppress. Three damage vectors with zero safety net.',
 		color: '#fa8'
 	},
 	'gunner+healer+spotter': {
@@ -344,7 +385,7 @@ export const SYNERGIES: Record<SynergyKey, SynergyData> = {
 	},
 	'gunnerx2+tankx2': {
 		label: 'Steamroller',
-		desc: 'Total offense and defense. Bash, suppress, repeat. Nothing survives.',
+		desc: 'Total offense and defense. Slam, suppress, repeat. Nothing survives.',
 		color: '#fd6'
 	},
 	'gunnerx2+healerx2': {
@@ -439,7 +480,7 @@ export const TIPS: GameTip[] = [
 	{
 		tag: 'Tip',
 		color: '#adf',
-		text: 'Enemies spawn 35 units around a random alive player — you always have a moment to react.'
+		text: 'Enemies spawn around a random alive player — you always have a moment to react.'
 	},
 	{
 		tag: 'Tip',
@@ -454,7 +495,7 @@ export const TIPS: GameTip[] = [
 	{
 		tag: 'Tip',
 		color: '#adf',
-		text: 'Enemies get +5 HP per cycle completed, capped at 3× their base health.'
+		text: 'Enemies get +8 HP per cycle completed, capped at 3× their base health.'
 	},
 	{
 		tag: 'Tip',
@@ -464,17 +505,22 @@ export const TIPS: GameTip[] = [
 	{
 		tag: 'Tip',
 		color: '#adf',
-		text: 'Up to 26 enemies can be alive at once. Clearing the field briefly reduces spawn pressure.'
+		text: 'Up to 36 enemies can be alive at once (4-player game). Clearing the field reduces spawn pressure.'
 	},
 	{
 		tag: 'Tip',
 		color: '#adf',
-		text: 'If you go down, wait for a teammate to revive you. If all players are downed at once, the game ends.'
+		text: 'If you go down, wait for a Revive — or hold on until the phase ends. All downed players are revived with 50 HP at the end of each phase.'
 	},
 	{
 		tag: 'Tip',
 		color: '#adf',
 		text: 'Enemies loosely spread targets — each player gets at most 3 enemies fixated on them.'
+	},
+	{
+		tag: 'Tip',
+		color: '#adf',
+		text: 'All 4 classes have an Ultimate (Q) with a 35s cooldown. Use them to turn the tide — not just for cleanup.'
 	},
 	{
 		tag: 'Day Cycle',
@@ -489,7 +535,17 @@ export const TIPS: GameTip[] = [
 	{
 		tag: 'Day Cycle',
 		color: '#fa8',
-		text: 'Surviving to the next Sunset completes a cycle and increases your squad score multiplier.'
+		text: 'Fog rolls in during Sunset or Dusk — once per cycle, lasting 15–30 seconds. Visibility drops sharply.'
+	},
+	{
+		tag: 'Day Cycle',
+		color: '#fa8',
+		text: 'At the end of every phase, all downed players are revived with 50 HP and a brief speed boost. Hold on.'
+	},
+	{
+		tag: 'Day Cycle',
+		color: '#fa8',
+		text: 'Surviving to the next Sunset completes a cycle and increases enemy difficulty.'
 	},
 	{
 		tag: 'Enemy: Basic',
@@ -504,7 +560,7 @@ export const TIPS: GameTip[] = [
 	{
 		tag: 'Enemy: Brute',
 		color: '#f88',
-		text: '10% of spawns. 380 HP base — the tankiest enemy. Bash it, slow it, then pile on.'
+		text: '10% of spawns. 380 HP base — the tankiest regular enemy. Slam it, suppress it, then pile on.'
 	},
 	{
 		tag: 'Enemy: Spitter',
@@ -519,7 +575,27 @@ export const TIPS: GameTip[] = [
 	{
 		tag: 'Boss',
 		color: '#f44',
-		text: 'Spawns every 90 seconds if no boss is alive. 2200 HP, 0.6 units/s. Kills all other enemies on spawn. When the boss dies, all remaining enemies are wiped out. Drops massive score.'
+		text: 'Spawns every 90 seconds if no boss is alive. Kills all enemies on spawn. 4 boss types cycle in a random order — you face all 4 before any repeat.'
+	},
+	{
+		tag: 'Boss: Ghost Dragon',
+		color: '#f44',
+		text: '1800 HP, fast. Deals 7 damage per hit. High mobility — keep moving and use Flash or Frenzy to create distance.'
+	},
+	{
+		tag: 'Boss: Root Colossus',
+		color: '#f44',
+		text: '2800 HP, slow. Deals 14 damage per hit. Highest HP of all bosses — bring your ultimates and focus fire.'
+	},
+	{
+		tag: 'Boss: Shadow Stalker',
+		color: '#f44',
+		text: '1200 HP, very fast. Deals 5 damage per hit. Lowest HP but hardest to escape — Flash, Slam, or Frenzy it.'
+	},
+	{
+		tag: 'Boss: Plague Shaman',
+		color: '#f44',
+		text: '1500 HP, medium speed. Deals 4 damage per hit. Stay mobile — expect area hazards.'
 	},
 	...Object.values(CLASSES).flatMap((c) =>
 		c.tips.map((tip) => ({
