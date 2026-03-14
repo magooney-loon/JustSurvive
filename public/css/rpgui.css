@@ -86,7 +86,10 @@ inside your html file.
 
 /* golden button stuff */
 .rpgui-button.golden p {
-  display: inline-block; }
+  display: inline-block;
+  text-align: center;
+  width: 100%;
+  margin: 0; }
 
 /* golden button style */
 .rpgui-button.golden {
@@ -107,6 +110,7 @@ inside your html file.
   min-width: 140px;
   height: 60px;
   display: inline-block;
+  text-align: center;
   /* padding */
   padding-top: 5px;
   padding-left: 35px;
@@ -970,3 +974,51 @@ ul.rpgui-list-imp {
   left: 40px;
   background-image: url("img/slider-thumb-golden.png");
   background-size: 100% 100%; }
+
+/**
+* Native range input styled to match rpgui sliders.
+* Used instead of the JS-based slider to support fractional ranges (0-1).
+*/
+.rpgui-content input[type=range].rpgui-slider {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 28px;
+  background: transparent;
+  outline: none;
+  cursor: pointer;
+  margin: 4px 0; }
+
+.rpgui-content input[type=range].rpgui-slider::-webkit-slider-runnable-track {
+  background-image: url("img/slider-track.png");
+  background-repeat: repeat-x;
+  background-size: 36px 100%;
+  height: 18px;
+  border-radius: 0; }
+
+.rpgui-content input[type=range].rpgui-slider::-moz-range-track {
+  background-image: url("img/slider-track.png");
+  background-repeat: repeat-x;
+  background-size: 36px 100%;
+  height: 18px;
+  border-radius: 0; }
+
+.rpgui-content input[type=range].rpgui-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 18px;
+  height: 28px;
+  background-image: url("img/slider-thumb.png");
+  background-size: 100% 100%;
+  background-color: transparent;
+  border: none;
+  margin-top: -5px;
+  cursor: pointer; }
+
+.rpgui-content input[type=range].rpgui-slider::-moz-range-thumb {
+  width: 18px;
+  height: 28px;
+  background-image: url("img/slider-thumb.png");
+  background-size: 100% 100%;
+  background-color: transparent;
+  border: none;
+  cursor: pointer; }

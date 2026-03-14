@@ -134,7 +134,7 @@
 			</button>
 		{:else}
 			<div style="display: flex; flex-direction: column; gap: 0.35rem;">
-				<label for="player-name">Your Name</label>
+				<label for="player-name" style="text-align: center;">Your Name</label>
 				<input
 					id="player-name"
 					type="text"
@@ -150,6 +150,7 @@
 			{#if mode === 'main'}
 				<button
 					class="rpgui-button golden"
+					style="width: 100%;"
 					onclick={() => {
 						soundActions.playClick();
 						quickplay();
@@ -160,6 +161,7 @@
 				</button>
 				<button
 					class="rpgui-button"
+					style="width: 100%;"
 					onclick={() => {
 						soundActions.playClick();
 						hostPrivate();
@@ -170,6 +172,7 @@
 				</button>
 				<button
 					class="rpgui-button"
+					style="width: 100%;"
 					onclick={() => {
 						soundActions.playClick();
 						lobbyActions.clearError();
@@ -184,6 +187,7 @@
 				<div style="display: flex; gap: 0.5rem;">
 					<button
 						class="rpgui-button"
+						style="width: 100%;"
 						onclick={() => {
 							soundActions.playClick();
 							stageActions.setStage('leaderboard');
@@ -194,6 +198,7 @@
 					</button>
 					<button
 						class="rpgui-button"
+						style="width: 100%;"
 						onclick={() => {
 							soundActions.playClick();
 							stageActions.setStage('settings');
@@ -203,11 +208,13 @@
 						<p>Settings</p>
 					</button>
 				</div>
-				<a
-					href="https://github.com/magooney-loon/JustSurvive"
-					target="_blank"
-					rel="noopener noreferrer">Source Code</a
-				>
+				<p class="rpgui-center">
+					<a
+						href="https://github.com/magooney-loon/JustSurvive"
+						target="_blank"
+						rel="noopener noreferrer">Source Code</a
+					>
+				</p>
 			{:else}
 				<input
 					type="text"
@@ -218,6 +225,7 @@
 				/>
 				<button
 					class="rpgui-button golden"
+					style="width: 100%;"
 					onclick={() => {
 						soundActions.playClick();
 						joinByCode();
@@ -228,6 +236,7 @@
 				</button>
 				<button
 					class="rpgui-button"
+					style="width: 100%;"
 					onclick={() => {
 						soundActions.playClick();
 						lobbyActions.clearError();
@@ -274,6 +283,16 @@
 			transform: translate(1px, -2px);
 			filter: drop-shadow(0 0 14px rgba(0, 255, 255, 0.85)) hue-rotate(45deg);
 		}
+	}
+	/* Only apply block display to non-golden buttons — golden button p is inline-block by design */
+	.rpgui-button:not(.golden) p {
+		display: block;
+		text-align: center;
+		margin: 0;
+		line-height: 1.2;
+	}
+	.rpgui-button.golden {
+		min-width: 180px;
 	}
 	.player-name-input {
 		text-align: center;

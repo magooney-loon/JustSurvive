@@ -9,6 +9,7 @@
 	} from '$root/settings.svelte.js';
 	import type { QualityLevel } from '$root/settings.svelte.js';
 	import { soundActions } from '$root/Sound.svelte';
+
 </script>
 
 <!-- Example: Settings overlay -->
@@ -19,7 +20,7 @@
 	class="rpgui-content"
 	style="position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;"
 >
-	<div class="rpgui-container framed" style="padding: 2rem; min-width: 320px;">
+	<div class="rpgui-container framed" style="padding: 2rem; min-width: 420px; max-width: 500px;">
 		<h2>Settings</h2>
 
 		<!-- Graphics Quality -->
@@ -28,18 +29,17 @@
 			<div style="display: flex; gap: 0.5rem;">
 				{#each ['low', 'mid', 'high'] as QualityLevel[] as level}
 					<button
+						class="rpgui-button"
 						onclick={() => {
 							soundActions.playClick();
 							graphicsActions.setQuality(level);
 						}}
-						style="flex: 1; padding: 0.4rem; border-radius: 0.375rem; border: 1px solid rgba(255,255,255,{settingsState
+						style="flex: 1; min-width: auto; height: auto; padding: 0.5rem 1rem; {settingsState
 							.graphics.quality === level
-							? '0.6'
-							: '0.2'}); background: {settingsState.graphics.quality === level
-							? 'rgba(255,255,255,0.2)'
-							: 'transparent'}; color: white; cursor: pointer; text-transform: capitalize;"
+							? 'background-image: url(/css/img/button-down.png);'
+							: ''}"
 					>
-						{level}
+						<p style="font-size: 0.75rem;">{level}</p>
 					</button>
 				{/each}
 			</div>
@@ -48,90 +48,75 @@
 		<!-- Audio -->
 		<div style="margin-bottom: 1.5rem;">
 			<h4>Audio</h4>
-			<div style="display: flex; flex-direction: column; gap: 0.75rem;">
+			<div style="display: flex; flex-direction: column; gap: 1rem;">
 				<div style="display: flex; flex-direction: column; gap: 0.25rem;">
-					<label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+					<label style="display: flex; align-items: center; gap: 0.75rem; cursor: pointer;">
 						<input
 							type="checkbox"
+							id="music-check"
+							class="rpgui-checkbox"
 							checked={settingsState.audio.musicEnabled}
 							onchange={() => audioActions.toggleMusic()}
 						/>
-						Music
+						<label for="music-check">Music</label>
 					</label>
-					<div class="rpgui-slider-container">
-						<div class="rpgui-slider-left-edge"></div>
-						<div class="rpgui-slider-track"></div>
-						<input
-							type="range"
-							min="0"
-							max="1"
-							step="0.01"
-							aria-label="Music volume"
-							value={settingsState.audio.musicVolume}
-							oninput={(e) => audioActions.setMusicVolume(+(e.target as HTMLInputElement).value)}
-							style="position: relative; z-index: 1; width: 100%; height: 100%; opacity: 0.5;"
-						/>
-						<div
-							class="rpgui-slider-thumb"
-							style="left: {settingsState.audio.musicVolume * 100}%;"
-						></div>
-					</div>
+					<input
+						type="range"
+						class="rpgui-slider"
+						min="0"
+						max="1"
+						step="0.01"
+						aria-label="Music volume"
+						value={settingsState.audio.musicVolume}
+						oninput={(e) => audioActions.setMusicVolume(+(e.target as HTMLInputElement).value)}
+						style="width: 100%;"
+					/>
 				</div>
 				<div style="display: flex; flex-direction: column; gap: 0.25rem;">
-					<label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+					<label style="display: flex; align-items: center; gap: 0.75rem; cursor: pointer;">
 						<input
 							type="checkbox"
+							id="ambience-check"
+							class="rpgui-checkbox"
 							checked={settingsState.audio.ambienceEnabled}
 							onchange={() => audioActions.toggleAmbience()}
 						/>
-						Ambience
+						<label for="ambience-check">Ambience</label>
 					</label>
-					<div class="rpgui-slider-container">
-						<div class="rpgui-slider-left-edge"></div>
-						<div class="rpgui-slider-track"></div>
-						<input
-							type="range"
-							min="0"
-							max="1"
-							step="0.01"
-							aria-label="Ambience volume"
-							value={settingsState.audio.ambienceVolume}
-							oninput={(e) => audioActions.setAmbienceVolume(+(e.target as HTMLInputElement).value)}
-							style="position: relative; z-index: 1; width: 100%; height: 100%; opacity: 0.5;"
-						/>
-						<div
-							class="rpgui-slider-thumb"
-							style="left: {settingsState.audio.ambienceVolume * 100}%;"
-						></div>
-					</div>
+					<input
+						type="range"
+						class="rpgui-slider"
+						min="0"
+						max="1"
+						step="0.01"
+						aria-label="Ambience volume"
+						value={settingsState.audio.ambienceVolume}
+						oninput={(e) => audioActions.setAmbienceVolume(+(e.target as HTMLInputElement).value)}
+						style="width: 100%;"
+					/>
 				</div>
 				<div style="display: flex; flex-direction: column; gap: 0.25rem;">
-					<label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+					<label style="display: flex; align-items: center; gap: 0.75rem; cursor: pointer;">
 						<input
 							type="checkbox"
+							id="effects-check"
+							class="rpgui-checkbox"
 							checked={settingsState.audio.effectsEnabled}
 							onchange={() => audioActions.toggleEffects()}
 						/>
-						Sound Effects
+						<label for="effects-check">Sound Effects</label>
 					</label>
-					<div class="rpgui-slider-container">
-						<div class="rpgui-slider-left-edge"></div>
-						<div class="rpgui-slider-track"></div>
-						<input
-							type="range"
-							min="0"
-							max="1"
-							step="0.01"
-							aria-label="Effects volume"
-							value={settingsState.audio.effectsVolume}
-							oninput={(e) => audioActions.setEffectsVolume(+(e.target as HTMLInputElement).value)}
-							style="position: relative; z-index: 1; width: 100%; height: 100%; opacity: 0.5;"
-						/>
-						<div
-							class="rpgui-slider-thumb"
-							style="left: {settingsState.audio.effectsVolume * 100}%;"
-						></div>
-					</div>
+					<input
+						type="range"
+						class="rpgui-slider"
+						min="0"
+						max="1"
+						step="0.01"
+						aria-label="Effects volume"
+						value={settingsState.audio.effectsVolume}
+						oninput={(e) => audioActions.setEffectsVolume(+(e.target as HTMLInputElement).value)}
+						style="width: 100%;"
+					/>
 				</div>
 			</div>
 		</div>
@@ -145,25 +130,18 @@
 						<span>Mouse Sensitivity</span>
 						<span style="opacity: 0.6;">{settingsState.controls.mouseSensitivity.toFixed(2)}</span>
 					</div>
-					<div class="rpgui-slider-container">
-						<div class="rpgui-slider-left-edge"></div>
-						<div class="rpgui-slider-track"></div>
-						<input
-							type="range"
-							min="0.1"
-							max="3"
-							step="0.05"
-							aria-label="Mouse sensitivity"
-							value={settingsState.controls.mouseSensitivity}
-							oninput={(e) =>
-								controlsActions.setMouseSensitivity(+(e.target as HTMLInputElement).value)}
-							style="position: relative; z-index: 1; width: 100%; height: 100%; opacity: 0.5;"
-						/>
-						<div
-							class="rpgui-slider-thumb"
-							style="left: {((settingsState.controls.mouseSensitivity - 0.1) / 2.9) * 100}%;"
-						></div>
-					</div>
+					<input
+						type="range"
+						class="rpgui-slider"
+						min="0.1"
+						max="3"
+						step="0.05"
+						aria-label="Mouse sensitivity"
+						value={settingsState.controls.mouseSensitivity}
+						oninput={(e) =>
+							controlsActions.setMouseSensitivity(+(e.target as HTMLInputElement).value)}
+						style="width: 100%;"
+					/>
 				</div>
 			</div>
 		</div>
@@ -184,6 +162,7 @@
 
 		<button
 			class="rpgui-button"
+			style="width: 100%;"
 			onclick={() => {
 				soundActions.playClick();
 				stageActions.goBack();

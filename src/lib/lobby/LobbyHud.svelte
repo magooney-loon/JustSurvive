@@ -496,6 +496,13 @@
 			: []
 	);
 
+	function rpguiProgress(node: HTMLElement) {
+		const rpgui = (window as any).RPGUI;
+		if (rpgui && !node.getAttribute('data-rpgui-type')) {
+			rpgui.create(node, 'progress');
+		}
+	}
+
 	let chatInput = $state('');
 	let chatEl = $state<HTMLDivElement | null>(null);
 
@@ -544,12 +551,35 @@
 	class="rpgui-content"
 	style="position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;"
 >
+	<!-- Squad Synergy — absolutely positioned at the top center, above everything -->
+	{#if activeSynergy && currentLobby}
+		{@const syn = activeSynergy}
+		<div
+			class="rpgui-container framed-golden"
+			style="position: absolute; top: 0.75rem; left: 50%; transform: translateX(-50%); z-index: 10; padding: 0.4rem 1.25rem; display: flex; align-items: center; gap: 1.25rem; white-space: nowrap;"
+		>
+			<p
+				style="margin: 0; font-size: 0.6rem; text-transform: uppercase; letter-spacing: 0.08em; opacity: 0.5;"
+			>
+				Squad Synergy
+			</p>
+			<p style="margin: 0; font-size: 0.8rem; font-weight: 700; color: {syn.color};">
+				{syn.label}
+			</p>
+			<p
+				style="margin: 0; font-size: 0.68rem; opacity: 0.65; max-width: 400px; white-space: normal; line-height: 1.3;"
+			>
+				{syn.desc}
+			</p>
+		</div>
+	{/if}
+
 	<div
 		class="rpgui-container framed"
-		style="padding: 2rem; color: white; display: flex; gap: 1.5rem; align-items: flex-start;"
+		style="padding: 1.5rem; color: white; display: flex; gap: 1.5rem; align-items: flex-start;"
 	>
 		<!-- Left: Lobby panel -->
-		<div style="min-width: 400px; flex: 1;">
+		<div style="width: 560px; flex-shrink: 0;">
 			{#if !currentLobby}
 				<p>Connecting to lobby... or kicked...</p>
 				<p>
@@ -577,15 +607,18 @@
 							>PUBLIC</span
 						>
 					{:else}
-						<button
-							class="rpgui-button"
-							onclick={() => {
-								soundActions.playClick();
-								copyCode();
-							}}
-						>
-							<p>{currentLobby?.code}</p>
-						</button>
+						<div style="display: flex; align-items: center; gap: 0.5rem;">
+							<span style="font-size: 0.75rem; opacity: 0.6;">Copy:</span>
+							<button
+								class="rpgui-button"
+								onclick={() => {
+									soundActions.playClick();
+									copyCode();
+								}}
+							>
+								<p>{currentLobby?.code}</p>
+							</button>
+						</div>
 					{/if}
 				</div>
 
@@ -640,7 +673,7 @@
 				<!-- Class selector -->
 				<div style="margin-bottom: 1.25rem;">
 					<h4>Select class</h4>
-					<div style="display: flex; gap: 0.4rem; flex-wrap: wrap;">
+					<div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.5rem;">
 						{#each CLASSES as cls}
 							{@const isFull = classCounts[cls] >= 2}
 							{@const isSelected = myEntry?.classChoice === cls}
@@ -656,43 +689,90 @@
 									}
 								}}
 								disabled={classLocked}
-								style="flex: 1; padding: 0.5rem 0.4rem; border-radius: 0.375rem; border: 1px solid rgba(255,255,255,{isSelected
-									? '0.6'
-									: isFull
-										? '0.1'
-										: '0.15'}); background: {isSelected
-									? 'rgba(0,0,0,0.4)'
-									: isFull
-										? 'rgba(0,0,0,0.2)'
-										: 'rgba(255,255,255,0.06)'}; color: {isSelected
-									? CLASS_COLORS[cls]
-									: isFull
-										? 'rgba(255,255,255,0.3)'
-										: 'white'}; cursor: {classLocked
-									? 'not-allowed'
-									: 'pointer'}; transition: background 0.15s, border-color 0.15s; display: flex; flex-direction: column; align-items: center; gap: 0.12rem;"
+								class="rpgui-button"
+								style="width: 100%; min-width: auto; height: auto; padding: 0.6rem 0.25rem; {isSelected &&
+								!isFull
+									? 'background-image: url(/css/img/button-down.png); outline: 2px solid ' +
+										CLASS_COLORS[cls] +
+										'; outline-offset: -2px;'
+									: ''}"
 							>
-								<span
-									style="font-size: 0.82rem; font-weight: 700; text-transform: capitalize; line-height: 1;"
-									>{cls}</span
+								<div
+									style="display: flex; flex-direction: column; align-items: center; gap: 0.15rem;"
 								>
-								<span style="font-size: 0.58rem; opacity: 0.5; line-height: 1;"
-									>{CLASS_STATS[cls].role}</span
-								>
-								<span style="font-size: 0.6rem; opacity: 0.55; line-height: 1;"
-									>❤ {CLASS_STATS[cls].hp} · ⚡ {CLASS_STATS[cls].stamina}</span
-								>
-								<span style="font-size: 0.55rem; opacity: 0.4; line-height: 1;"
-									>({classCounts[cls]}/2)</span
-								>
+									{#if cls === 'spotter'}
+										<div
+											class="rpgui-icon"
+											style="width: 32px; height: 32px; background-image: url(/css/img/icons/sword.png);"
+										></div>
+									{:else if cls === 'gunner'}
+										<div
+											class="rpgui-icon"
+											style="width: 32px; height: 32px; background-image: url(/css/img/icons/weapon-slot.png);"
+										></div>
+									{:else if cls === 'tank'}
+										<div
+											class="rpgui-icon"
+											style="width: 32px; height: 32px; background-image: url(/css/img/icons/shield.png);"
+										></div>
+									{:else if cls === 'healer'}
+										<div
+											class="rpgui-icon"
+											style="width: 32px; height: 32px; background-image: url(/css/img/icons/potion-red.png);"
+										></div>
+									{/if}
+									<span
+										style="font-size: 0.7rem; font-weight: 700; text-transform: capitalize; color: {isSelected
+											? isFull
+												? 'rgba(255,255,255,0.3)'
+												: CLASS_COLORS[cls]
+											: isFull
+												? 'rgba(255,255,255,0.3)'
+												: 'white'};">{cls}</span
+									>
+									<span style="font-size: 0.5rem; opacity: 0.5;">({classCounts[cls]}/2)</span>
+								</div>
 							</button>
 						{/each}
 					</div>
 
+					<!-- Class stats bars -->
+					<div
+						style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.5rem; margin-top: 0.75rem;"
+					>
+						{#each CLASSES as cls}
+							{@const isSelected = myEntry?.classChoice === cls}
+							<div
+								class="rpgui-container framed-grey"
+								style="padding: 0.4rem; {isSelected
+									? 'border-color: ' + CLASS_COLORS[cls] + ';'
+									: ''}"
+							>
+								<div
+									style="font-size: 0.6rem; text-transform: capitalize; text-align: center; color: {CLASS_COLORS[
+										cls
+									]}; margin-bottom: 0.25rem;"
+								>
+									{cls}
+								</div>
+								<span style="font-size: 0.5rem;">HP</span>
+								<div
+									class="rpgui-progress red progress-sm"
+									data-value={CLASS_STATS[cls].hp / 150}
+									use:rpguiProgress
+								></div>
+								<span style="font-size: 0.5rem;">STM</span>
+								<div
+									class="rpgui-progress green progress-sm"
+									data-value={CLASS_STATS[cls].stamina / 450}
+									use:rpguiProgress
+								></div>
+							</div>
+						{/each}
+					</div>
+
 					{#if myEntry?.classChoice}
-						<div
-							style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 0.5rem; padding: 0.75rem; margin-bottom: 1rem;"
-						>
+						<div class="rpgui-container framed-grey" style="margin-top: 0.75rem; padding: 0.75rem;">
 							<p
 								style="margin: 0 0 0.5rem; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.08em; font-weight: 600; color: {CLASS_COLORS[
 									myEntry.classChoice
@@ -701,54 +781,34 @@
 								{myEntry.classChoice} Abilities
 							</p>
 							{#if myEntry.classChoice === 'spotter'}
-								<p style="margin: 0 0 0.25rem; font-size: 0.8rem;">
-									<span style="opacity: 0.7;">LMB:</span> Mark enemy (2s cooldown)
+								<p style="margin: 0 0 0.25rem; font-size: 0.75rem;">
+									<span style="opacity: 0.7;">🖱 LMB:</span> Mark enemy
 								</p>
-								<p style="margin: 0; font-size: 0.8rem;">
-									<span style="opacity: 0.7;">RMB:</span> Flash stun (1.5s cooldown)
+								<p style="margin: 0; font-size: 0.75rem;">
+									<span style="opacity: 0.7;">🖱 RMB:</span> Flash stun
 								</p>
 							{:else if myEntry.classChoice === 'gunner'}
-								<p style="margin: 0 0 0.25rem; font-size: 0.8rem;">
-									<span style="opacity: 0.7;">LMB:</span> Shoot enemy
+								<p style="margin: 0 0 0.25rem; font-size: 0.75rem;">
+									<span style="opacity: 0.7;">🖱 LMB:</span> Shoot enemy
 								</p>
-								<p style="margin: 0; font-size: 0.8rem;">
-									<span style="opacity: 0.7;">Every 3rd shot:</span> Suppresses enemy
+								<p style="margin: 0; font-size: 0.75rem;">
+									<span style="opacity: 0.7;">⚡ Every 3rd:</span> Suppress
 								</p>
 							{:else if myEntry.classChoice === 'tank'}
-								<p style="margin: 0 0 0.25rem; font-size: 0.8rem;">
-									<span style="opacity: 0.7;">LMB:</span> Shield bash (1.5s cooldown)
+								<p style="margin: 0 0 0.25rem; font-size: 0.75rem;">
+									<span style="opacity: 0.7;">🖱 LMB:</span> Shield bash
 								</p>
-								<p style="margin: 0; font-size: 0.8rem;">
-									<span style="opacity: 0.7;">RMB hold:</span> Brace (5s, reduces damage)
+								<p style="margin: 0; font-size: 0.75rem;">
+									<span style="opacity: 0.7;">🖱 RMB hold:</span> Brace
 								</p>
 							{:else if myEntry.classChoice === 'healer'}
-								<p style="margin: 0 0 0.25rem; font-size: 0.8rem;">
-									<span style="opacity: 0.7;">LMB:</span> Heal teammate (2s cooldown)
+								<p style="margin: 0 0 0.25rem; font-size: 0.75rem;">
+									<span style="opacity: 0.7;">🖱 LMB:</span> Heal teammate
 								</p>
-								<p style="margin: 0; font-size: 0.8rem;">
-									<span style="opacity: 0.7;">RMB:</span> Revive downed teammate
+								<p style="margin: 0; font-size: 0.75rem;">
+									<span style="opacity: 0.7;">🖱 RMB:</span> Revive
 								</p>
 							{/if}
-						</div>
-					{/if}
-
-					<!-- Synergy -->
-					{#if activeSynergy}
-						{@const syn = activeSynergy}
-						<div
-							style="background: rgba(255,255,255,0.04); border: 1px solid {syn.color}44; border-radius: 0.5rem; padding: 0.6rem 0.75rem; margin-top: 0.5rem;"
-						>
-							<p
-								style="margin: 0 0 0.2rem; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.08em; opacity: 0.5;"
-							>
-								Squad Synergy
-							</p>
-							<p
-								style="margin: 0 0 0.2rem; font-size: 0.85rem; font-weight: 700; color: {syn.color};"
-							>
-								{syn.label}
-							</p>
-							<p style="margin: 0; font-size: 0.75rem; opacity: 0.65;">{syn.desc}</p>
 						</div>
 					{/if}
 				</div>
@@ -760,6 +820,7 @@
 					(currentLobby?.isPublic && !!myEntry?.isReady)}
 				<button
 					class="rpgui-button golden"
+					style="width: 100%;"
 					onclick={() => {
 						soundActions.playClick();
 						lobbyActions.setReady(currentLobby.id, !myEntry?.isReady);
@@ -781,6 +842,7 @@
 				{:else if isHost}
 					<button
 						class="rpgui-button golden"
+						style="width: 100%;"
 						onclick={() => {
 							soundActions.playClick();
 							lobbyActions.startCountdown(currentLobby.id);
@@ -803,6 +865,7 @@
 
 				<button
 					class="rpgui-button"
+					style="width: 100%;"
 					onclick={() => {
 						soundActions.playClick();
 						lobbyActions.leaveLobby(currentLobby.id);
@@ -823,7 +886,7 @@
 		{#if currentLobby}
 			<div
 				class="rpgui-container framed-grey"
-				style="width: 280px; flex-shrink: 0; display: flex; flex-direction: column; gap: 0.5rem; padding: 1rem;"
+				style="width: 340px; flex-shrink: 0; display: flex; flex-direction: column; gap: 0.5rem; padding: 1rem;"
 			>
 				<h4>Lobby Chat</h4>
 
@@ -862,7 +925,7 @@
 					<input
 						type="text"
 						maxlength="200"
-						placeholder="Say something..."
+						placeholder="Type..."
 						bind:value={chatInput}
 						onkeydown={(e) => {
 							if (e.key === 'Enter') sendChat();
@@ -946,3 +1009,26 @@
 		{/if}
 	</div>
 </div>
+
+<style>
+	/* Scale RPGUI progress bars down for compact stat cards */
+	:global(.progress-sm.rpgui-progress) {
+		height: 18px;
+		margin-top: 2px;
+		margin-bottom: 2px;
+	}
+	:global(.progress-sm .rpgui-progress-left-edge),
+	:global(.progress-sm .rpgui-progress-right-edge) {
+		height: 18px;
+		width: 18px;
+	}
+	:global(.progress-sm .rpgui-progress-track) {
+		height: 18px;
+		left: 18px;
+		right: 18px;
+	}
+	:global(.progress-sm .rpgui-progress-fill) {
+		top: 4px;
+		bottom: 3px;
+	}
+</style>
