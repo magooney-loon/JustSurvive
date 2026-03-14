@@ -1,3 +1,17 @@
+<script module lang="ts">
+	export type BossAction =
+		| 'winidle'
+		| 'travelmove'
+		| 'attack_3'
+		| 'cast_1'
+		| 'attack_2'
+		| 'attack_4'
+		| 'stunidle'
+		| 'dead';
+
+	export const bossState = $state({ action: 'winidle' as BossAction, attackIndex: 0 });
+</script>
+
 <script lang="ts">
 	import { useTask } from '@threlte/core';
 	import { GLTF, useGltfAnimations, PositionalAudio } from '@threlte/extras';
@@ -5,14 +19,6 @@
 	import { localPos, bossShake } from '$lib/stores/movement.svelte.js';
 	import { settingsState } from '$root/settings.svelte.js';
 	import { soundActions } from '$root/Sound.svelte';
-
-	type BossAction =
-		| 'zbs_phobos.qc_skeleton|zbs_idle1'
-		| 'zbs_phobos.qc_skeleton|zbs_run'
-		| 'zbs_phobos.qc_skeleton|zbs_walk'
-		| 'zbs_phobos.qc_skeleton|zbs_attack_justiceSwing'
-		| 'zbs_phobos.qc_skeleton|zbs_attack_mahadash'
-		| 'zbs_phobos.qc_skeleton|gutshot';
 
 	type Props = {
 		speed: number;
@@ -38,10 +44,13 @@
 
 	const { gltf, actions, mixer } = useGltfAnimations<BossAction>();
 
-	let currentAction: BossAction | null = null;
+	let currentAction: BossAction = 'winidle';
 	let shakeTimer = 0;
 	let footstepTimer = 0;
 	let hasPlayedIntro = false;
+	let attackIndex = 0;
+
+	const attackAnimations: BossAction[] = ['attack_3', 'cast_1', 'attack_2', 'attack_4'];
 
 	let footstepAudio: THREE.PositionalAudio | undefined = $state(undefined);
 	let attackAudio: THREE.PositionalAudio | undefined = $state(undefined);
@@ -98,33 +107,34 @@
 	});
 
 	$effect(() => {
-		for (const key of ['zbs_phobos.qc_skeleton|gutshot'] as BossAction[]) {
+		for (const key of ['dead', 'stunidle', ...attackAnimations] as BossAction[]) {
 			const action = $actions[key];
 			if (!action) continue;
 			action.setLoop(THREE.LoopOnce, 1);
 			action.clampWhenFinished = true;
-		}
-		for (const key of ['zbs_phobos.qc_skeleton|zbs_attack_mahadash'] as BossAction[]) {
-			const action = $actions[key];
-			if (!action) continue;
-			action.setLoop(THREE.LoopOnce, 1);
-			action.clampWhenFinished = true;
-		}
-		for (const key of ['zbs_phobos.qc_skeleton|zbs_run'] as BossAction[]) {
-			const action = $actions[key];
-			if (!action) continue;
-			action.setLoop(THREE.LoopPingPong, Infinity);
 		}
 	});
 
 	$effect(() => {
-		if (!currentAction && $actions?.['zbs_phobos.qc_skeleton|zbs_idle1']) {
-			$actions['zbs_phobos.qc_skeleton|zbs_idle1'].play();
-			currentAction = 'zbs_phobos.qc_skeleton|zbs_idle1';
-		}
+		if (!mixer) return;
+		const onFinished = (e: THREE.Event & { action: THREE.AnimationAction }) => {
+			const name = e.action.getClip().name as BossAction;
+			if (attackAnimations.includes(name)) {
+				attackIndex = (attackIndex + 1) % attackAnimations.length;
+			}
+			if (name === 'dead' || name === 'stunidle' || attackAnimations.includes(name)) {
+				bossState.action = 'winidle';
+			}
+		};
+		mixer.addEventListener('finished', onFinished as (e: THREE.Event) => void);
+		return () => mixer.removeEventListener('finished', onFinished as (e: THREE.Event) => void);
 	});
 
-	// Play boss intro when GLTF loads
+	$effect(() => {
+		if (!$actions?.['winidle']) return;
+		$actions['winidle'].play();
+	});
+
 	$effect(() => {
 		if ($gltf && !hasPlayedIntro) {
 			hasPlayedIntro = true;
@@ -133,41 +143,31 @@
 	});
 
 	$effect(() => {
+		const currentAttack = attackAnimations[attackIndex];
 		const next: BossAction = isDead
-			? 'zbs_phobos.qc_skeleton|gutshot'
+			? 'dead'
 			: isDazed
-				? 'zbs_phobos.qc_skeleton|zbs_attack_mahadash'
+				? 'stunidle'
 				: attackPhase > 0.3
-					? 'zbs_phobos.qc_skeleton|zbs_attack_justiceSwing'
+					? currentAttack
 					: speed < 0.1
-						? 'zbs_phobos.qc_skeleton|zbs_idle1'
-						: 'zbs_phobos.qc_skeleton|zbs_run';
+						? 'winidle'
+						: 'travelmove';
 
-		if (currentAction === next) return;
-
-		// Trigger sounds on animation change
-		if (next === 'zbs_phobos.qc_skeleton|gutshot') {
-			playDead();
-		} else if (next === 'zbs_phobos.qc_skeleton|zbs_attack_mahadash') {
-			playDaze();
-		} else if (next === 'zbs_phobos.qc_skeleton|zbs_attack_justiceSwing') {
-			playAttack();
-		}
-
-		const current = currentAction ? $actions[currentAction] : null;
+		const current = $actions[currentAction];
 		const nextAction = $actions[next];
-		if (!nextAction) return;
+		if (!nextAction || current === nextAction) return;
 
 		nextAction.enabled = true;
-		if (
-			next === 'zbs_phobos.qc_skeleton|gutshot' ||
-			next === 'zbs_phobos.qc_skeleton|zbs_attack_mahadash'
-		) {
+		if (next === 'dead' || next === 'stunidle' || attackAnimations.includes(next))
 			nextAction.reset();
-		}
-		if (current) current.crossFadeTo(nextAction, 0.25, true);
+		if (current) current.crossFadeTo(nextAction, 0.3, true);
 		nextAction.play();
 		currentAction = next;
+
+		if (next === 'dead') playDead();
+		else if (next === 'stunidle') playDaze();
+		else if (attackAnimations.includes(next)) playAttack();
 	});
 </script>
 
@@ -213,10 +213,5 @@
 	bind:gltf={$gltf}
 	url="{import.meta.env.BASE_URL}models/enemies/boss/scene.gltf"
 	rotation.y={Math.PI}
-	oncreate={(scene) => {
-		scene.traverse((child) => {
-			child.castShadow = true;
-		});
-	}}
-	scale={4.5}
+	scale={5.4}
 />
