@@ -36,6 +36,7 @@ import {
 // Import all reducer arg schemas
 import AdrenalineReducer from "./adrenaline_reducer";
 import AttackEnemyReducer from "./attack_enemy_reducer";
+import AxeSwingReducer from "./axe_swing_reducer";
 import BraceEndReducer from "./brace_end_reducer";
 import BraceStartReducer from "./brace_start_reducer";
 import ClearDebrisReducer from "./clear_debris_reducer";
@@ -45,16 +46,15 @@ import JoinByCodeReducer from "./join_by_code_reducer";
 import JoinLobbyReducer from "./join_lobby_reducer";
 import KickPlayerReducer from "./kick_player_reducer";
 import LeaveLobbyReducer from "./leave_lobby_reducer";
-import MarkEnemyReducer from "./mark_enemy_reducer";
 import MovePlayerReducer from "./move_player_reducer";
 import QuickJoinReducer from "./quick_join_reducer";
 import ReviveStartReducer from "./revive_start_reducer";
 import SendLobbyMessageReducer from "./send_lobby_message_reducer";
 import SetClassReducer from "./set_class_reducer";
 import SetReadyReducer from "./set_ready_reducer";
-import ShieldBashReducer from "./shield_bash_reducer";
 import SpotterFlashReducer from "./spotter_flash_reducer";
 import StartCountdownReducer from "./start_countdown_reducer";
+import SteadyShotReducer from "./steady_shot_reducer";
 
 // Import all procedure arg schemas
 
@@ -295,6 +295,7 @@ const tablesSchema = __schema({
 const reducersSchema = __reducers(
   __reducerSchema("adrenaline", AdrenalineReducer),
   __reducerSchema("attack_enemy", AttackEnemyReducer),
+  __reducerSchema("axe_swing", AxeSwingReducer),
   __reducerSchema("brace_end", BraceEndReducer),
   __reducerSchema("brace_start", BraceStartReducer),
   __reducerSchema("clear_debris", ClearDebrisReducer),
@@ -304,16 +305,15 @@ const reducersSchema = __reducers(
   __reducerSchema("join_lobby", JoinLobbyReducer),
   __reducerSchema("kick_player", KickPlayerReducer),
   __reducerSchema("leave_lobby", LeaveLobbyReducer),
-  __reducerSchema("mark_enemy", MarkEnemyReducer),
   __reducerSchema("move_player", MovePlayerReducer),
   __reducerSchema("quick_join", QuickJoinReducer),
   __reducerSchema("revive_start", ReviveStartReducer),
   __reducerSchema("send_lobby_message", SendLobbyMessageReducer),
   __reducerSchema("set_class", SetClassReducer),
   __reducerSchema("set_ready", SetReadyReducer),
-  __reducerSchema("shield_bash", ShieldBashReducer),
   __reducerSchema("spotter_flash", SpotterFlashReducer),
   __reducerSchema("start_countdown", StartCountdownReducer),
+  __reducerSchema("steady_shot", SteadyShotReducer),
 );
 
 /** The schema information for all procedures in this module. This is defined the same way as the procedures would have been defined in the server. */

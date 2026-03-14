@@ -222,6 +222,7 @@ export const ReviveChannel = __t.object("ReviveChannel", {
   healerIdentity: __t.identity(),
   targetIdentity: __t.identity(),
   channelStartedAt: __t.timestamp(),
+  shieldHp: __t.u64(),
 });
 export type ReviveChannel = __Infer<typeof ReviveChannel>;
 

@@ -238,7 +238,8 @@ export const ReviveChannel = table(
 		sessionId: t.u64(),
 		healerIdentity: t.identity(),
 		targetIdentity: t.identity(),
-		channelStartedAt: t.timestamp()
+		channelStartedAt: t.timestamp(),
+		shieldHp: t.u64()
 	}
 );
 

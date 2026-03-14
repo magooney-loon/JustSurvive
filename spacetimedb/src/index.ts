@@ -43,7 +43,18 @@ import {
 	TORCH_COLLISION_SQ,
 	SPAWN_POINT_COUNT,
 	WALL_SPAWN_RADIUS,
-	BOSS_SPAWN_INTERVAL_US
+	BOSS_SPAWN_INTERVAL_US,
+	STEADY_SHOT_DAMAGE,
+	STEADY_SHOT_RANGE_SQ,
+	STEADY_SHOT_COOLDOWN_US,
+	MARK_DURATION_US,
+	MARK_DAMAGE_BONUS,
+	AXE_SWING_DAMAGE,
+	AXE_SWING_RANGE,
+	AXE_SWING_COOLDOWN_US,
+	AXE_SWING_DAZE_US,
+	AXE_SWING_KNOCKBACK,
+	REVIVE_SHIELD_HP
 } from './constants.js';
 
 // Precomputed torch positions (computed once at module load)
@@ -205,11 +216,29 @@ function clearLobbyMessages(ctx: any, lobbyId: bigint) {
 // Apply damage to a single player (use only when one damage source per transaction, e.g. acid pool in move_player).
 // For enemy_tick (multiple sources per tick), accumulate into damageAccum and use applyAccumulatedDamage instead.
 function apply_player_damage(ctx: any, sessionId: bigint, ps: any, damage: bigint) {
-	const newHp = ps.hp > damage ? ps.hp - damage : 0n;
+	// If this player is a healer currently channeling a revive, absorb damage into the revive shield first
+	let remainingDamage = damage;
+	for (const c of ctx.db.reviveChannel.revive_channel_session_id.filter(sessionId)) {
+		if (c.healerIdentity.isEqual(ps.playerIdentity)) {
+			if (c.shieldHp >= remainingDamage) {
+				// Shield absorbs all damage — revive continues
+				ctx.db.reviveChannel.id.update({ ...c, shieldHp: c.shieldHp - remainingDamage });
+				return;
+			} else {
+				// Shield breaks — overflow damages healer and interrupts revive
+				remainingDamage -= c.shieldHp;
+				ctx.db.reviveChannel.id.delete(c.id);
+			}
+			break;
+		}
+	}
+
+	const newHp = ps.hp > remainingDamage ? ps.hp - remainingDamage : 0n;
 	if (newHp <= 0n && ps.status === 'alive') {
 		ctx.db.playerState.id.update({ ...ps, hp: 0n, status: 'downed' });
 
-		// Interrupt revive if this player was healing someone
+		// Also interrupt any revive this player was healing (already deleted above if shield broke,
+		// but if we got here without shield, delete now)
 		for (const c of ctx.db.reviveChannel.revive_channel_session_id.filter(sessionId)) {
 			if (c.healerIdentity.isEqual(ps.playerIdentity)) {
 				ctx.db.reviveChannel.id.delete(c.id);
@@ -227,13 +256,6 @@ function apply_player_damage(ctx: any, sessionId: bigint, ps: any, damage: bigin
 		}
 	} else {
 		ctx.db.playerState.id.update({ ...ps, hp: newHp });
-		// Interrupt revive if this player was healing someone
-		for (const c of ctx.db.reviveChannel.revive_channel_session_id.filter(sessionId)) {
-			if (c.healerIdentity.isEqual(ps.playerIdentity)) {
-				ctx.db.reviveChannel.id.delete(c.id);
-				break;
-			}
-		}
 	}
 }
 
@@ -251,19 +273,41 @@ function applyAccumulatedDamage(
 	for (const [playerId, totalDamage] of damageAccum) {
 		const ps = alivePlayers.find((p) => p.id === playerId);
 		if (!ps) continue;
-		const newHp = ps.hp > totalDamage ? ps.hp - totalDamage : 0n;
+
+		// Check if this player is a healer channeling a revive — absorb into shield first
+		let remainingDamage = totalDamage;
+		for (const c of ctx.db.reviveChannel.revive_channel_session_id.filter(sessionId)) {
+			if (c.healerIdentity.isEqual(ps.playerIdentity)) {
+				if (c.shieldHp >= remainingDamage) {
+					// Shield absorbs all — skip player damage entirely
+					ctx.db.reviveChannel.id.update({ ...c, shieldHp: c.shieldHp - remainingDamage });
+					remainingDamage = 0n;
+				} else {
+					// Shield breaks — overflow carries through, revive interrupted
+					remainingDamage -= c.shieldHp;
+					ctx.db.reviveChannel.id.delete(c.id);
+				}
+				break;
+			}
+		}
+		if (remainingDamage === 0n) continue;
+
+		const newHp = ps.hp > remainingDamage ? ps.hp - remainingDamage : 0n;
 		const willDown = newHp <= 0n;
 		ctx.db.playerState.id.update({
 			...ps,
 			hp: willDown ? 0n : newHp,
 			status: willDown ? 'downed' : ps.status
 		});
-		if (willDown) newlyDownedIds.add(playerId);
-		// Interrupt revive if this player was a healer mid-revive
-		for (const c of ctx.db.reviveChannel.revive_channel_session_id.filter(sessionId)) {
-			if (c.healerIdentity.isEqual(ps.playerIdentity)) {
-				ctx.db.reviveChannel.id.delete(c.id);
-				break;
+		if (willDown) {
+			newlyDownedIds.add(playerId);
+			// Interrupt any revive this player was channeling (if shield already deleted it above,
+			// this loop will find nothing — that's fine)
+			for (const c of ctx.db.reviveChannel.revive_channel_session_id.filter(sessionId)) {
+				if (c.healerIdentity.isEqual(ps.playerIdentity)) {
+					ctx.db.reviveChannel.id.delete(c.id);
+					break;
+				}
 			}
 		}
 	}
@@ -1533,7 +1577,7 @@ export const fire_boss_spawn = spacetimedb.reducer(
 
 // ─── Phase 4 Reducers ─────────────────────────────────────────────────────────
 
-export const mark_enemy = spacetimedb.reducer(
+export const steady_shot = spacetimedb.reducer(
 	{
 		sessionId: t.u64(),
 		enemyId: t.u64()
@@ -1552,30 +1596,50 @@ export const mark_enemy = spacetimedb.reducer(
 			ps.markCooldownUntil &&
 			ctx.timestamp.microsSinceUnixEpoch < ps.markCooldownUntil.microsSinceUnixEpoch
 		) {
-			throw new SenderError('Mark on cooldown');
+			throw new SenderError('Steady Shot on cooldown');
 		}
 
 		const enemy = ctx.db.enemy.id.find(enemyId);
 		if (!enemy || !enemy.isAlive) return;
 		const dx = enemy.posX - ps.posX;
 		const dz = enemy.posZ - ps.posZ;
-		if (dx * dx + dz * dz > 225_000_000n) return; // 15 units
+		if (dx * dx + dz * dz > STEADY_SHOT_RANGE_SQ) return;
 
-		const expiresAt = ctx.timestamp.microsSinceUnixEpoch + 5_000_000n;
-		// Mark info lives directly on the enemy row — no separate mark insert needed
-		const alreadyMarked =
+		// Apply damage — bonus if already marked
+		const isAlreadyMarked =
 			enemy.isMarked &&
 			enemy.markedUntil &&
 			ctx.timestamp.microsSinceUnixEpoch < enemy.markedUntil.microsSinceUnixEpoch;
-		ctx.db.enemy.id.update({ ...enemy, isMarked: true, markedUntil: ts(expiresAt) });
+		const dmg = isAlreadyMarked ? STEADY_SHOT_DAMAGE + MARK_DAMAGE_BONUS : STEADY_SHOT_DAMAGE;
+		const newHp = enemy.hp > dmg ? enemy.hp - dmg : 0n;
 
-		const cooldownUntil = ts(ctx.timestamp.microsSinceUnixEpoch + 2_000_000n);
-		const scoreAdd = alreadyMarked ? 0n : 10n;
-		ctx.db.playerState.id.update({
-			...ps,
-			score: ps.score + scoreAdd,
-			markCooldownUntil: cooldownUntil
-		});
+		// Mark target for 5s
+		const markedUntil = ts(ctx.timestamp.microsSinceUnixEpoch + MARK_DURATION_US);
+
+		if (newHp <= 0n) {
+			ctx.db.enemy.id.update({
+				...enemy,
+				hp: 0n,
+				isAlive: false,
+				isMarked: true,
+				markedUntil,
+				diedAt: ts(ctx.timestamp.microsSinceUnixEpoch)
+			});
+			ctx.db.playerState.id.update({
+				...ps,
+				score: ps.score + 2n,
+				lastShotAt: ctx.timestamp,
+				markCooldownUntil: ts(ctx.timestamp.microsSinceUnixEpoch + STEADY_SHOT_COOLDOWN_US)
+			});
+		} else {
+			ctx.db.enemy.id.update({ ...enemy, hp: newHp, isMarked: true, markedUntil });
+			ctx.db.playerState.id.update({
+				...ps,
+				score: ps.score + (isAlreadyMarked ? 0n : 10n),
+				lastShotAt: ctx.timestamp,
+				markCooldownUntil: ts(ctx.timestamp.microsSinceUnixEpoch + STEADY_SHOT_COOLDOWN_US)
+			});
+		}
 	}
 );
 
@@ -1654,7 +1718,12 @@ export const attack_enemy = spacetimedb.reducer(
 		const dz = enemy.posZ - ps.posZ;
 		if (dx * dx + dz * dz > 100_000_000n) return; // 10 units
 
-		const dmg = WEAPON_DAMAGE[ps.classChoice] ?? 15n;
+		const baseDmg = WEAPON_DAMAGE[ps.classChoice] ?? 15n;
+		const isMarked =
+			enemy.isMarked &&
+			enemy.markedUntil &&
+			ctx.timestamp.microsSinceUnixEpoch < enemy.markedUntil.microsSinceUnixEpoch;
+		const dmg = isMarked ? baseDmg + MARK_DAMAGE_BONUS : baseDmg;
 		const newHp = enemy.hp > dmg ? enemy.hp - dmg : 0n;
 
 		const shotAt = ctx.timestamp;
@@ -1769,12 +1838,11 @@ export const adrenaline = spacetimedb.reducer({ sessionId: t.u64() }, (ctx, { se
 	console.log('ADRENALINE: success!');
 });
 
-export const shield_bash = spacetimedb.reducer(
+export const axe_swing = spacetimedb.reducer(
 	{
-		sessionId: t.u64(),
-		enemyId: t.u64().optional()
+		sessionId: t.u64()
 	},
-	(ctx, { sessionId, enemyId }) => {
+	(ctx, { sessionId }) => {
 		let ps: any;
 		for (const p of ctx.db.playerState.player_state_session_id.filter(sessionId)) {
 			if (p.playerIdentity.isEqual(ctx.sender)) {
@@ -1791,28 +1859,58 @@ export const shield_bash = spacetimedb.reducer(
 		)
 			return;
 
-		const BASH_COOLDOWN_US = 1_500_000n;
-		const bashCooldown = ts(ctx.timestamp.microsSinceUnixEpoch + BASH_COOLDOWN_US);
+		const bashCooldown = ts(ctx.timestamp.microsSinceUnixEpoch + AXE_SWING_COOLDOWN_US);
 		ctx.db.playerState.id.update({ ...ps, bashCooldownUntil: bashCooldown });
 		ps = { ...ps, bashCooldownUntil: bashCooldown };
 
-		if (enemyId !== undefined) {
-			const enemy = ctx.db.enemy.id.find(enemyId);
-			if (!enemy || !enemy.isAlive) return;
-			const dx0 = enemy.posX - ps.posX;
-			const dz0 = enemy.posZ - ps.posZ;
-			if (dx0 * dx0 + dz0 * dz0 > 25_000_000n) return; // 5 units
+		// Cone parameters: AXE_SWING_RANGE units, ±45° (90° total)
+		const HALF_ANGLE = Math.PI / 4;
+		const facingRad = Number(ps.facingAngle) / 1000;
+		const fwdX = -Math.sin(facingRad);
+		const fwdZ = -Math.cos(facingRad);
+		const cosHalf = Math.cos(HALF_ANGLE);
 
-			const dx = enemy.posX - ps.posX;
-			const dz = enemy.posZ - ps.posZ;
-			const mag = bs(dx * dx + dz * dz);
-			const knockback = 4000n;
-			const newX = mag > 0n ? enemy.posX + (dx * knockback) / mag : enemy.posX + knockback;
-			const newZ = mag > 0n ? enemy.posZ + (dz * knockback) / mag : enemy.posZ + knockback;
-			const dazedUntil = ts(ctx.timestamp.microsSinceUnixEpoch + 1_500_000n);
-			ctx.db.enemy.id.update({ ...enemy, posX: newX, posZ: newZ, isDazed: true, dazedUntil });
-			ctx.db.playerState.id.update({ ...ps, score: ps.score + 5n });
+		let scoreAdd = 0n;
+		for (const e of ctx.db.enemy.enemy_session_id.filter(sessionId)) {
+			if (!e.isAlive) continue;
+			const ex = Number(e.posX) - Number(ps.posX);
+			const ez = Number(e.posZ) - Number(ps.posZ);
+			const dist = Math.sqrt(ex * ex + ez * ez);
+			if (dist > AXE_SWING_RANGE || dist < 1) continue;
+			const dot = (ex * fwdX + ez * fwdZ) / dist;
+			if (dot < cosHalf) continue;
+
+			// Enemy is in cone — apply damage, knockback, daze
+			const newHp = e.hp > AXE_SWING_DAMAGE ? e.hp - AXE_SWING_DAMAGE : 0n;
+			const dazedUntil = ts(ctx.timestamp.microsSinceUnixEpoch + AXE_SWING_DAZE_US);
+			if (newHp <= 0n) {
+				ctx.db.enemy.id.update({
+					...e,
+					hp: 0n,
+					isAlive: false,
+					isDazed: true,
+					dazedUntil,
+					diedAt: ts(ctx.timestamp.microsSinceUnixEpoch)
+				});
+				scoreAdd += 2n;
+			} else {
+				const edx = BigInt(Math.round(ex));
+				const edz = BigInt(Math.round(ez));
+				const mag = bs(edx * edx + edz * edz);
+				const newX =
+					mag > 0n ? e.posX + (edx * AXE_SWING_KNOCKBACK) / mag : e.posX + AXE_SWING_KNOCKBACK;
+				const newZ =
+					mag > 0n ? e.posZ + (edz * AXE_SWING_KNOCKBACK) / mag : e.posZ + AXE_SWING_KNOCKBACK;
+				ctx.db.enemy.id.update({ ...e, hp: newHp, posX: newX, posZ: newZ, isDazed: true, dazedUntil });
+				scoreAdd += 5n;
+			}
 		}
+
+		ctx.db.playerState.id.update({
+			...ps,
+			score: ps.score + scoreAdd,
+			lastFlashAt: ctx.timestamp
+		});
 	}
 );
 
@@ -1924,7 +2022,8 @@ export const revive_start = spacetimedb.reducer(
 			sessionId,
 			healerIdentity: ctx.sender,
 			targetIdentity,
-			channelStartedAt: ctx.timestamp
+			channelStartedAt: ctx.timestamp,
+			shieldHp: REVIVE_SHIELD_HP
 		});
 
 		const completeAt = ctx.timestamp.microsSinceUnixEpoch + REVIVE_CHANNEL_US;

@@ -1,9 +1,9 @@
 // Shared ability state — written by AbilityInput, read by GameHud
 export const abilityState = $state({
-	markCooldownUntil: 0, // ms timestamp (spotter mark, 5s)
+	markCooldownUntil: 0, // ms timestamp (spotter steady shot, 3s)
 	suppressHits: 0, // gunner suppress counter (resets on enemy change)
 	lastSuppressedEnemyId: null as bigint | null,
-	bashCooldownUntil: 0, // ms timestamp (tank bash, 1.5s)
+	bashCooldownUntil: 0, // ms timestamp (tank axe swing, 1.5s)
 	healCooldownUntil: 0, // ms timestamp (healer heal shot, 2s)
 	braceCooldownUntil: 0, // ms timestamp (tank brace, 1s between activations)
 	pingCooldownUntil: 0, // ms timestamp (spotter flash stun, 1.5s)
@@ -24,6 +24,14 @@ export const SHOT_FLASH_MS = 200;
 export const spotterFlash = $state({ active: false, yaw: 0, until: 0 });
 export const SPOTTER_FLASH_MS = 500;
 
+// Steady shot flash — optimistic local effect for the shooter
+export const steadyShotFlash = $state({ until: 0 });
+export const STEADY_SHOT_FLASH_MS = 250;
+
+// Axe swing cone — optimistic local effect for the tank
+export const axeSwingFlash = $state({ active: false, yaw: 0, until: 0 });
+export const AXE_SWING_FLASH_MS = 350;
+
 export function resetAbilities() {
 	abilityState.markCooldownUntil = 0;
 	abilityState.suppressHits = 0;
@@ -39,4 +47,8 @@ export function resetAbilities() {
 	healBeam.toX = 0;
 	healBeam.toZ = 0;
 	healBeam.until = 0;
+	steadyShotFlash.until = 0;
+	axeSwingFlash.active = false;
+	axeSwingFlash.yaw = 0;
+	axeSwingFlash.until = 0;
 }

@@ -55,6 +55,7 @@
 
 	const armForwardZ = -0.2;
 	const leftArmRotX = $derived(-swing * 0.8);
+	const rightArmRotX = $derived(swing * 0.8);
 </script>
 
 <PlayerRig
@@ -130,5 +131,24 @@
 				</T.Mesh>
 			{/if}
 		</T.Group>
+	</T.Group>
+
+	<!-- Right arm — axe -->
+	<T.Group position={[0.24, 1.1, armForwardZ - leanForward * 0.6]} rotation={[rightArmRotX, 0, 0]}>
+		<!-- Handle -->
+		<T.Mesh position={[0, 0, -0.28]} rotation={[Math.PI / 2, 0, 0]}>
+			<T.CylinderGeometry args={[0.022, 0.018, 0.44, 7]} />
+			<T.MeshStandardMaterial color="#3b2007" roughness={0.75} metalness={0.05} />
+		</T.Mesh>
+		<!-- Axe head -->
+		<T.Mesh position={[-0.04, 0, -0.52]}>
+			<T.BoxGeometry args={[0.14, 0.18, 0.055]} />
+			<T.MeshStandardMaterial color="#5a5a5a" roughness={0.22} metalness={0.8} />
+		</T.Mesh>
+		<!-- Blade edge (slightly offset, lighter) -->
+		<T.Mesh position={[-0.105, 0, -0.52]}>
+			<T.BoxGeometry args={[0.02, 0.16, 0.045]} />
+			<T.MeshStandardMaterial color="#c8c8c8" roughness={0.08} metalness={0.95} />
+		</T.Mesh>
 	</T.Group>
 </T.Group>
