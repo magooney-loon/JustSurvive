@@ -415,21 +415,19 @@ function end_session(ctx: any, sessionId: bigint) {
 				sessionId,
 				lobbyCode: lobby?.code ?? '??????',
 				combo,
-				playerCount: BigInt(classes.length),
+				playerCount: BigInt(sessionLobbyPlayers.length),
 				totalScore,
 				survivalSecs,
 				cycleNumber: session.cycleNumber,
 				createdAt: ctx.timestamp
 			});
 			for (const lp of sessionLobbyPlayers) {
-				if (lp.classChoice) {
-					ctx.db.lobbyResultPlayer.insert({
-						id: 0n,
-						sessionId,
-						playerName: lp.playerName,
-						classChoice: lp.classChoice
-					});
-				}
+				ctx.db.lobbyResultPlayer.insert({
+					id: 0n,
+					sessionId,
+					playerName: lp.playerName,
+					classChoice: lp.classChoice || 'none'
+				});
 			}
 		}
 	}
