@@ -5,7 +5,6 @@
 		click: 0,
 		hitmarker: 0,
 		// Global game SFX (non-positional)
-		playerDead: 0,
 		playerDown: 0,
 		playerDamage: 0,
 		newCycle: 0,
@@ -48,9 +47,6 @@
 		},
 		playHitmarker() {
 			soundTriggers.hitmarker++;
-		},
-		playPlayerDead() {
-			soundTriggers.playerDead++;
 		},
 		playPlayerDown() {
 			soundTriggers.playerDown++;
@@ -145,8 +141,7 @@
 	const AMBIENCE_URL = `${base}sounds/ambience/ambience.ogg`;
 	const CLICK_URL = `${base}sounds/click.mp3`;
 	const SWOOSH_URL = `${base}sounds/swoosh.mp3`;
-	const PLAYER_DEAD_URL = `${base}sounds/map/player_dead.mp3`;
-	const PLAYER_DOWN_URL = `${base}sounds/map/player_down.mp3`;
+	const PLAYER_DOWN_URL = `${base}sounds/player/player_down.wav`;
 	const PLAYER_DAMAGE_URL = `${base}sounds/player/damage_impact.wav`;
 	const NEW_CYCLE_URL = `${base}sounds/map/new_cycle.mp3`;
 	const SPREE_KILLING_URL = `${base}sounds/map/spree_killing.mp3`;
@@ -169,7 +164,6 @@
 	let ambienceAudio = $state.raw<ThreeAudio>();
 	let clickAudio = $state.raw<ThreeAudio>();
 	let swooshAudio = $state.raw<ThreeAudio>();
-	let playerDeadAudio = $state.raw<ThreeAudio>();
 	let playerDownAudio = $state.raw<ThreeAudio>();
 	let playerDamageAudio = $state.raw<ThreeAudio>();
 	let newCycleAudio = $state.raw<ThreeAudio>();
@@ -334,11 +328,6 @@
 	});
 
 	$effect(() => {
-		if (!playerDeadAudio) return;
-		playerDeadAudio.setVolume(settingsState.audio.effectsVolume);
-	});
-
-	$effect(() => {
 		if (!playerDownAudio) return;
 		playerDownAudio.setVolume(settingsState.audio.effectsVolume);
 	});
@@ -389,11 +378,6 @@
 
 	$effect(() => {
 		if (soundTriggers.swoosh > 0 && settingsState.audio.effectsEnabled) playPolyphonic(swooshAudio);
-	});
-
-	$effect(() => {
-		if (soundTriggers.playerDead > 0 && settingsState.audio.effectsEnabled)
-			playOneShot(playerDeadAudio);
 	});
 
 	$effect(() => {
@@ -509,22 +493,11 @@
 	userData={{ hideInTree: true, selectable: false }}
 />
 
-<!-- Global SFX: Player Dead -->
-<Audio
-	src={PLAYER_DEAD_URL}
-	oncreate={(a) => {
-		playerDeadAudio = a;
-		log.info('Audio loaded: Player Dead SFX');
-	}}
-	userData={{ hideInTree: true, selectable: false }}
-/>
-
 <!-- Global SFX: Player Down -->
 <Audio
 	src={PLAYER_DOWN_URL}
 	oncreate={(a) => {
 		playerDownAudio = a;
-		log.info('Audio loaded: Player Down SFX');
 	}}
 	userData={{ hideInTree: true, selectable: false }}
 />

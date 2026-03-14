@@ -102,6 +102,16 @@
 			}
 		}
 		if (beamTimer > 0) beamTimer = Math.max(0, beamTimer - dt);
+
+		if (enemy.isAlive && growlAudio?.buffer && settingsState.audio.effectsEnabled) {
+			growlTimer -= dt;
+			if (growlTimer <= 0) {
+				if (growlAudio.isPlaying) growlAudio.stop();
+				growlAudio.play();
+				growlTimer = Math.random() * 10 + 8;
+			}
+		}
+
 		if (enemy.isMarked) {
 			t += dt;
 			pulse = 0.85 + Math.sin(t * 6) * 0.15;
@@ -119,7 +129,9 @@
 
 	let killedAudio = $state.raw<ThreePosAudio | undefined>(undefined);
 	let spawnAudio = $state.raw<ThreePosAudio | undefined>(undefined);
+	let growlAudio = $state.raw<ThreePosAudio | undefined>(undefined);
 	let spawnSoundPlayed = false;
+	let growlTimer = Math.random() * 10 + 8; // first growl after 8–18s
 	$effect(() => {
 		if (dead && killedAudio?.buffer && settingsState.audio.effectsEnabled) {
 			if (killedAudio.isPlaying) killedAudio.stop();
@@ -232,6 +244,15 @@
 			rolloffFactor={2}
 			oncreate={(a) => {
 				spawnAudio = a;
+			}}
+		/>
+		<PositionalAudio
+			src={`${import.meta.env.BASE_URL}sounds/enemies/enemy_growl.wav`}
+			refDistance={5}
+			maxDistance={35}
+			rolloffFactor={2}
+			oncreate={(a) => {
+				growlAudio = a;
 			}}
 		/>
 		<T.Group rotation={[downedTilt, 0, 0]}>
