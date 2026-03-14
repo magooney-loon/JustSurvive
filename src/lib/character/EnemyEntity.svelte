@@ -4,10 +4,13 @@
 	export const markStemGeo = new THREE.CylinderGeometry(0.03, 0.03, 1, 4);
 	export const markMat = new THREE.MeshBasicMaterial({ color: '#f84' });
 
-	// Blood splatter - instanced for performance
-	export const bloodGeo = new THREE.SphereGeometry(1, 6, 4);
-	export const bloodMat = new THREE.MeshBasicMaterial({ color: '#8a0a0a' });
-	export const MAX_BLOOD_PER_ENEMY = 15;
+	// Blood splatter — shared geometry only; material is per-enemy for opacity control
+	export const bloodGeo = new THREE.SphereGeometry(1, 4, 3);
+	export const MAX_BLOOD_PER_ENEMY = 12;
+
+	// Shared splat decal geometry (unit-sized, scaled per mesh)
+	export const splatCircleGeo = new THREE.CircleGeometry(1, 8);
+	export const splatRingGeo = new THREE.RingGeometry(0.4, 1.0, 8);
 </script>
 
 <script lang="ts">
@@ -200,23 +203,33 @@
 		}
 	});
 
-	const bloodOpacity = $derived(bloodStarted ? Math.max(0, 1 - bloodAge / 1.8) : 0);
+	// Per-enemy blood material (opacity animated imperatively — can't share across enemies)
+	const perBloodMat = new THREE.MeshBasicMaterial({ color: '#8a0a0a', transparent: true });
+	let bloodMeshRef = $state.raw<THREE.InstancedMesh | undefined>(undefined);
+	const _dummy = new THREE.Object3D();
 
 	useTask((dt) => {
 		if (bloodStarted && dead) {
 			bloodAge += dt;
-			for (const p of bloodParticles) {
-				if (bloodAge < p.delay) continue;
-				p.vy -= GRAVITY * dt;
-				p.x += p.vx * dt;
-				p.y += p.vy * dt;
-				p.z += p.vz * dt;
-				if (p.y < 0.015) {
-					p.y = 0.015;
-					p.vy = 0;
-					p.vx *= 0.25;
-					p.vz *= 0.25;
+			perBloodMat.opacity = Math.max(0, 1 - bloodAge / 1.8);
+			if (bloodMeshRef) {
+				let count = 0;
+				for (const p of bloodParticles) {
+					if (bloodAge < p.delay) continue;
+					p.vy -= GRAVITY * dt;
+					p.x += p.vx * dt;
+					p.y += p.vy * dt;
+					p.z += p.vz * dt;
+					if (p.y < 0.015) { p.y = 0.015; p.vy = 0; p.vx *= 0.25; p.vz *= 0.25; }
+					const localAge = bloodAge - p.delay;
+					const scaleMult = p.scale * Math.max(0.4, 1 - localAge * 0.6);
+					_dummy.position.set(p.x, p.y + scaleMult * 0.3, p.z);
+					_dummy.scale.set(scaleMult, scaleMult * 0.6, scaleMult);
+					_dummy.updateMatrix();
+					bloodMeshRef.setMatrixAt(count++, _dummy.matrix);
 				}
+				bloodMeshRef.count = count;
+				bloodMeshRef.instanceMatrix.needsUpdate = true;
 			}
 		}
 	});
@@ -282,107 +295,29 @@
 			<T.Mesh
 				position={[0, 0.01, 0]}
 				rotation={[-Math.PI / 2, 0, 0]}
-				scale={[1.1 + splatGrow * 0.6, 1.1 + splatGrow * 0.6, 1]}
+				scale={[1.0 + splatGrow * 0.6, 1.0 + splatGrow * 0.6, 1]}
+				geometry={splatCircleGeo}
 				renderOrder={1}
 			>
-				<T.CircleGeometry args={[0.45 + (1 - splatT) * 0.55, 16]} />
-				<T.MeshBasicMaterial
-					color="#4a0f0f"
-					transparent
-					opacity={0.7 * splatT}
-					depthWrite={false}
-				/>
-			</T.Mesh>
-			<T.Mesh
-				position={[0.05, 0.011, -0.08]}
-				rotation={[-Math.PI / 2, 0.2, 0]}
-				scale={[1.2 + splatGrow * 0.7, 1.0 + splatGrow * 0.5, 1]}
-				renderOrder={1}
-			>
-				<T.RingGeometry args={[0.35, 0.85, 18]} />
-				<T.MeshBasicMaterial
-					color="#2b0606"
-					transparent
-					opacity={0.35 * splatT}
-					depthWrite={false}
-				/>
-			</T.Mesh>
-			<T.Mesh
-				position={[-0.35, 0.01, 0.15]}
-				rotation={[-Math.PI / 2, 0, 0]}
-				scale={[0.35, 0.25, 1]}
-				renderOrder={1}
-			>
-				<T.CircleGeometry args={[0.25, 12]} />
-				<T.MeshBasicMaterial
-					color="#4a0f0f"
-					transparent
-					opacity={0.45 * splatT}
-					depthWrite={false}
-				/>
-			</T.Mesh>
-			<T.Mesh
-				position={[0.32, 0.01, -0.22]}
-				rotation={[-Math.PI / 2, 0, 0]}
-				scale={[0.28, 0.22, 1]}
-				renderOrder={1}
-			>
-				<T.CircleGeometry args={[0.22, 12]} />
-				<T.MeshBasicMaterial
-					color="#4a0f0f"
-					transparent
-					opacity={0.4 * splatT}
-					depthWrite={false}
-				/>
-			</T.Mesh>
-			<T.Mesh
-				position={[0.18, 0.01, 0.32]}
-				rotation={[-Math.PI / 2, 0, 0]}
-				scale={[0.22, 0.18, 1]}
-				renderOrder={1}
-			>
-				<T.CircleGeometry args={[0.18, 12]} />
-				<T.MeshBasicMaterial
-					color="#3b0b0b"
-					transparent
-					opacity={0.35 * splatT}
-					depthWrite={false}
-				/>
+				<T.MeshBasicMaterial color="#4a0f0f" transparent opacity={0.7 * splatT} depthWrite={false} />
 			</T.Mesh>
 			<T.Mesh
 				position={[0, 0.012, 0]}
 				rotation={[-Math.PI / 2, 0, 0]}
-				scale={[1 + splatGrow * 1.2, 1 + splatGrow * 1.2, 1]}
+				scale={[1.1 + splatGrow * 1.0, 1.1 + splatGrow * 1.0, 1]}
+				geometry={splatRingGeo}
 				renderOrder={1}
 			>
-				<T.RingGeometry args={[0.25, 0.55, 16]} />
-				<T.MeshBasicMaterial
-					color="#aa2222"
-					transparent
-					opacity={0.25 * splatT}
-					depthWrite={false}
-				/>
+				<T.MeshBasicMaterial color="#2b0606" transparent opacity={0.3 * splatT} depthWrite={false} />
 			</T.Mesh>
 		{/if}
 
-		{#if bloodStarted && bloodOpacity > 0}
-			{#each bloodParticles as p}
-				{@const localAge = bloodAge - p.delay}
-				{#if localAge >= 0}
-					{@const scaleMult = p.scale * Math.max(0.4, 1 - localAge * 0.6)}
-					<T.Mesh
-						position={[p.x, p.y + scaleMult * 0.3, p.z]}
-						scale={[scaleMult, scaleMult * 0.6, scaleMult]}
-					>
-						<T.SphereGeometry args={[1, 8, 6]} />
-						<T.MeshBasicMaterial
-							color={p.color}
-							transparent
-							opacity={bloodOpacity * (0.75 + Math.random() * 0.25)}
-						/>
-					</T.Mesh>
-				{/if}
-			{/each}
+		{#if bloodStarted}
+			<T.InstancedMesh
+				args={[bloodGeo, perBloodMat, MAX_BLOOD_PER_ENEMY]}
+				frustumCulled={false}
+				oncreate={(m) => { bloodMeshRef = m; m.count = 0; }}
+			/>
 		{/if}
 
 		{@const hitT = Math.max(0, 1 - (nowMs - hitFlashAt) / 160)}

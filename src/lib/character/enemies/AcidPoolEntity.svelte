@@ -1,9 +1,8 @@
 <script module lang="ts">
 	import * as THREE from 'three';
-	const acidGeo = new THREE.CircleGeometry(2.0, 16);
-	const acidMat = new THREE.MeshStandardMaterial({
-		color: '#3f3',
-		emissive: '#1a1',
+	const acidGeo = new THREE.CircleGeometry(2.0, 10);
+	const acidMat = new THREE.MeshBasicMaterial({
+		color: '#3a3',
 		opacity: 0.6,
 		transparent: true
 	});
