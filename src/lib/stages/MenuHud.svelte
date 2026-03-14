@@ -67,7 +67,7 @@
 <div
 	transition:fly={{ y: 20, duration: 300 }}
 	class="rpgui-content"
-	style="position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;"
+	style="position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,0.55); backdrop-filter: blur(6px);"
 >
 	<div
 		class="rpgui-container framed-golden"
