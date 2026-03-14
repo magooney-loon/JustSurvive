@@ -10,6 +10,7 @@
 	import type { QualityLevel } from '$root/settings.svelte.js';
 	import { soundActions } from '$root/Sound.svelte';
 
+	const base = import.meta.env.BASE_URL;
 </script>
 
 <!-- Example: Settings overlay -->
@@ -36,7 +37,7 @@
 						}}
 						style="flex: 1; min-width: auto; height: auto; padding: 0.5rem 1rem; {settingsState
 							.graphics.quality === level
-							? 'background-image: url(/css/img/button-down.png);'
+							? 'background-image: url(' + base + 'css/img/button-down.png);'
 							: ''}"
 					>
 						<p style="font-size: 0.75rem;">{level}</p>

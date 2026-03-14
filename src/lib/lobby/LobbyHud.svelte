@@ -6,6 +6,8 @@
 	import { tables } from '$bindings/index.js';
 	import { soundActions } from '$root/Sound.svelte';
 
+	const base = import.meta.env.BASE_URL;
+
 	const conn = useSpacetimeDB();
 	const [lobbies] = useTable(tables.lobby);
 	const [lobbyPlayers] = useTable(tables.lobbyPlayer);
@@ -693,7 +695,7 @@
 								class="rpgui-button"
 								style="width: 100%; min-width: auto; height: auto; padding: 0.6rem 0.25rem; {isSelected &&
 								!isFull
-									? 'background-image: url(/css/img/button-down.png); outline: 2px solid ' +
+									? 'background-image: url(' + base + 'css/img/button-down.png); outline: 2px solid ' +
 										CLASS_COLORS[cls] +
 										'; outline-offset: -2px;'
 									: ''}"
@@ -704,22 +706,22 @@
 									{#if cls === 'spotter'}
 										<div
 											class="rpgui-icon"
-											style="width: 32px; height: 32px; background-image: url(/css/img/icons/sword.png);"
+											style="width: 32px; height: 32px; background-image: url({base}css/img/icons/sword.png);"
 										></div>
 									{:else if cls === 'gunner'}
 										<div
 											class="rpgui-icon"
-											style="width: 32px; height: 32px; background-image: url(/css/img/icons/weapon-slot.png);"
+											style="width: 32px; height: 32px; background-image: url({base}css/img/icons/weapon-slot.png);"
 										></div>
 									{:else if cls === 'tank'}
 										<div
 											class="rpgui-icon"
-											style="width: 32px; height: 32px; background-image: url(/css/img/icons/shield.png);"
+											style="width: 32px; height: 32px; background-image: url({base}css/img/icons/shield.png);"
 										></div>
 									{:else if cls === 'healer'}
 										<div
 											class="rpgui-icon"
-											style="width: 32px; height: 32px; background-image: url(/css/img/icons/potion-red.png);"
+											style="width: 32px; height: 32px; background-image: url({base}css/img/icons/potion-red.png);"
 										></div>
 									{/if}
 									<span
