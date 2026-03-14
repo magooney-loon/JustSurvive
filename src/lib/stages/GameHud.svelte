@@ -188,8 +188,14 @@
 			class="rpgui-container framed"
 			style="position: absolute; top: 1rem; right: 1rem; padding: 0.4rem 1.25rem; white-space: nowrap; text-align: center;"
 		>
-			<span style="font-size: 0.75rem; color: rgba(255,100,130,0.8); font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em;">Boss in</span>
-			<span style="font-size: 1.5rem; font-weight: 800; color: #ff4466; margin-left: 0.5rem; font-variant-numeric: tabular-nums;">{bossSecsLeft}s</span>
+			<span
+				style="font-size: 0.75rem; color: rgba(255,100,130,0.8); font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em;"
+				>Boss in</span
+			>
+			<span
+				style="font-size: 1.5rem; font-weight: 800; color: #ff4466; margin-left: 0.5rem; font-variant-numeric: tabular-nums;"
+				>{bossSecsLeft}s</span
+			>
 		</div>
 	{/if}
 
@@ -212,10 +218,7 @@
 				>
 					<!-- Cooldown fill (bottom-up) -->
 					{#if slot.cdFrac > 0}
-						<div
-							class="cd-overlay"
-							style="height: {slot.cdFrac * 100}%;"
-						></div>
+						<div class="cd-overlay" style="height: {slot.cdFrac * 100}%;"></div>
 					{/if}
 					<!-- Active pulse -->
 					{#if slot.active}
@@ -223,10 +226,7 @@
 					{/if}
 					<!-- Content -->
 					<div class="ability-content">
-						<span
-							class="ability-label"
-							style="color: {slot.cdFrac > 0 ? '#777' : slot.color};"
-						>
+						<span class="ability-label" style="color: {slot.cdFrac > 0 ? '#777' : slot.color};">
 							{slot.label}
 						</span>
 						{#if slot.input}
@@ -256,7 +256,10 @@
 					<span class="stat-value">{Number(myState.hp)} / {Number(myState.maxHp)}</span>
 				</div>
 				<div class="bar-track">
-					<div class="bar-fill hp-fill" style="width: {hpPercent(myState.hp, myState.maxHp)}%;"></div>
+					<div
+						class="bar-fill hp-fill"
+						style="width: {hpPercent(myState.hp, myState.maxHp)}%;"
+					></div>
 				</div>
 			</div>
 			<!-- Stamina bar -->
@@ -265,7 +268,10 @@
 					<span class="stat-label">Stamina</span>
 				</div>
 				<div class="bar-track" style="height: 9px;">
-					<div class="bar-fill stm-fill" style="width: {hpPercent(myState.stamina, myState.maxStamina)}%;"></div>
+					<div
+						class="bar-fill stm-fill"
+						style="width: {hpPercent(myState.stamina, myState.maxStamina)}%;"
+					></div>
 				</div>
 			</div>
 		</div>
@@ -274,29 +280,26 @@
 			class="rpgui-container framed"
 			style="position: absolute; bottom: 2rem; left: 50%; transform: translateX(-50%); padding: 0.35rem 1.5rem; white-space: nowrap; text-align: center;"
 		>
-			<span style="font-size: 1.2rem; font-weight: 700; color: #ffd060;">{Number(myState.score).toLocaleString()} pts</span>
+			<span style="font-size: 1.2rem; font-weight: 700; color: #ffd060;"
+				>{Number(myState.score).toLocaleString()} pts</span
+			>
 		</div>
 	{/if}
 
 	<!-- Teammate status — top center -->
-	<div
-		style="position: absolute; top: 1rem; left: 50%; transform: translateX(-50%); display: flex; flex-direction: row; gap: 0.5rem;"
-	>
+	<div style="position: absolute; top: 1rem; left: 50%; transform: translateX(-50%); display: flex; flex-direction: column; gap: 0.4rem; align-items: center;">
 		{#each teammates as p (p.id)}
-			<div
-				class="rpgui-container framed"
-				style="padding: 0.4rem 0.75rem; min-width: 210px; color: {p.status === 'downed' ? '#f66' : 'inherit'};"
-			>
-				<div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.25rem;">
-					<span style="text-transform: capitalize; font-weight: 600; flex: 1; font-size: 0.9rem;">{p.classChoice}</span>
+			<div class="teammate-card" style="color: {p.status === 'downed' ? '#f66' : 'inherit'};">
+				<div style="display: flex; align-items: center; gap: 0.4rem; margin-bottom: 0.2rem;">
+					<span style="text-transform: capitalize; font-weight: 600; flex: 1; font-size: 0.8rem;">{p.classChoice}</span>
 					{#if p.status === 'downed'}
-						<span style="color: #f66; font-size: 0.7rem; font-weight: 700; letter-spacing: 0.06em;">DOWNED</span>
+						<span style="color: #f66; font-size: 0.6rem; font-weight: 700; letter-spacing: 0.04em;">DOWN</span>
 					{:else}
-						<span style="font-size: 0.75rem; color: rgba(255,255,255,0.5);">{Number(p.hp)}/{Number(p.maxHp)}</span>
+						<span style="font-size: 0.65rem; color: rgba(255,255,255,0.5);">{Number(p.hp)}/{Number(p.maxHp)}</span>
 					{/if}
 				</div>
 				{#if p.status !== 'downed'}
-					<div class="bar-track" style="height: 6px;">
+					<div class="bar-track" style="height: 5px;">
 						<div class="bar-fill hp-fill" style="width: {hpPercent(p.hp, p.maxHp)}%;"></div>
 					</div>
 				{/if}
@@ -311,7 +314,9 @@
 			       background: rgba(0,0,0,0.55); pointer-events: none; backdrop-filter: blur(3px);"
 		>
 			<div class="rpgui-container framed" style="text-align: center; padding: 2rem 3rem;">
-				<h2 style="font-size: 2rem; margin: 0 0 0.5rem; color: #f66; font-weight: 800; letter-spacing: 0.06em;">
+				<h2
+					style="font-size: 2rem; margin: 0 0 0.5rem; color: #f66; font-weight: 800; letter-spacing: 0.06em;"
+				>
 					YOU'RE DOWN
 				</h2>
 				<p style="font-size: 1rem; color: rgba(255,255,255,0.6); margin: 0;">
@@ -339,6 +344,15 @@
 		height: 100%;
 		transition: width 0.2s;
 		border-radius: 3px;
+	}
+
+	/* Teammate card */
+	.teammate-card {
+		width: 200px;
+		background: rgba(0, 0, 0, 0.6);
+		border: 1px solid rgba(255, 255, 255, 0.18);
+		border-radius: 4px;
+		padding: 0.35rem 0.6rem;
 	}
 
 	/* Generic stat bar */
@@ -425,7 +439,11 @@
 	}
 
 	@keyframes abilityPulse {
-		from { opacity: 0.4; }
-		to { opacity: 1; }
+		from {
+			opacity: 0.4;
+		}
+		to {
+			opacity: 1;
+		}
 	}
 </style>

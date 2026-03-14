@@ -400,13 +400,13 @@
 								<span style="font-size: 0.5rem;">HP</span>
 								<div
 									class="rpgui-progress red progress-sm"
-									data-value={CLASS_STATS[clsId].hp / 150}
+									data-value={CLASS_STATS[clsId].hp / 200}
 									use:rpguiProgress
 								></div>
 								<span style="font-size: 0.5rem;">STM</span>
 								<div
 									class="rpgui-progress green progress-sm"
-									data-value={CLASS_STATS[clsId].stamina / 450}
+									data-value={CLASS_STATS[clsId].stamina / 600}
 									use:rpguiProgress
 								></div>
 							</div>
