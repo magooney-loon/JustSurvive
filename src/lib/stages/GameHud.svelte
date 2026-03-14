@@ -9,6 +9,8 @@
 	import { bossShake } from '$lib/stores/movement.svelte.js';
 	import ReviveChannelHud from '$lib/character/ui/ReviveChannelHud.svelte';
 	import { stageActions } from '$root/stage.svelte.js';
+	import { soundActions } from '$root/Sound.svelte';
+	import { untrack } from 'svelte';
 
 	let now = $state(Date.now());
 
@@ -58,10 +60,13 @@
 		if (session?.status === 'active' && !sessionWasActive) {
 			sessionWasActive = true;
 			lobbyState.gameStartedAt = Date.now();
+			untrack(() => soundActions.playGameStart());
 		}
 		if (session?.status === 'finished' && sessionWasActive) {
+			sessionWasActive = false;
 			lobbyState.gameStartedAt = null;
 			bossShake.intensity = 0;
+			untrack(() => soundActions.playGameEnd());
 			stageActions.setStage('game_over');
 		}
 	});

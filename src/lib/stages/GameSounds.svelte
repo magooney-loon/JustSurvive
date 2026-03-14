@@ -2,6 +2,7 @@
 	import { T } from '@threlte/core';
 	import { PositionalAudio } from '@threlte/extras';
 	import { PositionalAudio as ThreePosAudio } from 'three';
+	import { untrack } from 'svelte';
 	import { useSpacetimeDB, useTable } from 'spacetimedb/svelte';
 	import { tables } from '$bindings/index.js';
 	import { lobbyState } from '$lib/stores/lobby.svelte.js';
@@ -130,12 +131,22 @@
 		if (soundTriggers.enemySpawn > 0) playPos(enemySpawnAudio);
 	});
 
-// ─── Player status → global sounds ───────────────────────────────────────
+	// ─── Player damage → global sound ────────────────────────────────────────
+	let prevHp = $state<bigint | undefined>(undefined);
+	$effect(() => {
+		const hp = myState?.hp;
+		if (hp !== undefined && prevHp !== undefined && hp < prevHp) {
+			untrack(() => soundActions.playPlayerDamage());
+		}
+		prevHp = hp;
+	});
+
+	// ─── Player status → global sounds ───────────────────────────────────────
 	let prevStatus = $state<string | undefined>(undefined);
 	$effect(() => {
 		const status = myState?.status;
 		if (status !== prevStatus) {
-			if (status === 'downed') soundActions.playPlayerDown();
+			if (status === 'downed') untrack(() => soundActions.playPlayerDown());
 			prevStatus = status;
 		}
 	});

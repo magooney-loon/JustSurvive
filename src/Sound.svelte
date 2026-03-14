@@ -7,6 +7,7 @@
 		// Global game SFX (non-positional)
 		playerDead: 0,
 		playerDown: 0,
+		playerDamage: 0,
 		newCycle: 0,
 		spreeKilling: 0,
 		spreeDominating: 0,
@@ -33,6 +34,7 @@
 		// Game flow
 		gameStart: 0,
 		gameEnd: 0,
+		countdown: 0,
 		// Enemy spawn
 		enemySpawn: 0
 	});
@@ -52,6 +54,9 @@
 		},
 		playPlayerDown() {
 			soundTriggers.playerDown++;
+		},
+		playPlayerDamage() {
+			soundTriggers.playerDamage++;
 		},
 		playNewCycle() {
 			soundTriggers.newCycle++;
@@ -114,6 +119,9 @@
 		playGameStart() {
 			soundTriggers.gameStart++;
 		},
+		playCountdown() {
+			soundTriggers.countdown++;
+		},
 		playGameEnd() {
 			soundTriggers.gameEnd++;
 		},
@@ -139,6 +147,7 @@
 	const SWOOSH_URL = `${base}sounds/swoosh.mp3`;
 	const PLAYER_DEAD_URL = `${base}sounds/map/player_dead.mp3`;
 	const PLAYER_DOWN_URL = `${base}sounds/map/player_down.mp3`;
+	const PLAYER_DAMAGE_URL = `${base}sounds/player/damage_impact.wav`;
 	const NEW_CYCLE_URL = `${base}sounds/map/new_cycle.mp3`;
 	const SPREE_KILLING_URL = `${base}sounds/map/spree_killing.mp3`;
 	const SPREE_DOMINATING_URL = `${base}sounds/map/spree_dominating.mp3`;
@@ -151,6 +160,7 @@
 	const GAME_START_URL = `${base}sounds/map/game_start.wav`;
 	const GAME_END_URL = `${base}sounds/map/game_end.wav`;
 	const GUNNER_ADRENALINE_URL = `${base}sounds/classAbility/gunner_adrenaline.wav`;
+	const COUNTDOWN_URL = `${base}sounds/map/countdown.mp3`;
 
 	// $state.raw — prevents Svelte 5 from wrapping class instances in a Proxy
 	let ostAudio = $state.raw<ThreeAudio>();
@@ -161,6 +171,7 @@
 	let swooshAudio = $state.raw<ThreeAudio>();
 	let playerDeadAudio = $state.raw<ThreeAudio>();
 	let playerDownAudio = $state.raw<ThreeAudio>();
+	let playerDamageAudio = $state.raw<ThreeAudio>();
 	let newCycleAudio = $state.raw<ThreeAudio>();
 	let spreeKillingAudio = $state.raw<ThreeAudio>();
 	let spreeDominatingAudio = $state.raw<ThreeAudio>();
@@ -173,6 +184,7 @@
 	let gameStartAudio = $state.raw<ThreeAudio>();
 	let gameEndAudio = $state.raw<ThreeAudio>();
 	let gunnerAdrenalineAudio = $state.raw<ThreeAudio>();
+	let countdownAudio = $state.raw<ThreeAudio>();
 
 	// ─── Playback helpers ─────────────────────────────────────────────────────
 
@@ -332,6 +344,11 @@
 	});
 
 	$effect(() => {
+		if (!playerDamageAudio) return;
+		playerDamageAudio.setVolume(settingsState.audio.effectsVolume);
+	});
+
+	$effect(() => {
 		const vol = settingsState.audio.effectsVolume;
 		for (const a of [
 			newCycleAudio,
@@ -385,6 +402,11 @@
 	});
 
 	$effect(() => {
+		if (soundTriggers.playerDamage > 0 && settingsState.audio.effectsEnabled)
+			playOneShot(playerDamageAudio);
+	});
+
+	$effect(() => {
 		if (soundTriggers.newCycle > 0 && settingsState.audio.effectsEnabled)
 			playOneShot(newCycleAudio);
 	});
@@ -411,6 +433,10 @@
 	$effect(() => {
 		if (soundTriggers.gameStart > 0 && settingsState.audio.effectsEnabled)
 			playOneShot(gameStartAudio);
+	});
+	$effect(() => {
+		if (soundTriggers.countdown > 0 && settingsState.audio.effectsEnabled)
+			playOneShot(countdownAudio);
 	});
 	$effect(() => {
 		if (soundTriggers.gameEnd > 0 && settingsState.audio.effectsEnabled)
@@ -499,6 +525,15 @@
 	oncreate={(a) => {
 		playerDownAudio = a;
 		log.info('Audio loaded: Player Down SFX');
+	}}
+	userData={{ hideInTree: true, selectable: false }}
+/>
+
+<!-- Global SFX: Player Damage -->
+<Audio
+	src={PLAYER_DAMAGE_URL}
+	oncreate={(a) => {
+		playerDamageAudio = a;
 	}}
 	userData={{ hideInTree: true, selectable: false }}
 />
@@ -594,6 +629,15 @@
 	oncreate={(a) => {
 		gameEndAudio = a;
 		log.info('Audio loaded: Game End');
+	}}
+	userData={{ hideInTree: true, selectable: false }}
+/>
+
+<!-- Countdown — plays on game start -->
+<Audio
+	src={COUNTDOWN_URL}
+	oncreate={(a) => {
+		countdownAudio = a;
 	}}
 	userData={{ hideInTree: true, selectable: false }}
 />

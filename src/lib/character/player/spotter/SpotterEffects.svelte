@@ -67,7 +67,10 @@
 	const impactX = $derived(x - Math.sin(effectiveShotYaw) * BEAM_LEN);
 	const impactZ = $derived(z - Math.cos(effectiveShotYaw) * BEAM_LEN);
 	const beamQ = $derived(
-		new THREE.Quaternion().setFromEuler(new THREE.Euler(Math.PI / 2, -effectiveShotYaw, 0))
+		new THREE.Quaternion().setFromUnitVectors(
+			new THREE.Vector3(0, 1, 0),
+			new THREE.Vector3(-Math.sin(effectiveShotYaw), 0, -Math.cos(effectiveShotYaw))
+		)
 	);
 </script>
 
