@@ -148,7 +148,11 @@
 	const torchGlowGeo = new THREE.SphereGeometry(0.15, 7, 6);
 	const torchHaloGeo = new THREE.SphereGeometry(0.5, 7, 6);
 	// Fallback (no-texture) material for post/bowl
-	const torchMat = new THREE.MeshStandardMaterial({ color: '#2a1a0a', roughness: 0.85, metalness: 0.3 });
+	const torchMat = new THREE.MeshStandardMaterial({
+		color: '#2a1a0a',
+		roughness: 0.85,
+		metalness: 0.3
+	});
 	const torchFlameMat = new THREE.MeshBasicMaterial({ color: '#ff4400' });
 	const torchFlameInnerMat = new THREE.MeshBasicMaterial({ color: '#ffdd44' });
 	const torchGlowMat = new THREE.MeshBasicMaterial({
@@ -185,17 +189,41 @@
 	const portalGlowGeo = new THREE.SphereGeometry(0.7, 8, 6);
 
 	// Portal materials
-	const portalRingMat = new THREE.MeshStandardMaterial({ color: '#1a1020', roughness: 0.9, metalness: 0.2 });
-	const portalVoidMat = new THREE.MeshBasicMaterial({ color: '#0a0018', transparent: true, opacity: 0.92, depthWrite: false });
-	const portalSwirl1Mat = new THREE.MeshBasicMaterial({ color: '#9922ff', transparent: true, opacity: 0.75, depthWrite: false });
-	const portalSwirl2Mat = new THREE.MeshBasicMaterial({ color: '#cc44ff', transparent: true, opacity: 0.55, depthWrite: false });
-	const portalGlowMat = new THREE.MeshBasicMaterial({ color: '#6600cc', transparent: true, opacity: 0.1, depthWrite: false });
+	const portalRingMat = new THREE.MeshStandardMaterial({
+		color: '#1a1020',
+		roughness: 0.9,
+		metalness: 0.2
+	});
+	const portalVoidMat = new THREE.MeshBasicMaterial({
+		color: '#0a0018',
+		transparent: true,
+		opacity: 0.92,
+		depthWrite: false
+	});
+	const portalSwirl1Mat = new THREE.MeshBasicMaterial({
+		color: '#9922ff',
+		transparent: true,
+		opacity: 0.75,
+		depthWrite: false
+	});
+	const portalSwirl2Mat = new THREE.MeshBasicMaterial({
+		color: '#cc44ff',
+		transparent: true,
+		opacity: 0.55,
+		depthWrite: false
+	});
+	const portalGlowMat = new THREE.MeshBasicMaterial({
+		color: '#6600cc',
+		transparent: true,
+		opacity: 0.1,
+		depthWrite: false
+	});
 
 	// Wall ring (12), mid ring (7), inner ring (4)
 	export const TORCH_RINGS = [
 		{ count: 12, radius: ARENA_RADIUS - 1.5 },
-		{ count: 7,  radius: 33 },
-		{ count: 4,  radius: 18 }
+		{ count: 7, radius: 33 },
+		{ count: 4, radius: 18 }
 	] as const;
 
 	const torchPositions = TORCH_RINGS.flatMap(({ count, radius }) =>
@@ -204,6 +232,85 @@
 			z: Math.sin((i / count) * Math.PI * 2) * radius
 		}))
 	);
+
+	// Pre-create all torch groups for caching (ready before first render)
+	const torchGroups: THREE.Group[] = torchPositions.map((torch) => {
+		const group = new THREE.Group();
+		group.position.set(torch.x, 0, torch.z);
+
+		const post = new THREE.Mesh(torchPostGeo, torchMat);
+		post.position.set(0, 0.5, 0);
+		group.add(post);
+
+		const bowl = new THREE.Mesh(torchBowlGeo, torchMat);
+		bowl.position.set(0, 1.5, 0);
+		group.add(bowl);
+
+		const rim = new THREE.Mesh(torchBowlRimGeo, torchMat);
+		rim.position.set(0, 1.6, 0);
+		rim.rotation.set(Math.PI / 2, 0, 0);
+		group.add(rim);
+
+		const flame = new THREE.Mesh(torchFlameGeo, torchFlameMat);
+		flame.position.set(0, 1.74, 0);
+		flame.name = 'flame';
+		group.add(flame);
+
+		const flameInner = new THREE.Mesh(torchFlameInnerGeo, torchFlameInnerMat);
+		flameInner.position.set(0, 1.76, 0);
+		flameInner.name = 'flameInner';
+		group.add(flameInner);
+
+		const glow = new THREE.Mesh(torchGlowGeo, torchGlowMat);
+		glow.position.set(0, 1.64, 0);
+		glow.name = 'glow';
+		group.add(glow);
+
+		const halo = new THREE.Mesh(torchHaloGeo, torchHaloMat);
+		halo.position.set(0, 1.7, 0);
+		halo.name = 'halo';
+		group.add(halo);
+
+		const light = new THREE.PointLight('#ff7722', 10, 28, 2);
+		light.position.set(0, 1.9, 0);
+		light.name = 'light';
+		group.add(light);
+
+		return group;
+	});
+
+	// Pre-create all portal groups for caching
+	const portalGroups: THREE.Group[] = portalPositions.map((portal) => {
+		const group = new THREE.Group();
+		group.position.set(portal.x, 1.2, portal.z);
+		group.rotation.set(0, portal.ry, 0);
+
+		const ring = new THREE.Mesh(portalRingGeo, portalRingMat);
+		group.add(ring);
+
+		const voidMesh = new THREE.Mesh(portalVoidGeo, portalVoidMat);
+		voidMesh.position.set(0, 0, 0.01);
+		group.add(voidMesh);
+
+		const swirl1 = new THREE.Mesh(portalSwirl1Geo, portalSwirl1Mat);
+		swirl1.name = 'swirl1';
+		group.add(swirl1);
+
+		const swirl2 = new THREE.Mesh(portalSwirl2Geo, portalSwirl2Mat);
+		swirl2.name = 'swirl2';
+		group.add(swirl2);
+
+		const glow = new THREE.Mesh(portalGlowGeo, portalGlowMat);
+		glow.name = 'glow';
+		group.add(glow);
+
+		const light = new THREE.PointLight('#8833ff', 2.5, 12, 2);
+		light.position.set(0, 0, -1);
+		light.name = 'light';
+		group.add(light);
+
+		return group;
+	});
 
 	export {
 		groundGeo,
@@ -227,6 +334,7 @@
 		rubbleBoxMesh,
 		rubbleSphereMesh,
 		torchPositions,
+		torchGroups,
 		torchPostGeo,
 		torchBowlGeo,
 		torchBowlRimGeo,
@@ -238,7 +346,8 @@
 		torchFlameMat,
 		torchFlameInnerMat,
 		torchGlowMat,
-		torchHaloMat
+		torchHaloMat,
+		portalGroups
 	};
 </script>
 
@@ -344,103 +453,85 @@
 <T is={rubbleBoxMesh} />
 <T is={rubbleSphereMesh} />
 
-<!-- Torches: 3 rings (12 wall / 7 mid / 4 inner) — layered flame + textured metal post -->
+<!-- Torches: 3 rings (12 wall / 7 mid / 4 inner) — use cached groups -->
 {#await spikeTexture then tex}
 	{@const metalMat = tex
-		? new THREE.MeshStandardMaterial({ map: tex, roughness: 0.82, metalness: 0.45, color: '#3a2510' })
+		? new THREE.MeshStandardMaterial({
+				map: tex,
+				roughness: 0.82,
+				metalness: 0.45,
+				color: '#3a2510'
+			})
 		: torchMat}
-	{#each torchPositions as torch, i}
-		<!-- outer flicker — slow base pulse -->
-		{@const fs = 0.88 + Math.sin(clock * 6.8 + i * 1.4) * 0.1 + Math.sin(clock * 14.2 + i * 0.9) * 0.04}
-		<!-- inner flicker — faster, slightly offset phase -->
-		{@const fi = 0.82 + Math.sin(clock * 11.1 + i * 2.3) * 0.14 + Math.sin(clock * 19.7 + i * 1.1) * 0.06}
-		<!-- light intensity -->
-		{@const li = 1.2 + Math.sin(clock * 5.1 + i * 1.2) * 0.45 + Math.sin(clock * 10.7 + i * 2.1) * 0.18}
-		<!-- subtle flame sway offset -->
+	{#each torchGroups as group, i}
+		{@const fs =
+			0.88 + Math.sin(clock * 6.8 + i * 1.4) * 0.1 + Math.sin(clock * 14.2 + i * 0.9) * 0.04}
+		{@const fi =
+			0.82 + Math.sin(clock * 11.1 + i * 2.3) * 0.14 + Math.sin(clock * 19.7 + i * 1.1) * 0.06}
+		{@const li =
+			1.2 + Math.sin(clock * 5.1 + i * 1.2) * 0.45 + Math.sin(clock * 10.7 + i * 2.1) * 0.18}
 		{@const sx = Math.sin(clock * 3.7 + i * 2.1) * 0.03}
 		{@const sz = Math.cos(clock * 4.3 + i * 1.7) * 0.03}
-		<T.Group position={[torch.x, 0, torch.z]}>
-			<!-- Iron post with metal texture -->
-			<T.Mesh position={[0, 0.5, 0]} geometry={torchPostGeo} material={metalMat} />
-			<!-- Bowl + rim -->
-			<T.Mesh position={[0, 1.5, 0]} geometry={torchBowlGeo} material={metalMat} />
-			<T.Mesh
-				position={[0, 1.6, 0]}
-				rotation={[Math.PI / 2, 0, 0]}
-				geometry={torchBowlRimGeo}
-				material={metalMat}
-			/>
-			<!-- Outer flame — wide orange, sways -->
-			<T.Mesh
-				position={[sx, 1.74, sz]}
-				scale={[fs * 1.05, fs, fs * 1.05]}
-				geometry={torchFlameGeo}
-				material={torchFlameMat}
-			/>
-			<!-- Inner flame — narrow bright yellow, faster flicker -->
-			<T.Mesh
-				position={[sx * 0.5, 1.76, sz * 0.5]}
-				scale={[fi * 0.5, fi * 1.15, fi * 0.5]}
-				geometry={torchFlameInnerGeo}
-				material={torchFlameInnerMat}
-			/>
-			<!-- Tight bright glow around base of flame -->
-			<T.Mesh
-				position={[0, 1.64, 0]}
-				scale={[fs * 1.6, fs * 0.9, fs * 1.6]}
-				geometry={torchGlowGeo}
-				material={torchGlowMat}
-			/>
-			<!-- Wide faint halo -->
-			<T.Mesh
-				position={[0, 1.7, 0]}
-				scale={[li * 1.2, li * 0.9, li * 1.2]}
-				geometry={torchHaloGeo}
-				material={torchHaloMat}
-			/>
-			<T.PointLight
-				color="#ff7722"
-				intensity={li * 10}
-				distance={28}
-				decay={2}
-				position={[0, 1.9, 0]}
-			/>
-		</T.Group>
+		{@const post = group.children[0]}
+		{@const bowl = group.children[1]}
+		{@const rim = group.children[2]}
+		{@const flame = group.children[3]}
+		{@const flameInner = group.children[4]}
+		{@const glow = group.children[5]}
+		{@const halo = group.children[6]}
+		{@const light = group.children[7]}
+		{#if post instanceof THREE.Mesh}{(post.material = metalMat)}{/if}
+		{#if bowl instanceof THREE.Mesh}{(bowl.material = metalMat)}{/if}
+		{#if rim instanceof THREE.Mesh}{(rim.material = metalMat)}{/if}
+		{#if flame}
+			{@const m = flame}
+			{m.position.set(sx, 1.74, sz)}
+			{m.scale.set(fs * 1.05, fs, fs * 1.05)}
+		{/if}
+		{#if flameInner}
+			{@const m = flameInner}
+			{m.position.set(sx * 0.5, 1.76, sz * 0.5)}
+			{m.scale.set(fi * 0.5, fi * 1.15, fi * 0.5)}
+		{/if}
+		{#if glow}
+			{@const m = glow}
+			{m.scale.set(fs * 1.6, fs * 0.9, fs * 1.6)}
+		{/if}
+		{#if halo}
+			{@const m = halo}
+			{m.scale.set(li * 1.2, li * 0.9, li * 1.2)}
+		{/if}
+		{#if light}
+			{@const l = light as THREE.PointLight}
+			{(l.intensity = li * 10)}
+		{/if}
+		<T is={group} />
 	{/each}
 {/await}
 
 <!-- Spawn portals: 8 gates evenly on the arena wall, facing inward -->
-{#each portalPositions as portal, i}
+{#each portalGroups as group, i}
 	{@const swirl1 = clock * 1.1 + i * 0.9}
 	{@const swirl2 = -(clock * 0.75 + i * 1.3)}
 	{@const pulse = 0.9 + Math.sin(clock * 1.8 + i * 2.1) * 0.1}
 	{@const flicker = 0.85 + Math.sin(clock * 3.2 + i * 1.7) * 0.12}
-	<T.Group position={[portal.x, 1.2, portal.z]} rotation={[0, portal.ry, 0]}>
-		<!-- Stone/metal outer ring frame -->
-		<T.Mesh geometry={portalRingGeo} material={portalRingMat} />
-		<!-- Dark void interior -->
-		<T.Mesh geometry={portalVoidGeo} material={portalVoidMat} position={[0, 0, 0.01]} />
-		<!-- Swirl ring 1 — slow clockwise -->
-		<T.Mesh
-			geometry={portalSwirl1Geo}
-			material={portalSwirl1Mat}
-			rotation={[swirl1, 0, swirl1 * 0.4]}
-			scale={[pulse, pulse, 1]}
-		/>
-		<!-- Swirl ring 2 — faster counter-clockwise -->
-		<T.Mesh
-			geometry={portalSwirl2Geo}
-			material={portalSwirl2Mat}
-			rotation={[swirl2 * 0.6, swirl2, 0]}
-			scale={[flicker, flicker, 1]}
-		/>
-		<!-- Ambient glow blob -->
-		<T.Mesh
-			geometry={portalGlowGeo}
-			material={portalGlowMat}
-			scale={[pulse * 1.3, pulse * 1.3, pulse * 0.5]}
-		/>
-		<!-- Dim purple point light — hints at portal location -->
-		<T.PointLight color="#8833ff" intensity={flicker * 2.5} distance={12} decay={2} position={[0, 0, -1]} />
-	</T.Group>
+	{@const swirl1Mesh = group.children[2]}
+	{@const swirl2Mesh = group.children[3]}
+	{@const glowMesh = group.children[4]}
+	{@const light = group.children[5] as THREE.PointLight}
+	{#if swirl1Mesh instanceof THREE.Mesh}
+		{swirl1Mesh.rotation.set(swirl1, 0, swirl1 * 0.4)}
+		{swirl1Mesh.scale.set(pulse, pulse, 1)}
+	{/if}
+	{#if swirl2Mesh instanceof THREE.Mesh}
+		{swirl2Mesh.rotation.set(swirl2 * 0.6, swirl2, 0)}
+		{swirl2Mesh.scale.set(flicker, flicker, 1)}
+	{/if}
+	{#if glowMesh instanceof THREE.Mesh}
+		{glowMesh.scale.set(pulse * 1.3, pulse * 1.3, pulse * 0.5)}
+	{/if}
+	{#if light instanceof THREE.PointLight}
+		{(light.intensity = flicker * 2.5)}
+	{/if}
+	<T is={group} />
 {/each}
