@@ -1,14 +1,15 @@
 // Shared ability state — written by AbilityInput, read by GameHud
 export const abilityState = $state({
-	markCooldownUntil: 0, // ms timestamp (spotter steady shot, 3s)
-	suppressHits: 0, // gunner suppress counter (resets on enemy change)
+	markCooldownUntil: 0,      // ms (spotter steady shot, 1.5s)
+	suppressHits: 0,           // gunner suppress counter (resets on enemy change)
 	lastSuppressedEnemyId: null as bigint | null,
-	bashCooldownUntil: 0, // ms timestamp (tank axe swing, 1.5s)
-	healCooldownUntil: 0, // ms timestamp (healer heal shot, 2s)
-	braceCooldownUntil: 0, // ms timestamp (tank brace, 1s between activations)
-	pingCooldownUntil: 0, // ms timestamp (spotter flash stun, 1.5s)
-	adrenalineCooldownUntil: 0, // ms timestamp (gunner adrenaline, 5s)
-	adrenalineUntil: 0 // ms timestamp — visual effect active during adrenaline
+	bashCooldownUntil: 0,      // ms (tank axe swing, 0.5s)
+	healCooldownUntil: 0,      // ms (healer chain heal, 3s)
+	braceCooldownUntil: 0,     // ms (tank brace, 2s between activations)
+	pingCooldownUntil: 0,      // ms (spotter flash, 3s)
+	adrenalineCooldownUntil: 0,// ms (gunner adrenaline, 5s)
+	ultimateCooldownUntil: 0,  // ms (all classes, 35s)
+	adrenalineUntil: 0         // ms — visual effect active during adrenaline
 });
 
 // Heal beam — written by AbilityInput, read by HealBeam (3D scene)
@@ -41,6 +42,7 @@ export function resetAbilities() {
 	abilityState.braceCooldownUntil = 0;
 	abilityState.pingCooldownUntil = 0;
 	abilityState.adrenalineCooldownUntil = 0;
+	abilityState.ultimateCooldownUntil = 0;
 	abilityState.adrenalineUntil = 0;
 	shotFlash.until = 0;
 	healBeam.active = false;

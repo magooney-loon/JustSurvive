@@ -21,6 +21,8 @@
 	import { soundActions } from '$root/Sound.svelte';
 	import { logAbility } from '$root/settings.svelte.js';
 
+	const ULTIMATE_CD_MS = 35_000;
+
 	const keyMap: Record<string, keyof typeof input> = {
 		KeyW: 'forward',
 		ArrowUp: 'forward',
@@ -37,6 +39,11 @@
 	function onKeyDown(e: KeyboardEvent) {
 		const key = keyMap[e.code];
 		if (key) input[key] = true;
+
+		// Ultimate — Q
+		if (e.code === 'KeyQ' && !e.repeat) {
+			fireUltimate();
+		}
 	}
 
 	function onKeyUp(e: KeyboardEvent) {
@@ -58,12 +65,10 @@
 		}
 		const sid = lobbyState.currentSessionId;
 		if (sid) combatActions.braceEnd(sid);
-		abilityState.braceCooldownUntil = Date.now() + 1000;
+		abilityState.braceCooldownUntil = Date.now() + 2000;
 	}
 	function startBraceTimer() {
-		if (braceTimer !== null) {
-			clearTimeout(braceTimer);
-		}
+		if (braceTimer !== null) clearTimeout(braceTimer);
 		braceTimer = setTimeout(endBrace, BRACE_MAX_MS);
 	}
 
@@ -149,6 +154,32 @@
 		return best;
 	}
 
+	function fireUltimate() {
+		if (!myState || myState.status !== 'alive') return;
+		const sid = lobbyState.currentSessionId;
+		if (!sid) return;
+		if (abilityState.ultimateCooldownUntil > Date.now()) return;
+		abilityState.ultimateCooldownUntil = Date.now() + ULTIMATE_CD_MS;
+
+		const cls = myState.classChoice;
+		if (cls === 'spotter') {
+			combatActions.spotterUltimate(sid);
+			logAbility.info('SPOTTER: barrage ultimate');
+		} else if (cls === 'gunner') {
+			combatActions.gunnerUltimate(sid);
+			logAbility.info('GUNNER: frenzy ultimate');
+		} else if (cls === 'tank') {
+			combatActions.tankUltimate(sid);
+			axeSwingFlash.active = true;
+			axeSwingFlash.yaw = fpsCamera.yaw;
+			axeSwingFlash.until = Date.now() + AXE_SWING_FLASH_MS;
+			logAbility.info('TANK: ground slam ultimate');
+		} else if (cls === 'healer') {
+			combatActions.healerUltimate(sid);
+			logAbility.info('HEALER: revitalize ultimate');
+		}
+	}
+
 	function onMouseDown(e: MouseEvent) {
 		logAbility.info('MOUSE DOWN: myState=', myState?.classChoice, 'status=', myState?.status);
 		if (!myState || myState.status !== 'alive') return;
@@ -163,7 +194,7 @@
 					combatActions.steadyShot(sid, enemy.id);
 					soundActions.playSpotterMark();
 					soundActions.playHitmarker();
-					abilityState.markCooldownUntil = Date.now() + 3000;
+					abilityState.markCooldownUntil = Date.now() + 1500;
 					steadyShotFlash.until = Date.now() + STEADY_SHOT_FLASH_MS;
 					steadyShotFlash.yaw = fpsCamera.yaw;
 					logAbility.info('SPOTTER: steady shot enemy', enemy.id);
@@ -172,7 +203,7 @@
 				if (abilityState.pingCooldownUntil > Date.now()) return;
 				combatActions.spotterFlash(sid);
 				soundActions.playSpotterPing();
-				abilityState.pingCooldownUntil = Date.now() + 1500;
+				abilityState.pingCooldownUntil = Date.now() + 3000;
 				spotterFlash.active = true;
 				spotterFlash.yaw = fpsCamera.yaw;
 				spotterFlash.until = Date.now() + SPOTTER_FLASH_MS;
@@ -198,14 +229,7 @@
 				shotFlash.until = Date.now() + SHOT_FLASH_MS;
 				logAbility.info('GUNNER: attack enemy', enemy.id, 'suppress=', suppress);
 			} else if (e.button === 2) {
-				logAbility.info(
-					'GUNNER: adrenaline attempt, cooldown=',
-					abilityState.adrenalineCooldownUntil,
-					'now=',
-					Date.now()
-				);
 				if (abilityState.adrenalineCooldownUntil > Date.now()) return;
-				// Server fills stamina - just trigger the adrenaline
 				combatActions.adrenaline(sid);
 				soundActions.playGunnerAdrenaline();
 				abilityState.adrenalineCooldownUntil = Date.now() + 5000;
@@ -239,17 +263,18 @@
 		if (myState.classChoice === 'healer') {
 			if (e.button === 0) {
 				if (abilityState.healCooldownUntil > Date.now()) return;
+				// Server auto-targets lowest HP teammate; find nearest for local VFX only
 				const target = nearestAliveTeammate(10_000);
+				combatActions.healPlayer(sid);
+				soundActions.playHealerHeal();
+				abilityState.healCooldownUntil = Date.now() + 3000;
 				if (target) {
-					combatActions.healPlayer(sid, target.playerIdentity);
-					soundActions.playHealerHeal();
-					abilityState.healCooldownUntil = Date.now() + 2000;
 					healBeam.active = true;
 					healBeam.toX = Number(target.posX) / 1000;
 					healBeam.toZ = Number(target.posZ) / 1000;
 					healBeam.until = Date.now() + HEAL_BEAM_MS;
-					logAbility.info('HEALER: heal target', target.playerIdentity.toHexString());
 				}
+				logAbility.info('HEALER: chain heal');
 			} else if (e.button === 2) {
 				const target = nearestDowned(3_000);
 				if (target) {

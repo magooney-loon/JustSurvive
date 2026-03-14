@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { useTask } from '@threlte/core';
+	import { T, useTask } from '@threlte/core';
 	import { useSpacetimeDB, useTable } from 'spacetimedb/svelte';
 	import { tables } from '$bindings/index.js';
 	import { lobbyState } from '$lib/stores/lobby.svelte.js';
@@ -19,6 +19,7 @@
 	import { onMount } from 'svelte';
 	import PlayerEntity from '$lib/character/PlayerEntity.svelte';
 	import EnemyEntity from '$lib/character/EnemyEntity.svelte';
+	import BossEntity from '$lib/character/enemies/boss/BossEntity.svelte';
 	import AcidPoolEntity from '$lib/character/enemies/AcidPoolEntity.svelte';
 	import MarkOverlay from '$lib/character/ui/MarkOverlay.svelte';
 	import GameSounds from '$lib/stages/GameSounds.svelte';
@@ -26,10 +27,19 @@
 	const conn = useSpacetimeDB();
 	const [players] = useTable(tables.playerState);
 	const [enemies] = useTable(tables.enemy);
+	const [bosses] = useTable(tables.boss);
+	const [tankStates] = useTable(tables.tankState);
 	const [sessions] = useTable(tables.gameSession);
 	const [acidPools] = useTable(tables.acidPool);
 
 	const session = $derived($sessions.find((s) => s.id === lobbyState.currentSessionId));
+	const myTankState = $derived(
+		$tankStates.find(
+			(t) =>
+				t.playerIdentity.toHexString() === $conn.identity?.toHexString() &&
+				t.sessionId === lobbyState.currentSessionId
+		)
+	);
 	const myState = $derived(
 		$players.find(
 			(p) =>
@@ -203,7 +213,7 @@
 		const hasStamina = myState.stamina > 0n;
 		// camYaw for movement: camera forward is (-sin(yaw), -cos(yaw)), so pass yaw+π
 		const camYaw = fpsCamera.yaw + Math.PI;
-		updateLocalMovement(dt, myState.classChoice, hasStamina, camYaw, myState.isBracing);
+		updateLocalMovement(dt, myState.classChoice, hasStamina, camYaw, myTankState?.isBracing ?? false);
 
 		sendTimer += dt;
 		if (sendTimer >= SEND_INTERVAL) {
@@ -244,6 +254,19 @@
 {#each visibleEnemies as enemy (enemy.id)}
 	<EnemyEntity {enemy} />
 {/each}
+
+<!-- Bosses -->
+{#each $bosses.filter((b) => b.sessionId === lobbyState.currentSessionId) as boss (boss.id)}
+	<BossEntity {boss} />
+{/each}
+
+<!-- Fog placeholder: red box at arena center when fog is active -->
+{#if session?.fogEndsAt && Number(session.fogEndsAt.microsSinceUnixEpoch) / 1000 > Date.now()}
+	<T.Mesh position={[0, 1, 0]}>
+		<T.BoxGeometry args={[4, 2, 4]} />
+		<T.MeshBasicMaterial color="#ff0000" transparent opacity={0.5} />
+	</T.Mesh>
+{/if}
 
 <!-- Acid pools -->
 {#each livePools as pool (pool.id)}

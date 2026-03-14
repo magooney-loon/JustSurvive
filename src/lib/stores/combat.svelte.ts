@@ -28,22 +28,46 @@ export const combatActions = {
 			await conn.reducers.spotterFlash({ sessionId });
 		} catch {}
 	},
+	async spotterUltimate(sessionId: bigint) {
+		if (!conn) return;
+		try {
+			await conn.reducers.spotterUltimate({ sessionId });
+		} catch {}
+	},
 	async attackEnemy(sessionId: bigint, enemyId: bigint, suppress: boolean) {
 		if (!conn) return;
 		try {
 			await conn.reducers.attackEnemy({ sessionId, enemyId, suppress });
 		} catch {}
 	},
-	async healPlayer(sessionId: bigint, targetIdentity: Identity) {
+	async gunnerUltimate(sessionId: bigint) {
 		if (!conn) return;
 		try {
-			await conn.reducers.healPlayer({ sessionId, targetIdentity });
+			await conn.reducers.gunnerUltimate({ sessionId });
+		} catch {}
+	},
+	async healPlayer(sessionId: bigint) {
+		if (!conn) return;
+		try {
+			await conn.reducers.healPlayer({ sessionId });
+		} catch {}
+	},
+	async healerUltimate(sessionId: bigint) {
+		if (!conn) return;
+		try {
+			await conn.reducers.healerUltimate({ sessionId });
 		} catch {}
 	},
 	async axeSwing(sessionId: bigint) {
 		if (!conn) return;
 		try {
 			await conn.reducers.axeSwing({ sessionId });
+		} catch {}
+	},
+	async tankUltimate(sessionId: bigint) {
+		if (!conn) return;
+		try {
+			await conn.reducers.tankUltimate({ sessionId });
 		} catch {}
 	},
 	async adrenaline(sessionId: bigint) {
