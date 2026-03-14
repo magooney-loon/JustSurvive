@@ -16,16 +16,15 @@
 
 <div
 	transition:fly={{ y: -16, duration: 220 }}
-	style="position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,0.6); backdrop-filter: blur(8px);"
+	class="rpgui-content"
+	style="position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;"
 >
-	<div
-		style="background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15); border-radius: 1rem; padding: 2rem; min-width: 320px; color: white;"
-	>
-		<h2 style="margin: 0 0 1.5rem; font-size: 1.5rem; font-weight: 600;">Settings</h2>
+	<div class="rpgui-container framed" style="padding: 2rem; min-width: 320px;">
+		<h2>Settings</h2>
 
 		<!-- Graphics Quality -->
 		<div style="margin-bottom: 1.5rem;">
-			<p style="margin: 0 0 0.5rem; opacity: 0.7; font-size: 0.875rem;">Graphics Quality</p>
+			<h4>Graphics Quality</h4>
 			<div style="display: flex; gap: 0.5rem;">
 				{#each ['low', 'mid', 'high'] as QualityLevel[] as level}
 					<button
@@ -48,7 +47,7 @@
 
 		<!-- Audio -->
 		<div style="margin-bottom: 1.5rem;">
-			<p style="margin: 0 0 0.5rem; opacity: 0.7; font-size: 0.875rem;">Audio</p>
+			<h4>Audio</h4>
 			<div style="display: flex; flex-direction: column; gap: 0.75rem;">
 				<div style="display: flex; flex-direction: column; gap: 0.25rem;">
 					<label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
@@ -59,16 +58,24 @@
 						/>
 						Music
 					</label>
-					<input
-						type="range"
-						min="0"
-						max="1"
-						step="0.01"
-						aria-label="Music volume"
-						value={settingsState.audio.musicVolume}
-						oninput={(e) => audioActions.setMusicVolume(+(e.target as HTMLInputElement).value)}
-						style="width: 100%; accent-color: rgba(255,255,255,0.8);"
-					/>
+					<div class="rpgui-slider-container">
+						<div class="rpgui-slider-left-edge"></div>
+						<div class="rpgui-slider-track"></div>
+						<input
+							type="range"
+							min="0"
+							max="1"
+							step="0.01"
+							aria-label="Music volume"
+							value={settingsState.audio.musicVolume}
+							oninput={(e) => audioActions.setMusicVolume(+(e.target as HTMLInputElement).value)}
+							style="position: relative; z-index: 1; width: 100%; height: 100%; opacity: 0.5;"
+						/>
+						<div
+							class="rpgui-slider-thumb"
+							style="left: {settingsState.audio.musicVolume * 100}%;"
+						></div>
+					</div>
 				</div>
 				<div style="display: flex; flex-direction: column; gap: 0.25rem;">
 					<label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
@@ -79,16 +86,24 @@
 						/>
 						Ambience
 					</label>
-					<input
-						type="range"
-						min="0"
-						max="1"
-						step="0.01"
-						aria-label="Ambience volume"
-						value={settingsState.audio.ambienceVolume}
-						oninput={(e) => audioActions.setAmbienceVolume(+(e.target as HTMLInputElement).value)}
-						style="width: 100%; accent-color: rgba(255,255,255,0.8);"
-					/>
+					<div class="rpgui-slider-container">
+						<div class="rpgui-slider-left-edge"></div>
+						<div class="rpgui-slider-track"></div>
+						<input
+							type="range"
+							min="0"
+							max="1"
+							step="0.01"
+							aria-label="Ambience volume"
+							value={settingsState.audio.ambienceVolume}
+							oninput={(e) => audioActions.setAmbienceVolume(+(e.target as HTMLInputElement).value)}
+							style="position: relative; z-index: 1; width: 100%; height: 100%; opacity: 0.5;"
+						/>
+						<div
+							class="rpgui-slider-thumb"
+							style="left: {settingsState.audio.ambienceVolume * 100}%;"
+						></div>
+					</div>
 				</div>
 				<div style="display: flex; flex-direction: column; gap: 0.25rem;">
 					<label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
@@ -99,49 +114,65 @@
 						/>
 						Sound Effects
 					</label>
-					<input
-						type="range"
-						min="0"
-						max="1"
-						step="0.01"
-						aria-label="Effects volume"
-						value={settingsState.audio.effectsVolume}
-						oninput={(e) => audioActions.setEffectsVolume(+(e.target as HTMLInputElement).value)}
-						style="width: 100%; accent-color: rgba(255,255,255,0.8);"
-					/>
+					<div class="rpgui-slider-container">
+						<div class="rpgui-slider-left-edge"></div>
+						<div class="rpgui-slider-track"></div>
+						<input
+							type="range"
+							min="0"
+							max="1"
+							step="0.01"
+							aria-label="Effects volume"
+							value={settingsState.audio.effectsVolume}
+							oninput={(e) => audioActions.setEffectsVolume(+(e.target as HTMLInputElement).value)}
+							style="position: relative; z-index: 1; width: 100%; height: 100%; opacity: 0.5;"
+						/>
+						<div
+							class="rpgui-slider-thumb"
+							style="left: {settingsState.audio.effectsVolume * 100}%;"
+						></div>
+					</div>
 				</div>
 			</div>
 		</div>
 
 		<!-- Controls -->
 		<div style="margin-bottom: 1.5rem;">
-			<p style="margin: 0 0 0.5rem; opacity: 0.7; font-size: 0.875rem;">Controls</p>
+			<h4>Controls</h4>
 			<div style="display: flex; flex-direction: column; gap: 0.75rem;">
 				<div style="display: flex; flex-direction: column; gap: 0.25rem;">
-					<div style="display: flex; justify-content: space-between; font-size: 0.85rem;">
+					<div style="display: flex; justify-content: space-between;">
 						<span>Mouse Sensitivity</span>
 						<span style="opacity: 0.6;">{settingsState.controls.mouseSensitivity.toFixed(2)}</span>
 					</div>
-					<input
-						type="range"
-						min="0.1"
-						max="3"
-						step="0.05"
-						aria-label="Mouse sensitivity"
-						value={settingsState.controls.mouseSensitivity}
-						oninput={(e) =>
-							controlsActions.setMouseSensitivity(+(e.target as HTMLInputElement).value)}
-						style="width: 100%; accent-color: rgba(255,255,255,0.8);"
-					/>
+					<div class="rpgui-slider-container">
+						<div class="rpgui-slider-left-edge"></div>
+						<div class="rpgui-slider-track"></div>
+						<input
+							type="range"
+							min="0.1"
+							max="3"
+							step="0.05"
+							aria-label="Mouse sensitivity"
+							value={settingsState.controls.mouseSensitivity}
+							oninput={(e) =>
+								controlsActions.setMouseSensitivity(+(e.target as HTMLInputElement).value)}
+							style="position: relative; z-index: 1; width: 100%; height: 100%; opacity: 0.5;"
+						/>
+						<div
+							class="rpgui-slider-thumb"
+							style="left: {((settingsState.controls.mouseSensitivity - 0.1) / 2.9) * 100}%;"
+						></div>
+					</div>
 				</div>
 			</div>
 		</div>
 
 		<!-- Keybinds -->
 		<div style="margin-bottom: 1.5rem;">
-			<p style="margin: 0 0 0.5rem; opacity: 0.7; font-size: 0.875rem;">Keybinds</p>
+			<h4>Keybinds</h4>
 			<div
-				style="display: flex; justify-content: space-between; align-items: center; font-size: 0.85rem; opacity: 0.6;"
+				style="display: flex; justify-content: space-between; align-items: center; opacity: 0.6;"
 			>
 				<span>Toggle HUD</span>
 				<kbd
@@ -152,13 +183,13 @@
 		</div>
 
 		<button
+			class="rpgui-button"
 			onclick={() => {
 				soundActions.playClick();
 				stageActions.goBack();
 			}}
-			style="width: 100%; padding: 0.6rem; background: rgba(255,255,255,0.15); color: white; border: 1px solid rgba(255,255,255,0.3); border-radius: 0.5rem; cursor: pointer;"
 		>
-			Back
+			<p>Back</p>
 		</button>
 	</div>
 </div>

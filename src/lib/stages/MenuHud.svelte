@@ -66,10 +66,12 @@
 
 <div
 	transition:fly={{ y: 20, duration: 300 }}
-	style="position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,0.4); backdrop-filter: blur(4px);"
+	class="rpgui-content"
+	style="position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;"
 >
 	<div
-		style="background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15); border-radius: 1rem; padding: 2.5rem; min-width: 340px; color: white; display: flex; flex-direction: column; gap: 1rem; align-items: stretch;"
+		class="rpgui-container framed-golden"
+		style="padding: 2rem; min-width: 360px; display: flex; flex-direction: column; gap: 1rem; align-items: stretch;"
 	>
 		<h1
 			style="margin: 0.25rem 0 0.5rem; font-size: 2.5rem; font-weight: 900; text-align: center; letter-spacing: 0.15em; color: #fff; text-transform: uppercase; font-family: system-ui, -apple-system, sans-serif; position: relative;"
@@ -85,39 +87,17 @@
 		</h1>
 
 		<!-- Decorative hazard bar -->
-		<svg viewBox="0 0 200 12" style="width: 100%; height: 12px; display: block;">
-			<defs>
-				<pattern
-					id="hazard"
-					width="10"
-					height="12"
-					patternUnits="userSpaceOnUse"
-					patternTransform="rotate(45)"
-				>
-					<rect width="5" height="12" fill="#0ff" />
-					<rect x="5" width="5" height="12" fill="#222" />
-				</pattern>
-			</defs>
-			<rect width="200" height="12" fill="url(#hazard)" opacity="0.8" />
-		</svg>
+		<hr class="golden" />
 
 		{#if !inActiveGame}
-			<div style="display: flex; justify-content: center; gap: 1.5rem; margin-bottom: 0.25rem;">
-				<span style="font-size: 0.75rem; color: rgba(255,255,255,0.5);">
-					<span style="color: #4af; font-weight: 600;">{totalLobbies}</span> lobbies
-				</span>
-				<span style="font-size: 0.75rem; color: rgba(255,255,255,0.5);">
-					<span style="color: #8a4; font-weight: 600;">{totalPlayers}</span> players
-				</span>
-			</div>
+			<p class="rpgui-center">
+				<span style="color: #4af; font-weight: 600;">{totalLobbies}</span> lobbies ·
+				<span style="color: #8a4; font-weight: 600;">{totalPlayers}</span> players
+			</p>
 		{/if}
 
 		{#if inActiveGame}
-			<label
-				for="player-name"
-				style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.08em; opacity: 0.6; text-align: center;"
-				>Your Name</label
-			>
+			<label for="player-name">Your Name</label>
 			<input
 				id="player-name"
 				type="text"
@@ -126,37 +106,35 @@
 				class="player-name-input"
 			/>
 			<button
+				class="rpgui-button"
 				onclick={() => {
 					soundActions.playClick();
 					stageActions.setStage('lobby');
 				}}
-				style="padding: 0.6rem; background: rgba(74,170,136,0.3); color: white; border: 1px solid rgba(74,170,136,0.5); border-radius: 0.5rem; cursor: pointer; font-size: 1rem;"
 			>
-				Reconnect to Lobby
+				<p>Reconnect to Lobby</p>
 			</button>
 			<button
+				class="rpgui-button"
 				onclick={() => {
 					soundActions.playClick();
 					stageActions.setStage('leaderboard');
 				}}
-				style="padding: 0.6rem; background: rgba(255,255,255,0.1); color: white; border: 1px solid rgba(255,255,255,0.2); border-radius: 0.5rem; cursor: pointer;"
-				>Leaderboard</button
 			>
+				<p>Leaderboard</p>
+			</button>
 			<button
+				class="rpgui-button"
 				onclick={() => {
 					soundActions.playClick();
 					stageActions.setStage('settings');
 				}}
-				style="padding: 0.6rem; background: rgba(255,255,255,0.1); color: white; border: 1px solid rgba(255,255,255,0.2); border-radius: 0.5rem; cursor: pointer;"
-				>Settings</button
 			>
+				<p>Settings</p>
+			</button>
 		{:else}
 			<div style="display: flex; flex-direction: column; gap: 0.35rem;">
-				<label
-					for="player-name"
-					style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.08em; opacity: 0.6; text-align: center;"
-					>Your Name</label
-				>
+				<label for="player-name">Your Name</label>
 				<input
 					id="player-name"
 					type="text"
@@ -167,65 +145,68 @@
 				/>
 			</div>
 
-			<div style="height: 1px; background: rgba(255,255,255,0.1); margin: 0.25rem 0;"></div>
+			<hr class="golden" />
 
 			{#if mode === 'main'}
 				<button
+					class="rpgui-button golden"
 					onclick={() => {
 						soundActions.playClick();
 						quickplay();
 					}}
 					disabled={loading}
-					style="padding: 0.65rem; background: rgba(74,170,136,0.25); color: white; border: 1px solid rgba(74,170,136,0.45); border-radius: 0.5rem; cursor: pointer; font-size: 1rem; font-weight: 600;"
-					>Quick Play</button
 				>
+					<p>Quick Play</p>
+				</button>
 				<button
+					class="rpgui-button"
 					onclick={() => {
 						soundActions.playClick();
 						hostPrivate();
 					}}
 					disabled={loading}
-					style="padding: 0.65rem; background: rgba(255,255,255,0.1); color: white; border: 1px solid rgba(255,255,255,0.2); border-radius: 0.5rem; cursor: pointer;"
-					>Host Private Lobby</button
 				>
+					<p>Host Private Lobby</p>
+				</button>
 				<button
+					class="rpgui-button"
 					onclick={() => {
 						soundActions.playClick();
 						lobbyActions.clearError();
 						mode = 'join_code';
 					}}
 					disabled={loading}
-					style="padding: 0.65rem; background: rgba(255,255,255,0.1); color: white; border: 1px solid rgba(255,255,255,0.2); border-radius: 0.5rem; cursor: pointer;"
-					>Join Private Lobby</button
 				>
-				<div style="height: 1px; background: rgba(255,255,255,0.1); margin: 0.5rem 0;"></div>
+					<p>Join Private Lobby</p>
+				</button>
+				<hr class="golden" />
 
 				<div style="display: flex; gap: 0.5rem;">
 					<button
+						class="rpgui-button"
 						onclick={() => {
 							soundActions.playClick();
 							stageActions.setStage('leaderboard');
 						}}
 						disabled={loading}
-						style="flex: 1; padding: 0.5rem; background: rgba(255,255,255,0.07); color: white; border: 1px solid rgba(255,255,255,0.15); border-radius: 0.5rem; cursor: pointer; font-size: 0.875rem;"
-						>Leaderboard</button
 					>
+						<p>Leaderboard</p>
+					</button>
 					<button
+						class="rpgui-button"
 						onclick={() => {
 							soundActions.playClick();
 							stageActions.setStage('settings');
 						}}
 						disabled={loading}
-						style="flex: 1; padding: 0.5rem; background: rgba(255,255,255,0.07); color: white; border: 1px solid rgba(255,255,255,0.15); border-radius: 0.5rem; cursor: pointer; font-size: 0.875rem;"
-						>Settings</button
 					>
+						<p>Settings</p>
+					</button>
 				</div>
 				<a
 					href="https://github.com/magooney-loon/JustSurvive"
 					target="_blank"
-					rel="noopener noreferrer"
-					style="padding: 0.5rem; background: rgba(255,255,255,0.07); color: rgba(255,255,255,0.6); border: 1px solid rgba(255,255,255,0.15); border-radius: 0.5rem; cursor: pointer; text-align: center; text-decoration: none; font-size: 0.8rem;"
-					>Source Code</a
+					rel="noopener noreferrer">Source Code</a
 				>
 			{:else}
 				<input
@@ -236,34 +217,32 @@
 					style="text-align: center; text-transform: uppercase; font-size: 1.75rem; padding: 0.5rem 1rem; letter-spacing: 0.4em; border-radius: 0.5rem; background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.25); color: white; outline: none;"
 				/>
 				<button
+					class="rpgui-button golden"
 					onclick={() => {
 						soundActions.playClick();
 						joinByCode();
 					}}
 					disabled={joinCode.length < 4 || loading}
-					style="padding: 0.65rem; background: rgba(74,170,136,0.25); color: white; border: 1px solid rgba(74,170,136,0.45); border-radius: 0.5rem; cursor: pointer; font-size: 1rem; font-weight: 600;"
-					>Join</button
 				>
+					<p>Join</p>
+				</button>
 				<button
+					class="rpgui-button"
 					onclick={() => {
 						soundActions.playClick();
 						lobbyActions.clearError();
 						mode = 'main';
 					}}
 					disabled={loading}
-					style="padding: 0.5rem; background: rgba(255,255,255,0.07); color: white; border: 1px solid rgba(255,255,255,0.15); border-radius: 0.5rem; cursor: pointer;"
-					>Back</button
 				>
+					<p>Back</p>
+				</button>
 			{/if}
 
 			{#if loading}
-				<p
-					style="text-align: center; color: rgba(255,255,255,0.5); margin: 0; font-size: 0.875rem;"
-				>
-					Connecting...
-				</p>
+				<p class="rpgui-center" style="color: rgba(255,255,255,0.5);">Connecting...</p>
 			{:else if lobbyState.error}
-				<p style="text-align: center; color: #f66; margin: 0; font-size: 0.875rem;">
+				<p class="rpgui-center" style="color: #f66;">
 					{lobbyState.error}
 				</p>
 			{/if}

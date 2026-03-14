@@ -541,35 +541,36 @@
 
 <div
 	transition:fly={{ y: 20, duration: 300 }}
-	style="position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,0.5); backdrop-filter: blur(8px)"
+	class="rpgui-content"
+	style="position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;"
 >
 	<div
-		style="background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15); border-radius: 1rem; padding: 2rem; color: white; display: flex; gap: 1.5rem; align-items: flex-start;"
+		class="rpgui-container framed"
+		style="padding: 2rem; color: white; display: flex; gap: 1.5rem; align-items: flex-start;"
 	>
 		<!-- Left: Lobby panel -->
 		<div style="min-width: 400px; flex: 1;">
 			{#if !currentLobby}
-				<p style="color: rgba(255,255,255,0.6); margin: 0 0 0.5rem;">
-					Connecting to lobby... or kicked...
-				</p>
-				<p style="color: rgba(255,255,255,0.4); margin: 0 0 1rem; font-size: 0.85rem;">
+				<p>Connecting to lobby... or kicked...</p>
+				<p>
 					Canceling in {connectingCountdown}s...
 				</p>
 				<button
+					class="rpgui-button"
 					onclick={() => {
 						soundActions.playClick();
 						lobbyState.currentLobbyId = null;
 						stageActions.setStage('menu');
 					}}
-					style="padding: 0.5rem 1.5rem; background: rgba(255,255,255,0.1); color: white; border: 1px solid rgba(255,255,255,0.2); border-radius: 0.5rem; cursor: pointer;"
-					>Back</button
 				>
+					<p>Back</p>
+				</button>
 			{:else}
 				<!-- Header -->
 				<div
 					style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;"
 				>
-					<h2 style="margin: 0; font-size: 1.5rem; font-weight: 600;">Lobby</h2>
+					<h2>Lobby</h2>
 					{#if currentLobby?.isPublic}
 						<span
 							style="background: rgba(42,170,85,0.25); border: 1px solid rgba(42,170,85,0.4); padding: 0.2rem 0.7rem; border-radius: 999px; font-size: 0.75rem; color: #4f4; font-weight: 600; letter-spacing: 0.05em;"
@@ -577,24 +578,25 @@
 						>
 					{:else}
 						<button
+							class="rpgui-button"
 							onclick={() => {
 								soundActions.playClick();
 								copyCode();
 							}}
-							style="background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.2); color: rgba(255,255,255,0.8); padding: 0.3rem 0.8rem; border-radius: 0.375rem; cursor: pointer; font-family: monospace; letter-spacing: 0.15em; font-size: 0.9rem;"
 						>
-							{currentLobby?.code} 📋
+							<p>{currentLobby?.code}</p>
 						</button>
 					{/if}
 				</div>
 
 				<!-- Player list -->
-				<div style="display: flex; flex-direction: column; gap: 0.4rem; margin-bottom: 1.5rem;">
+				<div
+					class="rpgui-list-imp"
+					style="display: flex; flex-direction: column; gap: 0.4rem; margin-bottom: 1.5rem; max-height: 200px; overflow-y: auto;"
+				>
 					{#each players as player (player.id)}
-						<div
-							style="display: flex; align-items: center; gap: 0.75rem; padding: 0.6rem 0.75rem; background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.1); border-radius: 0.5rem;"
-						>
-							<span style="flex: 1; font-size: 0.95rem;">{player.playerName}</span>
+						<div style="display: flex; align-items: center; gap: 0.75rem; padding: 0.6rem 0.75rem;">
+							<span style="flex: 1;">{player.playerName}</span>
 							<span
 								style="font-size: 0.8rem; font-weight: 600; text-transform: capitalize; color: {player.classChoice
 									? CLASS_COLORS[player.classChoice]
@@ -628,7 +630,7 @@
 					{/each}
 					{#each { length: Math.max(0, 4 - players.length) } as _}
 						<div
-							style="padding: 0.6rem 0.75rem; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.07); border-radius: 0.5rem; color: rgba(255,255,255,0.25); font-size: 0.875rem;"
+							style="padding: 0.6rem 0.75rem; color: rgba(255,255,255,0.25); font-size: 0.875rem;"
 						>
 							Waiting for player...
 						</div>
@@ -637,11 +639,7 @@
 
 				<!-- Class selector -->
 				<div style="margin-bottom: 1.25rem;">
-					<p
-						style="margin: 0 0 0.5rem; font-size: 0.8rem; opacity: 0.6; text-transform: uppercase; letter-spacing: 0.08em;"
-					>
-						Select class
-					</p>
+					<h4>Select class</h4>
 					<div style="display: flex; gap: 0.4rem; flex-wrap: wrap;">
 						{#each CLASSES as cls}
 							{@const isFull = classCounts[cls] >= 2}
@@ -761,27 +759,19 @@
 					currentLobby?.status !== 'waiting' ||
 					(currentLobby?.isPublic && !!myEntry?.isReady)}
 				<button
+					class="rpgui-button golden"
 					onclick={() => {
 						soundActions.playClick();
 						lobbyActions.setReady(currentLobby.id, !myEntry?.isReady);
 					}}
 					disabled={readyLocked}
-					style="width: 100%; padding: 0.65rem; margin-bottom: 0.75rem; border-radius: 0.5rem; border: 1px solid rgba(255,255,255,{myEntry?.isReady
-						? '0.45'
-						: '0.2'}); background: {myEntry?.isReady
-						? 'rgba(74,170,136,0.3)'
-						: 'rgba(255,255,255,0.1)'}; color: white; cursor: {readyLocked
-						? 'not-allowed'
-						: 'pointer'}; font-weight: 600; font-size: 0.95rem; transition: background 0.15s;"
 				>
-					{myEntry?.isReady ? '✓ Locked In' : 'Ready Up'}
+					<p>{myEntry?.isReady ? '✓ Locked In' : 'Ready Up'}</p>
 				</button>
 
 				<!-- Start area -->
 				{#if currentLobby?.isPublic}
-					<p
-						style="text-align: center; color: rgba(255,255,255,0.45); font-size: 0.875rem; margin: 0 0 0.5rem;"
-					>
+					<p class="rpgui-center">
 						{gameStarting
 							? 'Starting...'
 							: allReady
@@ -790,56 +780,41 @@
 					</p>
 				{:else if isHost}
 					<button
+						class="rpgui-button golden"
 						onclick={() => {
 							soundActions.playClick();
 							lobbyActions.startCountdown(currentLobby.id);
 						}}
 						disabled={!canStart}
-						style="width: 100%; padding: 0.75rem; font-size: 1rem; font-weight: 600; border-radius: 0.5rem; border: 1px solid rgba(255,255,255,{canStart
-							? '0.5'
-							: '0.12'}); background: {canStart
-							? 'rgba(74,170,136,0.35)'
-							: 'rgba(255,255,255,0.05)'}; color: {canStart
-							? 'white'
-							: 'rgba(255,255,255,0.3)'}; cursor: {canStart
-							? 'pointer'
-							: 'not-allowed'}; margin-bottom: 0.5rem; transition: background 0.15s;"
 					>
-						{!allReady ? 'Waiting for all players' : gameStarting ? 'Starting...' : 'Start Game'}
+						<p>
+							{!allReady ? 'Waiting for all players' : gameStarting ? 'Starting...' : 'Start Game'}
+						</p>
 					</button>
 				{:else}
-					<p
-						style="text-align: center; color: rgba(255,255,255,0.45); font-size: 0.875rem; margin: 0 0 0.5rem;"
-					>
-						Waiting for host to start...
-					</p>
+					<p class="rpgui-center">Waiting for host to start...</p>
 				{/if}
 
 				{#if currentLobby?.status === 'countdown'}
-					<p
-						style="text-align: center; font-size: 2rem; color: #ff8; margin: 0.5rem 0; font-weight: 700;"
-					>
+					<p class="rpgui-center" style="font-size: 2rem; color: #ff8;">
 						Starting in {countdownValue}...
 					</p>
 				{/if}
 
 				<button
+					class="rpgui-button"
 					onclick={() => {
 						soundActions.playClick();
 						lobbyActions.leaveLobby(currentLobby.id);
 						stageActions.setStage('menu');
 					}}
 					disabled={currentLobby?.status !== 'waiting'}
-					style="width: 100%; margin-top: 0.25rem; padding: 0.5rem; background: rgba(220,50,50,0.15); border: 1px solid rgba(220,50,50,0.3); border-radius: 0.5rem; color: rgba(255,120,120,0.9); cursor: {currentLobby?.status !==
-					'waiting'
-						? 'not-allowed'
-						: 'pointer'}; font-size: 0.875rem;"
 				>
-					Leave Lobby
+					<p>Leave Lobby</p>
 				</button>
 
 				{#if lobbyState.error}
-					<p style="color: #f66; margin: 0.75rem 0 0; font-size: 0.875rem;">{lobbyState.error}</p>
+					<p style="color: #f66;">{lobbyState.error}</p>
 				{/if}
 			{/if}
 		</div>
@@ -847,25 +822,19 @@
 		<!-- Right: Chat panel -->
 		{#if currentLobby}
 			<div
-				style="width: 260px; flex-shrink: 0; display: flex; flex-direction: column; gap: 0.5rem;"
+				class="rpgui-container framed-grey"
+				style="width: 280px; flex-shrink: 0; display: flex; flex-direction: column; gap: 0.5rem; padding: 1rem;"
 			>
-				<p
-					style="margin: 0; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.08em; opacity: 0.5;"
-				>
-					Lobby Chat
-				</p>
+				<h4>Lobby Chat</h4>
 
 				<!-- Messages -->
 				<div
 					bind:this={chatEl}
-					style="flex: 1; min-height: 200px; max-height: 420px; overflow-y: auto; display: flex; flex-direction: column; gap: 0.35rem; background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.08); border-radius: 0.5rem; padding: 0.6rem;"
+					class="rpgui-list-imp"
+					style="flex: 1; min-height: 200px; max-height: 420px; overflow-y: auto; display: flex; flex-direction: column; gap: 0.35rem; padding: 0.6rem;"
 				>
 					{#if chatMessages.length === 0}
-						<p
-							style="margin: 0; color: rgba(255,255,255,0.25); font-size: 0.75rem; text-align: center; padding-top: 0.5rem;"
-						>
-							No messages yet
-						</p>
+						<p class="rpgui-center" style="color: rgba(255,255,255,0.25);">No messages yet</p>
 					{:else}
 						{#each chatMessages as msg (msg.id)}
 							<div style="display: flex; flex-direction: column; gap: 0.1rem;">
@@ -898,26 +867,15 @@
 						onkeydown={(e) => {
 							if (e.key === 'Enter') sendChat();
 						}}
-						style="flex: 1; background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.15); border-radius: 0.375rem; padding: 0.4rem 0.6rem; color: white; font-size: 0.8rem; outline: none;"
 					/>
-					<button
-						onclick={sendChat}
-						disabled={!chatInput.trim()}
-						style="padding: 0.4rem 0.7rem; background: rgba(255,255,255,0.12); border: 1px solid rgba(255,255,255,0.2); border-radius: 0.375rem; color: white; cursor: pointer; font-size: 0.8rem; opacity: {chatInput.trim()
-							? '1'
-							: '0.35'};"
-					>
-						Send
+					<button class="rpgui-button" onclick={sendChat} disabled={!chatInput.trim()}>
+						<p>Send</p>
 					</button>
 				</div>
 
 				<!-- Controls -->
 				<div style="padding-top: 0.5rem; border-top: 1px solid rgba(255,255,255,0.08);">
-					<p
-						style="margin: 0 0 0.35rem; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.08em; opacity: 0.5; text-align: center;"
-					>
-						Controls
-					</p>
+					<p class="rpgui-center">Controls</p>
 					<div style="display: flex; flex-wrap: wrap; gap: 0.35rem; justify-content: center;">
 						<span
 							style="font-size: 0.65rem; padding: 0.2rem 0.4rem; background: rgba(255,255,255,0.1); border-radius: 0.25rem;"
@@ -936,7 +894,7 @@
 
 				<!-- Cycling tips -->
 				<div
-					style="padding: 0.55rem 0.6rem; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); border-radius: 0.5rem; min-height: 3.2rem; position: relative; overflow: hidden;"
+					style="padding: 0.55rem 0.6rem; min-height: 3.2rem; position: relative; overflow: hidden;"
 				>
 					{#key tipIndex}
 						{@const tip = TIPS[tipIndex]}

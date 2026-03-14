@@ -87,24 +87,24 @@
 
 <div
 	transition:fly={{ y: 20, duration: 300 }}
-	style="position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,0.65); backdrop-filter: blur(10px); padding: 1rem;"
+	class="rpgui-content"
+	style="position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; padding: 1rem;"
 >
 	<div
-		style="background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.13); border-radius: 1.25rem; padding: 1.75rem; width: 100%; max-width: 700px; max-height: 90vh; display: flex; flex-direction: column; gap: 1rem; color: white;"
+		class="rpgui-container framed"
+		style="padding: 1.75rem; width: 100%; max-width: 700px; max-height: 90vh; display: flex; flex-direction: column; gap: 1rem;"
 	>
 		<!-- Header -->
 		<div style="display: flex; align-items: center; justify-content: space-between;">
-			<h2 style="margin: 0; font-size: 1.4rem; font-weight: 700; letter-spacing: 0.02em;">
-				Leaderboard
-			</h2>
+			<h2>Leaderboard</h2>
 			<button
+				class="rpgui-button"
 				onclick={() => {
 					soundActions.playClick();
 					stageActions.setStage('menu');
 				}}
-				style="padding: 0.35rem 0.85rem; background: rgba(255,255,255,0.1); color: white; border: 1px solid rgba(255,255,255,0.2); border-radius: 0.5rem; cursor: pointer; font-size: 0.85rem;"
 			>
-				Back
+				<p>Back</p>
 			</button>
 		</div>
 
@@ -116,7 +116,7 @@
 						soundActions.playClick();
 						tab = id as typeof tab;
 					}}
-					style="flex: 1; padding: 0.45rem; border-radius: 0.5rem; font-size: 0.85rem; cursor: pointer; transition: background 0.15s;
+					style="flex: 1; padding: 0.45rem; border-radius: 0.5rem; cursor: pointer; transition: background 0.15s;
 						background: {tab === id ? 'rgba(255,255,255,0.18)' : 'rgba(255,255,255,0.06)'};
 						border: 1px solid {tab === id ? 'rgba(255,255,255,0.3)' : 'rgba(255,255,255,0.1)'};
 						color: {tab === id ? 'white' : 'rgba(255,255,255,0.5)'};"
@@ -128,14 +128,13 @@
 
 		<!-- Content -->
 		<div
-			style="overflow-y: auto; flex: 1; display: flex; flex-direction: column; gap: 0.5rem; max-height: 400px;"
+			class="rpgui-list-imp"
+			style="overflow-y: auto; flex: 1; display: flex; flex-direction: column; gap: 0.5rem; max-height: 400px; border: none; padding: 0;"
 		>
 			<!-- ── TOP 20 ── -->
 			{#if tab === 'board'}
 				{#if sorted.length === 0}
-					<p
-						style="color: rgba(255,255,255,0.35); text-align: center; margin: 2rem 0; font-size: 0.875rem;"
-					>
+					<p class="rpgui-center" style="color: rgba(255,255,255,0.35); margin: 2rem 0;">
 						No games recorded yet.
 					</p>
 				{:else}
@@ -199,9 +198,7 @@
 				<!-- ── GLOBAL STATS ── -->
 			{:else if tab === 'stats'}
 				{#if !stats}
-					<p
-						style="color: rgba(255,255,255,0.35); text-align: center; margin: 2rem 0; font-size: 0.875rem;"
-					>
+					<p class="rpgui-center" style="color: rgba(255,255,255,0.35); margin: 2rem 0;">
 						No games played yet.
 					</p>
 				{:else}
@@ -269,10 +266,10 @@
 								soundActions.playClick();
 								squadSort = id as typeof squadSort;
 							}}
-							style="flex: 1; padding: 0.35rem; border-radius: 0.5rem; font-size: 0.8rem; cursor: pointer;
-								background: {squadSort === id ? 'rgba(255,255,255,0.15)' : 'rgba(255,255,255,0.05)'};
-								border: 1px solid {squadSort === id ? 'rgba(255,255,255,0.25)' : 'rgba(255,255,255,0.08)'};
-								color: {squadSort === id ? 'white' : 'rgba(255,255,255,0.45)'};"
+							style="flex: 1; padding: 0.35rem; border-radius: 0.5rem; cursor: pointer;
+							background: {squadSort === id ? 'rgba(255,255,255,0.15)' : 'rgba(255,255,255,0.05)'};
+							border: 1px solid {squadSort === id ? 'rgba(255,255,255,0.25)' : 'rgba(255,255,255,0.08)'};
+							color: {squadSort === id ? 'white' : 'rgba(255,255,255,0.45)'};"
 						>
 							{label}
 						</button>
@@ -280,9 +277,7 @@
 				</div>
 
 				{#if $squadRecords.length === 0}
-					<p
-						style="color: rgba(255,255,255,0.35); text-align: center; margin: 2rem 0; font-size: 0.875rem;"
-					>
+					<p class="rpgui-center" style="color: rgba(255,255,255,0.35); margin: 2rem 0;">
 						No squad data yet.
 					</p>
 				{:else}

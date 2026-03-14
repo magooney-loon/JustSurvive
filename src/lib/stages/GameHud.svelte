@@ -168,7 +168,11 @@
 	});
 </script>
 
-<div transition:fly={{ x: -20, duration: 300 }}>
+<div
+	transition:fly={{ x: -20, duration: 300 }}
+	class="rpgui-content"
+	style="position: absolute; inset: 0; pointer-events: none;"
+>
 	<!-- Day phase indicator — top left -->
 	<div
 		style="
