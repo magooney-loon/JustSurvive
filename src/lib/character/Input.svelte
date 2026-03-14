@@ -207,6 +207,7 @@
 				if (abilityState.adrenalineCooldownUntil > Date.now()) return;
 				// Server fills stamina - just trigger the adrenaline
 				combatActions.adrenaline(sid);
+				soundActions.playGunnerAdrenaline();
 				abilityState.adrenalineCooldownUntil = Date.now() + 5000;
 				abilityState.adrenalineUntil = Date.now() + 180;
 				logAbility.info('GUNNER: adrenaline triggered');

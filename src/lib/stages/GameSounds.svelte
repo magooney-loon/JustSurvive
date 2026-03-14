@@ -26,12 +26,14 @@
 
 	// ─── Positional audio refs ────────────────────────────────────────────────
 	let gunnerShotAudio = $state.raw<ThreePosAudio | undefined>(undefined);
+	let gunnerAdrenalineAudio = $state.raw<ThreePosAudio | undefined>(undefined);
 	let healerHealAudio = $state.raw<ThreePosAudio | undefined>(undefined);
 	let healerReviveAudio = $state.raw<ThreePosAudio | undefined>(undefined);
 	let spotterMarkAudio = $state.raw<ThreePosAudio | undefined>(undefined);
 	let spotterPingAudio = $state.raw<ThreePosAudio | undefined>(undefined);
 	let tankBashAudio = $state.raw<ThreePosAudio | undefined>(undefined);
 	let tankBraceAudio = $state.raw<ThreePosAudio | undefined>(undefined);
+	let enemySpawnAudio = $state.raw<ThreePosAudio | undefined>(undefined);
 
 	const playPos = (audio: ThreePosAudio | undefined) => {
 		if (!audio?.buffer || !settingsState.audio.effectsEnabled) return;
@@ -86,20 +88,25 @@
 		const vol = settingsState.audio.effectsVolume;
 		for (const a of [
 			gunnerShotAudio,
+			gunnerAdrenalineAudio,
 			healerHealAudio,
 			healerReviveAudio,
 			spotterMarkAudio,
 			spotterPingAudio,
 			tankBashAudio,
-			tankBraceAudio
+			tankBraceAudio,
+			enemySpawnAudio
 		]) {
 			if (a) a.setVolume(vol);
 		}
 	});
 
-	// ─── Ability sound triggers ───────────────────────────────────────────────
+	// ─── Ability sound triggers (local player — positional) ───────────────────
 	$effect(() => {
 		if (soundTriggers.gunnerShot > 0) playPos(gunnerShotAudio);
+	});
+	$effect(() => {
+		if (soundTriggers.gunnerAdrenaline > 0) playPos(gunnerAdrenalineAudio);
 	});
 	$effect(() => {
 		if (soundTriggers.healerHeal > 0) playPos(healerHealAudio);
@@ -119,8 +126,11 @@
 	$effect(() => {
 		if (soundTriggers.tankBrace > 0) playPos(tankBraceAudio);
 	});
+	$effect(() => {
+		if (soundTriggers.enemySpawn > 0) playPos(enemySpawnAudio);
+	});
 
-	// ─── Player status → global sounds ───────────────────────────────────────
+// ─── Player status → global sounds ───────────────────────────────────────
 	let prevStatus = $state<string | undefined>(undefined);
 	$effect(() => {
 		const status = myState?.status;
@@ -134,7 +144,7 @@
 <!-- Group tracks local player world position so PositionalAudio is spatially correct -->
 <T.Group position={[localPos.x, 1.0, localPos.z]}>
 	<PositionalAudio
-		src={`${base}sounds/gunner_shot.mp3`}
+		src={`${base}sounds/classAbility/gunner_shot.wav`}
 		refDistance={4}
 		maxDistance={20}
 		rolloffFactor={1.5}
@@ -143,7 +153,16 @@
 		}}
 	/>
 	<PositionalAudio
-		src={`${base}sounds/healer_heal.mp3`}
+		src={`${base}sounds/classAbility/gunner_adrenaline.wav`}
+		refDistance={4}
+		maxDistance={20}
+		rolloffFactor={1.5}
+		oncreate={(a) => {
+			gunnerAdrenalineAudio = a;
+		}}
+	/>
+	<PositionalAudio
+		src={`${base}sounds/classAbility/healer_heal.wav`}
 		refDistance={4}
 		maxDistance={20}
 		rolloffFactor={1.5}
@@ -152,7 +171,7 @@
 		}}
 	/>
 	<PositionalAudio
-		src={`${base}sounds/healer_revive.mp3`}
+		src={`${base}sounds/classAbility/healer_revive.wav`}
 		refDistance={4}
 		maxDistance={20}
 		rolloffFactor={1.5}
@@ -161,7 +180,7 @@
 		}}
 	/>
 	<PositionalAudio
-		src={`${base}sounds/spotter_location.mp3`}
+		src={`${base}sounds/classAbility/spotter_steady_shot.wav`}
 		refDistance={4}
 		maxDistance={20}
 		rolloffFactor={1.5}
@@ -170,7 +189,7 @@
 		}}
 	/>
 	<PositionalAudio
-		src={`${base}sounds/spotter_ping.mp3`}
+		src={`${base}sounds/classAbility/spotter_flash_stun.wav`}
 		refDistance={4}
 		maxDistance={20}
 		rolloffFactor={1.5}
@@ -179,7 +198,7 @@
 		}}
 	/>
 	<PositionalAudio
-		src={`${base}sounds/tank_bash.mp3`}
+		src={`${base}sounds/classAbility/tank_axe_swing.wav`}
 		refDistance={4}
 		maxDistance={20}
 		rolloffFactor={1.5}
@@ -188,12 +207,21 @@
 		}}
 	/>
 	<PositionalAudio
-		src={`${base}sounds/tank_brace.mp3`}
+		src={`${base}sounds/classAbility/tank_brace.wav`}
 		refDistance={4}
 		maxDistance={20}
 		rolloffFactor={1.5}
 		oncreate={(a) => {
 			tankBraceAudio = a;
+		}}
+	/>
+	<PositionalAudio
+		src={`${base}sounds/map/enemy_spawn.wav`}
+		refDistance={3}
+		maxDistance={25}
+		rolloffFactor={2}
+		oncreate={(a) => {
+			enemySpawnAudio = a;
 		}}
 	/>
 </T.Group>

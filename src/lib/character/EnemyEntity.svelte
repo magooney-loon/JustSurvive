@@ -63,6 +63,13 @@
 			spawnT = Math.min(1, age / spawnDuration);
 		} else {
 			spawnT = 1;
+			if (!spawnSoundPlayed) {
+				spawnSoundPlayed = true;
+				if (spawnAudio?.buffer && settingsState.audio.effectsEnabled) {
+					if (spawnAudio.isPlaying) spawnAudio.stop();
+					spawnAudio.play();
+				}
+			}
 		}
 
 		if (!enemy.isAlive && deathAt === null) deathAt = nowMs;
@@ -111,6 +118,8 @@
 	);
 
 	let killedAudio = $state.raw<ThreePosAudio | undefined>(undefined);
+	let spawnAudio = $state.raw<ThreePosAudio | undefined>(undefined);
+	let spawnSoundPlayed = false;
 	$effect(() => {
 		if (dead && killedAudio?.buffer && settingsState.audio.effectsEnabled) {
 			if (killedAudio.isPlaying) killedAudio.stop();
@@ -120,7 +129,7 @@
 
 	// Hit flash — brief white ring when enemy takes damage
 	let hitFlashAt = $state(0);
-	let trackedHp = $state(Number(enemy.hp));
+	let trackedHp = $state(untrack(() => Number(enemy.hp)));
 	$effect(() => {
 		const curHp = Number(enemy.hp);
 		if (curHp < trackedHp && enemy.isAlive) hitFlashAt = Date.now();
@@ -208,12 +217,21 @@
 		scale={cubicOut(spawnT)}
 	>
 		<PositionalAudio
-			src={`${import.meta.env.BASE_URL}sounds/enemy_killed.mp3`}
+			src={`${import.meta.env.BASE_URL}sounds/enemies/enemy_killed.mp3`}
 			refDistance={5}
 			maxDistance={30}
 			rolloffFactor={2}
 			oncreate={(a) => {
 				killedAudio = a;
+			}}
+		/>
+		<PositionalAudio
+			src={`${import.meta.env.BASE_URL}sounds/map/enemy_spawn.wav`}
+			refDistance={3}
+			maxDistance={25}
+			rolloffFactor={2}
+			oncreate={(a) => {
+				spawnAudio = a;
 			}}
 		/>
 		<T.Group rotation={[downedTilt, 0, 0]}>
@@ -347,34 +365,34 @@
 		{/if}
 
 		{@const hitT = Math.max(0, 1 - (nowMs - hitFlashAt) / 160)}
-	{#if hitT > 0 && !dead}
-		<T.Mesh
-			position={[0, 0.05, 0]}
-			rotation={[-Math.PI / 2, 0, 0]}
-			scale={0.3 + (1 - hitT) * 0.7}
-		>
-			<T.RingGeometry args={[0.2, 0.45, 16]} />
-			<T.MeshBasicMaterial
-				color="#ffffff"
-				transparent
-				opacity={hitT * 0.85}
-				blending={THREE.AdditiveBlending}
-				depthWrite={false}
-			/>
-		</T.Mesh>
-		<T.Mesh position={[0, 1.0, 0]} scale={0.05 + (1 - hitT) * 0.12}>
-			<T.SphereGeometry args={[1, 6, 4]} />
-			<T.MeshBasicMaterial
-				color="#ffffff"
-				transparent
-				opacity={hitT * 0.7}
-				blending={THREE.AdditiveBlending}
-				depthWrite={false}
-			/>
-		</T.Mesh>
-	{/if}
+		{#if hitT > 0 && !dead}
+			<T.Mesh
+				position={[0, 0.05, 0]}
+				rotation={[-Math.PI / 2, 0, 0]}
+				scale={0.3 + (1 - hitT) * 0.7}
+			>
+				<T.RingGeometry args={[0.2, 0.45, 16]} />
+				<T.MeshBasicMaterial
+					color="#ffffff"
+					transparent
+					opacity={hitT * 0.85}
+					blending={THREE.AdditiveBlending}
+					depthWrite={false}
+				/>
+			</T.Mesh>
+			<T.Mesh position={[0, 1.0, 0]} scale={0.05 + (1 - hitT) * 0.12}>
+				<T.SphereGeometry args={[1, 6, 4]} />
+				<T.MeshBasicMaterial
+					color="#ffffff"
+					transparent
+					opacity={hitT * 0.7}
+					blending={THREE.AdditiveBlending}
+					depthWrite={false}
+				/>
+			</T.Mesh>
+		{/if}
 
-	{#if enemy.isMarked && !dead}
+		{#if enemy.isMarked && !dead}
 			<T.Mesh
 				position={[0, 2.2, 0]}
 				rotation={[Math.PI / 4, 0, 0]}

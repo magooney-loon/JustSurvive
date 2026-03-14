@@ -4,6 +4,7 @@
 	import * as THREE from 'three';
 	import { settingsState } from '$root/settings.svelte.js';
 	import { skyState } from '$lib/stores/sky.svelte.js';
+	import { soundActions } from '$root/Sound.svelte';
 
 	const { camera } = useThrelte();
 	let skyGroup = $state<THREE.Group | undefined>(undefined);
@@ -83,6 +84,7 @@
 				lNext = (4 + Math.random() * 14 + Math.random() * 8) / storm;
 				lPhase = 'f1';
 				lTimer = 0;
+				soundActions.playThunder();
 			}
 		} else {
 			lTimer += dt;
