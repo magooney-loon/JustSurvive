@@ -71,5 +71,6 @@
 	bind:gltf={$gltf}
 	url="{base}models/player/legs.glb"
 	position={[0, 0, 0]}
+	rotation={[0, Math.PI, 0]}
 	scale={0.05}
 />

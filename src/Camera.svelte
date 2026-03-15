@@ -3,13 +3,7 @@
 	import { AudioListener } from '@threlte/extras';
 	import { stageState } from '$root/stage.svelte.js';
 	import { log, settingsState } from '$root/settings.svelte.js';
-	import {
-		localPos,
-		localVelocity,
-		tpsCamera,
-		cameraFollow,
-		bossShake
-	} from '$lib/stores/movement.svelte.js';
+	import { localPos, tpsCamera, cameraFollow, bossShake } from '$lib/stores/movement.svelte.js';
 	import type { PerspectiveCamera } from 'three';
 
 	const { renderer } = useThrelte();
@@ -27,13 +21,8 @@
 	let camTargetY = 0;
 	let camTargetZ = 0;
 	let camYawSmooth = 0;
-	const LERP_POS = 0.04;
-	const LERP_YAW = 0.06;
-
-	// Movement bob
-	let bobPhase = 0;
-	const BOB_SPEED = 12;
-	const BOB_AMPLITUDE = 0.08;
+	const LERP_POS = 0.12;
+	const LERP_YAW = 0.18;
 
 	$effect(() => {
 		const canvas = renderer.domElement;
@@ -65,7 +54,7 @@
 		}
 	});
 
-	useTask((delta) => {
+	useTask(() => {
 		if (!camera || stageState.currentStage !== 'game') return;
 		camera.rotation.order = 'YXZ';
 		if (cameraFollow.active) {
@@ -85,20 +74,9 @@
 			const smoothBehindX = Math.sin(camYawSmooth) * TPS_Z;
 			const smoothBehindZ = Math.cos(camYawSmooth) * TPS_Z;
 
-			// Movement bob
-			const speed = Math.sqrt(
-				localVelocity.x * localVelocity.x + localVelocity.z * localVelocity.z
-			);
-			if (speed > 0.5) {
-				bobPhase += delta * BOB_SPEED;
-			}
-			const bob = Math.sin(bobPhase) * BOB_AMPLITUDE * Math.min(speed / 5, 1);
-
-			// Look-ahead based on velocity
-			const lookAhead = 0.3;
-			const targetX = localPos.x + smoothBehindX + localVelocity.x * lookAhead;
-			const targetY = localPos.y + TPS_Y + bob;
-			const targetZ = localPos.z + smoothBehindZ + localVelocity.z * lookAhead;
+			const targetX = localPos.x + smoothBehindX;
+			const targetY = localPos.y + TPS_Y;
+			const targetZ = localPos.z + smoothBehindZ;
 
 			// Smooth camera position
 			camTargetX += (targetX - camTargetX) * LERP_POS;
