@@ -227,7 +227,7 @@
 			myState.classChoice,
 			hasStamina,
 			camYaw,
-			myTankState?.isBracing ?? false,
+			myTankState?.isCharging ?? false,
 			isStunned,
 			slowMultiplier
 		);

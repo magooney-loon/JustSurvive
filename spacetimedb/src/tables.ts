@@ -384,11 +384,14 @@ export const TankState = table(
 		id: t.u64().primaryKey().autoInc(),
 		sessionId: t.u64(),
 		playerIdentity: t.identity(),
-		isBracing: t.bool(),
-		braceStartAt: t.timestamp().optional(),
-		braceCooldownUntil: t.timestamp().optional(),
+		isCharging: t.bool(),
+		chargeUntil: t.timestamp().optional(),
+		chargeDirX: t.i64(),
+		chargeDirZ: t.i64(),
+		chargeCooldownUntil: t.timestamp().optional(),
 		axeSwingCooldownUntil: t.timestamp().optional(),
 		lastAxeSwingAt: t.timestamp().optional(),   // VFX: when axe was last swung
+		lastChargeAt: t.timestamp().optional(),     // VFX: when charge was last activated
 		ultimateCooldownUntil: t.timestamp().optional(),
 		lastUltimateAt: t.timestamp().optional()  // VFX: when ultimate was last fired
 	}

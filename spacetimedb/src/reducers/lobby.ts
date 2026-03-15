@@ -404,11 +404,14 @@ export function fireStartGame(ctx: any, { arg }: any) {
 				id: 0n,
 				sessionId: session.id,
 				playerIdentity: p.playerIdentity,
-				isBracing: false,
-				braceStartAt: undefined,
-				braceCooldownUntil: undefined,
+				isCharging: false,
+				chargeUntil: undefined,
+				chargeDirX: 0n,
+				chargeDirZ: 0n,
+				chargeCooldownUntil: undefined,
 				axeSwingCooldownUntil: undefined,
 				lastAxeSwingAt: undefined,
+				lastChargeAt: undefined,
 				ultimateCooldownUntil: undefined,
 				lastUltimateAt: undefined
 			});

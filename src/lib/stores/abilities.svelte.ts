@@ -5,7 +5,7 @@ export const abilityState = $state({
 	lastSuppressedEnemyId: null as bigint | null,
 	bashCooldownUntil: 0,      // ms (tank axe swing, 0.5s)
 	healCooldownUntil: 0,      // ms (healer chain heal, 3s)
-	braceCooldownUntil: 0,     // ms (tank brace, 2s between activations)
+	chargeCooldownUntil: 0,    // ms (tank charge, 8s cooldown)
 	pingCooldownUntil: 0,      // ms (spotter flash, 3s)
 	adrenalineCooldownUntil: 0,// ms (gunner adrenaline, 5s)
 	ultimateCooldownUntil: 0,  // ms (all classes, 35s)
@@ -39,7 +39,7 @@ export function resetAbilities() {
 	abilityState.lastSuppressedEnemyId = null;
 	abilityState.bashCooldownUntil = 0;
 	abilityState.healCooldownUntil = 0;
-	abilityState.braceCooldownUntil = 0;
+	abilityState.chargeCooldownUntil = 0;
 	abilityState.pingCooldownUntil = 0;
 	abilityState.adrenalineCooldownUntil = 0;
 	abilityState.ultimateCooldownUntil = 0;

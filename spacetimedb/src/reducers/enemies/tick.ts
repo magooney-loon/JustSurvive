@@ -11,7 +11,13 @@ import {
 	BOSS_SPAWN_INTERVAL_US,
 	TARGET_JITTER,
 	MAX_ENEMIES_PER_PLAYER,
-	BRACE_HEAL_PER_TICK
+	CHARGE_SPEED,
+	CHARGE_COOLDOWN_US,
+	CHARGE_BOOST_US,
+	CHARGE_DAMAGE,
+	CHARGE_KNOCKBACK,
+	CHARGE_HIT_RADIUS,
+	ARENA_RADIUS_SRV
 } from '../../constants.js';
 import { applyAccumulatedDamage } from '../shared.js';
 import { handleSpitter } from './types/spitter.js';
@@ -53,18 +59,77 @@ export function enemyTick(ctx: any, { arg }: any) {
 		}
 	}
 
-	// Auto-end brace after max duration
-	const BRACE_MAX_US = 5_000_000n;
+	// ── Tank charge tick ─────────────────────────────────────────────────────
+	// Per tick (100ms): advance charging tanks, hit enemies in path, end charge
+	const CHARGE_SPEED_PER_TICK = (CHARGE_SPEED * TICK_MS) / 1000n; // server units per tick
+	const CHARGE_HIT_RADIUS_SQ = CHARGE_HIT_RADIUS * CHARGE_HIT_RADIUS;
 	for (const [playerId, tankSt] of tankStateMap) {
-		if (
-			tankSt.isBracing &&
-			tankSt.braceStartAt &&
-			now - (tankSt.braceStartAt.microsSinceUnixEpoch as bigint) >= BRACE_MAX_US
-		) {
-			const cooldownUntil = ts(now + 2_000_000n);
-			const updated = { ...tankSt, isBracing: false, braceStartAt: undefined, braceCooldownUntil: cooldownUntil };
+		if (!tankSt.isCharging) continue;
+		const p = players.find((pl: any) => pl.id === playerId);
+		if (!p) continue;
+
+		const chargeExpired =
+			tankSt.chargeUntil &&
+			now >= (tankSt.chargeUntil.microsSinceUnixEpoch as bigint);
+
+		if (chargeExpired) {
+			// End charge — apply speed boost to player
+			ctx.db.playerState.id.update({ ...p, speedBoostUntil: ts(now + CHARGE_BOOST_US) });
+			const updated = {
+				...tankSt,
+				isCharging: false,
+				chargeUntil: undefined,
+				chargeDirX: 0n,
+				chargeDirZ: 0n,
+				chargeCooldownUntil: ts(now + CHARGE_COOLDOWN_US)
+			};
 			ctx.db.tankState.id.update(updated);
 			tankStateMap.set(playerId, updated);
+			continue;
+		}
+
+		// Move tank forward in charge direction
+		const moveX = (tankSt.chargeDirX * CHARGE_SPEED_PER_TICK) / 1000n;
+		const moveZ = (tankSt.chargeDirZ * CHARGE_SPEED_PER_TICK) / 1000n;
+		const newX = (p.posX as bigint) + moveX;
+		const newZ = (p.posZ as bigint) + moveZ;
+		// Clamp to arena
+		if (newX * newX + newZ * newZ < ARENA_RADIUS_SRV * ARENA_RADIUS_SRV) {
+			ctx.db.playerState.id.update({ ...p, posX: newX, posZ: newZ, lastMoveAt: ctx.timestamp });
+		}
+
+		// Hit enemies in charge radius — knock them sideways
+		for (const e of ctx.db.enemy.enemy_session_id.filter(arg.sessionId)) {
+			if (!e.isAlive) continue;
+			const ex = (e.posX as bigint) - newX;
+			const ez = (e.posZ as bigint) - newZ;
+			if (ex * ex + ez * ez > CHARGE_HIT_RADIUS_SQ) continue;
+
+			// Determine which side of charge path the enemy is on (2D cross product)
+			const cross = tankSt.chargeDirX * ez - tankSt.chargeDirZ * ex;
+			// Perpendicular direction (right if cross>=0, left otherwise), scale ×1000
+			const perpX = cross >= 0n ? tankSt.chargeDirZ : -tankSt.chargeDirZ;
+			const perpZ = cross >= 0n ? -tankSt.chargeDirX : tankSt.chargeDirX;
+			const knockX = (perpX * CHARGE_KNOCKBACK) / 1000n;
+			const knockZ = (perpZ * CHARGE_KNOCKBACK) / 1000n;
+			const newHp = (e.hp as bigint) > CHARGE_DAMAGE ? (e.hp as bigint) - CHARGE_DAMAGE : 0n;
+			if (newHp <= 0n) {
+				ctx.db.enemy.id.update({
+					...e,
+					hp: 0n,
+					isAlive: false,
+					posX: (e.posX as bigint) + knockX,
+					posZ: (e.posZ as bigint) + knockZ,
+					diedAt: ts(now)
+				});
+			} else {
+				ctx.db.enemy.id.update({
+					...e,
+					hp: newHp,
+					posX: (e.posX as bigint) + knockX,
+					posZ: (e.posZ as bigint) + knockZ
+				});
+			}
 		}
 	}
 
@@ -148,15 +213,8 @@ export function enemyTick(ctx: any, { arg }: any) {
 		const enemyRange = MELEE_RANGE;
 		const chosenTankState = tankStateMap.get(chosen.id as bigint);
 
-		// Tank brace: bounce enemy back and daze it
-		if (chosenDist <= MELEE_RANGE * MELEE_RANGE && chosenTankState?.isBracing && !enemy.isDazed) {
-			const magnitude = bs(chosenDist);
-			const knockback = 4000n;
-			const newX = magnitude > 0n ? (enemy.posX as bigint) - (dx * knockback) / magnitude : (enemy.posX as bigint) - knockback;
-			const newZ = magnitude > 0n ? (enemy.posZ as bigint) - (dz * knockback) / magnitude : (enemy.posZ as bigint) - knockback;
-			const dazedUntil = ts(now + 1_500_000n);
-			ctx.db.enemy.id.update({ ...enemy, posX: newX, posZ: newZ, isDazed: true, dazedUntil });
-			ctx.db.playerState.id.update({ ...chosen, score: (chosen.score as bigint) + 5n });
+		// Tank charging: enemies in charge radius are handled in charge tick above — skip melee here
+		if (chosenDist <= MELEE_RANGE * MELEE_RANGE && chosenTankState?.isCharging) {
 			continue;
 		}
 
@@ -179,18 +237,6 @@ export function enemyTick(ctx: any, { arg }: any) {
 
 	// Apply all accumulated damage — one write per player
 	applyAccumulatedDamage(ctx, arg.sessionId, players, damageAccum);
-
-	// Brace heal: tank recovers HP per tick while bracing
-	for (const p of players) {
-		const tankSt = tankStateMap.get(p.id as bigint);
-		if (p.classChoice === 'tank' && tankSt?.isBracing && p.status === 'alive' && (p.hp as bigint) < (p.maxHp as bigint)) {
-			const healedHp =
-				(p.hp as bigint) + BRACE_HEAL_PER_TICK > (p.maxHp as bigint)
-					? p.maxHp
-					: (p.hp as bigint) + BRACE_HEAL_PER_TICK;
-			ctx.db.playerState.id.update({ ...p, hp: healedHp });
-		}
-	}
 
 	// ── Boss dead cleanup + boss AI ──────────────────────────────────────────
 	const BOSS_DEAD_CLEANUP_US = 5_000_000n;

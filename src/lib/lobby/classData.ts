@@ -145,12 +145,12 @@ export const CLASSES: Record<ClassId, ClassData> = {
 				desc: 'Swing your axe in a 90° cone up to 4 units. Deals 25 damage to all enemies in range, knocks them back, and dazes them for 1.5s. Score: +5 per hit, +2 per kill.'
 			},
 			{
-				name: 'Brace',
-				hudLabel: 'Brace',
-				input: 'RMB (hold)',
-				cooldown: '2s after release',
-				cooldownMs: 2000,
-				desc: 'Enter a defensive stance — you can still move while bracing. Enemies that melee you are knocked back instead of dealing damage. Heals ~30 HP/s while active. Release to end; 2s cooldown before you can brace again.'
+				name: 'Charge',
+				hudLabel: 'CHARGE',
+				input: 'RMB',
+				cooldown: '8s',
+				cooldownMs: 8000,
+				desc: 'Charge forward in your facing direction for 0.7s. You cannot move during the charge — the server pushes you. Enemies in your path take 35 damage and are knocked sideways. On completion you get a 3s speed boost.'
 			},
 			{
 				name: 'Ground Slam',

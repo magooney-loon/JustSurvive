@@ -122,8 +122,14 @@ export const AXE_SWING_DAZE_US = 1_500_000n; // 1.5s daze
 export const AXE_SWING_KNOCKBACK = 4000n;
 export const AXE_SWING_SELF_HEAL = 5n; // tank heals 5 HP per enemy hit
 
-// ─── Tank: Brace ─────────────────────────────────────────────────────────────
-export const BRACE_HEAL_PER_TICK = 3n; // 3 HP per 100ms tick while bracing (~30 HP/s)
+// ─── Tank: Charge ────────────────────────────────────────────────────────────
+export const CHARGE_DURATION_US = 700_000n;   // 0.7s charge
+export const CHARGE_SPEED = 15000n;           // 15 units/s (server units/s)
+export const CHARGE_COOLDOWN_US = 8_000_000n; // 8s cooldown
+export const CHARGE_DAMAGE = 35n;             // damage to enemies hit
+export const CHARGE_KNOCKBACK = 6000n;        // lateral knockback (server units)
+export const CHARGE_BOOST_US = 3_000_000n;    // 3s speed boost after charge
+export const CHARGE_HIT_RADIUS = 2500n;       // hit enemies within 2.5 units radius
 export const ULTIMATE_COOLDOWN_US = 35_000_000n; // 35 seconds
 
 // ─── Healer: Revive Shield ────────────────────────────────────────────────────

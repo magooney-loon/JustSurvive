@@ -137,7 +137,7 @@
 		const cd1: Record<ClassId, number> = {
 			spotter: Math.max(0, (abilityState.pingCooldownUntil - now) / a1.cooldownMs),
 			gunner: Math.max(0, (abilityState.adrenalineCooldownUntil - now) / a1.cooldownMs),
-			tank: Math.max(0, (abilityState.braceCooldownUntil - now) / a1.cooldownMs),
+			tank: Math.max(0, (abilityState.chargeCooldownUntil - now) / a1.cooldownMs),
 			healer: cdFrac(myHealerState?.reviveCooldownUntil?.microsSinceUnixEpoch, a1.cooldownMs)
 		};
 		const ultCdFrac = a2
@@ -158,7 +158,7 @@
 				color,
 				cdFrac: cd1[cls],
 				cdMs: a1.cooldownMs || undefined,
-				active: cls === 'tank' ? myTankState?.isBracing ?? false : undefined
+				active: cls === 'tank' ? myTankState?.isCharging ?? false : undefined
 			},
 			a2
 				? { label: a2.hudLabel, input: a2.input, color: '#ffcc44', cdFrac: ultCdFrac, cdMs: a2.cooldownMs }

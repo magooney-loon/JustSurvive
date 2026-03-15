@@ -76,13 +76,11 @@ export const combatActions = {
 			await conn.reducers.adrenaline({ sessionId });
 		} catch {}
 	},
-	braceStart(sessionId: bigint) {
+	async chargeActivate(sessionId: bigint) {
 		if (!conn) return;
-		conn.reducers.braceStart({ sessionId });
-	},
-	braceEnd(sessionId: bigint) {
-		if (!conn) return;
-		conn.reducers.braceEnd({ sessionId });
+		try {
+			await conn.reducers.chargeActivate({ sessionId });
+		} catch {}
 	},
 	async reviveStart(sessionId: bigint, targetIdentity: Identity) {
 		if (!conn) return;

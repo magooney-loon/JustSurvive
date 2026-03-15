@@ -56,22 +56,7 @@
 	const [enemies] = useTable(tables.enemy);
 	const [bosses] = useTable(tables.boss);
 
-	let braceTimer: ReturnType<typeof setTimeout> | null = null;
-	const BRACE_MAX_MS = 5000;
-
-	function endBrace() {
-		if (braceTimer !== null) {
-			clearTimeout(braceTimer);
-			braceTimer = null;
-		}
-		const sid = lobbyState.currentSessionId;
-		if (sid) combatActions.braceEnd(sid);
-		abilityState.braceCooldownUntil = Date.now() + 2000;
-	}
-	function startBraceTimer() {
-		if (braceTimer !== null) clearTimeout(braceTimer);
-		braceTimer = setTimeout(endBrace, BRACE_MAX_MS);
-	}
+	const CHARGE_COOLDOWN_MS = 8000;
 
 	const myState = $derived(
 		$players.find(
@@ -272,11 +257,11 @@
 				axeSwingFlash.until = Date.now() + AXE_SWING_FLASH_MS;
 				logAbility.info('TANK: axe swing');
 			} else if (e.button === 2) {
-				if (abilityState.braceCooldownUntil > Date.now()) return;
-				combatActions.braceStart(sid);
+				if (abilityState.chargeCooldownUntil > Date.now()) return;
+				combatActions.chargeActivate(sid);
 				soundActions.playTankBrace();
-				startBraceTimer();
-				logAbility.info('TANK: brace start');
+				abilityState.chargeCooldownUntil = Date.now() + CHARGE_COOLDOWN_MS;
+				logAbility.info('TANK: charge');
 			}
 			return;
 		}
@@ -308,19 +293,10 @@
 		}
 	}
 
-	function onMouseUp(e: MouseEvent) {
-		if (!myState) return;
-		const sid = lobbyState.currentSessionId;
-		if (!sid) return;
-		if (e.button === 2 && myState.classChoice === 'tank') {
-			endBrace();
-		}
-	}
 </script>
 
 <svelte:window
 	onkeydown={onKeyDown}
 	onkeyup={onKeyUp}
 	onmousedown={onMouseDown}
-	onmouseup={onMouseUp}
 />

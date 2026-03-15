@@ -44,7 +44,7 @@ import { spawnEnemy, fireBossSpawn } from './reducers/enemies/spawn.js';
 import { steadyShot, spotterFlash, spotterUltimate } from './reducers/classes/spotter.js';
 import { attackEnemy, adrenaline as adrenalineImpl, gunnerUltimate } from './reducers/classes/gunner.js';
 import { healPlayer, reviveStart, completeRevive, healerUltimate } from './reducers/classes/healer.js';
-import { axeSwing, braceStart, braceEnd, tankUltimate } from './reducers/classes/tank.js';
+import { axeSwing, chargeActivate, tankUltimate } from './reducers/classes/tank.js';
 import { clearLobbyMessages, endSession } from './reducers/shared.js';
 
 // ─── Scheduled Tables ─────────────────────────────────────────────────────────
@@ -307,14 +307,9 @@ export const axe_swing = spacetimedb.reducer(
 );
 
 
-export const brace_start = spacetimedb.reducer(
+export const charge_activate = spacetimedb.reducer(
 	{ sessionId: t.u64() },
-	braceStart
-);
-
-export const brace_end = spacetimedb.reducer(
-	{ sessionId: t.u64() },
-	braceEnd
+	chargeActivate
 );
 
 export const spotter_ultimate = spacetimedb.reducer(

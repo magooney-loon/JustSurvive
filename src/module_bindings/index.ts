@@ -37,8 +37,7 @@ import {
 import AdrenalineReducer from "./adrenaline_reducer";
 import AttackEnemyReducer from "./attack_enemy_reducer";
 import AxeSwingReducer from "./axe_swing_reducer";
-import BraceEndReducer from "./brace_end_reducer";
-import BraceStartReducer from "./brace_start_reducer";
+import ChargeActivateReducer from "./charge_activate_reducer";
 import CreateLobbyReducer from "./create_lobby_reducer";
 import GunnerUltimateReducer from "./gunner_ultimate_reducer";
 import HealPlayerReducer from "./heal_player_reducer";
@@ -374,8 +373,7 @@ const reducersSchema = __reducers(
   __reducerSchema("adrenaline", AdrenalineReducer),
   __reducerSchema("attack_enemy", AttackEnemyReducer),
   __reducerSchema("axe_swing", AxeSwingReducer),
-  __reducerSchema("brace_end", BraceEndReducer),
-  __reducerSchema("brace_start", BraceStartReducer),
+  __reducerSchema("charge_activate", ChargeActivateReducer),
   __reducerSchema("create_lobby", CreateLobbyReducer),
   __reducerSchema("gunner_ultimate", GunnerUltimateReducer),
   __reducerSchema("heal_player", HealPlayerReducer),

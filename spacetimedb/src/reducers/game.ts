@@ -23,6 +23,16 @@ export function movePlayer(
 	}
 	if (!ps || ps.status !== 'alive') return;
 
+	// Block movement input while tank is charging — server drives position
+	if (ps.classChoice === 'tank') {
+		for (const tankSt of ctx.db.tankState.tank_state_session_id.filter(sessionId)) {
+			if (tankSt.playerIdentity.isEqual(ctx.sender)) {
+				if (tankSt.isCharging) return;
+				break;
+			}
+		}
+	}
+
 	const SPRINT_DRAIN = 3n;
 	const BASE_REGEN_PER_SEC = classBaseRegen(ps.classChoice);
 	const RAMP_REGEN_PER_SEC = classRampRegen(ps.classChoice);
