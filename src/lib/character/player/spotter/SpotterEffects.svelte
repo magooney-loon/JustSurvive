@@ -65,12 +65,18 @@
 
 	// ─── Steady shot railbeam ────────────────────────────────────────────────────
 
-	const shotUntil = $derived.by(() => {
-		if (isLocal) return steadyShotFlash.until;
-		const ts = (player as any).lastShotAt;
-		if (!ts) return 0;
-		return Number(ts.microsSinceUnixEpoch) / 1000 + STEADY_SHOT_FLASH_MS;
+	let remoteShotUntil = $state(0);
+	let prevShotMicros: bigint | undefined;
+	$effect(() => {
+		if (!isLocal) {
+			const micros = (player as any).lastShotAt?.microsSinceUnixEpoch;
+			if (micros !== prevShotMicros && micros != null) {
+				remoteShotUntil = Date.now() + STEADY_SHOT_FLASH_MS;
+			}
+			prevShotMicros = micros;
+		}
 	});
+	const shotUntil = $derived(isLocal ? steadyShotFlash.until : remoteShotUntil);
 
 	const st = $derived(Math.max(0, (shotUntil - now) / STEADY_SHOT_FLASH_MS));
 	const effectiveShotYaw = $derived(
