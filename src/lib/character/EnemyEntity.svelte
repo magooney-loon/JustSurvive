@@ -25,11 +25,12 @@
 	import BruteRig from '$lib/character/enemies/brute/BruteRig.svelte';
 	import SpitterRig from '$lib/character/enemies/spitter/SpitterRig.svelte';
 	import CasterRig from '$lib/character/enemies/caster/CasterRig.svelte';
+	import JumperRig from '$lib/character/enemies/jumper/JumperRig.svelte';
 	import BossRig from '$lib/character/enemies/boss/BossRig.svelte';
 	import { settingsState } from '$root/settings.svelte.js';
 
-	type Props = { enemy: Enemy };
-	let { enemy }: Props = $props();
+	type Props = { enemy: Enemy; alivePlayers?: any[] };
+	let { enemy, alivePlayers = [] }: Props = $props();
 
 	let displayX = $state(untrack(() => Number(enemy.posX) / 1000));
 	let displayZ = $state(untrack(() => Number(enemy.posZ) / 1000));
@@ -97,11 +98,25 @@
 			attackCycle = 0;
 		}
 		attackPhase = Math.max(0, Math.sin(attackCycle * Math.PI * 2));
-		if (enemy.enemyType === 'caster') {
+		if (enemy.enemyType === 'caster' || enemy.enemyType.startsWith('caster_')) {
 			const curSpitAt = enemy.lastSpitAt?.microsSinceUnixEpoch;
 			if (curSpitAt !== prevSpitAt) {
 				prevSpitAt = curSpitAt;
 				if (curSpitAt !== undefined) beamTimer = 0.65;
+			}
+			// Always face nearest alive player
+			if (alivePlayers.length > 0 && !deathAt) {
+				let nearestPlayer = alivePlayers[0];
+				let nearestDistSq = Infinity;
+				for (const p of alivePlayers) {
+					const px = Number(p.posX) / 1000;
+					const pz = Number(p.posZ) / 1000;
+					const d = (px - displayX) ** 2 + (pz - displayZ) ** 2;
+					if (d < nearestDistSq) { nearestDistSq = d; nearestPlayer = p; }
+				}
+				const px = Number(nearestPlayer.posX) / 1000;
+				const pz = Number(nearestPlayer.posZ) / 1000;
+				facing = Math.atan2(px - displayX, pz - displayZ) + Math.PI;
 			}
 		}
 		if (beamTimer > 0) beamTimer = Math.max(0, beamTimer - dt);
@@ -282,10 +297,12 @@
 				<BruteRig {speed} {attackPhase} isDead={dead} />
 			{:else if enemy.enemyType === 'fast'}
 				<FastRig {speed} {attackPhase} isDead={dead} />
+			{:else if enemy.enemyType === 'jumper'}
+				<JumperRig {speed} {attackPhase} isDead={dead} />
 			{:else if enemy.enemyType === 'spitter'}
 				<SpitterRig {speed} {attackPhase} isDead={dead} />
-			{:else if enemy.enemyType === 'caster'}
-				<CasterRig {speed} {attackPhase} {beamTimer} isDead={dead} />
+			{:else if enemy.enemyType === 'caster' || enemy.enemyType.startsWith('caster_')}
+				<CasterRig enemyType={enemy.enemyType as any} {speed} {attackPhase} {beamTimer} isDead={dead} />
 			{:else}
 				<BasicRig {speed} {attackPhase} isDead={dead} />
 			{/if}

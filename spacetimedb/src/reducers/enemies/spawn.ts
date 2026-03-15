@@ -142,13 +142,6 @@ export function fireBossSpawn(ctx: any, { arg }: any) {
 
 	const now = ctx.timestamp.microsSinceUnixEpoch as bigint;
 
-	// Kill all existing enemies
-	for (const e of ctx.db.enemy.enemy_session_id.filter(arg.sessionId)) {
-		if (e.isAlive) {
-			ctx.db.enemy.id.update({ ...e, isAlive: false, diedAt: ts(now) });
-		}
-	}
-
 	// Delete the countdown timer
 	for (const bt of ctx.db.bossTimer.boss_timer_session_id.filter(arg.sessionId)) {
 		ctx.db.bossTimer.id.delete(bt.id);
@@ -157,12 +150,21 @@ export function fireBossSpawn(ctx: any, { arg }: any) {
 	// Cycle through all 4 boss types in a shuffled order before repeating.
 	// bossSpawnCount tracks total bosses spawned across the whole session.
 	const spawnCount = session.bossSpawnCount as bigint;
+
+	// Scale boss HP by total player count in session (1→50%, 2→100%, 3→150%, 4→200%)
+	const totalPlayers = [...ctx.db.playerState.player_state_session_id.filter(arg.sessionId)];
+	const playerScale = BigInt(totalPlayers.length) * 5n; // 1→50, 2→100, 3→150, 4→200 (percentage)
+
+	// 10% HP increase per boss spawn
+	const spawnBonus = 100n + spawnCount * 10n; // 100%, 110%, 120%, etc.
+
 	const cycleNum = spawnCount / 4n; // which 4-boss cycle we're in
 	const posInCycle = spawnCount % 4n; // slot within that cycle (0–3)
 	const shuffleSeed = (session.mapSeed as bigint) ^ cycleNum;
 	const bossType = shuffledBossTypes(shuffleSeed)[Number(posInCycle)];
 
-	const hp = BOSS_HP[bossType] ?? 1500n;
+	const baseHp = BOSS_HP[bossType] ?? 1500n;
+	const hp = (baseHp * playerScale * spawnBonus) / (100n * 100n);
 
 	ctx.db.boss.insert({
 		id: 0n,

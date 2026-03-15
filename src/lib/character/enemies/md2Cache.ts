@@ -2,7 +2,17 @@ import * as THREE from 'three';
 import { MD2Loader } from 'three/addons/loaders/MD2Loader.js';
 import { logEnemy } from '$root/settings.svelte.js';
 
-export type EnemyType = 'basic' | 'fast' | 'brute' | 'spitter' | 'caster';
+export type EnemyType =
+	| 'basic'
+	| 'fast'
+	| 'brute'
+	| 'spitter'
+	| 'caster'
+	| 'caster_railgun'
+	| 'caster_chaingun'
+	| 'caster_bfg'
+	| 'caster_shotgun'
+	| 'jumper';
 
 export interface LoadedMD2 {
 	geometry: THREE.BufferGeometry;
@@ -20,15 +30,36 @@ const SKIN_MAP: Record<EnemyType, string> = {
 	fast: 'fast.png',
 	brute: 'brute.png',
 	spitter: 'spitter.png',
-	caster: 'caster.png'
+	caster: 'caster.png',
+	caster_railgun: 'basic.png',
+	caster_chaingun: 'caster.png',
+	caster_bfg: 'fast.png',
+	caster_shotgun: 'caster.png',
+	jumper: 'fast.png'
 };
 
+// Weapon MD2 files — drop the Quake2 weapon models into public/models/enemies/
+// to get distinct weapon shapes. Falls back gracefully if file is missing.
 export const WEAPON_MAP: Record<EnemyType, string | null> = {
 	basic: null,
 	fast: null,
 	brute: null,
 	spitter: 'spitter_weapon.md2',
-	caster: 'caster_weapon.md2'
+	caster: 'caster_weapon.md2',
+	caster_railgun: 'w_railgun.md2',
+	caster_chaingun: 'w_chaingun.md2',
+	caster_bfg: 'w_bfg.md2',
+	caster_shotgun: 'w_shotgun.md2',
+	jumper: null
+};
+
+// Material tint color per caster variant for visual distinction
+export const CASTER_TINT: Partial<Record<EnemyType, number>> = {
+	caster: 0xffffff,
+	caster_railgun: 0xaaddff, // icy blue tint
+	caster_chaingun: 0xffddaa, // warm orange tint
+	caster_bfg: 0xaaffcc, // radioactive green tint
+	caster_shotgun: 0xffeeaa // golden tint
 };
 
 const SCALE_MAP: Record<EnemyType, number> = {
@@ -36,7 +67,12 @@ const SCALE_MAP: Record<EnemyType, number> = {
 	fast: 0.04,
 	brute: 0.055,
 	spitter: 0.045,
-	caster: 0.045
+	caster: 0.045,
+	caster_railgun: 0.045,
+	caster_chaingun: 0.045,
+	caster_bfg: 0.048,
+	caster_shotgun: 0.045,
+	jumper: 0.04
 };
 
 const md2Loader = new MD2Loader();
@@ -77,6 +113,14 @@ function loadWeaponData(
 	});
 }
 
+// Caster variants share the same body model as 'caster' — avoids re-downloading model.md2 + skin.
+// We resolve to the canonical key used for model loading.
+function resolveModelKey(enemyType: EnemyType): EnemyType {
+	if (enemyType.startsWith('caster_')) return 'caster';
+	if (enemyType === 'jumper') return 'fast';
+	return enemyType;
+}
+
 export async function loadEnemyModel(enemyType: EnemyType): Promise<LoadedMD2> {
 	if (_loaded.has(enemyType)) {
 		logEnemy.info(`Cache hit: ${enemyType}`);
@@ -92,36 +136,56 @@ export async function loadEnemyModel(enemyType: EnemyType): Promise<LoadedMD2> {
 
 		const skinName = SKIN_MAP[enemyType];
 		const weaponName = WEAPON_MAP[enemyType];
+		const modelKey = resolveModelKey(enemyType);
 
-		const [md2Result, skinTexture] = await Promise.all([
-			new Promise<any>((resolve, reject) => {
-				md2Loader.load(`${BASE_URL}model.md2`, resolve, undefined, reject);
-			}),
-			loadSkin(skinName)
-		]);
+		// Caster variants reuse the already-loaded caster body geometry to avoid duplication
+		let geometry: THREE.BufferGeometry;
+		let animations: THREE.AnimationClip[];
+		let baseTexture: THREE.Texture;
 
-		const geometry = md2Result.geometry || md2Result;
-		const animations: THREE.AnimationClip[] =
-			md2Result.animations ||
-			(geometry as any).animations ||
-			(geometry as any).userData?.animations ||
-			[];
+		if (modelKey !== enemyType && _loaded.has(modelKey)) {
+			// Reuse body from already-loaded base type
+			const base = _loaded.get(modelKey)!;
+			geometry = base.geometry;
+			animations = base.animations;
+			baseTexture = base.skins[0];
+		} else {
+			const [md2Result, skinTexture] = await Promise.all([
+				new Promise<any>((resolve, reject) => {
+					md2Loader.load(`${BASE_URL}model.md2`, resolve, undefined, reject);
+				}),
+				loadSkin(skinName)
+			]);
+
+			geometry = md2Result.geometry || md2Result;
+			animations =
+				md2Result.animations ||
+				(geometry as any).animations ||
+				(geometry as any).userData?.animations ||
+				[];
+			baseTexture = skinTexture;
+		}
 
 		const weaponGeometries = new Map<string, THREE.BufferGeometry>();
 		const weaponAnimations = new Map<string, THREE.AnimationClip[]>();
 		if (weaponName) {
-			const weaponData = await loadWeaponData(weaponName);
-			weaponGeometries.set(weaponName, weaponData.geometry);
-			weaponAnimations.set(weaponName, weaponData.animations);
-			logEnemy.info(
-				`Weapon anims for ${enemyType}: ${weaponData.animations.map((a) => a.name).join(', ')}`
-			);
+			try {
+				const weaponData = await loadWeaponData(weaponName);
+				weaponGeometries.set(weaponName, weaponData.geometry);
+				weaponAnimations.set(weaponName, weaponData.animations);
+				logEnemy.info(
+					`Weapon anims for ${enemyType}: ${weaponData.animations.map((a) => a.name).join(', ')}`
+				);
+			} catch (_e) {
+				// Weapon file not found — renders without weapon model (graceful fallback)
+				logEnemy.warn(`Weapon model not found for ${enemyType} (${weaponName}), skipping`);
+			}
 		}
 
 		const result: LoadedMD2 = {
 			geometry,
 			animations,
-			skins: [skinTexture],
+			skins: [baseTexture],
 			weaponGeometries,
 			weaponAnimations
 		};
@@ -145,10 +209,11 @@ export function createEnemyMesh(
 	group.position.y = 0.9;
 
 	const scale = SCALE_MAP[enemyType] || 0.04;
+	const tint = CASTER_TINT[enemyType] ?? 0xffffff;
 
 	const material = new THREE.MeshLambertMaterial({
 		map: loaded.skins[0],
-		color: 0xffffff
+		color: tint
 	});
 
 	const bodyGeo = loaded.geometry.clone();
@@ -164,7 +229,7 @@ export function createEnemyMesh(
 		const weaponGeo = loaded.weaponGeometries.get(weaponPath)!;
 		const weaponMat = new THREE.MeshLambertMaterial({
 			map: loaded.skins[0],
-			color: 0xffffff
+			color: tint
 		});
 		// Clone geometry for this instance — animations stay in loaded.weaponAnimations (not in cloned geo)
 		const weaponMesh = new THREE.Mesh(weaponGeo.clone(), weaponMat);

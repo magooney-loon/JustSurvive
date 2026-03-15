@@ -4,8 +4,13 @@ export const ENEMY_BASE_SPEED: Record<string, bigint> = {
 	basic: 3200n,
 	fast: 5200n,
 	brute: 2100n,
-	spitter: 1700n,
-	caster: 1400n
+	spitter: 2600n,
+	caster: 1400n,
+	caster_railgun: 1200n,
+	caster_chaingun: 1800n,
+	caster_bfg: 5000n,
+	caster_shotgun: 1500n,
+	jumper: 4800n
 };
 
 export const ENEMY_CAP = 36; // 4-player cap; scales down per player count
@@ -23,11 +28,16 @@ export const TARGET_JITTER = 0.08; // +-8% distance jitter
 export const ENEMY_SPEED_PER_SEC = 2n; // +2% speed per second alive (capped at +50%)
 
 export const ENEMY_WEIGHTS = [
-	{ type: 'basic', weight: 57 },
-	{ type: 'fast', weight: 24 },
+	{ type: 'basic', weight: 34 },
+	{ type: 'fast', weight: 20 },
 	{ type: 'brute', weight: 10 },
-	{ type: 'spitter', weight: 5 },
-	{ type: 'caster', weight: 4 }
+	{ type: 'spitter', weight: 8 },
+	{ type: 'caster', weight: 8 },
+	{ type: 'caster_chaingun', weight: 5 },
+	{ type: 'caster_railgun', weight: 4 },
+	{ type: 'caster_shotgun', weight: 3 },
+	{ type: 'caster_bfg', weight: 2 },
+	{ type: 'jumper', weight: 6 }
 ];
 
 export const ENEMY_HP: Record<string, bigint> = {
@@ -35,7 +45,12 @@ export const ENEMY_HP: Record<string, bigint> = {
 	fast: 75n,
 	brute: 380n,
 	spitter: 150n,
-	caster: 120n
+	caster: 120n,
+	caster_railgun: 150n,
+	caster_chaingun: 90n,
+	caster_bfg: 180n,
+	caster_shotgun: 110n,
+	jumper: 65n
 };
 
 export const BOSS_SPAWN_INTERVAL_US = 90_000_000n; // 90 seconds
@@ -184,15 +199,15 @@ export const TORCH_POSITIONS_SRV: ReadonlyArray<{ x: bigint; z: bigint }> = [
 ];
 
 // ─── Item Drops ───────────────────────────────────────────────────────────────
-export const ITEM_PICKUP_RADIUS_SQ = 4_000_000n; // 2 world units radius
+export const ITEM_PICKUP_RADIUS_SQ = 2_000_000n; // 2 world units radius
 export const ITEM_EXPIRE_US = 20_000_000n; // 20 seconds before despawn
 export const ITEM_HP_RESTORE = 40n; // HP restored by hp orb
 export const ITEM_BUFF_US = 8_000_000n; // 8s double_damage / double_speed buff
-// Drop rates (pseudo-random 0–99): hp=18%, stamina=12%, dmg=7%, spd=7%, none=56%
-export const ITEM_DROP_HP_MAX = 18;
-export const ITEM_DROP_STAMINA_MAX = 30;
-export const ITEM_DROP_DMG_MAX = 37;
-export const ITEM_DROP_SPD_MAX = 44;
+// Drop rates (pseudo-random 0–99): hp=8%, stamina=5%, dmg=2%, spd=2%, none=83%
+export const ITEM_DROP_HP_MAX = 8;
+export const ITEM_DROP_STAMINA_MAX = 13;
+export const ITEM_DROP_DMG_MAX = 15;
+export const ITEM_DROP_SPD_MAX = 17;
 
 // ─── Spawn Points ─────────────────────────────────────────────────────────────
 export const SPAWN_POINT_COUNT = 8;

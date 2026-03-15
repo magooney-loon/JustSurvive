@@ -272,7 +272,7 @@
 
 <!-- Enemies (interpolated) -->
 {#each visibleEnemies as enemy (enemy.id)}
-	<EnemyEntity {enemy} />
+	<EnemyEntity {enemy} alivePlayers={$players.filter((p: any) => p.status === 'alive')} />
 {/each}
 
 <!-- Bosses -->

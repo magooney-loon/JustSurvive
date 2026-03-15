@@ -13,7 +13,7 @@
 	} from './md2Cache.js';
 
 	export type MD2EnemyCharacterProps = {
-		enemyType: 'basic' | 'fast' | 'brute' | 'spitter' | 'caster';
+		enemyType: 'basic' | 'fast' | 'brute' | 'spitter' | 'caster' | 'caster_railgun' | 'caster_chaingun' | 'caster_bfg' | 'caster_shotgun' | 'jumper';
 		speed: number;
 		attackPhase?: number;
 		isDead?: boolean;
@@ -60,6 +60,36 @@
 			idle: ['stand'],
 			move: ['run'],
 			attack: ['taunt'],
+			death: ['crdeath']
+		},
+		caster_railgun: {
+			idle: ['stand'],
+			move: ['run'],
+			attack: ['taunt'],
+			death: ['crdeath']
+		},
+		caster_chaingun: {
+			idle: ['stand'],
+			move: ['run'],
+			attack: ['taunt'],
+			death: ['crdeath']
+		},
+		caster_bfg: {
+			idle: ['stand'],
+			move: ['run'],
+			attack: ['taunt'],
+			death: ['crdeath']
+		},
+		caster_shotgun: {
+			idle: ['stand'],
+			move: ['run'],
+			attack: ['taunt'],
+			death: ['crdeath']
+		},
+		jumper: {
+			idle: ['jump'],
+			move: ['jump'],
+			attack: ['salute'],
 			death: ['crdeath']
 		}
 	};
