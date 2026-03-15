@@ -38,7 +38,7 @@ export const ENEMY_HP: Record<string, bigint> = {
 	caster: 120n
 };
 
-export const BOSS_SPAWN_INTERVAL_US = 10_000_000n; // 90 seconds
+export const BOSS_SPAWN_INTERVAL_US = 90_000_000n; // 90 seconds
 
 export const BOSS_HP: Record<string, bigint> = {
 	ghost_dragon: 2500n,

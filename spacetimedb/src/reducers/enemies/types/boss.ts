@@ -182,11 +182,17 @@ function handleWormMonster(
 	damageAccum: Map<bigint, bigint>,
 	abilitiesLocked: boolean
 ): any {
-	// Auto-emerge after WORM_BURROW_DURATION_US
+	// Auto-emerge after WORM_BURROW_DURATION_US — teleport to destination on emerge (not on burrow-in)
 	if (boss.isBurrowed && boss.ability2CooldownUntil) {
 		const firedAt = (boss.ability2CooldownUntil.microsSinceUnixEpoch as bigint) - WORM_ABILITY2_COOLDOWN_US;
 		if (now >= firedAt + WORM_BURROW_DURATION_US) {
-			boss = { ...boss, isBurrowed: false };
+			// Recompute target position from fire timestamp (same seed as when ability fired)
+			const seed = firedAt % 1000n;
+			const angle = (Number(seed) / 1000) * Math.PI * 2;
+			const radius = 20000 + Number((firedAt / 7n) % 20000n);
+			const newX = BigInt(Math.round(Math.cos(angle) * radius));
+			const newZ = BigInt(Math.round(Math.sin(angle) * radius));
+			boss = { ...boss, isBurrowed: false, posX: newX, posZ: newZ };
 			ctx.db.boss.id.update(boss);
 		}
 	}
@@ -224,17 +230,12 @@ function handleWormMonster(
 		return boss;
 	}
 
-	// Ability 2: Burrow — go underground, teleport to random spot
+	// Ability 2: Burrow — sink at current position, teleport on emerge
 	const canAbility2 = !abilitiesLocked && (!boss.ability2CooldownUntil ||
 		now >= (boss.ability2CooldownUntil.microsSinceUnixEpoch as bigint));
 	if (canAbility2) {
-		// Random position inside arena using timestamp seed
-		const seed = now % 1000n;
-		const angle = (Number(seed) / 1000) * Math.PI * 2;
-		const radius = 20000 + Number((now / 7n) % 20000n); // 20–40 world units from center
-		const newX = BigInt(Math.round(Math.cos(angle) * radius));
-		const newZ = BigInt(Math.round(Math.sin(angle) * radius));
-		boss = { ...boss, isBurrowed: true, posX: newX, posZ: newZ, ability2CooldownUntil: ts(now + WORM_ABILITY2_COOLDOWN_US) };
+		// Stay at current position — teleport happens on emerge using firedAt as seed
+		boss = { ...boss, isBurrowed: true, ability2CooldownUntil: ts(now + WORM_ABILITY2_COOLDOWN_US) };
 		ctx.db.boss.id.update(boss);
 		return boss;
 	}

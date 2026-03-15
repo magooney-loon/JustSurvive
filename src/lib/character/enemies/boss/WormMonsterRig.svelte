@@ -209,6 +209,6 @@
 		bind:gltf={$gltf}
 		url="{import.meta.env.BASE_URL}models/enemies/boss/worm_monster/scene.gltf"
 		rotation.y={Math.PI}
-		scale={200.0}
+		scale={270.0}
 	/>
 </T.Group>
