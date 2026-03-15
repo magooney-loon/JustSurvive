@@ -116,7 +116,7 @@ export function spawnEnemy(ctx: any, { arg }: any) {
 // each cycle so the sequence is never predictable.
 
 function shuffledBossTypes(seed: bigint): string[] {
-	const arr = ['ghost_dragon', 'root_colossus', 'shadow_stalker', 'plague_shaman'];
+	const arr = ['ghost_dragon', 'worm_monster', 'rabid_dog', 'scp_096'];
 	// Knuth LCG — good avalanche for small sequences
 	let s = seed ^ 0xdeadbeefcafe1234n;
 	const next = () => {
@@ -182,7 +182,9 @@ export function fireBossSpawn(ctx: any, { arg }: any) {
 		spawnedAt: ts(now),
 		diedAt: undefined,
 		ability1CooldownUntil: undefined,
-		ability2CooldownUntil: undefined
+		ability2CooldownUntil: undefined,
+		isHidden: false,
+		isBurrowed: false
 	});
 
 	ctx.db.gameSession.id.update({ ...session, bossSpawnCount: spawnCount + 1n });

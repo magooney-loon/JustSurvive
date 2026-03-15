@@ -66,16 +66,18 @@ export function updateLocalMovement(
 	playerClass: string,
 	hasStamina: boolean,
 	cameraYaw: number,
-	isBracing: boolean = false
+	isBracing: boolean = false,
+	isStunned: boolean = false,
+	slowMultiplier: number = 1.0
 ) {
-	if (isBracing) {
+	if (isBracing || isStunned) {
 		localVelocity.x = 0;
 		localVelocity.z = 0;
 		return;
 	}
 	const speeds = CLASS_SPEED[playerClass] ?? CLASS_SPEED.gunner;
 	const isSprinting = input.sprint && hasStamina;
-	const speed = isSprinting ? speeds.sprint : speeds.walk;
+	const speed = (isSprinting ? speeds.sprint : speeds.walk) * slowMultiplier;
 
 	let right = 0;
 	let forward = 0;

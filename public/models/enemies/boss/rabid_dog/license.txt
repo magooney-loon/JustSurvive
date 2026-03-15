@@ -1,0 +1,11 @@
+Model Information:
+* title:	SCP-939
+* source:	https://sketchfab.com/3d-models/scp-939-1b99ae814fad47ebb558076e8b5beb49
+* author:	ThatJamGuy (https://sketchfab.com/ThatJamGuy)
+
+Model License:
+* license type:	CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)
+* requirements:	Author must be credited. Commercial use is allowed.
+
+If you use this 3D model in your project be sure to copy paste this credit wherever you share it:
+This work is based on "SCP-939" (https://sketchfab.com/3d-models/scp-939-1b99ae814fad47ebb558076e8b5beb49) by ThatJamGuy (https://sketchfab.com/ThatJamGuy) licensed under CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)

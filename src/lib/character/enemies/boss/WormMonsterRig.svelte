@@ -1,0 +1,186 @@
+<script lang="ts">
+	import { T, useTask } from '@threlte/core';
+	import { GLTF, useGltfAnimations, PositionalAudio } from '@threlte/extras';
+	import * as THREE from 'three';
+	import { localPos, bossShake } from '$lib/stores/movement.svelte.js';
+	import { settingsState } from '$root/settings.svelte.js';
+
+	type WormAction = 'Idle' | 'RUN' | 'WALK' | 'ATTACK' | 'DEATH' | 'WOUND_3';
+
+	type Props = {
+		speed: number;
+		attackPhase?: number;
+		isDead?: boolean;
+		isDazed?: boolean;
+		isBurrowed?: boolean;
+		bossX?: number;
+		bossZ?: number;
+	};
+
+	let {
+		speed,
+		attackPhase = 0,
+		isDead = false,
+		isDazed = false,
+		isBurrowed = false,
+		bossX = 0,
+		bossZ = 0
+	}: Props = $props();
+
+	const SHAKE_MAX_DIST = 30;
+	const SHAKE_FREQ = Math.PI * 1.0;
+	const SHAKE_AMPLITUDE = 0.45;
+
+	const { gltf, actions, mixer } = useGltfAnimations<WormAction>();
+
+	let currentAction: WormAction = 'Idle';
+	let shakeTimer = 0;
+	let footstepTimer = 0;
+
+	// Burrow animation state
+	let burrowY = $state(0);
+	let burrowRotX = $state(0);
+
+	let footstepAudio = $state.raw<THREE.PositionalAudio | undefined>(undefined);
+	let attackAudio = $state.raw<THREE.PositionalAudio | undefined>(undefined);
+	let deadAudio = $state.raw<THREE.PositionalAudio | undefined>(undefined);
+	let dazeAudio = $state.raw<THREE.PositionalAudio | undefined>(undefined);
+
+	const playFootstep = () => {
+		if (!footstepAudio || !settingsState.audio.effectsEnabled) return;
+		if (footstepAudio.isPlaying) footstepAudio.stop();
+		footstepAudio.play();
+	};
+	const playAttack = () => {
+		if (!attackAudio || !settingsState.audio.effectsEnabled) return;
+		if (attackAudio.isPlaying) attackAudio.stop();
+		attackAudio.play();
+	};
+	const playDead = () => {
+		if (!deadAudio || !settingsState.audio.effectsEnabled) return;
+		if (deadAudio.isPlaying) deadAudio.stop();
+		deadAudio.play();
+	};
+	const playDaze = () => {
+		if (!dazeAudio || !settingsState.audio.effectsEnabled) return;
+		if (dazeAudio.isPlaying) dazeAudio.stop();
+		dazeAudio.play();
+	};
+
+	useTask((dt) => {
+		if (mixer) mixer.update(dt);
+
+		// Burrow: rotate nose-down and sink below ground, reverse on emerge
+		const targetY = isBurrowed ? -10 : 0;
+		const targetRotX = isBurrowed ? -Math.PI / 2 : 0;
+		burrowY += (targetY - burrowY) * Math.min(1, dt * 2.5);
+		burrowRotX += (targetRotX - burrowRotX) * Math.min(1, dt * 2.5);
+
+		const isWalking = !isDead && !isDazed && speed > 0.05;
+		if (isWalking) {
+			shakeTimer += dt;
+			footstepTimer += dt;
+			if (footstepTimer > 0.6) {
+				footstepTimer = 0;
+				playFootstep();
+			}
+			const dx = bossX - localPos.x;
+			const dz = bossZ - localPos.z;
+			const dist = Math.sqrt(dx * dx + dz * dz);
+			const proximity = Math.max(0, 1 - dist / SHAKE_MAX_DIST);
+			bossShake.intensity = Math.sin(shakeTimer * SHAKE_FREQ) * proximity * SHAKE_AMPLITUDE;
+		} else {
+			bossShake.intensity = Math.max(0, bossShake.intensity - dt * 3);
+			footstepTimer = 0;
+		}
+	});
+
+	$effect(() => {
+		for (const key of ['DEATH', 'WOUND_3', 'ATTACK'] as WormAction[]) {
+			const action = $actions[key];
+			if (!action) continue;
+			action.setLoop(THREE.LoopOnce, 1);
+			action.clampWhenFinished = true;
+		}
+	});
+
+	$effect(() => {
+		if (!mixer) return;
+		const onFinished = (e: THREE.Event & { action: THREE.AnimationAction }) => {
+			const name = e.action.getClip().name as WormAction;
+			if (name === 'WOUND_3' || name === 'ATTACK') {
+				const idle = $actions['Idle'];
+				if (idle) { idle.enabled = true; idle.play(); currentAction = 'Idle'; }
+			}
+		};
+		mixer.addEventListener('finished', onFinished as (e: THREE.Event) => void);
+		return () => mixer.removeEventListener('finished', onFinished as (e: THREE.Event) => void);
+	});
+
+	$effect(() => {
+		if (!$actions?.['Idle']) return;
+		$actions['Idle'].play();
+	});
+
+	$effect(() => {
+		// While burrowing use RUN so it looks like it's tunneling
+		const next: WormAction = isDead
+			? 'DEATH'
+			: isDazed
+				? 'WOUND_3'
+				: isBurrowed
+					? 'RUN'
+					: attackPhase > 0.3
+						? 'ATTACK'
+						: speed > 3
+							? 'RUN'
+							: speed > 0.1
+								? 'WALK'
+								: 'Idle';
+
+		const current = $actions[currentAction];
+		const nextAction = $actions[next];
+		if (!nextAction || current === nextAction) return;
+
+		nextAction.enabled = true;
+		if (next === 'DEATH' || next === 'WOUND_3' || next === 'ATTACK') nextAction.reset();
+		if (current) current.crossFadeTo(nextAction, 0.25, true);
+		nextAction.play();
+		currentAction = next;
+
+		if (next === 'DEATH') playDead();
+		else if (next === 'WOUND_3') playDaze();
+		else if (next === 'ATTACK') playAttack();
+	});
+</script>
+
+<PositionalAudio
+	src="{import.meta.env.BASE_URL}sounds/boss_footstep.mp3"
+	refDistance={3} maxDistance={20} rolloffFactor={1.5}
+	oncreate={(a) => { footstepAudio = a; }}
+/>
+<PositionalAudio
+	src="{import.meta.env.BASE_URL}sounds/boss_attack.mp3"
+	refDistance={5} maxDistance={25} rolloffFactor={1.5}
+	oncreate={(a) => { attackAudio = a; }}
+/>
+<PositionalAudio
+	src="{import.meta.env.BASE_URL}sounds/boss_dead.mp3"
+	refDistance={8} maxDistance={30} rolloffFactor={1.5}
+	oncreate={(a) => { deadAudio = a; }}
+/>
+<PositionalAudio
+	src="{import.meta.env.BASE_URL}sounds/boss_daze.mp3"
+	refDistance={5} maxDistance={25} rolloffFactor={1.5}
+	oncreate={(a) => { dazeAudio = a; }}
+/>
+
+<!-- Burrow: sink and rotate nose-down into ground, reverse on emerge -->
+<T.Group position.y={burrowY} rotation.x={burrowRotX}>
+	<GLTF
+		bind:gltf={$gltf}
+		url="{import.meta.env.BASE_URL}models/enemies/boss/worm_monster/scene.gltf"
+		rotation.y={Math.PI}
+		scale={3.0}
+	/>
+</T.Group>

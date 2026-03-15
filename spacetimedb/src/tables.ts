@@ -122,7 +122,9 @@ export const PlayerState = table(
 		status: t.string(),
 		score: t.u64(),
 		facingAngle: t.i64(), // milliradians * 1000, e.g. PI = 3142
-		speedBoostUntil: t.timestamp().optional()
+		speedBoostUntil: t.timestamp().optional(),
+		stunUntil: t.timestamp().optional(),  // player stun from boss abilities
+		slowedUntil: t.timestamp().optional() // player slow from scp_096 slam
 	}
 );
 
@@ -295,7 +297,7 @@ export const Boss = table(
 	{
 		id: t.u64().primaryKey().autoInc(),
 		sessionId: t.u64(),
-		bossType: t.string(), // 'ghost_dragon' | 'root_colossus' | 'shadow_stalker' | 'plague_shaman'
+		bossType: t.string(), // 'ghost_dragon' | 'worm_monster' | 'rabid_dog' | 'scp_096'
 		hp: t.u64(),
 		maxHp: t.u64(),
 		posX: t.i64(),
@@ -309,7 +311,9 @@ export const Boss = table(
 		spawnedAt: t.timestamp(),
 		diedAt: t.timestamp().optional(),
 		ability1CooldownUntil: t.timestamp().optional(),
-		ability2CooldownUntil: t.timestamp().optional()
+		ability2CooldownUntil: t.timestamp().optional(),
+		isHidden: t.bool(),   // ghost_dragon: invisible during hide & seek
+		isBurrowed: t.bool()  // worm_monster: underground during burrow
 	}
 );
 

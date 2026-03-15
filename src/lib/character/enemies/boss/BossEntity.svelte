@@ -5,6 +5,9 @@
 	import * as THREE from 'three';
 	import type { Boss } from '$bindings/types.js';
 	import BossRig from './BossRig.svelte';
+	import WormMonsterRig from './WormMonsterRig.svelte';
+	import RabidDogRig from './RabidDogRig.svelte';
+	import Scp096Rig from './Scp096Rig.svelte';
 
 	type Props = { boss: Boss };
 	let { boss }: Props = $props();
@@ -30,6 +33,22 @@
 	const targetZ = $derived(Number(boss.posZ) / 1000);
 
 	const isEnraged = $derived(boss.phase > 0n);
+	const isHidden = $derived((boss as any).isHidden ?? false);
+	const isBurrowed = $derived((boss as any).isBurrowed ?? false);
+
+	// Leap cooldown as ms timestamp — RabidDogRig watches this for changes to trigger leap anim
+	const leapCooldownMs = $derived(
+		boss.bossType === 'rabid_dog' && (boss as any).ability1CooldownUntil
+			? Number((boss as any).ability1CooldownUntil.microsSinceUnixEpoch) / 1000
+			: 0
+	);
+
+	// Ice ball cooldown as ms timestamp — BossRig watches this for changes to trigger cast_1 anim
+	const iceBallCooldownMs = $derived(
+		boss.bossType === 'ghost_dragon' && (boss as any).ability2CooldownUntil
+			? Number((boss as any).ability2CooldownUntil.microsSinceUnixEpoch) / 1000
+			: 0
+	);
 
 	let attackPhase = $state(0);
 	let attackCycle = 0;
@@ -54,7 +73,7 @@
 		speed = deathAt ? 0 : moveSpeed;
 		if (moveSpeed > 0.02) facing = Math.atan2(dx, dz) + Math.PI;
 		if (!deathAt && speed < 0.8) {
-			attackCycle += dt * 0.85;
+			attackCycle += dt * 0.35;
 		} else {
 			attackCycle = 0;
 		}
@@ -72,23 +91,70 @@
 </script>
 
 {#if !expired}
-	<!-- Outer group: spawn drop + position -->
 	<T.Group
 		position={[displayX, bossDropY, displayZ]}
 		rotation={[0, facing, 0]}
 		scale={cubicOut(spawnT)}
 	>
-		<!-- Inner group: enrage scale -->
 		<T.Group scale={isEnraged ? 1.3 : 1.0}>
-			<BossRig
-				{speed}
-				{attackPhase}
-				isDead={dead}
-				isDazed={dazed}
-				bossX={displayX}
-				bossZ={displayZ}
-			/>
-			<!-- Enrage red aura overlay -->
+			{#if boss.bossType === 'ghost_dragon'}
+				<BossRig
+					{speed}
+					{attackPhase}
+					isDead={dead}
+					isDazed={dazed}
+					{isHidden}
+					bossX={displayX}
+					bossZ={displayZ}
+					{iceBallCooldownMs}
+				/>
+			{:else if boss.bossType === 'worm_monster'}
+				<WormMonsterRig
+					{speed}
+					{attackPhase}
+					isDead={dead}
+					isDazed={dazed}
+					{isBurrowed}
+					bossX={displayX}
+					bossZ={displayZ}
+				/>
+			{:else if boss.bossType === 'rabid_dog'}
+				<RabidDogRig
+					{speed}
+					{attackPhase}
+					isDead={dead}
+					isDazed={dazed}
+					bossX={displayX}
+					bossZ={displayZ}
+					{leapCooldownMs}
+				/>
+			{:else if boss.bossType === 'scp_096'}
+				<Scp096Rig
+					{speed}
+					{attackPhase}
+					isDead={dead}
+					isDazed={dazed}
+					{isEnraged}
+					bossX={displayX}
+					bossZ={displayZ}
+				/>
+			{/if}
+
+			<!-- Ghost Dragon: faint blue aura when hidden (visible even though model is not) -->
+			{#if isHidden}
+				<T.Mesh position={[0, 2.5, 0]}>
+					<T.SphereGeometry args={[1.8, 10, 6]} />
+					<T.MeshBasicMaterial
+						color="#88aaff"
+						transparent
+						opacity={0.08}
+						blending={THREE.AdditiveBlending}
+						depthWrite={false}
+					/>
+				</T.Mesh>
+			{/if}
+
+			<!-- Enrage aura (all bosses) -->
 			{#if isEnraged}
 				<T.Mesh position={[0, 2.5, 0]}>
 					<T.SphereGeometry args={[2.2, 12, 8]} />

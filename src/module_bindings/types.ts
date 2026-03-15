@@ -38,6 +38,8 @@ export const Boss = __t.object("Boss", {
   diedAt: __t.option(__t.timestamp()),
   ability1CooldownUntil: __t.option(__t.timestamp()),
   ability2CooldownUntil: __t.option(__t.timestamp()),
+  isHidden: __t.bool(),
+  isBurrowed: __t.bool(),
 });
 export type Boss = __Infer<typeof Boss>;
 
@@ -248,6 +250,8 @@ export const PlayerState = __t.object("PlayerState", {
   score: __t.u64(),
   facingAngle: __t.i64(),
   speedBoostUntil: __t.option(__t.timestamp()),
+  stunUntil: __t.option(__t.timestamp()),
+  slowedUntil: __t.option(__t.timestamp()),
 });
 export type PlayerState = __Infer<typeof PlayerState>;
 

@@ -41,24 +41,44 @@ export const BOSS_SPAWN_INTERVAL_US = 10_000_000n; // 10 seconds (testing)
 
 export const BOSS_HP: Record<string, bigint> = {
 	ghost_dragon: 1800n,
-	root_colossus: 2800n,
-	shadow_stalker: 1200n,
-	plague_shaman: 1500n
+	worm_monster: 2500n,
+	rabid_dog: 1000n,
+	scp_096: 1500n
 };
 
 export const BOSS_SPEED: Record<string, bigint> = {
 	ghost_dragon: 4800n,
-	root_colossus: 3500n,
-	shadow_stalker: 6000n,
-	plague_shaman: 4000n
+	worm_monster: 3500n,
+	rabid_dog: 7000n,
+	scp_096: 5000n
 };
 
 export const BOSS_DAMAGE: Record<string, bigint> = {
-	ghost_dragon: 7n,
-	root_colossus: 14n,
-	shadow_stalker: 5n,
-	plague_shaman: 4n
+	ghost_dragon: 2n,
+	worm_monster: 3n,
+	rabid_dog: 2n,
+	scp_096: 1n
 };
+
+// ─── Boss Ability Constants ────────────────────────────────────────────────────
+// Ghost Dragon
+export const GHOST_ABILITY1_COOLDOWN_US = 20_000_000n; // 20s hide & seek
+export const GHOST_HIDE_DURATION_US = 3_000_000n;       // 3s invisible window
+export const GHOST_ABILITY2_COOLDOWN_US = 10_000_000n;  // 10s ice ball
+// Worm Monster
+export const WORM_ABILITY1_COOLDOWN_US = 12_000_000n;   // 12s chain charge
+export const WORM_ABILITY2_COOLDOWN_US = 20_000_000n;   // 20s burrow
+export const WORM_BURROW_DURATION_US = 2_500_000n;      // 2.5s underground
+// Rabid Dog
+export const DOG_ABILITY1_COOLDOWN_US = 7_000_000n;     // 7s leap
+export const DOG_ABILITY2_COOLDOWN_US = 12_000_000n;    // 12s stun attack
+// SCP-096
+export const SCP096_ABILITY1_COOLDOWN_US = 14_000_000n; // 14s aoe slam
+export const SCP096_ABILITY2_COOLDOWN_US = 9_000_000n;  // 9s charge
+// Shared
+export const BOSS_PLAYER_STUN_US = 1_000_000n;          // 1s stun (ice ball)
+export const BOSS_PLAYER_LONG_STUN_US = 2_000_000n;     // 2s stun (rabid dog)
+export const BOSS_PLAYER_SLOW_US = 3_000_000n;          // 3s slow (scp_096)
 
 export const ENEMY_HP_CYCLE_BONUS = 8n; // +8 HP per cycle
 export const ENEMY_HP_MAX_MULTIPLIER = 300n; // Hard cap at 3x base HP

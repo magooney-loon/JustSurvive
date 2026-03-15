@@ -28,4 +28,6 @@ export default __t.row({
   diedAt: __t.option(__t.timestamp()).name("died_at"),
   ability1CooldownUntil: __t.option(__t.timestamp()).name("ability_1_cooldown_until"),
   ability2CooldownUntil: __t.option(__t.timestamp()).name("ability_2_cooldown_until"),
+  isHidden: __t.bool().name("is_hidden"),
+  isBurrowed: __t.bool().name("is_burrowed"),
 });

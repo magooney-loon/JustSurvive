@@ -30,4 +30,6 @@ export default __t.row({
   score: __t.u64(),
   facingAngle: __t.i64().name("facing_angle"),
   speedBoostUntil: __t.option(__t.timestamp()).name("speed_boost_until"),
+  stunUntil: __t.option(__t.timestamp()).name("stun_until"),
+  slowedUntil: __t.option(__t.timestamp()).name("slowed_until"),
 });

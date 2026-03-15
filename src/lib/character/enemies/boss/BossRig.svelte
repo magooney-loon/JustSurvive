@@ -13,7 +13,7 @@
 </script>
 
 <script lang="ts">
-	import { useTask } from '@threlte/core';
+	import { T, useTask } from '@threlte/core';
 	import { GLTF, useGltfAnimations, PositionalAudio } from '@threlte/extras';
 	import * as THREE from 'three';
 	import { localPos, bossShake } from '$lib/stores/movement.svelte.js';
@@ -25,8 +25,10 @@
 		attackPhase?: number;
 		isDead?: boolean;
 		isDazed?: boolean;
+		isHidden?: boolean;
 		bossX?: number;
 		bossZ?: number;
+		iceBallCooldownMs?: number;
 	};
 
 	let {
@@ -34,8 +36,10 @@
 		attackPhase = 0,
 		isDead = false,
 		isDazed = false,
+		isHidden = false,
 		bossX = 0,
-		bossZ = 0
+		bossZ = 0,
+		iceBallCooldownMs = 0
 	}: Props = $props();
 
 	const SHAKE_MAX_DIST = 28;
@@ -50,7 +54,12 @@
 	let hasPlayedIntro = false;
 	let attackIndex = 0;
 
-	const attackAnimations: BossAction[] = ['attack_3', 'cast_1', 'attack_2', 'attack_4'];
+	// Ice ball detection — triggers cast_1 anim when ability2 cooldown timestamp changes
+	let prevIceBallCooldownMs = $state(0);
+	let isCasting = $state(false);
+	let castTimer = $state(0);
+
+	const attackAnimations: BossAction[] = ['attack_3', 'attack_2', 'attack_4'];
 
 	let footstepAudio = $state.raw<THREE.PositionalAudio | undefined>(undefined);
 	let attackAudio = $state.raw<THREE.PositionalAudio | undefined>(undefined);
@@ -86,6 +95,11 @@
 			mixer.update(dt);
 		}
 
+		if (isCasting) {
+			castTimer += dt;
+			if (castTimer > 2.0) isCasting = false;
+		}
+
 		const isWalking = !isDead && speed > 0.05;
 		if (isWalking) {
 			shakeTimer += dt;
@@ -98,8 +112,7 @@
 			const dz = bossZ - localPos.z;
 			const dist = Math.sqrt(dx * dx + dz * dz);
 			const proximity = Math.max(0, 1 - dist / SHAKE_MAX_DIST);
-			bossShake.intensity =
-				Math.sin(shakeTimer * SHAKE_FREQ) * proximity * SHAKE_AMPLITUDE;
+			bossShake.intensity = Math.sin(shakeTimer * SHAKE_FREQ) * proximity * SHAKE_AMPLITUDE;
 		} else {
 			bossShake.intensity = Math.max(0, bossShake.intensity - dt * 3);
 			footstepTimer = 0;
@@ -107,11 +120,20 @@
 	});
 
 	$effect(() => {
-		for (const key of ['dead', 'stunidle', ...attackAnimations] as BossAction[]) {
+		for (const key of ['dead', 'stunidle', 'cast_1', ...attackAnimations] as BossAction[]) {
 			const action = $actions[key];
 			if (!action) continue;
 			action.setLoop(THREE.LoopOnce, 1);
 			action.clampWhenFinished = true;
+		}
+	});
+
+	// Detect ice ball cast (ability2 cooldown timestamp changes)
+	$effect(() => {
+		if (iceBallCooldownMs > 0 && iceBallCooldownMs !== prevIceBallCooldownMs) {
+			prevIceBallCooldownMs = iceBallCooldownMs;
+			isCasting = true;
+			castTimer = 0;
 		}
 	});
 
@@ -122,7 +144,7 @@
 			if (attackAnimations.includes(name)) {
 				attackIndex = (attackIndex + 1) % attackAnimations.length;
 			}
-			if (name === 'dead' || name === 'stunidle' || attackAnimations.includes(name)) {
+			if (name === 'dead' || name === 'stunidle' || name === 'cast_1' || attackAnimations.includes(name)) {
 				bossState.action = 'winidle';
 			}
 		};
@@ -148,18 +170,20 @@
 			? 'dead'
 			: isDazed
 				? 'stunidle'
-				: attackPhase > 0.3
-					? currentAttack
-					: speed < 0.1
-						? 'winidle'
-						: 'travelmove';
+				: isCasting
+					? 'cast_1'
+					: attackPhase > 0.3
+						? currentAttack
+						: speed < 0.1
+							? 'winidle'
+							: 'travelmove';
 
 		const current = $actions[currentAction];
 		const nextAction = $actions[next];
 		if (!nextAction || current === nextAction) return;
 
 		nextAction.enabled = true;
-		if (next === 'dead' || next === 'stunidle' || attackAnimations.includes(next))
+		if (next === 'dead' || next === 'stunidle' || next === 'cast_1' || attackAnimations.includes(next))
 			nextAction.reset();
 		if (current) current.crossFadeTo(nextAction, 0.3, true);
 		nextAction.play();
@@ -167,6 +191,7 @@
 
 		if (next === 'dead') playDead();
 		else if (next === 'stunidle') playDaze();
+		else if (next === 'cast_1') playAttack();
 		else if (attackAnimations.includes(next)) playAttack();
 	});
 </script>
@@ -208,9 +233,11 @@
 	}}
 />
 
-<GLTF
-	bind:gltf={$gltf}
-	url="{import.meta.env.BASE_URL}models/enemies/boss/scene.gltf"
-	rotation.y={Math.PI}
-	scale={5.4}
-/>
+<T.Group visible={!isHidden}>
+	<GLTF
+		bind:gltf={$gltf}
+		url="{import.meta.env.BASE_URL}models/enemies/boss/ghost_dragon/scene.gltf"
+		rotation.y={Math.PI}
+		scale={5.4}
+	/>
+</T.Group>

@@ -213,12 +213,23 @@
 		const hasStamina = myState.stamina > 0n;
 		// camYaw for movement: camera forward is (-sin(yaw), -cos(yaw)), so pass yaw+π
 		const camYaw = fpsCamera.yaw + Math.PI;
+		const nowMs = Date.now();
+		const isStunned = myState.stunUntil
+			? Number(myState.stunUntil.microsSinceUnixEpoch) / 1000 > nowMs
+			: false;
+		const slowMultiplier = myState.slowedUntil
+			? Number(myState.slowedUntil.microsSinceUnixEpoch) / 1000 > nowMs
+				? 0.45
+				: 1.0
+			: 1.0;
 		updateLocalMovement(
 			dt,
 			myState.classChoice,
 			hasStamina,
 			camYaw,
-			myTankState?.isBracing ?? false
+			myTankState?.isBracing ?? false,
+			isStunned,
+			slowMultiplier
 		);
 
 		sendTimer += dt;

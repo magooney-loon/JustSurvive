@@ -1,0 +1,11 @@
+Model Information:
+* title:	Worm Monster
+* source:	https://sketchfab.com/3d-models/worm-monster-5563066315694125b741901681d387c5
+* author:	CR!STALLL (https://sketchfab.com/CR1STALLL)
+
+Model License:
+* license type:	CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)
+* requirements:	Author must be credited. Commercial use is allowed.
+
+If you use this 3D model in your project be sure to copy paste this credit wherever you share it:
+This work is based on "Worm Monster" (https://sketchfab.com/3d-models/worm-monster-5563066315694125b741901681d387c5) by CR!STALLL (https://sketchfab.com/CR1STALLL) licensed under CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)
