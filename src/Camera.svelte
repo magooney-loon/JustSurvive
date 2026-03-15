@@ -3,7 +3,7 @@
 	import { AudioListener } from '@threlte/extras';
 	import { stageState } from '$root/stage.svelte.js';
 	import { log, settingsState } from '$root/settings.svelte.js';
-	import { localPos, tpsCamera, cameraFollow, bossShake } from '$lib/stores/movement.svelte.js';
+	import { localPos, localVelocity, tpsCamera, cameraFollow, bossShake } from '$lib/stores/movement.svelte.js';
 	import type { PerspectiveCamera } from 'three';
 
 	const { renderer } = useThrelte();
@@ -21,8 +21,11 @@
 	let camTargetY = 0;
 	let camTargetZ = 0;
 	let camYawSmooth = 0;
+	let camRotYaw = 0;
 	const LERP_POS = 0.12;
 	const LERP_YAW = 0.18;
+	const LERP_ROT = 0.25;
+	const LOOK_AHEAD = 0.06;
 
 	$effect(() => {
 		const canvas = renderer.domElement;
@@ -74,9 +77,9 @@
 			const smoothBehindX = Math.sin(camYawSmooth) * TPS_Z;
 			const smoothBehindZ = Math.cos(camYawSmooth) * TPS_Z;
 
-			const targetX = localPos.x + smoothBehindX;
+			const targetX = localPos.x + smoothBehindX + localVelocity.x * LOOK_AHEAD;
 			const targetY = localPos.y + TPS_Y;
-			const targetZ = localPos.z + smoothBehindZ;
+			const targetZ = localPos.z + smoothBehindZ + localVelocity.z * LOOK_AHEAD;
 
 			// Smooth camera position
 			camTargetX += (targetX - camTargetX) * LERP_POS;
@@ -87,8 +90,9 @@
 			const shakeY = bossShake.intensity;
 			const shakeX = bossShake.intensity * Math.sin(Date.now() * 0.031) * 0.4;
 
+			camRotYaw += (tpsCamera.yaw - camRotYaw) * LERP_ROT;
 			camera.position.set(camTargetX + shakeX, camTargetY + shakeY, camTargetZ);
-			camera.rotation.y = tpsCamera.yaw;
+			camera.rotation.y = camRotYaw;
 			camera.rotation.x = TPS_PITCH;
 		}
 	});
