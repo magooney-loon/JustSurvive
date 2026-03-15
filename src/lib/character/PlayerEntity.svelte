@@ -125,8 +125,10 @@
 
 	const aimRange = $derived(CLASS_RANGE[player.classChoice] ?? 10);
 	const facing = $derived(overrideFacing ?? Number(player.facingAngle) / 1000);
-	const aimX = $derived(overrideAim?.x ?? displayX + -Math.sin(facing) * aimRange);
-	const aimZ = $derived(overrideAim?.z ?? displayZ + -Math.cos(facing) * aimRange);
+	const aimPosX = $derived(isLocal ? displayX : targetX);
+	const aimPosZ = $derived(isLocal ? displayZ : targetZ);
+	const aimX = $derived(overrideAim?.x ?? aimPosX + -Math.sin(facing) * aimRange);
+	const aimZ = $derived(overrideAim?.z ?? aimPosZ + -Math.cos(facing) * aimRange);
 	const isDowned = $derived(player.status === 'downed');
 	const downedTilt = $derived(isDowned ? -Math.PI / 2 : 0);
 	const downedYOffset = $derived(isDowned ? -0.35 : 0);
@@ -209,155 +211,155 @@
 </script>
 
 <T.Group
-		position={[displayX, displayY + downedYOffset, displayZ]}
-		rotation={[downedTilt, facing, 0]}
-	>
-		{#if player.classChoice === 'spotter'}
-			{#if classTexture}
-				<SpotterRig
-					color={CLASS_COLORS[player.classChoice] ?? '#fff'}
-					{walkPhase}
-					{speed}
-					{shotPulse}
-					{phase}
-					isBracing={false}
-					texture={classTexture}
-				/>
-			{:else}
-				<SpotterRig
-					color={CLASS_COLORS[player.classChoice] ?? '#fff'}
-					{walkPhase}
-					{speed}
-					{shotPulse}
-					{phase}
-					isBracing={false}
-				/>
-			{/if}
-		{:else if player.classChoice === 'gunner'}
-			{#if classTexture}
-				<GunnerRig
-					color={CLASS_COLORS[player.classChoice] ?? '#fff'}
-					{walkPhase}
-					{speed}
-					{shotPulse}
-					{phase}
-					isBracing={false}
-					texture={classTexture}
-				/>
-			{:else}
-				<GunnerRig
-					color={CLASS_COLORS[player.classChoice] ?? '#fff'}
-					{walkPhase}
-					{speed}
-					{shotPulse}
-					{phase}
-					isBracing={false}
-				/>
-			{/if}
-		{:else if player.classChoice === 'tank'}
-			{#if classTexture}
-				<TankRig
-					color={CLASS_COLORS[player.classChoice] ?? '#fff'}
-					{walkPhase}
-					{speed}
-					{shotPulse}
-					{phase}
-					{isCharging}
-					texture={classTexture}
-				/>
-			{:else}
-				<TankRig
-					color={CLASS_COLORS[player.classChoice] ?? '#fff'}
-					{walkPhase}
-					{speed}
-					{shotPulse}
-					{phase}
-					{isCharging}
-				/>
-			{/if}
-		{:else if player.classChoice === 'healer'}
-			{#if classTexture}
-				<HealerRig
-					color={CLASS_COLORS[player.classChoice] ?? '#fff'}
-					{walkPhase}
-					{speed}
-					{shotPulse}
-					{phase}
-					isBracing={false}
-					texture={classTexture}
-				/>
-			{:else}
-				<HealerRig
-					color={CLASS_COLORS[player.classChoice] ?? '#fff'}
-					{walkPhase}
-					{speed}
-					{shotPulse}
-					{phase}
-					isBracing={false}
-				/>
-			{/if}
-		{/if}
-	</T.Group>
-	{#if isDowned}
-		<!-- Downward-pointing arrow, bobbing above body -->
-		<T.Mesh
-			position={[displayX, displayY + 2.2 + Math.sin(downedBob * 2) * 0.12, displayZ]}
-			rotation={[Math.PI, 0, 0]}
-			geometry={downedMarkerGeo}
-			material={downedMarkerMat}
-		/>
-		<!-- Pulsing ground ring -->
-		<T.Mesh
-			position={[displayX, displayY + 0.02, displayZ]}
-			rotation={[-Math.PI / 2, 0, 0]}
-			geometry={downedRingGeo}
-			material={downedRingMat}
-		/>
-	{/if}
-
-	<!-- Revive shield bubble on healer while channeling revive -->
-	{#if isReviving}
-		<T.Mesh position={[displayX, displayY + 0.75, displayZ]}>
-			<T.SphereGeometry args={[0.85, 14, 10]} />
-			<T.MeshBasicMaterial
-				color="#88ccff"
-				transparent
-				opacity={0.15}
-				blending={THREE.AdditiveBlending}
-				depthWrite={false}
-				side={THREE.DoubleSide}
-			/>
-		</T.Mesh>
-		<T.Mesh position={[displayX, displayY + 0.75, displayZ]}>
-			<T.SphereGeometry args={[0.88, 14, 10]} />
-			<T.MeshBasicMaterial
-				color="#aaddff"
-				transparent
-				opacity={0.08}
-				blending={THREE.AdditiveBlending}
-				depthWrite={false}
-				side={THREE.BackSide}
-			/>
-		</T.Mesh>
-	{/if}
-
-	<!-- Per-class ability effects (world-space, follow interpolated position) -->
+	position={[displayX, displayY + downedYOffset, displayZ]}
+	rotation={[downedTilt, facing, 0]}
+>
 	{#if player.classChoice === 'spotter'}
-		<SpotterEffects x={displayX} z={displayZ} yaw={facing} {player} {isLocal} />
-	{:else if player.classChoice === 'tank'}
-		<TankEffects x={displayX} z={displayZ} yaw={facing} {player} {isLocal} />
-	{:else if player.classChoice === 'healer'}
-		<HealerEffects
-			x={displayX}
-			z={displayZ}
-			{player}
-			{isLocal}
-			allPlayers={$allPlayers ?? []}
-			{sessionId}
-			{isReviving}
-		/>
+		{#if classTexture}
+			<SpotterRig
+				color={CLASS_COLORS[player.classChoice] ?? '#fff'}
+				{walkPhase}
+				{speed}
+				{shotPulse}
+				{phase}
+				isBracing={false}
+				texture={classTexture}
+			/>
+		{:else}
+			<SpotterRig
+				color={CLASS_COLORS[player.classChoice] ?? '#fff'}
+				{walkPhase}
+				{speed}
+				{shotPulse}
+				{phase}
+				isBracing={false}
+			/>
+		{/if}
 	{:else if player.classChoice === 'gunner'}
-		<GunnerEffects x={displayX} z={displayZ} {isLocal} {player} />
+		{#if classTexture}
+			<GunnerRig
+				color={CLASS_COLORS[player.classChoice] ?? '#fff'}
+				{walkPhase}
+				{speed}
+				{shotPulse}
+				{phase}
+				isBracing={false}
+				texture={classTexture}
+			/>
+		{:else}
+			<GunnerRig
+				color={CLASS_COLORS[player.classChoice] ?? '#fff'}
+				{walkPhase}
+				{speed}
+				{shotPulse}
+				{phase}
+				isBracing={false}
+			/>
+		{/if}
+	{:else if player.classChoice === 'tank'}
+		{#if classTexture}
+			<TankRig
+				color={CLASS_COLORS[player.classChoice] ?? '#fff'}
+				{walkPhase}
+				{speed}
+				{shotPulse}
+				{phase}
+				{isCharging}
+				texture={classTexture}
+			/>
+		{:else}
+			<TankRig
+				color={CLASS_COLORS[player.classChoice] ?? '#fff'}
+				{walkPhase}
+				{speed}
+				{shotPulse}
+				{phase}
+				{isCharging}
+			/>
+		{/if}
+	{:else if player.classChoice === 'healer'}
+		{#if classTexture}
+			<HealerRig
+				color={CLASS_COLORS[player.classChoice] ?? '#fff'}
+				{walkPhase}
+				{speed}
+				{shotPulse}
+				{phase}
+				isBracing={false}
+				texture={classTexture}
+			/>
+		{:else}
+			<HealerRig
+				color={CLASS_COLORS[player.classChoice] ?? '#fff'}
+				{walkPhase}
+				{speed}
+				{shotPulse}
+				{phase}
+				isBracing={false}
+			/>
+		{/if}
 	{/if}
+</T.Group>
+{#if isDowned}
+	<!-- Downward-pointing arrow, bobbing above body -->
+	<T.Mesh
+		position={[displayX, displayY + 2.2 + Math.sin(downedBob * 2) * 0.12, displayZ]}
+		rotation={[Math.PI, 0, 0]}
+		geometry={downedMarkerGeo}
+		material={downedMarkerMat}
+	/>
+	<!-- Pulsing ground ring -->
+	<T.Mesh
+		position={[displayX, displayY + 0.02, displayZ]}
+		rotation={[-Math.PI / 2, 0, 0]}
+		geometry={downedRingGeo}
+		material={downedRingMat}
+	/>
+{/if}
+
+<!-- Revive shield bubble on healer while channeling revive -->
+{#if isReviving}
+	<T.Mesh position={[displayX, displayY + 0.75, displayZ]}>
+		<T.SphereGeometry args={[0.85, 14, 10]} />
+		<T.MeshBasicMaterial
+			color="#88ccff"
+			transparent
+			opacity={0.15}
+			blending={THREE.AdditiveBlending}
+			depthWrite={false}
+			side={THREE.DoubleSide}
+		/>
+	</T.Mesh>
+	<T.Mesh position={[displayX, displayY + 0.75, displayZ]}>
+		<T.SphereGeometry args={[0.88, 14, 10]} />
+		<T.MeshBasicMaterial
+			color="#aaddff"
+			transparent
+			opacity={0.08}
+			blending={THREE.AdditiveBlending}
+			depthWrite={false}
+			side={THREE.BackSide}
+		/>
+	</T.Mesh>
+{/if}
+
+<!-- Per-class ability effects (world-space, follow interpolated position) -->
+{#if player.classChoice === 'spotter'}
+	<SpotterEffects x={displayX} z={displayZ} yaw={facing} {player} {isLocal} />
+{:else if player.classChoice === 'tank'}
+	<TankEffects x={displayX} z={displayZ} yaw={facing} {player} {isLocal} />
+{:else if player.classChoice === 'healer'}
+	<HealerEffects
+		x={displayX}
+		z={displayZ}
+		{player}
+		{isLocal}
+		allPlayers={$allPlayers ?? []}
+		{sessionId}
+		{isReviving}
+	/>
+{:else if player.classChoice === 'gunner'}
+	<GunnerEffects x={displayX} z={displayZ} {isLocal} {player} />
+{/if}
 
 <AimReticle x={aimX} z={aimZ} color={CLASS_COLORS[player.classChoice] ?? '#fff'} />
