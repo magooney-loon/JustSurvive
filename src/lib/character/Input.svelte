@@ -54,6 +54,7 @@
 	const conn = useSpacetimeDB();
 	const [players] = useTable(tables.playerState);
 	const [enemies] = useTable(tables.enemy);
+	const [bosses] = useTable(tables.boss);
 
 	let braceTimer: ReturnType<typeof setTimeout> | null = null;
 	const BRACE_MAX_MS = 5000;
@@ -95,6 +96,7 @@
 		const maxPerpSq = AIM_RAY_RADIUS_FP * AIM_RAY_RADIUS_FP;
 		let best: any = null;
 		let bestPerp = Number.POSITIVE_INFINITY;
+
 		for (const e of $enemies) {
 			if (!e.isAlive || e.sessionId !== lobbyState.currentSessionId) continue;
 			const ex = Number(e.posX);
@@ -110,6 +112,23 @@
 				bestPerp = perpSq;
 			}
 		}
+
+		for (const b of $bosses) {
+			if (!b.isAlive || b.sessionId !== lobbyState.currentSessionId) continue;
+			const bx = Number(b.posX);
+			const bz = Number(b.posZ);
+			const vx = bx - ox;
+			const vz = bz - oz;
+			const along = (vx * dirX + vz * dirZ) / dirLen;
+			if (along < 0 || along > maxDist) continue;
+			const perpSq = Math.max(0, vx * vx + vz * vz - along * along);
+			if (perpSq > maxPerpSq) continue;
+			if (perpSq < bestPerp) {
+				best = b;
+				bestPerp = perpSq;
+			}
+		}
+
 		return best;
 	}
 

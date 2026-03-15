@@ -29,7 +29,10 @@ function findSpotterState(ctx: any, sessionId: any, identity: any): any {
 export function steadyShot(ctx: any, { sessionId, enemyId }: any) {
 	let ps: any;
 	for (const p of ctx.db.playerState.player_state_session_id.filter(sessionId)) {
-		if (p.playerIdentity.isEqual(ctx.sender)) { ps = p; break; }
+		if (p.playerIdentity.isEqual(ctx.sender)) {
+			ps = p;
+			break;
+		}
 	}
 	if (!ps || ps.classChoice !== 'spotter') throw new SenderError('Not a Spotter');
 	if (ps.status !== 'alive') return;
@@ -38,33 +41,62 @@ export function steadyShot(ctx: any, { sessionId, enemyId }: any) {
 	if (!ss) return;
 	if (
 		ss.steadyShotCooldownUntil &&
-		(ctx.timestamp.microsSinceUnixEpoch as bigint) < (ss.steadyShotCooldownUntil.microsSinceUnixEpoch as bigint)
-	) throw new SenderError('Steady Shot on cooldown');
+		(ctx.timestamp.microsSinceUnixEpoch as bigint) <
+			(ss.steadyShotCooldownUntil.microsSinceUnixEpoch as bigint)
+	)
+		throw new SenderError('Steady Shot on cooldown');
 
 	const enemy = ctx.db.enemy.id.find(enemyId);
-	if (!enemy || !enemy.isAlive) return;
-	const dx = (enemy.posX as bigint) - (ps.posX as bigint);
-	const dz = (enemy.posZ as bigint) - (ps.posZ as bigint);
+	let boss = ctx.db.boss.id.find(enemyId);
+	if (!enemy && !boss) return;
+	const target = enemy ?? boss;
+	if (!target.isAlive) return;
+
+	const dx = (target.posX as bigint) - (ps.posX as bigint);
+	const dz = (target.posZ as bigint) - (ps.posZ as bigint);
 	if (dx * dx + dz * dz > STEADY_SHOT_RANGE_SQ) return;
 
 	const now = ctx.timestamp.microsSinceUnixEpoch as bigint;
 	const isAlreadyMarked =
-		enemy.isMarked &&
-		enemy.markedUntil &&
-		now < (enemy.markedUntil.microsSinceUnixEpoch as bigint);
+		target.isMarked &&
+		target.markedUntil &&
+		now < (target.markedUntil.microsSinceUnixEpoch as bigint);
 	const dmg = isAlreadyMarked ? STEADY_SHOT_DAMAGE + MARK_DAMAGE_BONUS : STEADY_SHOT_DAMAGE;
-	const newHp = (enemy.hp as bigint) > dmg ? (enemy.hp as bigint) - dmg : 0n;
+	const newHp = (target.hp as bigint) > dmg ? (target.hp as bigint) - dmg : 0n;
 	const markedUntil = ts(now + MARK_DURATION_US);
 	const cooldownUntil = ts(now + STEADY_SHOT_COOLDOWN_US);
 	let scoreAdd = 0n;
+	const isBoss = !!boss;
 
 	// Primary target: full damage, always marked
 	if (newHp <= 0n) {
-		ctx.db.enemy.id.update({ ...enemy, hp: 0n, isAlive: false, isMarked: true, markedUntil, diedAt: ts(now) });
-		scoreAdd += 1n;
+		if (isBoss) {
+			ctx.db.boss.id.update({
+				...boss,
+				hp: 0n,
+				isAlive: false,
+				isMarked: true,
+				markedUntil,
+				diedAt: ts(now)
+			});
+		} else {
+			ctx.db.enemy.id.update({
+				...enemy,
+				hp: 0n,
+				isAlive: false,
+				isMarked: true,
+				markedUntil,
+				diedAt: ts(now)
+			});
+		}
+		scoreAdd += isBoss ? 50n : 1n;
 	} else {
-		ctx.db.enemy.id.update({ ...enemy, hp: newHp, isMarked: true, markedUntil });
-		scoreAdd += isAlreadyMarked ? 0n : 3n;
+		if (isBoss) {
+			ctx.db.boss.id.update({ ...boss, hp: newHp, isMarked: true, markedUntil });
+		} else {
+			ctx.db.enemy.id.update({ ...enemy, hp: newHp, isMarked: true, markedUntil });
+		}
+		scoreAdd += isBoss ? 25n : isAlreadyMarked ? 0n : 3n;
 	}
 
 	// ── Pierce: collect all enemies along the shot line, sorted by distance ──
@@ -90,17 +122,33 @@ export function steadyShot(ctx: any, { sessionId, enemyId }: any) {
 		const { e } = pierceTargets[i];
 		const isLast = i === pierceTargets.length - 1;
 		const falloffPct = BigInt(Math.max(25, 75 - i * 25));
-		const pierceDmg = STEADY_SHOT_DAMAGE * falloffPct / 100n;
+		const pierceDmg = (STEADY_SHOT_DAMAGE * falloffPct) / 100n;
 		const pierceHp = (e.hp as bigint) > pierceDmg ? (e.hp as bigint) - pierceDmg : 0n;
 		if (pierceHp <= 0n) {
-			ctx.db.enemy.id.update({ ...e, hp: 0n, isAlive: false, isMarked: isLast, markedUntil: isLast ? markedUntil : e.markedUntil, diedAt: ts(now) });
+			ctx.db.enemy.id.update({
+				...e,
+				hp: 0n,
+				isAlive: false,
+				isMarked: isLast,
+				markedUntil: isLast ? markedUntil : e.markedUntil,
+				diedAt: ts(now)
+			});
 		} else {
-			ctx.db.enemy.id.update({ ...e, hp: pierceHp, isMarked: isLast, markedUntil: isLast ? markedUntil : e.markedUntil });
+			ctx.db.enemy.id.update({
+				...e,
+				hp: pierceHp,
+				isMarked: isLast,
+				markedUntil: isLast ? markedUntil : e.markedUntil
+			});
 		}
 		scoreAdd += 1n;
 	}
 
-	ctx.db.playerState.id.update({ ...ps, score: (ps.score as bigint) + scoreAdd, lastShotAt: ctx.timestamp });
+	ctx.db.playerState.id.update({
+		...ps,
+		score: (ps.score as bigint) + scoreAdd,
+		lastShotAt: ctx.timestamp
+	});
 	ctx.db.spotterState.id.update({ ...ss, steadyShotCooldownUntil: cooldownUntil });
 }
 
@@ -109,7 +157,10 @@ export function steadyShot(ctx: any, { sessionId, enemyId }: any) {
 export function spotterFlash(ctx: any, { sessionId }: any) {
 	let ps: any;
 	for (const p of ctx.db.playerState.player_state_session_id.filter(sessionId)) {
-		if (p.playerIdentity.isEqual(ctx.sender)) { ps = p; break; }
+		if (p.playerIdentity.isEqual(ctx.sender)) {
+			ps = p;
+			break;
+		}
 	}
 	if (!ps || ps.classChoice !== 'spotter') throw new SenderError('Not a Spotter');
 	if (ps.status !== 'alive') return;
@@ -117,10 +168,8 @@ export function spotterFlash(ctx: any, { sessionId }: any) {
 	const ss = findSpotterState(ctx, sessionId, ctx.sender);
 	if (!ss) return;
 	const now = ctx.timestamp.microsSinceUnixEpoch as bigint;
-	if (
-		ss.flashCooldownUntil &&
-		now < (ss.flashCooldownUntil.microsSinceUnixEpoch as bigint)
-	) throw new SenderError('Flash on cooldown');
+	if (ss.flashCooldownUntil && now < (ss.flashCooldownUntil.microsSinceUnixEpoch as bigint))
+		throw new SenderError('Flash on cooldown');
 
 	const HALF_ANGLE = Math.PI / 4;
 	const facingRad = Number(ps.facingAngle) / 1000;
@@ -140,11 +189,43 @@ export function spotterFlash(ctx: any, { sessionId }: any) {
 		const dazedUntil = ts(now + FLASH_STUN_US);
 		const newHp = (e.hp as bigint) > FLASH_DAMAGE ? (e.hp as bigint) - FLASH_DAMAGE : 0n;
 		if (newHp <= 0n) {
-			ctx.db.enemy.id.update({ ...e, hp: 0n, isAlive: false, isDazed: true, dazedUntil, diedAt: ts(now) });
+			ctx.db.enemy.id.update({
+				...e,
+				hp: 0n,
+				isAlive: false,
+				isDazed: true,
+				dazedUntil,
+				diedAt: ts(now)
+			});
 		} else {
 			ctx.db.enemy.id.update({ ...e, hp: newHp, isDazed: true, dazedUntil });
 		}
 		stunned += 1n;
+	}
+
+	for (const b of ctx.db.boss.boss_session_id.filter(sessionId)) {
+		if (!b.isAlive) continue;
+		const bx = Number(b.posX) - Number(ps.posX);
+		const bz = Number(b.posZ) - Number(ps.posZ);
+		const dist = Math.sqrt(bx * bx + bz * bz);
+		if (dist > FLASH_CONE_RANGE || dist < 1) continue;
+		const dot = (bx * fwdX + bz * fwdZ) / dist;
+		if (dot < cosHalf) continue;
+		const dazedUntil = ts(now + FLASH_STUN_US);
+		const newHp = (b.hp as bigint) > FLASH_DAMAGE ? (b.hp as bigint) - FLASH_DAMAGE : 0n;
+		if (newHp <= 0n) {
+			ctx.db.boss.id.update({
+				...b,
+				hp: 0n,
+				isAlive: false,
+				isDazed: true,
+				dazedUntil,
+				diedAt: ts(now)
+			});
+		} else {
+			ctx.db.boss.id.update({ ...b, hp: newHp, isDazed: true, dazedUntil });
+		}
+		stunned += 10n;
 	}
 
 	ctx.db.playerState.id.update({ ...ps, score: (ps.score as bigint) + stunned * 10n });
@@ -161,7 +242,10 @@ export function spotterFlash(ctx: any, { sessionId }: any) {
 export function spotterUltimate(ctx: any, { sessionId }: any) {
 	let ps: any;
 	for (const p of ctx.db.playerState.player_state_session_id.filter(sessionId)) {
-		if (p.playerIdentity.isEqual(ctx.sender)) { ps = p; break; }
+		if (p.playerIdentity.isEqual(ctx.sender)) {
+			ps = p;
+			break;
+		}
 	}
 	if (!ps || ps.classChoice !== 'spotter') return;
 	if (ps.status !== 'alive') return;
@@ -169,7 +253,8 @@ export function spotterUltimate(ctx: any, { sessionId }: any) {
 	const ss = findSpotterState(ctx, sessionId, ctx.sender);
 	if (!ss) return;
 	const now = ctx.timestamp.microsSinceUnixEpoch as bigint;
-	if (ss.ultimateCooldownUntil && now < (ss.ultimateCooldownUntil.microsSinceUnixEpoch as bigint)) return;
+	if (ss.ultimateCooldownUntil && now < (ss.ultimateCooldownUntil.microsSinceUnixEpoch as bigint))
+		return;
 
 	const BARRAGE_DAMAGE = 20n;
 	const markedUntil = ts(now + MARK_DURATION_US);
@@ -182,7 +267,14 @@ export function spotterUltimate(ctx: any, { sessionId }: any) {
 		if (ex * ex + ez * ez > STEADY_SHOT_RANGE_SQ) continue;
 		const newHp = (e.hp as bigint) > BARRAGE_DAMAGE ? (e.hp as bigint) - BARRAGE_DAMAGE : 0n;
 		if (newHp <= 0n) {
-			ctx.db.enemy.id.update({ ...e, hp: 0n, isAlive: false, isMarked: true, markedUntil, diedAt: ts(now) });
+			ctx.db.enemy.id.update({
+				...e,
+				hp: 0n,
+				isAlive: false,
+				isMarked: true,
+				markedUntil,
+				diedAt: ts(now)
+			});
 			scoreAdd += 2n;
 		} else {
 			ctx.db.enemy.id.update({ ...e, hp: newHp, isMarked: true, markedUntil });
@@ -190,6 +282,36 @@ export function spotterUltimate(ctx: any, { sessionId }: any) {
 		}
 	}
 
-	ctx.db.playerState.id.update({ ...ps, score: (ps.score as bigint) + scoreAdd, lastShotAt: ctx.timestamp });
-	ctx.db.spotterState.id.update({ ...ss, ultimateCooldownUntil: ts(now + ULTIMATE_COOLDOWN_US), lastUltimateAt: ctx.timestamp });
+	for (const b of ctx.db.boss.boss_session_id.filter(sessionId)) {
+		if (!b.isAlive) continue;
+		const bx = (b.posX as bigint) - (ps.posX as bigint);
+		const bz = (b.posZ as bigint) - (ps.posZ as bigint);
+		if (bx * bx + bz * bz > STEADY_SHOT_RANGE_SQ) continue;
+		const newHp = (b.hp as bigint) > BARRAGE_DAMAGE ? (b.hp as bigint) - BARRAGE_DAMAGE : 0n;
+		if (newHp <= 0n) {
+			ctx.db.boss.id.update({
+				...b,
+				hp: 0n,
+				isAlive: false,
+				isMarked: true,
+				markedUntil,
+				diedAt: ts(now)
+			});
+			scoreAdd += 50n;
+		} else {
+			ctx.db.boss.id.update({ ...b, hp: newHp, isMarked: true, markedUntil });
+			scoreAdd += 25n;
+		}
+	}
+
+	ctx.db.playerState.id.update({
+		...ps,
+		score: (ps.score as bigint) + scoreAdd,
+		lastShotAt: ctx.timestamp
+	});
+	ctx.db.spotterState.id.update({
+		...ss,
+		ultimateCooldownUntil: ts(now + ULTIMATE_COOLDOWN_US),
+		lastUltimateAt: ctx.timestamp
+	});
 }

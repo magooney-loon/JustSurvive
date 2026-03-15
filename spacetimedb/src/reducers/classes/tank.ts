@@ -24,7 +24,10 @@ function findTankState(ctx: any, sessionId: any, identity: any): any {
 export function axeSwing(ctx: any, { sessionId }: any) {
 	let ps: any;
 	for (const p of ctx.db.playerState.player_state_session_id.filter(sessionId)) {
-		if (p.playerIdentity.isEqual(ctx.sender)) { ps = p; break; }
+		if (p.playerIdentity.isEqual(ctx.sender)) {
+			ps = p;
+			break;
+		}
 	}
 	if (!ps || ps.classChoice !== 'tank') return;
 	if (ps.status !== 'alive') return;
@@ -35,7 +38,8 @@ export function axeSwing(ctx: any, { sessionId }: any) {
 	if (
 		tankSt.axeSwingCooldownUntil &&
 		now < (tankSt.axeSwingCooldownUntil.microsSinceUnixEpoch as bigint)
-	) return;
+	)
+		return;
 
 	const HALF_ANGLE = Math.PI / 4;
 	const facingRad = Number(ps.facingAngle) / 1000;
@@ -56,21 +60,83 @@ export function axeSwing(ctx: any, { sessionId }: any) {
 		const newHp = (e.hp as bigint) > AXE_SWING_DAMAGE ? (e.hp as bigint) - AXE_SWING_DAMAGE : 0n;
 		const dazedUntil = ts(now + AXE_SWING_DAZE_US);
 		if (newHp <= 0n) {
-			ctx.db.enemy.id.update({ ...e, hp: 0n, isAlive: false, isDazed: true, dazedUntil, diedAt: ts(now) });
+			ctx.db.enemy.id.update({
+				...e,
+				hp: 0n,
+				isAlive: false,
+				isDazed: true,
+				dazedUntil,
+				diedAt: ts(now)
+			});
 			scoreAdd += 2n;
 		} else {
 			const edx = BigInt(Math.round(ex));
 			const edz = BigInt(Math.round(ez));
 			const mag = bs(edx * edx + edz * edz);
-			const newX = mag > 0n ? (e.posX as bigint) + (edx * AXE_SWING_KNOCKBACK) / mag : (e.posX as bigint) + AXE_SWING_KNOCKBACK;
-			const newZ = mag > 0n ? (e.posZ as bigint) + (edz * AXE_SWING_KNOCKBACK) / mag : (e.posZ as bigint) + AXE_SWING_KNOCKBACK;
-			ctx.db.enemy.id.update({ ...e, hp: newHp, posX: newX, posZ: newZ, isDazed: true, dazedUntil });
+			const newX =
+				mag > 0n
+					? (e.posX as bigint) + (edx * AXE_SWING_KNOCKBACK) / mag
+					: (e.posX as bigint) + AXE_SWING_KNOCKBACK;
+			const newZ =
+				mag > 0n
+					? (e.posZ as bigint) + (edz * AXE_SWING_KNOCKBACK) / mag
+					: (e.posZ as bigint) + AXE_SWING_KNOCKBACK;
+			ctx.db.enemy.id.update({
+				...e,
+				hp: newHp,
+				posX: newX,
+				posZ: newZ,
+				isDazed: true,
+				dazedUntil
+			});
 			scoreAdd += 5n;
 		}
 	}
 
+	for (const b of ctx.db.boss.boss_session_id.filter(sessionId)) {
+		if (!b.isAlive) continue;
+		const bx = Number(b.posX) - Number(ps.posX);
+		const bz = Number(b.posZ) - Number(ps.posZ);
+		const dist = Math.sqrt(bx * bx + bz * bz);
+		if (dist > AXE_SWING_RANGE || dist < 1) continue;
+		const dot = (bx * fwdX + bz * fwdZ) / dist;
+		if (dot < cosHalf) continue;
+
+		const newHp = (b.hp as bigint) > AXE_SWING_DAMAGE ? (b.hp as bigint) - AXE_SWING_DAMAGE : 0n;
+		const dazedUntil = ts(now + AXE_SWING_DAZE_US);
+		if (newHp <= 0n) {
+			ctx.db.boss.id.update({
+				...b,
+				hp: 0n,
+				isAlive: false,
+				isDazed: true,
+				dazedUntil,
+				diedAt: ts(now)
+			});
+			scoreAdd += 50n;
+		} else {
+			const bdx = BigInt(Math.round(bx));
+			const bdz = BigInt(Math.round(bz));
+			const mag = bs(bdx * bdx + bdz * bdz);
+			const newX =
+				mag > 0n
+					? (b.posX as bigint) + (bdx * AXE_SWING_KNOCKBACK) / mag
+					: (b.posX as bigint) + AXE_SWING_KNOCKBACK;
+			const newZ =
+				mag > 0n
+					? (b.posZ as bigint) + (bdz * AXE_SWING_KNOCKBACK) / mag
+					: (b.posZ as bigint) + AXE_SWING_KNOCKBACK;
+			ctx.db.boss.id.update({ ...b, hp: newHp, posX: newX, posZ: newZ, isDazed: true, dazedUntil });
+			scoreAdd += 25n;
+		}
+	}
+
 	ctx.db.playerState.id.update({ ...ps, score: (ps.score as bigint) + scoreAdd });
-	ctx.db.tankState.id.update({ ...tankSt, axeSwingCooldownUntil: ts(now + AXE_SWING_COOLDOWN_US), lastAxeSwingAt: ctx.timestamp });
+	ctx.db.tankState.id.update({
+		...tankSt,
+		axeSwingCooldownUntil: ts(now + AXE_SWING_COOLDOWN_US),
+		lastAxeSwingAt: ctx.timestamp
+	});
 }
 
 // ─── brace_start ──────────────────────────────────────────────────────────────
@@ -78,7 +144,10 @@ export function axeSwing(ctx: any, { sessionId }: any) {
 export function braceStart(ctx: any, { sessionId }: any) {
 	let ps: any;
 	for (const p of ctx.db.playerState.player_state_session_id.filter(sessionId)) {
-		if (p.playerIdentity.isEqual(ctx.sender)) { ps = p; break; }
+		if (p.playerIdentity.isEqual(ctx.sender)) {
+			ps = p;
+			break;
+		}
 	}
 	if (!ps || ps.classChoice !== 'tank') return;
 	if (ps.status !== 'alive') return;
@@ -86,18 +155,22 @@ export function braceStart(ctx: any, { sessionId }: any) {
 	const tankSt = findTankState(ctx, sessionId, ctx.sender);
 	if (!tankSt) return;
 	const now = ctx.timestamp.microsSinceUnixEpoch as bigint;
-	if (tankSt.braceCooldownUntil && now < (tankSt.braceCooldownUntil.microsSinceUnixEpoch as bigint)) return;
+	if (tankSt.braceCooldownUntil && now < (tankSt.braceCooldownUntil.microsSinceUnixEpoch as bigint))
+		return;
 	if (tankSt.isBracing) return;
 
 	ctx.db.tankState.id.update({ ...tankSt, isBracing: true, braceStartAt: ctx.timestamp });
 }
 
-// ─── brace_end ────────────────────────────────────────────────────────────────
+// ─── brace_end ───────────────────────────────────────────────────────────────
 
 export function braceEnd(ctx: any, { sessionId }: any) {
 	let ps: any;
 	for (const p of ctx.db.playerState.player_state_session_id.filter(sessionId)) {
-		if (p.playerIdentity.isEqual(ctx.sender)) { ps = p; break; }
+		if (p.playerIdentity.isEqual(ctx.sender)) {
+			ps = p;
+			break;
+		}
 	}
 	if (!ps || ps.classChoice !== 'tank') return;
 	if (ps.status !== 'alive') return;
@@ -119,7 +192,10 @@ export function braceEnd(ctx: any, { sessionId }: any) {
 export function tankUltimate(ctx: any, { sessionId }: any) {
 	let ps: any;
 	for (const p of ctx.db.playerState.player_state_session_id.filter(sessionId)) {
-		if (p.playerIdentity.isEqual(ctx.sender)) { ps = p; break; }
+		if (p.playerIdentity.isEqual(ctx.sender)) {
+			ps = p;
+			break;
+		}
 	}
 	if (!ps || ps.classChoice !== 'tank') return;
 	if (ps.status !== 'alive') return;
@@ -127,7 +203,11 @@ export function tankUltimate(ctx: any, { sessionId }: any) {
 	const tankSt = findTankState(ctx, sessionId, ctx.sender);
 	if (!tankSt) return;
 	const now = ctx.timestamp.microsSinceUnixEpoch as bigint;
-	if (tankSt.ultimateCooldownUntil && now < (tankSt.ultimateCooldownUntil.microsSinceUnixEpoch as bigint)) return;
+	if (
+		tankSt.ultimateCooldownUntil &&
+		now < (tankSt.ultimateCooldownUntil.microsSinceUnixEpoch as bigint)
+	)
+		return;
 
 	const SLAM_DAMAGE = AXE_SWING_DAMAGE * 2n;
 	const SLAM_KNOCKBACK = AXE_SWING_KNOCKBACK * 2n;
@@ -140,23 +220,86 @@ export function tankUltimate(ctx: any, { sessionId }: any) {
 		const ez = Number(e.posZ) - Number(ps.posZ);
 		const dist = Math.sqrt(ex * ex + ez * ez);
 		if (dist > AXE_SWING_RANGE || dist < 1) continue;
-		// 360° — no cone check
 		const newHp = (e.hp as bigint) > SLAM_DAMAGE ? (e.hp as bigint) - SLAM_DAMAGE : 0n;
 		const dazedUntil = ts(now + SLAM_DAZE_US);
 		const edx = BigInt(Math.round(ex));
 		const edz = BigInt(Math.round(ez));
 		const mag = bs(edx * edx + edz * edz);
-		const newX = mag > 0n ? (e.posX as bigint) + (edx * SLAM_KNOCKBACK) / mag : (e.posX as bigint) + SLAM_KNOCKBACK;
-		const newZ = mag > 0n ? (e.posZ as bigint) + (edz * SLAM_KNOCKBACK) / mag : (e.posZ as bigint) + SLAM_KNOCKBACK;
+		const newX =
+			mag > 0n
+				? (e.posX as bigint) + (edx * SLAM_KNOCKBACK) / mag
+				: (e.posX as bigint) + SLAM_KNOCKBACK;
+		const newZ =
+			mag > 0n
+				? (e.posZ as bigint) + (edz * SLAM_KNOCKBACK) / mag
+				: (e.posZ as bigint) + SLAM_KNOCKBACK;
 		if (newHp <= 0n) {
-			ctx.db.enemy.id.update({ ...e, hp: 0n, isAlive: false, isDazed: true, dazedUntil, posX: newX, posZ: newZ, diedAt: ts(now) });
+			ctx.db.enemy.id.update({
+				...e,
+				hp: 0n,
+				isAlive: false,
+				isDazed: true,
+				dazedUntil,
+				posX: newX,
+				posZ: newZ,
+				diedAt: ts(now)
+			});
 			scoreAdd += 3n;
 		} else {
-			ctx.db.enemy.id.update({ ...e, hp: newHp, isDazed: true, dazedUntil, posX: newX, posZ: newZ });
+			ctx.db.enemy.id.update({
+				...e,
+				hp: newHp,
+				isDazed: true,
+				dazedUntil,
+				posX: newX,
+				posZ: newZ
+			});
 			scoreAdd += 2n;
 		}
 	}
 
+	for (const b of ctx.db.boss.boss_session_id.filter(sessionId)) {
+		if (!b.isAlive) continue;
+		const bx = Number(b.posX) - Number(ps.posX);
+		const bz = Number(b.posZ) - Number(ps.posZ);
+		const dist = Math.sqrt(bx * bx + bz * bz);
+		if (dist > AXE_SWING_RANGE || dist < 1) continue;
+		const newHp = (b.hp as bigint) > SLAM_DAMAGE ? (b.hp as bigint) - SLAM_DAMAGE : 0n;
+		const dazedUntil = ts(now + SLAM_DAZE_US);
+		const bdx = BigInt(Math.round(bx));
+		const bdz = BigInt(Math.round(bz));
+		const mag = bs(bdx * bdx + bdz * bdz);
+		const newX =
+			mag > 0n
+				? (b.posX as bigint) + (bdx * SLAM_KNOCKBACK) / mag
+				: (b.posX as bigint) + SLAM_KNOCKBACK;
+		const newZ =
+			mag > 0n
+				? (b.posZ as bigint) + (bdz * SLAM_KNOCKBACK) / mag
+				: (b.posZ as bigint) + SLAM_KNOCKBACK;
+		if (newHp <= 0n) {
+			ctx.db.boss.id.update({
+				...b,
+				hp: 0n,
+				isAlive: false,
+				isDazed: true,
+				dazedUntil,
+				posX: newX,
+				posZ: newZ,
+				diedAt: ts(now)
+			});
+			scoreAdd += 50n;
+		} else {
+			ctx.db.boss.id.update({ ...b, hp: newHp, isDazed: true, dazedUntil, posX: newX, posZ: newZ });
+			scoreAdd += 25n;
+		}
+	}
+
 	ctx.db.playerState.id.update({ ...ps, score: (ps.score as bigint) + scoreAdd });
-	ctx.db.tankState.id.update({ ...tankSt, ultimateCooldownUntil: ts(now + ULTIMATE_COOLDOWN_US), lastAxeSwingAt: ctx.timestamp, lastUltimateAt: ctx.timestamp });
+	ctx.db.tankState.id.update({
+		...tankSt,
+		ultimateCooldownUntil: ts(now + ULTIMATE_COOLDOWN_US),
+		lastAxeSwingAt: ctx.timestamp,
+		lastUltimateAt: ctx.timestamp
+	});
 }

@@ -18,35 +18,55 @@ function findGunnerState(ctx: any, sessionId: any, identity: any): any {
 export function attackEnemy(ctx: any, { sessionId, enemyId, suppress }: any) {
 	let ps: any;
 	for (const p of ctx.db.playerState.player_state_session_id.filter(sessionId)) {
-		if (p.playerIdentity.isEqual(ctx.sender)) { ps = p; break; }
+		if (p.playerIdentity.isEqual(ctx.sender)) {
+			ps = p;
+			break;
+		}
 	}
 	if (!ps || ps.classChoice !== 'gunner') throw new SenderError('Not a Gunner');
 	if (ps.status !== 'alive') return;
 
 	const enemy = ctx.db.enemy.id.find(enemyId);
-	if (!enemy || !enemy.isAlive) return;
-	const dx = (enemy.posX as bigint) - (ps.posX as bigint);
-	const dz = (enemy.posZ as bigint) - (ps.posZ as bigint);
+	const boss = ctx.db.boss.id.find(enemyId);
+	if (!enemy && !boss) return;
+	const target = enemy ?? boss;
+	if (!target.isAlive) return;
+
+	const dx = (target.posX as bigint) - (ps.posX as bigint);
+	const dz = (target.posZ as bigint) - (ps.posZ as bigint);
 	if (dx * dx + dz * dz > 100_000_000n) return;
 
 	const now = ctx.timestamp.microsSinceUnixEpoch as bigint;
 	const baseDmg = WEAPON_DAMAGE[ps.classChoice] ?? 15n;
 	const isMarked =
-		enemy.isMarked &&
-		enemy.markedUntil &&
-		now < (enemy.markedUntil.microsSinceUnixEpoch as bigint);
+		target.isMarked &&
+		target.markedUntil &&
+		now < (target.markedUntil.microsSinceUnixEpoch as bigint);
 	const dmg = isMarked ? baseDmg + MARK_DAMAGE_BONUS : baseDmg;
-	const newHp = (enemy.hp as bigint) > dmg ? (enemy.hp as bigint) - dmg : 0n;
+	const newHp = (target.hp as bigint) > dmg ? (target.hp as bigint) - dmg : 0n;
+	const isBoss = !!boss;
 
 	if (newHp <= 0n) {
-		ctx.db.enemy.id.update({ ...enemy, hp: 0n, isAlive: false, diedAt: ts(now) });
-		ctx.db.playerState.id.update({ ...ps, score: (ps.score as bigint) + 2n, lastShotAt: ctx.timestamp });
-	} else {
-		let updatedEnemy = { ...enemy, hp: newHp };
-		if (suppress) {
-			updatedEnemy = { ...updatedEnemy, isDazed: true, dazedUntil: ts(now + 1_000_000n) };
+		if (isBoss) {
+			ctx.db.boss.id.update({ ...boss, hp: 0n, isAlive: false, diedAt: ts(now) });
+		} else {
+			ctx.db.enemy.id.update({ ...enemy, hp: 0n, isAlive: false, diedAt: ts(now) });
 		}
-		ctx.db.enemy.id.update(updatedEnemy);
+		ctx.db.playerState.id.update({
+			...ps,
+			score: (ps.score as bigint) + (isBoss ? 50n : 2n),
+			lastShotAt: ctx.timestamp
+		});
+	} else {
+		let updatedTarget = { ...target, hp: newHp };
+		if (suppress) {
+			updatedTarget = { ...updatedTarget, isDazed: true, dazedUntil: ts(now + 1_000_000n) };
+		}
+		if (isBoss) {
+			ctx.db.boss.id.update(updatedTarget);
+		} else {
+			ctx.db.enemy.id.update(updatedTarget);
+		}
 		ctx.db.playerState.id.update({ ...ps, lastShotAt: ctx.timestamp });
 	}
 }
@@ -56,7 +76,10 @@ export function attackEnemy(ctx: any, { sessionId, enemyId, suppress }: any) {
 export function adrenaline(ctx: any, { sessionId }: any) {
 	let ps: any;
 	for (const p of ctx.db.playerState.player_state_session_id.filter(sessionId)) {
-		if (p.playerIdentity.isEqual(ctx.sender)) { ps = p; break; }
+		if (p.playerIdentity.isEqual(ctx.sender)) {
+			ps = p;
+			break;
+		}
 	}
 	if (!ps || ps.classChoice !== 'gunner') throw new SenderError('Not a Gunner');
 	if (ps.status !== 'alive') return;
@@ -64,7 +87,11 @@ export function adrenaline(ctx: any, { sessionId }: any) {
 	const gs = findGunnerState(ctx, sessionId, ctx.sender);
 	if (!gs) return;
 	const now = ctx.timestamp.microsSinceUnixEpoch as bigint;
-	if (gs.adrenalineCooldownUntil && (gs.adrenalineCooldownUntil.microsSinceUnixEpoch as bigint) > now) return;
+	if (
+		gs.adrenalineCooldownUntil &&
+		(gs.adrenalineCooldownUntil.microsSinceUnixEpoch as bigint) > now
+	)
+		return;
 
 	ctx.db.playerState.id.update({ ...ps, stamina: ps.maxStamina, lastMoveAt: ctx.timestamp });
 	ctx.db.gunnerState.id.update({ ...gs, adrenalineCooldownUntil: ts(now + 5_000_000n) });
@@ -76,7 +103,10 @@ export function adrenaline(ctx: any, { sessionId }: any) {
 export function gunnerUltimate(ctx: any, { sessionId }: any) {
 	let ps: any;
 	for (const p of ctx.db.playerState.player_state_session_id.filter(sessionId)) {
-		if (p.playerIdentity.isEqual(ctx.sender)) { ps = p; break; }
+		if (p.playerIdentity.isEqual(ctx.sender)) {
+			ps = p;
+			break;
+		}
 	}
 	if (!ps || ps.classChoice !== 'gunner') return;
 	if (ps.status !== 'alive') return;
@@ -84,7 +114,8 @@ export function gunnerUltimate(ctx: any, { sessionId }: any) {
 	const gs = findGunnerState(ctx, sessionId, ctx.sender);
 	if (!gs) return;
 	const now = ctx.timestamp.microsSinceUnixEpoch as bigint;
-	if (gs.ultimateCooldownUntil && now < (gs.ultimateCooldownUntil.microsSinceUnixEpoch as bigint)) return;
+	if (gs.ultimateCooldownUntil && now < (gs.ultimateCooldownUntil.microsSinceUnixEpoch as bigint))
+		return;
 
 	const FRENZY_RANGE_SQ = 225_000_000n; // 15 world units
 	const FRENZY_DAMAGE = WEAPON_DAMAGE['gunner'] ?? 15n;
@@ -99,7 +130,14 @@ export function gunnerUltimate(ctx: any, { sessionId }: any) {
 		const dazedUntil = ts(now + FRENZY_DAZE_US);
 		const newHp = (e.hp as bigint) > FRENZY_DAMAGE ? (e.hp as bigint) - FRENZY_DAMAGE : 0n;
 		if (newHp <= 0n) {
-			ctx.db.enemy.id.update({ ...e, hp: 0n, isAlive: false, isDazed: true, dazedUntil, diedAt: ts(now) });
+			ctx.db.enemy.id.update({
+				...e,
+				hp: 0n,
+				isAlive: false,
+				isDazed: true,
+				dazedUntil,
+				diedAt: ts(now)
+			});
 			scoreAdd += 2n;
 		} else {
 			ctx.db.enemy.id.update({ ...e, hp: newHp, isDazed: true, dazedUntil });
@@ -107,6 +145,37 @@ export function gunnerUltimate(ctx: any, { sessionId }: any) {
 		}
 	}
 
-	ctx.db.playerState.id.update({ ...ps, score: (ps.score as bigint) + scoreAdd, lastShotAt: ctx.timestamp });
-	ctx.db.gunnerState.id.update({ ...gs, ultimateCooldownUntil: ts(now + ULTIMATE_COOLDOWN_US), lastUltimateAt: ctx.timestamp });
+	for (const b of ctx.db.boss.boss_session_id.filter(sessionId)) {
+		if (!b.isAlive) continue;
+		const bx = (b.posX as bigint) - (ps.posX as bigint);
+		const bz = (b.posZ as bigint) - (ps.posZ as bigint);
+		if (bx * bx + bz * bz > FRENZY_RANGE_SQ) continue;
+		const dazedUntil = ts(now + FRENZY_DAZE_US);
+		const newHp = (b.hp as bigint) > FRENZY_DAMAGE ? (b.hp as bigint) - FRENZY_DAMAGE : 0n;
+		if (newHp <= 0n) {
+			ctx.db.boss.id.update({
+				...b,
+				hp: 0n,
+				isAlive: false,
+				isDazed: true,
+				dazedUntil,
+				diedAt: ts(now)
+			});
+			scoreAdd += 50n;
+		} else {
+			ctx.db.boss.id.update({ ...b, hp: newHp, isDazed: true, dazedUntil });
+			scoreAdd += 25n;
+		}
+	}
+
+	ctx.db.playerState.id.update({
+		...ps,
+		score: (ps.score as bigint) + scoreAdd,
+		lastShotAt: ctx.timestamp
+	});
+	ctx.db.gunnerState.id.update({
+		...gs,
+		ultimateCooldownUntil: ts(now + ULTIMATE_COOLDOWN_US),
+		lastUltimateAt: ctx.timestamp
+	});
 }
