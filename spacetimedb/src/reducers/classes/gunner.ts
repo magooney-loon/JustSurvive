@@ -3,7 +3,7 @@
 // adrenaline: instantly refills stamina (5s cooldown).
 
 import { SenderError } from 'spacetimedb/server';
-import { ts } from '../../helpers.js';
+import { ts, damageMultiplier } from '../../helpers.js';
 import { WEAPON_DAMAGE, MARK_DAMAGE_BONUS, ULTIMATE_COOLDOWN_US } from '../../constants.js';
 
 function findGunnerState(ctx: any, sessionId: any, identity: any): any {
@@ -42,7 +42,7 @@ export function attackEnemy(ctx: any, { sessionId, enemyId, suppress }: any) {
 		target.isMarked &&
 		target.markedUntil &&
 		now < (target.markedUntil.microsSinceUnixEpoch as bigint);
-	const dmg = isMarked ? baseDmg + MARK_DAMAGE_BONUS : baseDmg;
+	const dmg = (isMarked ? baseDmg + MARK_DAMAGE_BONUS : baseDmg) * damageMultiplier(ps, now);
 	const newHp = (target.hp as bigint) > dmg ? (target.hp as bigint) - dmg : 0n;
 	const isBoss = !!boss;
 
@@ -122,7 +122,7 @@ export function gunnerUltimate(ctx: any, { sessionId }: any) {
 		return;
 
 	const FRENZY_RANGE_SQ = 225_000_000n; // 15 world units
-	const FRENZY_DAMAGE = WEAPON_DAMAGE['gunner'] ?? 15n;
+	const FRENZY_DAMAGE = (WEAPON_DAMAGE['gunner'] ?? 15n) * damageMultiplier(ps, now);
 	const FRENZY_DAZE_US = 2_000_000n;
 	let scoreAdd = 0n;
 

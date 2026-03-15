@@ -3,7 +3,7 @@
 // charge_activate: charge forward in facing direction — knocks enemies sideways,
 //   blocks player movement input, applies speed boost on completion.
 
-import { ts, bigintSqrt as bs } from '../../helpers.js';
+import { ts, bigintSqrt as bs, damageMultiplier } from '../../helpers.js';
 import {
 	AXE_SWING_DAMAGE,
 	AXE_SWING_RANGE,
@@ -50,6 +50,7 @@ export function axeSwing(ctx: any, { sessionId }: any) {
 	const fwdZ = -Math.cos(facingRad);
 	const cosHalf = Math.cos(HALF_ANGLE);
 
+	const axeDmg = AXE_SWING_DAMAGE * damageMultiplier(ps, now);
 	let scoreAdd = 0n;
 	for (const e of ctx.db.enemy.enemy_session_id.filter(sessionId)) {
 		if (!e.isAlive) continue;
@@ -59,8 +60,7 @@ export function axeSwing(ctx: any, { sessionId }: any) {
 		if (dist > AXE_SWING_RANGE || dist < 1) continue;
 		const dot = (ex * fwdX + ez * fwdZ) / dist;
 		if (dot < cosHalf) continue;
-
-		const newHp = (e.hp as bigint) > AXE_SWING_DAMAGE ? (e.hp as bigint) - AXE_SWING_DAMAGE : 0n;
+		const newHp = (e.hp as bigint) > axeDmg ? (e.hp as bigint) - axeDmg : 0n;
 		const dazedUntil = ts(now + AXE_SWING_DAZE_US);
 		if (newHp <= 0n) {
 			ctx.db.enemy.id.update({
@@ -105,7 +105,7 @@ export function axeSwing(ctx: any, { sessionId }: any) {
 		const dot = (bx * fwdX + bz * fwdZ) / dist;
 		if (dot < cosHalf) continue;
 
-		const newHp = (b.hp as bigint) > AXE_SWING_DAMAGE ? (b.hp as bigint) - AXE_SWING_DAMAGE : 0n;
+		const newHp = (b.hp as bigint) > axeDmg ? (b.hp as bigint) - axeDmg : 0n;
 		const dazedUntil = ts(now + AXE_SWING_DAZE_US);
 		if (newHp <= 0n) {
 			ctx.db.boss.id.update({
@@ -209,7 +209,7 @@ export function tankUltimate(ctx: any, { sessionId }: any) {
 	)
 		return;
 
-	const SLAM_DAMAGE = AXE_SWING_DAMAGE * 2n;
+	const SLAM_DAMAGE = AXE_SWING_DAMAGE * 2n * damageMultiplier(ps, now);
 	const SLAM_KNOCKBACK = AXE_SWING_KNOCKBACK * 2n;
 	const SLAM_DAZE_US = 2_000_000n;
 	let scoreAdd = 0n;

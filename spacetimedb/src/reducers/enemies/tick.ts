@@ -3,7 +3,7 @@
 // per-type handlers, accumulated damage application, brace heal.
 
 import { ScheduleAt } from 'spacetimedb';
-import { ts, bigintSqrt as bs } from '../../helpers.js';
+import { ts, bigintSqrt as bs, pseudoRand } from '../../helpers.js';
 import {
 	TICK_MS,
 	MELEE_RANGE,
@@ -18,7 +18,15 @@ import {
 	CHARGE_BOOST_US,
 	CHARGE_DAMAGE,
 	CHARGE_KNOCKBACK,
-	CHARGE_HIT_RADIUS
+	CHARGE_HIT_RADIUS,
+	ITEM_PICKUP_RADIUS_SQ,
+	ITEM_EXPIRE_US,
+	ITEM_HP_RESTORE,
+	ITEM_BUFF_US,
+	ITEM_DROP_HP_MAX,
+	ITEM_DROP_STAMINA_MAX,
+	ITEM_DROP_DMG_MAX,
+	ITEM_DROP_SPD_MAX
 } from '../../constants.js';
 import { applyAccumulatedDamage } from '../shared.js';
 import { handleSpitter } from './types/spitter.js';
@@ -52,10 +60,26 @@ export function enemyTick(ctx: any, { arg }: any) {
 		}
 	}
 
-	// Clean up dead enemies after 5 seconds
+	// Clean up dead enemies after 5 seconds — roll item drop on cleanup
 	const DEAD_CLEANUP_US = 5_000_000n;
 	for (const e of ctx.db.enemy.enemy_session_id.filter(arg.sessionId)) {
 		if (!e.isAlive && e.diedAt && now - (e.diedAt.microsSinceUnixEpoch as bigint) >= DEAD_CLEANUP_US) {
+			const roll = pseudoRand((e.id as bigint) ^ now, 100);
+			let itemType: string | null = null;
+			if (roll < ITEM_DROP_HP_MAX) itemType = 'hp';
+			else if (roll < ITEM_DROP_STAMINA_MAX) itemType = 'stamina';
+			else if (roll < ITEM_DROP_DMG_MAX) itemType = 'double_damage';
+			else if (roll < ITEM_DROP_SPD_MAX) itemType = 'double_speed';
+			if (itemType) {
+				ctx.db.droppedItem.insert({
+					id: 0n,
+					sessionId: arg.sessionId,
+					itemType,
+					posX: e.posX,
+					posZ: e.posZ,
+					spawnedAt: ctx.timestamp
+				});
+			}
 			ctx.db.enemy.id.delete(e.id);
 		}
 	}
@@ -248,6 +272,17 @@ export function enemyTick(ctx: any, { arg }: any) {
 	const BOSS_DEAD_CLEANUP_US = 5_000_000n;
 	for (const b of ctx.db.boss.boss_session_id.filter(arg.sessionId)) {
 		if (!b.isAlive && b.diedAt && now - (b.diedAt.microsSinceUnixEpoch as bigint) >= BOSS_DEAD_CLEANUP_US) {
+			// Boss always drops 3 items in a triangle around death position
+			const bossDrops: Array<[string, bigint, bigint]> = [
+				['hp',           (b.posX as bigint) + 2000n, (b.posZ as bigint)],
+				['double_damage',(b.posX as bigint) - 1000n, (b.posZ as bigint) + 1800n],
+				['double_speed', (b.posX as bigint) - 1000n, (b.posZ as bigint) - 1800n]
+			];
+			for (const [itemType, px, pz] of bossDrops) {
+				ctx.db.droppedItem.insert({
+					id: 0n, sessionId: arg.sessionId, itemType, posX: px, posZ: pz, spawnedAt: ctx.timestamp
+				});
+			}
 			ctx.db.boss.id.delete(b.id);
 			const nextBossAt = now + BOSS_SPAWN_INTERVAL_US;
 			ctx.db.bossSpawnJob.insert({
@@ -273,6 +308,42 @@ export function enemyTick(ctx: any, { arg }: any) {
 				handleBoss(ctx, boss, players, now, bossDamageAccum, arg.sessionId);
 			}
 			applyAccumulatedDamage(ctx, arg.sessionId, players, bossDamageAccum);
+		}
+	}
+
+	// ── Item drop pickup + expiry ─────────────────────────────────────────────
+	// Reuse the already-fetched `players` array — no extra DB queries per item
+	const allPlayers = [...ctx.db.playerState.player_state_session_id.filter(arg.sessionId)];
+	const pickedUp = new Set<bigint>();
+	for (const item of ctx.db.droppedItem.dropped_item_session_id.filter(arg.sessionId)) {
+		// Expire stale items
+		if (now - (item.spawnedAt.microsSinceUnixEpoch as bigint) >= ITEM_EXPIRE_US) {
+			ctx.db.droppedItem.id.delete(item.id);
+			continue;
+		}
+		for (const p of allPlayers) {
+			if (p.status !== 'alive') continue;
+			if (pickedUp.has(p.id as bigint)) continue;
+			const dx = (p.posX as bigint) - (item.posX as bigint);
+			const dz = (p.posZ as bigint) - (item.posZ as bigint);
+			if (dx * dx + dz * dz > ITEM_PICKUP_RADIUS_SQ) continue;
+
+			let updated = { ...p };
+			if (item.itemType === 'hp') {
+				const newHp = (p.hp as bigint) + ITEM_HP_RESTORE > (p.maxHp as bigint)
+					? p.maxHp : (p.hp as bigint) + ITEM_HP_RESTORE;
+				updated = { ...updated, hp: newHp };
+			} else if (item.itemType === 'stamina') {
+				updated = { ...updated, stamina: p.maxStamina };
+			} else if (item.itemType === 'double_damage') {
+				updated = { ...updated, doubleDamageUntil: ts(now + ITEM_BUFF_US) };
+			} else if (item.itemType === 'double_speed') {
+				updated = { ...updated, speedBoostUntil: ts(now + ITEM_BUFF_US) };
+			}
+			ctx.db.playerState.id.update(updated);
+			ctx.db.droppedItem.id.delete(item.id);
+			pickedUp.add(p.id as bigint);
+			break;
 		}
 	}
 

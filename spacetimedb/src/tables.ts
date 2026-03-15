@@ -123,6 +123,7 @@ export const PlayerState = table(
 		score: t.u64(),
 		facingAngle: t.i64(), // milliradians * 1000, e.g. PI = 3142
 		speedBoostUntil: t.timestamp().optional(),
+		doubleDamageUntil: t.timestamp().optional(), // item: double damage buff
 		stunUntil: t.timestamp().optional(),  // player stun from boss abilities
 		slowedUntil: t.timestamp().optional(), // player slow from scp_096 slam
 		lastDamagedAt: t.timestamp().optional() // healer regen ramp tracking
@@ -315,6 +316,29 @@ export const Boss = table(
 		ability2CooldownUntil: t.timestamp().optional(),
 		isHidden: t.bool(),   // ghost_dragon: invisible during hide & seek
 		isBurrowed: t.bool()  // worm_monster: underground during burrow
+	}
+);
+
+export const DroppedItem = table(
+	{
+		name: 'dropped_item',
+		public: true,
+		indexes: [
+			{
+				name: 'dropped_item_session_id',
+				accessor: 'dropped_item_session_id',
+				algorithm: 'btree',
+				columns: ['sessionId']
+			}
+		]
+	},
+	{
+		id: t.u64().primaryKey().autoInc(),
+		sessionId: t.u64(),
+		itemType: t.string(), // 'hp' | 'stamina' | 'double_damage' | 'double_speed'
+		posX: t.i64(),
+		posZ: t.i64(),
+		spawnedAt: t.timestamp()
 	}
 );
 

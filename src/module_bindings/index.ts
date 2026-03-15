@@ -64,6 +64,7 @@ import TankUltimateReducer from "./tank_ultimate_reducer";
 import AcidPoolRow from "./acid_pool_table";
 import BossRow from "./boss_table";
 import BossTimerRow from "./boss_timer_table";
+import DroppedItemRow from "./dropped_item_table";
 import EnemyRow from "./enemy_table";
 import GameSessionRow from "./game_session_table";
 import GlobalStatsRow from "./global_stats_table";
@@ -127,6 +128,20 @@ const tablesSchema = __schema({
       { name: 'boss_timer_id_key', constraint: 'unique', columns: ['id'] },
     ],
   }, BossTimerRow),
+  droppedItem: __table({
+    name: 'dropped_item',
+    indexes: [
+      { name: 'id', algorithm: 'btree', columns: [
+        'id',
+      ] },
+      { name: 'dropped_item_session_id', algorithm: 'btree', columns: [
+        'sessionId',
+      ] },
+    ],
+    constraints: [
+      { name: 'dropped_item_id_key', constraint: 'unique', columns: ['id'] },
+    ],
+  }, DroppedItemRow),
   enemy: __table({
     name: 'enemy',
     indexes: [

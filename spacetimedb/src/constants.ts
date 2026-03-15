@@ -37,7 +37,7 @@ export const ENEMY_HP: Record<string, bigint> = {
 	caster: 120n
 };
 
-export const BOSS_SPAWN_INTERVAL_US = 10_000_000n; // 10 seconds (testing)
+export const BOSS_SPAWN_INTERVAL_US = 90_000_000n; // 90 seconds
 
 export const BOSS_HP: Record<string, bigint> = {
 	ghost_dragon: 2500n,
@@ -135,8 +135,8 @@ export const ULTIMATE_COOLDOWN_US = 35_000_000n; // 35 seconds
 // ─── Healer: Passive Self-Regen ──────────────────────────────────────────────
 // milliHP per tick (1000 milliHP = 1 HP). Tick = 100ms.
 // 2 HP/s base → 200 milliHP/tick; 10 HP/s max → 1000 milliHP/tick
-export const HEALER_REGEN_BASE = 200n;      // 2 HP/s
-export const HEALER_REGEN_MAX = 1000n;      // 10 HP/s
+export const HEALER_REGEN_BASE = 200n; // 2 HP/s
+export const HEALER_REGEN_MAX = 1000n; // 10 HP/s
 export const HEALER_REGEN_RAMP_US = 5_000_000n; // ramp time: 5 seconds without damage
 
 // ─── Healer: Revive Shield ────────────────────────────────────────────────────
@@ -181,6 +181,17 @@ export const TORCH_POSITIONS_SRV: ReadonlyArray<{ x: bigint; z: bigint }> = [
 	{ x: -18000n, z: 0n },
 	{ x: 0n, z: -18000n }
 ];
+
+// ─── Item Drops ───────────────────────────────────────────────────────────────
+export const ITEM_PICKUP_RADIUS_SQ = 4_000_000n; // 2 world units radius
+export const ITEM_EXPIRE_US = 20_000_000n; // 20 seconds before despawn
+export const ITEM_HP_RESTORE = 40n; // HP restored by hp orb
+export const ITEM_BUFF_US = 8_000_000n; // 8s double_damage / double_speed buff
+// Drop rates (pseudo-random 0–99): hp=18%, stamina=12%, dmg=7%, spd=7%, none=56%
+export const ITEM_DROP_HP_MAX = 18;
+export const ITEM_DROP_STAMINA_MAX = 30;
+export const ITEM_DROP_DMG_MAX = 37;
+export const ITEM_DROP_SPD_MAX = 44;
 
 // ─── Spawn Points ─────────────────────────────────────────────────────────────
 export const SPAWN_POINT_COUNT = 8;

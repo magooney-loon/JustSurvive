@@ -38,6 +38,19 @@ export function ts(micros: bigint): any {
 	return { __timestamp_micros_since_unix_epoch__: micros };
 }
 
+// Returns 2n if player has an active double-damage buff, else 1n
+export function damageMultiplier(ps: any, now: bigint): bigint {
+	if (ps.doubleDamageUntil && now < (ps.doubleDamageUntil.microsSinceUnixEpoch as bigint)) return 2n;
+	return 1n;
+}
+
+// Deterministic pseudo-random 0..range-1 from a bigint seed
+export function pseudoRand(seed: bigint, range: number): number {
+	let h = seed ^ (seed >> 17n);
+	h = (h ^ 0xdeadbeefn) & 0xffffn;
+	return Number(h) % range;
+}
+
 export function bigintSqrt(n: bigint): bigint {
 	if (n < 0n) return 0n;
 	if (n < 2n) return n;

@@ -64,6 +64,16 @@ export const DayPhaseJob = __t.object("DayPhaseJob", {
 });
 export type DayPhaseJob = __Infer<typeof DayPhaseJob>;
 
+export const DroppedItem = __t.object("DroppedItem", {
+  id: __t.u64(),
+  sessionId: __t.u64(),
+  itemType: __t.string(),
+  posX: __t.i64(),
+  posZ: __t.i64(),
+  spawnedAt: __t.timestamp(),
+});
+export type DroppedItem = __Infer<typeof DroppedItem>;
+
 export const Enemy = __t.object("Enemy", {
   id: __t.u64(),
   sessionId: __t.u64(),
@@ -251,6 +261,7 @@ export const PlayerState = __t.object("PlayerState", {
   score: __t.u64(),
   facingAngle: __t.i64(),
   speedBoostUntil: __t.option(__t.timestamp()),
+  doubleDamageUntil: __t.option(__t.timestamp()),
   stunUntil: __t.option(__t.timestamp()),
   slowedUntil: __t.option(__t.timestamp()),
   lastDamagedAt: __t.option(__t.timestamp()),

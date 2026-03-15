@@ -520,7 +520,32 @@ export const TIPS: GameTip[] = [
 	{
 		tag: 'Tip',
 		color: '#adf',
-		text: 'All 4 classes have an Ultimate (Q) with a 35s cooldown. Use them to turn the tide — not just for cleanup.'
+		text: 'All 4 classes have an Ultimate (Space) with a 35s cooldown. Use them to turn the tide — not just for cleanup.'
+	},
+	{
+		tag: 'Item Drop',
+		color: '#ff4444',
+		text: 'Red orbs restore 40 HP. Grab them before they expire — they vanish after 20 seconds.'
+	},
+	{
+		tag: 'Item Drop',
+		color: '#44ff88',
+		text: 'Green orbs fully restore your Stamina. Essential for Spotter and Tank who burn through it fast.'
+	},
+	{
+		tag: 'Item Drop',
+		color: '#ff8800',
+		text: 'Orange orbs grant Double Damage for 8 seconds. Time an Ultimate or ability burst while active.'
+	},
+	{
+		tag: 'Item Drop',
+		color: '#44aaff',
+		text: 'Blue orbs grant Double Speed for 8 seconds. Great for repositioning or escaping a tight spot.'
+	},
+	{
+		tag: 'Item Drop',
+		color: '#dda',
+		text: 'Bosses always drop 3 items on death: an HP orb, Double Damage, and Double Speed — guaranteed.'
 	},
 	{
 		tag: 'Day Cycle',

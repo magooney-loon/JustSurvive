@@ -3,7 +3,7 @@
 // spotter_flash: cone flash that stuns and damages enemies in front.
 
 import { SenderError } from 'spacetimedb/server';
-import { ts } from '../../helpers.js';
+import { ts, damageMultiplier } from '../../helpers.js';
 import {
 	STEADY_SHOT_DAMAGE,
 	STEADY_SHOT_RANGE_SQ,
@@ -61,7 +61,7 @@ export function steadyShot(ctx: any, { sessionId, enemyId }: any) {
 		target.isMarked &&
 		target.markedUntil &&
 		now < (target.markedUntil.microsSinceUnixEpoch as bigint);
-	const dmg = isAlreadyMarked ? STEADY_SHOT_DAMAGE + MARK_DAMAGE_BONUS : STEADY_SHOT_DAMAGE;
+	const dmg = (isAlreadyMarked ? STEADY_SHOT_DAMAGE + MARK_DAMAGE_BONUS : STEADY_SHOT_DAMAGE) * damageMultiplier(ps, now);
 	const newHp = (target.hp as bigint) > dmg ? (target.hp as bigint) - dmg : 0n;
 	const markedUntil = ts(now + MARK_DURATION_US);
 	const cooldownUntil = ts(now + STEADY_SHOT_COOLDOWN_US);
@@ -122,7 +122,7 @@ export function steadyShot(ctx: any, { sessionId, enemyId }: any) {
 		const { e } = pierceTargets[i];
 		const isLast = i === pierceTargets.length - 1;
 		const falloffPct = BigInt(Math.max(25, 75 - i * 25));
-		const pierceDmg = (STEADY_SHOT_DAMAGE * falloffPct) / 100n;
+		const pierceDmg = (STEADY_SHOT_DAMAGE * falloffPct * damageMultiplier(ps, now)) / 100n;
 		const pierceHp = (e.hp as bigint) > pierceDmg ? (e.hp as bigint) - pierceDmg : 0n;
 		if (pierceHp <= 0n) {
 			ctx.db.enemy.id.update({
@@ -177,6 +177,7 @@ export function spotterFlash(ctx: any, { sessionId }: any) {
 	const fwdZ = -Math.cos(facingRad);
 	const cosHalf = Math.cos(HALF_ANGLE);
 
+	const flashDmg = FLASH_DAMAGE * damageMultiplier(ps, now);
 	let stunned = 0n;
 	for (const e of ctx.db.enemy.enemy_session_id.filter(sessionId)) {
 		if (!e.isAlive) continue;
@@ -187,7 +188,7 @@ export function spotterFlash(ctx: any, { sessionId }: any) {
 		const dot = (ex * fwdX + ez * fwdZ) / dist;
 		if (dot < cosHalf) continue;
 		const dazedUntil = ts(now + FLASH_STUN_US);
-		const newHp = (e.hp as bigint) > FLASH_DAMAGE ? (e.hp as bigint) - FLASH_DAMAGE : 0n;
+		const newHp = (e.hp as bigint) > flashDmg ? (e.hp as bigint) - flashDmg : 0n;
 		if (newHp <= 0n) {
 			ctx.db.enemy.id.update({
 				...e,
@@ -212,7 +213,7 @@ export function spotterFlash(ctx: any, { sessionId }: any) {
 		const dot = (bx * fwdX + bz * fwdZ) / dist;
 		if (dot < cosHalf) continue;
 		const dazedUntil = ts(now + FLASH_STUN_US);
-		const newHp = (b.hp as bigint) > FLASH_DAMAGE ? (b.hp as bigint) - FLASH_DAMAGE : 0n;
+		const newHp = (b.hp as bigint) > flashDmg ? (b.hp as bigint) - flashDmg : 0n;
 		if (newHp <= 0n) {
 			ctx.db.boss.id.update({
 				...b,

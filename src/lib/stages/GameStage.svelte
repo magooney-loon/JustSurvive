@@ -21,6 +21,7 @@
 	import EnemyEntity from '$lib/character/EnemyEntity.svelte';
 	import BossEntity from '$lib/character/enemies/boss/BossEntity.svelte';
 	import AcidPoolEntity from '$lib/character/enemies/AcidPoolEntity.svelte';
+	import DroppedItemEntity from '$lib/character/DroppedItemEntity.svelte';
 	import MarkOverlay from '$lib/character/ui/MarkOverlay.svelte';
 	import GameSounds from '$lib/stages/GameSounds.svelte';
 
@@ -31,6 +32,7 @@
 	const [tankStates] = useTable(tables.tankState);
 	const [sessions] = useTable(tables.gameSession);
 	const [acidPools] = useTable(tables.acidPool);
+	const [droppedItems] = useTable(tables.droppedItem);
 
 	const session = $derived($sessions.find((s) => s.id === lobbyState.currentSessionId));
 	const myTankState = $derived(
@@ -276,6 +278,11 @@
 <!-- Bosses -->
 {#each $bosses.filter((b) => b.sessionId === lobbyState.currentSessionId) as boss (boss.id)}
 	<BossEntity {boss} />
+{/each}
+
+<!-- Item drops -->
+{#each $droppedItems.filter((i) => i.sessionId === lobbyState.currentSessionId) as item (item.id)}
+	<DroppedItemEntity posX={item.posX} posZ={item.posZ} itemType={item.itemType} spawnedAt={item.spawnedAt as any} />
 {/each}
 
 <!-- Acid pools -->

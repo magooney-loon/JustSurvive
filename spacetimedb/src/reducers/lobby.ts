@@ -377,6 +377,7 @@ export function fireStartGame(ctx: any, { arg }: any) {
 			score: 0n,
 			facingAngle: 0n,
 			speedBoostUntil: undefined,
+			doubleDamageUntil: undefined,
 			lastDamagedAt: undefined
 		});
 
