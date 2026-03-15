@@ -16,7 +16,9 @@
 		steadyShotFlash,
 		STEADY_SHOT_FLASH_MS,
 		axeSwingFlash,
-		AXE_SWING_FLASH_MS
+		AXE_SWING_FLASH_MS,
+		ultimateFlash,
+		ULTIMATE_FLASH_MS
 	} from '$lib/stores/abilities.svelte.js';
 	import { soundActions } from '$root/Sound.svelte';
 	import { logAbility } from '$root/settings.svelte.js';
@@ -169,6 +171,7 @@
 		abilityState.ultimateCooldownUntil = Date.now() + ULTIMATE_CD_MS;
 
 		const cls = myState.classChoice;
+		ultimateFlash.until = Date.now() + ULTIMATE_FLASH_MS;
 		if (cls === 'spotter') {
 			combatActions.spotterUltimate(sid);
 			logAbility.info('SPOTTER: barrage ultimate');

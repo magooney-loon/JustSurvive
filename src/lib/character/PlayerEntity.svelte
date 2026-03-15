@@ -357,7 +357,7 @@
 			{isReviving}
 		/>
 	{:else if player.classChoice === 'gunner'}
-		<GunnerEffects x={displayX} z={displayZ} {isLocal} />
+		<GunnerEffects x={displayX} z={displayZ} {isLocal} {player} />
 	{/if}
 
 <AimReticle x={aimX} z={aimZ} color={CLASS_COLORS[player.classChoice] ?? '#fff'} />

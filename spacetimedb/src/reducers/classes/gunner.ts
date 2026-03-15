@@ -108,7 +108,7 @@ export function adrenaline(ctx: any, { sessionId }: any) {
 		return;
 
 	ctx.db.playerState.id.update({ ...ps, stamina: ps.maxStamina, lastMoveAt: ctx.timestamp });
-	ctx.db.gunnerState.id.update({ ...gs, adrenalineCooldownUntil: ts(now + 5_000_000n) });
+	ctx.db.gunnerState.id.update({ ...gs, adrenalineCooldownUntil: ts(now + 5_000_000n), lastAdrenalineAt: ctx.timestamp });
 }
 
 // ─── gunner_ultimate: Frenzy ──────────────────────────────────────────────────

@@ -387,6 +387,7 @@ export const GunnerState = table(
 		sessionId: t.u64(),
 		playerIdentity: t.identity(),
 		adrenalineCooldownUntil: t.timestamp().optional(),
+		lastAdrenalineAt: t.timestamp().optional(),      // VFX: when adrenaline was last used
 		ultimateCooldownUntil: t.timestamp().optional(),
 		lastUltimateAt: t.timestamp().optional() // VFX: when ultimate was last fired
 	}
