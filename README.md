@@ -33,13 +33,6 @@
 
 Squad-based survival arena. Up to 4 players pick a class, drop into a circular arena, and hold out against escalating enemy waves and bosses. Every cycle the enemies get faster, hit harder, and spawn more often. Longest surviving squad wins.
 
-## Tech Stack
-
-- **Frontend** — Svelte 5 (runes), Threlte 8, Three.js, Vite
-- **Backend** — SpacetimeDB 2.0 (TypeScript module, server-authoritative)
-- **Real-time** — all game state lives in SpacetimeDB; clients subscribe and react
-- **3D** — instanced meshes, LineSegments rain, dynamic lighting, day/night sky shader
-
 ---
 
 ## Getting Started

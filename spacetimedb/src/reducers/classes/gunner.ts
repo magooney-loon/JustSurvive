@@ -59,7 +59,17 @@ export function attackEnemy(ctx: any, { sessionId, enemyId, suppress }: any) {
 		});
 	} else {
 		let updatedTarget = { ...target, hp: newHp };
-		if (suppress) {
+		if (suppress && isBoss) {
+			// Cooldown measured from when the last suppress daze ENDED (dazedUntil stays set after expiry)
+			const GUNNER_SUPPRESS_COOLDOWN_US = 8_000_000n;
+			const lastDazedUntil = target.dazedUntil
+				? (target.dazedUntil.microsSinceUnixEpoch as bigint)
+				: 0n;
+			const canSuppress = now >= lastDazedUntil + GUNNER_SUPPRESS_COOLDOWN_US;
+			if (canSuppress) {
+				updatedTarget = { ...updatedTarget, isDazed: true, dazedUntil: ts(now + 1_000_000n) };
+			}
+		} else if (suppress) {
 			updatedTarget = { ...updatedTarget, isDazed: true, dazedUntil: ts(now + 1_000_000n) };
 		}
 		if (isBoss) {
@@ -98,7 +108,7 @@ export function adrenaline(ctx: any, { sessionId }: any) {
 		return;
 
 	ctx.db.playerState.id.update({ ...ps, stamina: ps.maxStamina, lastMoveAt: ctx.timestamp });
-	ctx.db.gunnerState.id.update({ ...gs, adrenalineCooldownUntil: ts(now + 5_000_000n) });
+	ctx.db.gunnerState.id.update({ ...gs, adrenalineCooldownUntil: ts(now + 5_000_000n), lastAdrenalineAt: ctx.timestamp });
 }
 
 // ─── gunner_ultimate: Frenzy ──────────────────────────────────────────────────

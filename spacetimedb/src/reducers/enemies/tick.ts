@@ -63,7 +63,11 @@ export function enemyTick(ctx: any, { arg }: any) {
 	// Clean up dead enemies after 5 seconds — roll item drop on cleanup
 	const DEAD_CLEANUP_US = 5_000_000n;
 	for (const e of ctx.db.enemy.enemy_session_id.filter(arg.sessionId)) {
-		if (!e.isAlive && e.diedAt && now - (e.diedAt.microsSinceUnixEpoch as bigint) >= DEAD_CLEANUP_US) {
+		if (
+			!e.isAlive &&
+			e.diedAt &&
+			now - (e.diedAt.microsSinceUnixEpoch as bigint) >= DEAD_CLEANUP_US
+		) {
 			const roll = pseudoRand((e.id as bigint) ^ now, 100);
 			let itemType: string | null = null;
 			if (roll < ITEM_DROP_HP_MAX) itemType = 'hp';
@@ -123,9 +127,21 @@ export function enemyTick(ctx: any, { arg }: any) {
 			const knockZ = (perpZ * CHARGE_KNOCKBACK) / 1000n;
 			const newHp = (e.hp as bigint) > CHARGE_DAMAGE ? (e.hp as bigint) - CHARGE_DAMAGE : 0n;
 			if (newHp <= 0n) {
-				ctx.db.enemy.id.update({ ...e, hp: 0n, isAlive: false, posX: (e.posX as bigint) + knockX, posZ: (e.posZ as bigint) + knockZ, diedAt: ts(now) });
+				ctx.db.enemy.id.update({
+					...e,
+					hp: 0n,
+					isAlive: false,
+					posX: (e.posX as bigint) + knockX,
+					posZ: (e.posZ as bigint) + knockZ,
+					diedAt: ts(now)
+				});
 			} else {
-				ctx.db.enemy.id.update({ ...e, hp: newHp, posX: (e.posX as bigint) + knockX, posZ: (e.posZ as bigint) + knockZ });
+				ctx.db.enemy.id.update({
+					...e,
+					hp: newHp,
+					posX: (e.posX as bigint) + knockX,
+					posZ: (e.posZ as bigint) + knockZ
+				});
 			}
 		}
 	}
@@ -201,7 +217,7 @@ export function enemyTick(ctx: any, { arg }: any) {
 			handleSpitter(ctx, enemy, chosen, dx, dz, chosenDist, now, damageAccum, arg.sessionId);
 			continue;
 		}
-		if (enemy.enemyType === 'caster') {
+		if (enemy.enemyType === 'caster' || (enemy.enemyType as string).startsWith('caster_')) {
 			handleCaster(ctx, enemy, chosen, dx, dz, chosenDist, now, damageAccum, arg.sessionId);
 			continue;
 		}
@@ -222,8 +238,14 @@ export function enemyTick(ctx: any, { arg }: any) {
 			revisingHealerPlayerIds.has(chosen.id as bigint)
 		) {
 			const magnitude = bs(chosenDist);
-			const newX = magnitude > 0n ? (enemy.posX as bigint) - (dx * REVIVE_SHIELD_KNOCKBACK) / magnitude : (enemy.posX as bigint) - REVIVE_SHIELD_KNOCKBACK;
-			const newZ = magnitude > 0n ? (enemy.posZ as bigint) - (dz * REVIVE_SHIELD_KNOCKBACK) / magnitude : (enemy.posZ as bigint) - REVIVE_SHIELD_KNOCKBACK;
+			const newX =
+				magnitude > 0n
+					? (enemy.posX as bigint) - (dx * REVIVE_SHIELD_KNOCKBACK) / magnitude
+					: (enemy.posX as bigint) - REVIVE_SHIELD_KNOCKBACK;
+			const newZ =
+				magnitude > 0n
+					? (enemy.posZ as bigint) - (dz * REVIVE_SHIELD_KNOCKBACK) / magnitude
+					: (enemy.posZ as bigint) - REVIVE_SHIELD_KNOCKBACK;
 			ctx.db.enemy.id.update({ ...enemy, posX: newX, posZ: newZ });
 			continue;
 		}
@@ -261,9 +283,8 @@ export function enemyTick(ctx: any, { arg }: any) {
 		ctx.db.healerState.id.update({ ...hs, regenCarry: remainCarry });
 
 		if (hpToHeal > 0n) {
-			const newHp = (p.hp as bigint) + hpToHeal > (p.maxHp as bigint)
-				? p.maxHp
-				: (p.hp as bigint) + hpToHeal;
+			const newHp =
+				(p.hp as bigint) + hpToHeal > (p.maxHp as bigint) ? p.maxHp : (p.hp as bigint) + hpToHeal;
 			ctx.db.playerState.id.update({ ...p, hp: newHp });
 		}
 	}
@@ -271,16 +292,31 @@ export function enemyTick(ctx: any, { arg }: any) {
 	// ── Boss dead cleanup + boss AI ──────────────────────────────────────────
 	const BOSS_DEAD_CLEANUP_US = 5_000_000n;
 	for (const b of ctx.db.boss.boss_session_id.filter(arg.sessionId)) {
-		if (!b.isAlive && b.diedAt && now - (b.diedAt.microsSinceUnixEpoch as bigint) >= BOSS_DEAD_CLEANUP_US) {
+		if (
+			!b.isAlive &&
+			b.diedAt &&
+			now - (b.diedAt.microsSinceUnixEpoch as bigint) >= BOSS_DEAD_CLEANUP_US
+		) {
+			// Kill all remaining enemies when boss dies
+			for (const e of ctx.db.enemy.enemy_session_id.filter(arg.sessionId)) {
+				if (e.isAlive) {
+					ctx.db.enemy.id.update({ ...e, isAlive: false, diedAt: ts(now) });
+				}
+			}
 			// Boss always drops 3 items in a triangle around death position
 			const bossDrops: Array<[string, bigint, bigint]> = [
-				['hp',           (b.posX as bigint) + 2000n, (b.posZ as bigint)],
-				['double_damage',(b.posX as bigint) - 1000n, (b.posZ as bigint) + 1800n],
+				['hp', (b.posX as bigint) + 2000n, b.posZ as bigint],
+				['double_damage', (b.posX as bigint) - 1000n, (b.posZ as bigint) + 1800n],
 				['double_speed', (b.posX as bigint) - 1000n, (b.posZ as bigint) - 1800n]
 			];
 			for (const [itemType, px, pz] of bossDrops) {
 				ctx.db.droppedItem.insert({
-					id: 0n, sessionId: arg.sessionId, itemType, posX: px, posZ: pz, spawnedAt: ctx.timestamp
+					id: 0n,
+					sessionId: arg.sessionId,
+					itemType,
+					posX: px,
+					posZ: pz,
+					spawnedAt: ctx.timestamp
 				});
 			}
 			ctx.db.boss.id.delete(b.id);
@@ -304,8 +340,11 @@ export function enemyTick(ctx: any, { arg }: any) {
 		);
 		if (aliveBosses.length > 0) {
 			const bossDamageAccum = new Map<bigint, bigint>();
+			// Scale boss damage by total player count (1→50%, 2→100%, 3→150%, 4→200%)
+			const totalPlayers = [...ctx.db.playerState.player_state_session_id.filter(arg.sessionId)];
+			const playerScale = BigInt(totalPlayers.length) * 5n; // percentage
 			for (const boss of aliveBosses) {
-				handleBoss(ctx, boss, players, now, bossDamageAccum, arg.sessionId);
+				handleBoss(ctx, boss, players, now, bossDamageAccum, arg.sessionId, playerScale);
 			}
 			applyAccumulatedDamage(ctx, arg.sessionId, players, bossDamageAccum);
 		}
@@ -330,8 +369,10 @@ export function enemyTick(ctx: any, { arg }: any) {
 
 			let updated = { ...p };
 			if (item.itemType === 'hp') {
-				const newHp = (p.hp as bigint) + ITEM_HP_RESTORE > (p.maxHp as bigint)
-					? p.maxHp : (p.hp as bigint) + ITEM_HP_RESTORE;
+				const newHp =
+					(p.hp as bigint) + ITEM_HP_RESTORE > (p.maxHp as bigint)
+						? p.maxHp
+						: (p.hp as bigint) + ITEM_HP_RESTORE;
 				updated = { ...updated, hp: newHp };
 			} else if (item.itemType === 'stamina') {
 				updated = { ...updated, stamina: p.maxStamina };

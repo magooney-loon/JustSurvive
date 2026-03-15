@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { useTask } from '@threlte/core';
+	import { T, useTask } from '@threlte/core';
 	import { GLTF, useGltfAnimations, PositionalAudio } from '@threlte/extras';
 	import * as THREE from 'three';
 	import { localPos, bossShake } from '$lib/stores/movement.svelte.js';
@@ -17,6 +17,7 @@
 		bossX?: number;
 		bossZ?: number;
 		leapCooldownMs?: number; // ms timestamp of last leap cooldown end — changes trigger leap anim
+		stunCooldownMs?: number;
 	};
 
 	let {
@@ -27,7 +28,8 @@
 		isEnraged = false,
 		bossX = 0,
 		bossZ = 0,
-		leapCooldownMs = 0
+		leapCooldownMs = 0,
+		stunCooldownMs = 0
 	}: Props = $props();
 
 	const SHAKE_MAX_DIST = 20;
@@ -46,6 +48,9 @@
 	let prevLeapCooldownMs = $state(0);
 	let isLeaping = $state(false);
 	let leapTimer = $state(0);
+	let leapFlashT = $state(0);
+	let stunFlashT = $state(0);
+	let prevStunCooldownMs = $state(0);
 
 	const attackAnimations: DogAction[] = ['Attack 1', 'Attack 2'];
 	const onceAnimations: DogAction[] = ['Vocal', 'Leap', ...attackAnimations];
@@ -79,6 +84,9 @@
 			if (leapTimer > 0.85) isLeaping = false;
 		}
 
+		leapFlashT = Math.max(0, leapFlashT - dt / 0.6);
+		stunFlashT = Math.max(0, stunFlashT - dt / 0.85);
+
 		const isWalking = !isDead && !isDazed && speed > 0.05;
 		if (isWalking) {
 			shakeTimer += dt;
@@ -104,6 +112,14 @@
 			prevLeapCooldownMs = leapCooldownMs;
 			isLeaping = true;
 			leapTimer = 0;
+			leapFlashT = 1;
+		}
+	});
+
+	$effect(() => {
+		if (stunCooldownMs > 0 && stunCooldownMs !== prevStunCooldownMs) {
+			prevStunCooldownMs = stunCooldownMs;
+			stunFlashT = 1;
 		}
 	});
 
@@ -209,3 +225,43 @@
 	rotation.y={Math.PI}
 	scale={2.2}
 />
+
+<!-- Leap VFX: red teleport flash -->
+{#if leapFlashT > 0}
+    <T.Mesh position={[0, 0.06, 0]} rotation={[-Math.PI / 2, 0, 0]} scale={Math.max(0.1, (1 - leapFlashT) * 4)}>
+        <T.RingGeometry args={[0.82, 1, 24]} />
+        <T.MeshBasicMaterial color="#ff2200" transparent opacity={leapFlashT * 0.9} blending={THREE.AdditiveBlending} depthWrite={false} />
+    </T.Mesh>
+    <T.Mesh position={[0, 0.8, 0]} scale={0.2 + (1 - leapFlashT) * 0.5}>
+        <T.SphereGeometry args={[1, 8, 6]} />
+        <T.MeshBasicMaterial color="#ff4400" transparent opacity={leapFlashT * 0.95} blending={THREE.AdditiveBlending} depthWrite={false} />
+    </T.Mesh>
+    {#each Array.from({ length: 6 }, (_, i) => ({ angle: (i / 6) * Math.PI * 2 })) as s}
+        <T.Mesh position={[0, 0.8, 0]} rotation={[0, s.angle, 0]}>
+            <T.BoxGeometry args={[0.05, 0.05, 2.5 * (1 - leapFlashT)]} />
+            <T.MeshBasicMaterial color="#ff3300" transparent opacity={leapFlashT * 0.8} blending={THREE.AdditiveBlending} depthWrite={false} />
+        </T.Mesh>
+    {/each}
+{/if}
+
+<!-- Stun Attack VFX: purple slam ring -->
+{#if stunFlashT > 0}
+    <T.Mesh position={[0, 0.06, 0]} rotation={[-Math.PI / 2, 0, 0]} scale={Math.max(0.1, (1 - stunFlashT) * 6)}>
+        <T.RingGeometry args={[0.85, 1, 28]} />
+        <T.MeshBasicMaterial color="#aa00ff" transparent opacity={stunFlashT * 0.85} blending={THREE.AdditiveBlending} depthWrite={false} />
+    </T.Mesh>
+    <T.Mesh position={[0, 0.06, 0]} rotation={[-Math.PI / 2, 0, 0]} scale={Math.max(0.1, (1 - stunFlashT) * 3.5)}>
+        <T.RingGeometry args={[0.8, 1, 28]} />
+        <T.MeshBasicMaterial color="#cc44ff" transparent opacity={stunFlashT * 0.6} blending={THREE.AdditiveBlending} depthWrite={false} />
+    </T.Mesh>
+    {#each Array.from({ length: 5 }, (_, i) => ({ angle: (i / 5) * Math.PI * 2 })) as s}
+        <T.Mesh position={[Math.sin(s.angle) * 1.5 * (1 - stunFlashT), 0.9, Math.cos(s.angle) * 1.5 * (1 - stunFlashT)]} rotation={[0, s.angle, 0]}>
+            <T.BoxGeometry args={[0.07, 0.07, 2.5]} />
+            <T.MeshBasicMaterial color="#9900cc" transparent opacity={stunFlashT * 0.8} blending={THREE.AdditiveBlending} depthWrite={false} />
+        </T.Mesh>
+    {/each}
+    <T.Mesh position={[0, 0.8, 0]} scale={0.25 + (1 - stunFlashT) * 0.4}>
+        <T.SphereGeometry args={[1, 8, 6]} />
+        <T.MeshBasicMaterial color="#dd66ff" transparent opacity={stunFlashT * 0.9} blending={THREE.AdditiveBlending} depthWrite={false} />
+    </T.Mesh>
+{/if}

@@ -18,7 +18,10 @@ export function handleMelee(
 	enemyRange: bigint
 ): void {
 	if (chosenDist <= enemyRange * enemyRange && !enemy.isDazed) {
-		const damage = enemy.enemyType === 'brute' ? 3n : 1n;
+		const damage =
+			enemy.enemyType === 'ogre_stalker' ? 4n :
+			enemy.enemyType === 'brute' || enemy.enemyType === 'ogre_berserker' ? 3n :
+			enemy.enemyType === 'ogre' ? 2n : 1n;
 		damageAccum.set(chosen.id, (damageAccum.get(chosen.id) ?? 0n) + damage);
 	} else if (!enemy.isDazed) {
 		const ageSec = enemy.spawnedAt

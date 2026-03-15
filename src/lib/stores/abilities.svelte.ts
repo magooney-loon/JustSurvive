@@ -34,6 +34,10 @@ export const STEADY_SHOT_FLASH_MS = 250;
 export const axeSwingFlash = $state({ active: false, yaw: 0, until: 0 });
 export const AXE_SWING_FLASH_MS = 350;
 
+// Ultimate burst — shared by all classes, local only (remote uses lastUltimateAt from class state)
+export const ultimateFlash = $state({ until: 0 });
+export const ULTIMATE_FLASH_MS = 1200;
+
 export function resetAbilities() {
 	abilityState.markCooldownUntil = 0;
 	abilityState.suppressHits = 0;
@@ -55,4 +59,5 @@ export function resetAbilities() {
 	axeSwingFlash.active = false;
 	axeSwingFlash.yaw = 0;
 	axeSwingFlash.until = 0;
+	ultimateFlash.until = 0;
 }

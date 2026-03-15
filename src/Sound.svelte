@@ -35,7 +35,9 @@
 		gameEnd: 0,
 		countdown: 0,
 		// Enemy spawn
-		enemySpawn: 0
+		enemySpawn: 0,
+		// Ultimate ability
+		ultimate: 0
 	});
 
 	export const soundActions = {
@@ -123,6 +125,9 @@
 		},
 		playEnemySpawn() {
 			soundTriggers.enemySpawn++;
+		},
+		playUltimate() {
+			soundTriggers.ultimate++;
 		}
 	};
 </script>
@@ -156,6 +161,7 @@
 	const GAME_END_URL = `${base}sounds/map/game_end.wav`;
 	const GUNNER_ADRENALINE_URL = `${base}sounds/classAbility/gunner_adrenaline.wav`;
 	const COUNTDOWN_URL = `${base}sounds/map/countdown.mp3`;
+	const ULTIMATE_URL = `${base}sounds/classAbility/ultimate.mp3`;
 
 	// $state.raw — prevents Svelte 5 from wrapping class instances in a Proxy
 	let ostAudio = $state.raw<ThreeAudio>();
@@ -179,6 +185,7 @@
 	let gameEndAudio = $state.raw<ThreeAudio>();
 	let gunnerAdrenalineAudio = $state.raw<ThreeAudio>();
 	let countdownAudio = $state.raw<ThreeAudio>();
+	let ultimateAudio = $state.raw<ThreeAudio>();
 
 	// ─── Playback helpers ─────────────────────────────────────────────────────
 
@@ -430,6 +437,10 @@
 		if (soundTriggers.gunnerAdrenaline > 0 && settingsState.audio.effectsEnabled)
 			playOneShot(gunnerAdrenalineAudio);
 	});
+	$effect(() => {
+		if (soundTriggers.ultimate > 0 && settingsState.audio.effectsEnabled)
+			playOneShot(ultimateAudio);
+	});
 </script>
 
 <!-- Audio track 1: OST / background music (no loop — playlist switches tracks) -->
@@ -620,6 +631,15 @@
 	src={GUNNER_ADRENALINE_URL}
 	oncreate={(a) => {
 		gunnerAdrenalineAudio = a;
+	}}
+	userData={{ hideInTree: true, selectable: false }}
+/>
+
+<!-- Ultimate ability activation -->
+<Audio
+	src={ULTIMATE_URL}
+	oncreate={(a) => {
+		ultimateAudio = a;
 	}}
 	userData={{ hideInTree: true, selectable: false }}
 />

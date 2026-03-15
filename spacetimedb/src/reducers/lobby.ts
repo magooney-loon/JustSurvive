@@ -398,6 +398,7 @@ export function fireStartGame(ctx: any, { arg }: any) {
 				sessionId: session.id,
 				playerIdentity: p.playerIdentity,
 				adrenalineCooldownUntil: undefined,
+				lastAdrenalineAt: undefined,
 				ultimateCooldownUntil: undefined,
 				lastUltimateAt: undefined
 			});

@@ -610,7 +610,7 @@ export const CLASS_LIST = ['spotter', 'gunner', 'tank', 'healer'] as const;
 
 // ─── Boss Data ────────────────────────────────────────────────────────────────
 
-export type BossId = 'ghost_dragon' | 'worm_monster' | 'rabid_dog' | 'scp_096';
+export type BossId = 'ghost_dragon' | 'worm_monster' | 'rabid_dog' | 'scp_096' | 'terror_reaper';
 
 export interface BossAbility {
 	name: string;
@@ -746,10 +746,38 @@ export const BOSSES: Record<BossId, BossData> = {
 			'It changes charge targets every 8s — communicate who it\'s chasing so teammates can draw it away.',
 			'Healer should stay outside 15 units to avoid Slam — you can\'t heal if you\'re knocked away.'
 		]
+	},
+	terror_reaper: {
+		id: 'terror_reaper',
+		name: 'Terror Reaper',
+		hp: 2200,
+		speed: 3.8,
+		meleeDamage: 11,
+		enrageHp: 440,
+		color: '#a06fff',
+		threat: 'extreme',
+		abilities: [
+			{
+				name: 'Soul Drain',
+				cooldown: '10s',
+				desc: 'Drains life from ALL players within 14 units — heals itself for 40% of damage dealt. Don\'t cluster near it or it becomes unkillable.'
+			},
+			{
+				name: 'Death Blink',
+				cooldown: '15s',
+				desc: 'Teleports instantly to the closest player, deals 2× melee damage, and stuns them for 2s. It always targets the nearest — spread out.'
+			}
+		],
+		tips: [
+			'Soul Drain heals it — if multiple players are in range it can fully recover. Stay beyond 14 units.',
+			'Death Blink always targets the closest player — rotate who\'s nearest so no one gets repeatedly stunned.',
+			'High melee damage (11/hit, 16.5 when enraged) — Tank should be the primary target absorber.',
+			'Enrages at 440 HP: melee jumps to 16.5/hit. Burst it down fast when it\'s below half HP.'
+		]
 	}
 };
 
-export const BOSS_LIST: BossId[] = ['ghost_dragon', 'worm_monster', 'rabid_dog', 'scp_096'];
+export const BOSS_LIST: BossId[] = ['ghost_dragon', 'worm_monster', 'rabid_dog', 'scp_096', 'terror_reaper'];
 
 export function getActiveSynergy(classCounts: Record<string, number>): SynergyData | null {
 	const key = Object.entries(classCounts)

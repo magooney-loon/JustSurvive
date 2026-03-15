@@ -15,6 +15,7 @@ export default __t.row({
   sessionId: __t.u64().name("session_id"),
   playerIdentity: __t.identity().name("player_identity"),
   adrenalineCooldownUntil: __t.option(__t.timestamp()).name("adrenaline_cooldown_until"),
+  lastAdrenalineAt: __t.option(__t.timestamp()).name("last_adrenaline_at"),
   ultimateCooldownUntil: __t.option(__t.timestamp()).name("ultimate_cooldown_until"),
   lastUltimateAt: __t.option(__t.timestamp()).name("last_ultimate_at"),
 });

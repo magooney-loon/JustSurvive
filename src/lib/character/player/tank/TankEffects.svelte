@@ -2,25 +2,53 @@
 	import { T, useTask } from '@threlte/core';
 	import * as THREE from 'three';
 	import type { PlayerState } from '$bindings/types.js';
-	import { axeSwingFlash, AXE_SWING_FLASH_MS } from '$lib/stores/abilities.svelte.js';
+	import { useTable } from 'spacetimedb/svelte';
+	import { tables } from '$bindings/index.js';
+	import { axeSwingFlash, AXE_SWING_FLASH_MS, ultimateFlash, ULTIMATE_FLASH_MS } from '$lib/stores/abilities.svelte.js';
 
 	type Props = { x: number; z: number; yaw: number; player: PlayerState; isLocal: boolean };
 	let { x, z, yaw, player, isLocal }: Props = $props();
+
+	const [tankStates] = useTable(tables.tankState);
 
 	let now = $state(Date.now());
 	useTask(() => {
 		now = Date.now();
 	});
 
+	const myTankState = $derived(
+		$tankStates.find((t) => t.playerIdentity.toHexString() === player.playerIdentity.toHexString())
+	);
+
 	const swingUntil = $derived.by(() => {
 		if (isLocal && axeSwingFlash.active) return axeSwingFlash.until;
-		const ts = (player as any).lastFlashAt;
-		if (!ts) return 0;
-		return Number(ts.microsSinceUnixEpoch) / 1000 + AXE_SWING_FLASH_MS;
+		if (!myTankState?.lastAxeSwingAt) return 0;
+		return Number(myTankState.lastAxeSwingAt.microsSinceUnixEpoch) / 1000 + AXE_SWING_FLASH_MS;
 	});
 
 	const t = $derived(Math.max(0, (swingUntil - now) / AXE_SWING_FLASH_MS));
 	const effectiveYaw = $derived(isLocal && axeSwingFlash.active ? axeSwingFlash.yaw : yaw);
+
+	// ─── Ground Slam ultimate ────────────────────────────────────────────────
+
+	const ultimateUntil = $derived.by(() => {
+		if (isLocal) return ultimateFlash.until;
+		if (!myTankState?.lastUltimateAt) return 0;
+		return Number(myTankState.lastUltimateAt.microsSinceUnixEpoch) / 1000 + ULTIMATE_FLASH_MS;
+	});
+	const ut = $derived(Math.max(0, (ultimateUntil - now) / ULTIMATE_FLASH_MS));
+
+	const SLAM_R = 8;
+	const slamCracks = $derived(
+		Array.from({ length: 8 }, (_, i) => {
+			const angle = (i / 8) * Math.PI * 2;
+			return {
+				px: x - Math.sin(angle) * SLAM_R * 0.5,
+				pz: z - Math.cos(angle) * SLAM_R * 0.5,
+				angle
+			};
+		})
+	);
 
 	// 144° arc = ±72° from facing
 	const HALF_ARC = Math.PI * 0.4;
@@ -98,6 +126,74 @@
 			color="#ffffff"
 			transparent
 			opacity={t * 0.9}
+			blending={THREE.AdditiveBlending}
+			depthWrite={false}
+		/>
+	</T.Mesh>
+{/if}
+
+{#if ut > 0}
+	<!-- Ground Slam: 8 radial crack lines on the ground -->
+	{#each slamCracks as s}
+		<T.Mesh position={[s.px, 0.04, s.pz]} rotation={[-Math.PI / 2, 0, s.angle]}>
+			<T.BoxGeometry args={[0.08, SLAM_R, 0.01]} />
+			<T.MeshBasicMaterial
+				color="#ffffff"
+				transparent
+				opacity={ut * 0.7}
+				blending={THREE.AdditiveBlending}
+				depthWrite={false}
+			/>
+		</T.Mesh>
+	{/each}
+	<!-- White expanding shockwave ring -->
+	<T.Mesh
+		position={[x, 0.06, z]}
+		rotation={[-Math.PI / 2, 0, 0]}
+		scale={Math.max(0.1, (1 - ut) * SLAM_R)}
+	>
+		<T.RingGeometry args={[0.8, 1, 32]} />
+		<T.MeshBasicMaterial
+			color="#ffffff"
+			transparent
+			opacity={ut * 0.85}
+			blending={THREE.AdditiveBlending}
+			depthWrite={false}
+		/>
+	</T.Mesh>
+	<!-- Blue outer ring (slightly slower) -->
+	<T.Mesh
+		position={[x, 0.06, z]}
+		rotation={[-Math.PI / 2, 0, 0]}
+		scale={Math.max(0.1, (1 - ut) * SLAM_R * 0.75)}
+	>
+		<T.RingGeometry args={[0.75, 1, 32]} />
+		<T.MeshBasicMaterial
+			color="#88ccff"
+			transparent
+			opacity={ut * 0.6}
+			blending={THREE.AdditiveBlending}
+			depthWrite={false}
+		/>
+	</T.Mesh>
+	<!-- Ground flash -->
+	<T.Mesh position={[x, 0.05, z]} rotation={[-Math.PI / 2, 0, 0]} scale={0.5 + (1 - ut) * 2.5}>
+		<T.CircleGeometry args={[1, 24]} />
+		<T.MeshBasicMaterial
+			color="#ffffff"
+			transparent
+			opacity={ut * 0.4}
+			blending={THREE.AdditiveBlending}
+			depthWrite={false}
+		/>
+	</T.Mesh>
+	<!-- Central upward burst -->
+	<T.Mesh position={[x, 0.5 + (1 - ut) * 1.5, z]} scale={[0.3 + (1 - ut) * 0.5, 1.5, 0.3 + (1 - ut) * 0.5]}>
+		<T.CylinderGeometry args={[1, 1.5, 1, 12]} />
+		<T.MeshBasicMaterial
+			color="#aaddff"
+			transparent
+			opacity={ut * 0.6}
 			blending={THREE.AdditiveBlending}
 			depthWrite={false}
 		/>

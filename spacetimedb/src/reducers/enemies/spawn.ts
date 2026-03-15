@@ -115,14 +115,14 @@ export function spawnEnemy(ctx: any, { arg }: any) {
 // each cycle so the sequence is never predictable.
 
 function shuffledBossTypes(seed: bigint): string[] {
-	const arr = ['ghost_dragon', 'worm_monster', 'rabid_dog', 'scp_096'];
+	const arr = ['ghost_dragon', 'worm_monster', 'rabid_dog', 'scp_096', 'terror_reaper'];
 	// Knuth LCG — good avalanche for small sequences
 	let s = seed ^ 0xdeadbeefcafe1234n;
 	const next = () => {
 		s = (s * 6364136223846793005n + 1442695040888963407n) & 0xffffffffffffffffn;
 		return s;
 	};
-	for (let i = 3; i > 0; i--) {
+	for (let i = 4; i > 0; i--) {
 		const j = Number(next() % BigInt(i + 1));
 		[arr[i], arr[j]] = [arr[j], arr[i]];
 	}
@@ -142,13 +142,6 @@ export function fireBossSpawn(ctx: any, { arg }: any) {
 
 	const now = ctx.timestamp.microsSinceUnixEpoch as bigint;
 
-	// Kill all existing enemies
-	for (const e of ctx.db.enemy.enemy_session_id.filter(arg.sessionId)) {
-		if (e.isAlive) {
-			ctx.db.enemy.id.update({ ...e, isAlive: false, diedAt: ts(now) });
-		}
-	}
-
 	// Delete the countdown timer
 	for (const bt of ctx.db.bossTimer.boss_timer_session_id.filter(arg.sessionId)) {
 		ctx.db.bossTimer.id.delete(bt.id);
@@ -157,12 +150,23 @@ export function fireBossSpawn(ctx: any, { arg }: any) {
 	// Cycle through all 4 boss types in a shuffled order before repeating.
 	// bossSpawnCount tracks total bosses spawned across the whole session.
 	const spawnCount = session.bossSpawnCount as bigint;
-	const cycleNum = spawnCount / 4n; // which 4-boss cycle we're in
-	const posInCycle = spawnCount % 4n; // slot within that cycle (0–3)
+
+	// Scale boss HP by player count — tighter range so solo isn't trivial, 4p isn't absurd
+	const totalPlayers = [...ctx.db.playerState.player_state_session_id.filter(arg.sessionId)];
+	const PLAYER_SCALE_TABLE: Record<number, bigint> = { 1: 80n, 2: 100n, 3: 120n, 4: 140n };
+	const playerScale = PLAYER_SCALE_TABLE[Math.min(totalPlayers.length, 4)] ?? 100n;
+
+	// 5% HP increase per boss spawn (capped at +50%)
+	const rawBonus = spawnCount * 5n;
+	const spawnBonus = 100n + (rawBonus > 50n ? 50n : rawBonus); // 100%…150% max
+
+	const cycleNum = spawnCount / 5n; // which 5-boss cycle we're in
+	const posInCycle = spawnCount % 5n; // slot within that cycle (0–4)
 	const shuffleSeed = (session.mapSeed as bigint) ^ cycleNum;
 	const bossType = shuffledBossTypes(shuffleSeed)[Number(posInCycle)];
 
-	const hp = BOSS_HP[bossType] ?? 1500n;
+	const baseHp = BOSS_HP[bossType] ?? 1500n;
+	const hp = (baseHp * playerScale * spawnBonus) / (100n * 100n);
 
 	ctx.db.boss.insert({
 		id: 0n,

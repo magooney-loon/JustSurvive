@@ -141,6 +141,7 @@ export const GunnerState = __t.object("GunnerState", {
   sessionId: __t.u64(),
   playerIdentity: __t.identity(),
   adrenalineCooldownUntil: __t.option(__t.timestamp()),
+  lastAdrenalineAt: __t.option(__t.timestamp()),
   ultimateCooldownUntil: __t.option(__t.timestamp()),
   lastUltimateAt: __t.option(__t.timestamp()),
 });

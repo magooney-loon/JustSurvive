@@ -4,8 +4,16 @@ export const ENEMY_BASE_SPEED: Record<string, bigint> = {
 	basic: 3200n,
 	fast: 5200n,
 	brute: 2100n,
-	spitter: 1700n,
-	caster: 1400n
+	spitter: 2600n,
+	caster: 1400n,
+	caster_railgun: 1200n,
+	caster_chaingun: 1800n,
+	caster_bfg: 5000n,
+	caster_shotgun: 1500n,
+	jumper: 4800n,
+	ogre: 2500n,
+	ogre_berserker: 4200n,
+	ogre_stalker: 1600n
 };
 
 export const ENEMY_CAP = 36; // 4-player cap; scales down per player count
@@ -23,11 +31,19 @@ export const TARGET_JITTER = 0.08; // +-8% distance jitter
 export const ENEMY_SPEED_PER_SEC = 2n; // +2% speed per second alive (capped at +50%)
 
 export const ENEMY_WEIGHTS = [
-	{ type: 'basic', weight: 57 },
-	{ type: 'fast', weight: 24 },
-	{ type: 'brute', weight: 10 },
-	{ type: 'spitter', weight: 5 },
-	{ type: 'caster', weight: 4 }
+	{ type: 'basic', weight: 18 },
+	{ type: 'fast', weight: 12 },
+	{ type: 'brute', weight: 8 },
+	{ type: 'spitter', weight: 8 },
+	{ type: 'jumper', weight: 8 },
+	{ type: 'ogre', weight: 8 },
+	{ type: 'caster', weight: 7 },
+	{ type: 'caster_chaingun', weight: 6 },
+	{ type: 'ogre_berserker', weight: 6 },
+	{ type: 'ogre_stalker', weight: 6 },
+	{ type: 'caster_railgun', weight: 5 },
+	{ type: 'caster_shotgun', weight: 5 },
+	{ type: 'caster_bfg', weight: 3 }
 ];
 
 export const ENEMY_HP: Record<string, bigint> = {
@@ -35,7 +51,15 @@ export const ENEMY_HP: Record<string, bigint> = {
 	fast: 75n,
 	brute: 380n,
 	spitter: 150n,
-	caster: 120n
+	caster: 120n,
+	caster_railgun: 150n,
+	caster_chaingun: 90n,
+	caster_bfg: 180n,
+	caster_shotgun: 110n,
+	jumper: 65n,
+	ogre: 250n,
+	ogre_berserker: 150n,
+	ogre_stalker: 350n
 };
 
 export const BOSS_SPAWN_INTERVAL_US = 90_000_000n; // 90 seconds
@@ -44,21 +68,24 @@ export const BOSS_HP: Record<string, bigint> = {
 	ghost_dragon: 2500n,
 	worm_monster: 3500n,
 	rabid_dog: 1500n,
-	scp_096: 2000n
+	scp_096: 2000n,
+	terror_reaper: 2200n
 };
 
 export const BOSS_SPEED: Record<string, bigint> = {
 	ghost_dragon: 4800n,
 	worm_monster: 3500n,
 	rabid_dog: 7000n,
-	scp_096: 5000n
+	scp_096: 5000n,
+	terror_reaper: 3800n
 };
 
 export const BOSS_DAMAGE: Record<string, bigint> = {
 	ghost_dragon: 12n,
 	worm_monster: 9n,
 	rabid_dog: 8n,
-	scp_096: 6n
+	scp_096: 6n,
+	terror_reaper: 11n
 };
 
 export const BOSS_MELEE_COOLDOWN_US = 500_000n; // 0.5s between melee hits
@@ -78,6 +105,10 @@ export const DOG_ABILITY2_COOLDOWN_US = 12_000_000n; // 12s stun attack
 // SCP-096
 export const SCP096_ABILITY1_COOLDOWN_US = 14_000_000n; // 14s aoe slam
 export const SCP096_ABILITY2_COOLDOWN_US = 9_000_000n; // 9s charge
+// Terror Reaper
+export const REAPER_ABILITY1_COOLDOWN_US = 10_000_000n; // 10s soul drain
+export const REAPER_ABILITY2_COOLDOWN_US = 15_000_000n; // 15s death blink
+export const REAPER_SOUL_DRAIN_RANGE_SQ = 196_000_000n; // 14 units squared
 // Shared
 export const BOSS_PLAYER_STUN_US = 1_000_000n; // 1s stun (ice ball)
 export const BOSS_PLAYER_LONG_STUN_US = 2_000_000n; // 2s stun (rabid dog)
@@ -184,15 +215,15 @@ export const TORCH_POSITIONS_SRV: ReadonlyArray<{ x: bigint; z: bigint }> = [
 ];
 
 // ─── Item Drops ───────────────────────────────────────────────────────────────
-export const ITEM_PICKUP_RADIUS_SQ = 4_000_000n; // 2 world units radius
+export const ITEM_PICKUP_RADIUS_SQ = 2_000_000n; // 2 world units radius
 export const ITEM_EXPIRE_US = 20_000_000n; // 20 seconds before despawn
 export const ITEM_HP_RESTORE = 40n; // HP restored by hp orb
 export const ITEM_BUFF_US = 8_000_000n; // 8s double_damage / double_speed buff
-// Drop rates (pseudo-random 0–99): hp=18%, stamina=12%, dmg=7%, spd=7%, none=56%
-export const ITEM_DROP_HP_MAX = 18;
-export const ITEM_DROP_STAMINA_MAX = 30;
-export const ITEM_DROP_DMG_MAX = 37;
-export const ITEM_DROP_SPD_MAX = 44;
+// Drop rates (pseudo-random 0–99): hp=8%, stamina=5%, dmg=2%, spd=2%, none=83%
+export const ITEM_DROP_HP_MAX = 8;
+export const ITEM_DROP_STAMINA_MAX = 13;
+export const ITEM_DROP_DMG_MAX = 15;
+export const ITEM_DROP_SPD_MAX = 17;
 
 // ─── Spawn Points ─────────────────────────────────────────────────────────────
 export const SPAWN_POINT_COUNT = 8;
