@@ -68,7 +68,10 @@ export function enemyTick(ctx: any, { arg }: any) {
 		}
 	}
 
-	if (players.length === 0 || enemies.length === 0) {
+	const aliveBossesEarlyCheck = [...ctx.db.boss.boss_session_id.filter(arg.sessionId)].filter(
+		(b: any) => b.isAlive
+	);
+	if (players.length === 0 || (enemies.length === 0 && aliveBossesEarlyCheck.length === 0)) {
 		ctx.db.enemyTickJob.insert({
 			scheduledId: 0n,
 			scheduledAt: ScheduleAt.time(now + TICK_MS * 1000n),

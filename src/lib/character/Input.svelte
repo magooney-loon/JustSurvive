@@ -83,6 +83,7 @@
 
 	function nearestEnemyToAim(rangeFP: number) {
 		const AIM_RAY_RADIUS_FP = 1200;
+		const BOSS_AIM_RAY_RADIUS_FP = 3500;
 		const ox = localPos.x * 1000;
 		const oz = localPos.z * 1000;
 		const ax = localAim.x * 1000;
@@ -94,6 +95,7 @@
 		const dirLen = Math.sqrt(dirLenSq);
 		const maxDist = rangeFP;
 		const maxPerpSq = AIM_RAY_RADIUS_FP * AIM_RAY_RADIUS_FP;
+		const bossPerpSq = BOSS_AIM_RAY_RADIUS_FP * BOSS_AIM_RAY_RADIUS_FP;
 		let best: any = null;
 		let bestPerp = Number.POSITIVE_INFINITY;
 
@@ -122,7 +124,7 @@
 			const along = (vx * dirX + vz * dirZ) / dirLen;
 			if (along < 0 || along > maxDist) continue;
 			const perpSq = Math.max(0, vx * vx + vz * vz - along * along);
-			if (perpSq > maxPerpSq) continue;
+			if (perpSq > bossPerpSq) continue;
 			if (perpSq < bestPerp) {
 				best = b;
 				bestPerp = perpSq;

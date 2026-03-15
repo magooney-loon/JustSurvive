@@ -37,7 +37,7 @@ export const ENEMY_HP: Record<string, bigint> = {
 	caster: 120n
 };
 
-export const BOSS_SPAWN_INTERVAL_US = 90_000_000n; // 90 seconds
+export const BOSS_SPAWN_INTERVAL_US = 10_000_000n; // 10 seconds (testing)
 
 export const BOSS_HP: Record<string, bigint> = {
 	ghost_dragon: 1800n,
@@ -47,10 +47,10 @@ export const BOSS_HP: Record<string, bigint> = {
 };
 
 export const BOSS_SPEED: Record<string, bigint> = {
-	ghost_dragon: 2400n,
-	root_colossus: 1600n,
-	shadow_stalker: 3200n,
-	plague_shaman: 2000n
+	ghost_dragon: 4800n,
+	root_colossus: 3500n,
+	shadow_stalker: 6000n,
+	plague_shaman: 4000n
 };
 
 export const BOSS_DAMAGE: Record<string, bigint> = {

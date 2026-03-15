@@ -50,6 +50,19 @@ export function spawnEnemy(ctx: any, { arg }: any) {
 		return;
 	}
 
+	// Pause spawning for 30 seconds after a boss spawns
+	const BOSS_SPAWN_PAUSE_US = 30_000_000n;
+	const now2 = ctx.timestamp.microsSinceUnixEpoch as bigint;
+	for (const b of ctx.db.boss.boss_session_id.filter(arg.sessionId)) {
+		if (b.isAlive && b.spawnedAt) {
+			const bornAt = b.spawnedAt.microsSinceUnixEpoch as bigint;
+			if (now2 - bornAt < BOSS_SPAWN_PAUSE_US) {
+				scheduleNext();
+				return;
+			}
+		}
+	}
+
 	const seed = Number((ctx.timestamp.microsSinceUnixEpoch as bigint) % 100n);
 	let cumWeight = 0;
 	let enemyType = 'basic';

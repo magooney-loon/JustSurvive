@@ -24,7 +24,7 @@ export function handleBoss(
 ): void {
 	// ── Phase transition ─────────────────────────────────────────────────────
 	const currentPhase = boss.phase as bigint;
-	const shouldEnrage = (boss.hp as bigint) <= (boss.maxHp as bigint) / 2n;
+	const shouldEnrage = (boss.hp as bigint) <= (boss.maxHp as bigint) / 5n;
 	if (currentPhase === 0n && shouldEnrage) {
 		ctx.db.boss.id.update({ ...boss, phase: 1n });
 		boss = { ...boss, phase: 1n };
