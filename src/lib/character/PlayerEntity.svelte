@@ -30,6 +30,7 @@
 
 	const [allPlayers] = useTable(tables.playerState);
 	const [reviveChannels] = useTable(tables.reviveChannel);
+	const [tankStates] = useTable(tables.tankState);
 
 	const base = import.meta.env.BASE_URL;
 
@@ -55,6 +56,13 @@
 	}: Props = $props();
 
 	const sessionId = $derived(lobbyState.currentSessionId ?? 0n);
+	const isCharging = $derived(
+		$tankStates.find(
+			(t) =>
+				t.playerIdentity.toHexString() === player.playerIdentity.toHexString() &&
+				t.sessionId === player.sessionId
+		)?.isCharging ?? false
+	);
 	const isReviving = $derived(
 		$reviveChannels?.some((rc) => rc.healerIdentity.isEqual(player.playerIdentity)) ?? false
 	);
@@ -204,7 +212,7 @@
 					{speed}
 					{shotPulse}
 					{phase}
-					isBracing={player.isBracing}
+					isBracing={false}
 					texture={classTexture}
 				/>
 			{:else}
@@ -214,7 +222,7 @@
 					{speed}
 					{shotPulse}
 					{phase}
-					isBracing={player.isBracing}
+					isBracing={false}
 				/>
 			{/if}
 		{:else if player.classChoice === 'gunner'}
@@ -225,7 +233,7 @@
 					{speed}
 					{shotPulse}
 					{phase}
-					isBracing={player.isBracing}
+					isBracing={false}
 					texture={classTexture}
 				/>
 			{:else}
@@ -235,7 +243,7 @@
 					{speed}
 					{shotPulse}
 					{phase}
-					isBracing={player.isBracing}
+					isBracing={false}
 				/>
 			{/if}
 		{:else if player.classChoice === 'tank'}
@@ -246,7 +254,7 @@
 					{speed}
 					{shotPulse}
 					{phase}
-					isBracing={player.isBracing}
+					{isCharging}
 					texture={classTexture}
 				/>
 			{:else}
@@ -256,7 +264,7 @@
 					{speed}
 					{shotPulse}
 					{phase}
-					isBracing={player.isBracing}
+					{isCharging}
 				/>
 			{/if}
 		{:else if player.classChoice === 'healer'}
@@ -267,7 +275,7 @@
 					{speed}
 					{shotPulse}
 					{phase}
-					isBracing={player.isBracing}
+					isBracing={false}
 					texture={classTexture}
 				/>
 			{:else}
@@ -277,7 +285,7 @@
 					{speed}
 					{shotPulse}
 					{phase}
-					isBracing={player.isBracing}
+					isBracing={false}
 				/>
 			{/if}
 		{/if}

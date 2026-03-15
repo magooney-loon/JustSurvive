@@ -37,11 +37,11 @@ import {
 import AdrenalineReducer from "./adrenaline_reducer";
 import AttackEnemyReducer from "./attack_enemy_reducer";
 import AxeSwingReducer from "./axe_swing_reducer";
-import BraceEndReducer from "./brace_end_reducer";
-import BraceStartReducer from "./brace_start_reducer";
-import ClearDebrisReducer from "./clear_debris_reducer";
+import ChargeActivateReducer from "./charge_activate_reducer";
 import CreateLobbyReducer from "./create_lobby_reducer";
+import GunnerUltimateReducer from "./gunner_ultimate_reducer";
 import HealPlayerReducer from "./heal_player_reducer";
+import HealerUltimateReducer from "./healer_ultimate_reducer";
 import JoinByCodeReducer from "./join_by_code_reducer";
 import JoinLobbyReducer from "./join_lobby_reducer";
 import KickPlayerReducer from "./kick_player_reducer";
@@ -53,17 +53,23 @@ import SendLobbyMessageReducer from "./send_lobby_message_reducer";
 import SetClassReducer from "./set_class_reducer";
 import SetReadyReducer from "./set_ready_reducer";
 import SpotterFlashReducer from "./spotter_flash_reducer";
+import SpotterUltimateReducer from "./spotter_ultimate_reducer";
 import StartCountdownReducer from "./start_countdown_reducer";
 import SteadyShotReducer from "./steady_shot_reducer";
+import TankUltimateReducer from "./tank_ultimate_reducer";
 
 // Import all procedure arg schemas
 
 // Import all table schema definitions
 import AcidPoolRow from "./acid_pool_table";
+import BossRow from "./boss_table";
 import BossTimerRow from "./boss_timer_table";
+import DroppedItemRow from "./dropped_item_table";
 import EnemyRow from "./enemy_table";
 import GameSessionRow from "./game_session_table";
 import GlobalStatsRow from "./global_stats_table";
+import GunnerStateRow from "./gunner_state_table";
+import HealerStateRow from "./healer_state_table";
 import LobbyRow from "./lobby_table";
 import LobbyMessageRow from "./lobby_message_table";
 import LobbyPlayerRow from "./lobby_player_table";
@@ -72,7 +78,9 @@ import LobbyResultPlayerRow from "./lobby_result_player_table";
 import MarkRow from "./mark_table";
 import PlayerStateRow from "./player_state_table";
 import ReviveChannelRow from "./revive_channel_table";
+import SpotterStateRow from "./spotter_state_table";
 import SquadRecordRow from "./squad_record_table";
+import TankStateRow from "./tank_state_table";
 
 /** Type-only namespace exports for generated type groups. */
 
@@ -92,6 +100,20 @@ const tablesSchema = __schema({
       { name: 'acid_pool_id_key', constraint: 'unique', columns: ['id'] },
     ],
   }, AcidPoolRow),
+  boss: __table({
+    name: 'boss',
+    indexes: [
+      { name: 'id', algorithm: 'btree', columns: [
+        'id',
+      ] },
+      { name: 'boss_session_id', algorithm: 'btree', columns: [
+        'sessionId',
+      ] },
+    ],
+    constraints: [
+      { name: 'boss_id_key', constraint: 'unique', columns: ['id'] },
+    ],
+  }, BossRow),
   bossTimer: __table({
     name: 'boss_timer',
     indexes: [
@@ -106,6 +128,20 @@ const tablesSchema = __schema({
       { name: 'boss_timer_id_key', constraint: 'unique', columns: ['id'] },
     ],
   }, BossTimerRow),
+  droppedItem: __table({
+    name: 'dropped_item',
+    indexes: [
+      { name: 'id', algorithm: 'btree', columns: [
+        'id',
+      ] },
+      { name: 'dropped_item_session_id', algorithm: 'btree', columns: [
+        'sessionId',
+      ] },
+    ],
+    constraints: [
+      { name: 'dropped_item_id_key', constraint: 'unique', columns: ['id'] },
+    ],
+  }, DroppedItemRow),
   enemy: __table({
     name: 'enemy',
     indexes: [
@@ -145,6 +181,34 @@ const tablesSchema = __schema({
       { name: 'global_stats_id_key', constraint: 'unique', columns: ['id'] },
     ],
   }, GlobalStatsRow),
+  gunnerState: __table({
+    name: 'gunner_state',
+    indexes: [
+      { name: 'id', algorithm: 'btree', columns: [
+        'id',
+      ] },
+      { name: 'gunner_state_session_id', algorithm: 'btree', columns: [
+        'sessionId',
+      ] },
+    ],
+    constraints: [
+      { name: 'gunner_state_id_key', constraint: 'unique', columns: ['id'] },
+    ],
+  }, GunnerStateRow),
+  healerState: __table({
+    name: 'healer_state',
+    indexes: [
+      { name: 'id', algorithm: 'btree', columns: [
+        'id',
+      ] },
+      { name: 'healer_state_session_id', algorithm: 'btree', columns: [
+        'sessionId',
+      ] },
+    ],
+    constraints: [
+      { name: 'healer_state_id_key', constraint: 'unique', columns: ['id'] },
+    ],
+  }, HealerStateRow),
   lobby: __table({
     name: 'lobby',
     indexes: [
@@ -269,6 +333,20 @@ const tablesSchema = __schema({
       { name: 'revive_channel_id_key', constraint: 'unique', columns: ['id'] },
     ],
   }, ReviveChannelRow),
+  spotterState: __table({
+    name: 'spotter_state',
+    indexes: [
+      { name: 'id', algorithm: 'btree', columns: [
+        'id',
+      ] },
+      { name: 'spotter_state_session_id', algorithm: 'btree', columns: [
+        'sessionId',
+      ] },
+    ],
+    constraints: [
+      { name: 'spotter_state_id_key', constraint: 'unique', columns: ['id'] },
+    ],
+  }, SpotterStateRow),
   squadRecord: __table({
     name: 'squad_record',
     indexes: [
@@ -289,6 +367,20 @@ const tablesSchema = __schema({
       { name: 'squad_record_id_key', constraint: 'unique', columns: ['id'] },
     ],
   }, SquadRecordRow),
+  tankState: __table({
+    name: 'tank_state',
+    indexes: [
+      { name: 'id', algorithm: 'btree', columns: [
+        'id',
+      ] },
+      { name: 'tank_state_session_id', algorithm: 'btree', columns: [
+        'sessionId',
+      ] },
+    ],
+    constraints: [
+      { name: 'tank_state_id_key', constraint: 'unique', columns: ['id'] },
+    ],
+  }, TankStateRow),
 });
 
 /** The schema information for all reducers in this module. This is defined the same way as the reducers would have been defined in the server, except the body of the reducer is omitted in code generation. */
@@ -296,11 +388,11 @@ const reducersSchema = __reducers(
   __reducerSchema("adrenaline", AdrenalineReducer),
   __reducerSchema("attack_enemy", AttackEnemyReducer),
   __reducerSchema("axe_swing", AxeSwingReducer),
-  __reducerSchema("brace_end", BraceEndReducer),
-  __reducerSchema("brace_start", BraceStartReducer),
-  __reducerSchema("clear_debris", ClearDebrisReducer),
+  __reducerSchema("charge_activate", ChargeActivateReducer),
   __reducerSchema("create_lobby", CreateLobbyReducer),
+  __reducerSchema("gunner_ultimate", GunnerUltimateReducer),
   __reducerSchema("heal_player", HealPlayerReducer),
+  __reducerSchema("healer_ultimate", HealerUltimateReducer),
   __reducerSchema("join_by_code", JoinByCodeReducer),
   __reducerSchema("join_lobby", JoinLobbyReducer),
   __reducerSchema("kick_player", KickPlayerReducer),
@@ -312,8 +404,10 @@ const reducersSchema = __reducers(
   __reducerSchema("set_class", SetClassReducer),
   __reducerSchema("set_ready", SetReadyReducer),
   __reducerSchema("spotter_flash", SpotterFlashReducer),
+  __reducerSchema("spotter_ultimate", SpotterUltimateReducer),
   __reducerSchema("start_countdown", StartCountdownReducer),
   __reducerSchema("steady_shot", SteadyShotReducer),
+  __reducerSchema("tank_ultimate", TankUltimateReducer),
 );
 
 /** The schema information for all procedures in this module. This is defined the same way as the procedures would have been defined in the server. */

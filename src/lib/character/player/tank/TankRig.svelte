@@ -19,7 +19,7 @@
 		speed: number;
 		shotPulse?: number;
 		phase?: string;
-		isBracing?: boolean;
+		isCharging?: boolean;
 		texture?: Texture | null;
 	};
 
@@ -29,7 +29,7 @@
 		speed,
 		shotPulse = 0,
 		phase = 'sunset',
-		isBracing = false,
+		isCharging = false,
 		texture = null
 	}: TankRigProps = $props();
 
@@ -44,14 +44,14 @@
 	const isSprinting = $derived(speed > 6);
 	const leanForward = $derived((isSprinting ? 0.22 : 0.08) * moveIntensity);
 
-	let braceT = $state(0);
+	let chargeT = $state(0);
 	useTask((dt) => {
-		const target = isBracing ? 1 : 0;
-		braceT += (target - braceT) * (1 - Math.pow(0.004, dt));
+		const target = isCharging ? 1 : 0;
+		chargeT += (target - chargeT) * (1 - Math.pow(0.004, dt));
 	});
-	const shieldGlow = $derived(braceT * 0.85);
-	const shieldArmZ = $derived(-0.55 - 0.08 * braceT);
-	const shieldS = $derived(0.58 + 0.42 * braceT);
+	const shieldGlow = $derived(chargeT * 0.85);
+	const shieldArmZ = $derived(-0.55 - 0.08 * chargeT);
+	const shieldS = $derived(0.58 + 0.42 * chargeT);
 
 	const armForwardZ = -0.2;
 	const leftArmRotX = $derived(-swing * 0.8);
@@ -65,7 +65,7 @@
 	{speed}
 	{shotPulse}
 	{phase}
-	{isBracing}
+	isBracing={false}
 	{texture}
 />
 
@@ -108,7 +108,7 @@
 					metalness={0.6}
 				/>
 			</T.Mesh>
-			{#if braceT > 0.05}
+			{#if chargeT > 0.05}
 				<T.Mesh position={[0, 0.038, 0]}>
 					<T.CylinderGeometry args={[0.43, 0.43, 0.001, 16]} />
 					<T.MeshBasicMaterial

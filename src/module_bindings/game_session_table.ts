@@ -19,6 +19,8 @@ export default __t.row({
   dayPhase: __t.string().name("day_phase"),
   cycleNumber: __t.u64().name("cycle_number"),
   phaseStartedAt: __t.timestamp().name("phase_started_at"),
-  fogActive: __t.bool().name("fog_active"),
+  fogStartedAt: __t.option(__t.timestamp()).name("fog_started_at"),
+  fogEndsAt: __t.option(__t.timestamp()).name("fog_ends_at"),
   mapSeed: __t.u64().name("map_seed"),
+  bossSpawnCount: __t.u64().name("boss_spawn_count"),
 });

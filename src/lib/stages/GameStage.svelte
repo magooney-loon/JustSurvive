@@ -11,25 +11,37 @@
 		updateLocalMovement,
 		resetMovement,
 		localAim,
-		fpsCamera,
+		tpsCamera,
 		cameraFollow
 	} from '$lib/stores/movement.svelte.js';
-	import { resetAbilities } from '$lib/stores/abilities.svelte.js';
+	import { resetAbilities, abilityState } from '$lib/stores/abilities.svelte.js';
 	import { localHealthState, skyState, devSky } from '$lib/stores/sky.svelte.js';
 	import { onMount } from 'svelte';
 	import PlayerEntity from '$lib/character/PlayerEntity.svelte';
 	import EnemyEntity from '$lib/character/EnemyEntity.svelte';
+	import BossEntity from '$lib/character/enemies/boss/BossEntity.svelte';
 	import AcidPoolEntity from '$lib/character/enemies/AcidPoolEntity.svelte';
+	import DroppedItemEntity from '$lib/character/DroppedItemEntity.svelte';
 	import MarkOverlay from '$lib/character/ui/MarkOverlay.svelte';
 	import GameSounds from '$lib/stages/GameSounds.svelte';
 
 	const conn = useSpacetimeDB();
 	const [players] = useTable(tables.playerState);
 	const [enemies] = useTable(tables.enemy);
+	const [bosses] = useTable(tables.boss);
+	const [tankStates] = useTable(tables.tankState);
 	const [sessions] = useTable(tables.gameSession);
 	const [acidPools] = useTable(tables.acidPool);
+	const [droppedItems] = useTable(tables.droppedItem);
 
 	const session = $derived($sessions.find((s) => s.id === lobbyState.currentSessionId));
+	const myTankState = $derived(
+		$tankStates.find(
+			(t) =>
+				t.playerIdentity.toHexString() === $conn.identity?.toHexString() &&
+				t.sessionId === lobbyState.currentSessionId
+		)
+	);
 	const myState = $derived(
 		$players.find(
 			(p) =>
@@ -195,15 +207,33 @@
 		cameraFollow.active = false;
 		if (!myState || myState.status !== 'alive') return;
 
-		// FPS aim: project camera forward ray onto the ground plane
+		// TPS aim: project camera forward onto the ground plane
 		const range = CLASS_RANGE[myState?.classChoice ?? 'gunner'] ?? 10;
-		localAim.x = localPos.x + -Math.sin(fpsCamera.yaw) * range;
-		localAim.z = localPos.z + -Math.cos(fpsCamera.yaw) * range;
+		localAim.x = localPos.x + -Math.sin(tpsCamera.yaw) * range;
+		localAim.z = localPos.z + -Math.cos(tpsCamera.yaw) * range;
 
 		const hasStamina = myState.stamina > 0n;
 		// camYaw for movement: camera forward is (-sin(yaw), -cos(yaw)), so pass yaw+π
-		const camYaw = fpsCamera.yaw + Math.PI;
-		updateLocalMovement(dt, myState.classChoice, hasStamina, camYaw, myState.isBracing);
+		const camYaw = tpsCamera.yaw + Math.PI;
+		const nowMs = Date.now();
+		const isStunned = myState.stunUntil
+			? Number(myState.stunUntil.microsSinceUnixEpoch) / 1000 > nowMs
+			: false;
+		const slowMultiplier = myState.slowedUntil
+			? Number(myState.slowedUntil.microsSinceUnixEpoch) / 1000 > nowMs
+				? 0.45
+				: 1.0
+			: 1.0;
+		updateLocalMovement(
+			dt,
+			myState.classChoice,
+			hasStamina,
+			camYaw,
+			myTankState?.isCharging ?? false,
+			isStunned,
+			slowMultiplier,
+			abilityState.chargeYaw
+		);
 
 		sendTimer += dt;
 		if (sendTimer >= SEND_INTERVAL) {
@@ -243,6 +273,16 @@
 <!-- Enemies (interpolated) -->
 {#each visibleEnemies as enemy (enemy.id)}
 	<EnemyEntity {enemy} />
+{/each}
+
+<!-- Bosses -->
+{#each $bosses.filter((b) => b.sessionId === lobbyState.currentSessionId) as boss (boss.id)}
+	<BossEntity {boss} />
+{/each}
+
+<!-- Item drops -->
+{#each $droppedItems.filter((i) => i.sessionId === lobbyState.currentSessionId) as item (item.id)}
+	<DroppedItemEntity posX={item.posX} posZ={item.posZ} itemType={item.itemType} spawnedAt={item.spawnedAt as any} />
 {/each}
 
 <!-- Acid pools -->

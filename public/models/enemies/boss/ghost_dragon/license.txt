@@ -1,0 +1,11 @@
+Model Information:
+* title:	Skeleton_dragon ff
+* source:	https://sketchfab.com/3d-models/skeleton-dragon-ff-b02a51940b7d411fa972177444c49eac
+* author:	TRSgamings (https://sketchfab.com/TRSgamings)
+
+Model License:
+* license type:	CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)
+* requirements:	Author must be credited. Commercial use is allowed.
+
+If you use this 3D model in your project be sure to copy paste this credit wherever you share it:
+This work is based on "Skeleton_dragon ff" (https://sketchfab.com/3d-models/skeleton-dragon-ff-b02a51940b7d411fa972177444c49eac) by TRSgamings (https://sketchfab.com/TRSgamings) licensed under CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)

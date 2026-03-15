@@ -2,7 +2,6 @@
 	import { fly } from 'svelte/transition';
 	import { useSpacetimeDB, useTable } from 'spacetimedb/svelte';
 	import { tables } from '$bindings/index.js';
-	import type { Enemy } from '$bindings/types.js';
 	import { lobbyState } from '$lib/stores/lobby.svelte.js';
 	import { abilityState } from '$lib/stores/abilities.svelte.js';
 	import { CLASSES, type ClassId } from '$lib/lobby/classData.js';
@@ -17,7 +16,10 @@
 	const conn = useSpacetimeDB();
 	const [players] = useTable(tables.playerState);
 	const [sessions] = useTable(tables.gameSession);
-	const [enemies] = useTable(tables.enemy);
+	const [bosses] = useTable(tables.boss);
+	const [bossTimers] = useTable(tables.bossTimer);
+	const [tankStates] = useTable(tables.tankState);
+	const [healerStates] = useTable(tables.healerState);
 
 	const session = $derived($sessions.find((s) => s.id === lobbyState.currentSessionId));
 	const myState = $derived(
@@ -25,6 +27,20 @@
 			(p) =>
 				p.playerIdentity.toHexString() === $conn.identity?.toHexString() &&
 				p.sessionId === lobbyState.currentSessionId
+		)
+	);
+	const myTankState = $derived(
+		$tankStates.find(
+			(t) =>
+				t.playerIdentity.toHexString() === $conn.identity?.toHexString() &&
+				t.sessionId === lobbyState.currentSessionId
+		)
+	);
+	const myHealerState = $derived(
+		$healerStates.find(
+			(h) =>
+				h.playerIdentity.toHexString() === $conn.identity?.toHexString() &&
+				h.sessionId === lobbyState.currentSessionId
 		)
 	);
 	const teammates = $derived(
@@ -35,15 +51,14 @@
 		)
 	);
 	const boss = $derived(
-		$enemies.find(
-			(e) => e.sessionId === lobbyState.currentSessionId && e.enemyType === 'boss' && e.isAlive
-		) as Enemy | undefined
+		$bosses.find((b) => b.sessionId === lobbyState.currentSessionId && b.isAlive)
 	);
-
-	const BOSS_SPAWN_SECONDS = 90;
+	const bossTimer = $derived(
+		$bossTimers.find((bt) => bt.sessionId === lobbyState.currentSessionId)
+	);
 	const bossSecsLeft = $derived(
-		lobbyState.gameStartedAt
-			? Math.max(0, BOSS_SPAWN_SECONDS - Math.floor((now - lobbyState.gameStartedAt) / 1000))
+		bossTimer
+			? Math.max(0, Math.ceil((Number(bossTimer.spawnAt.microsSinceUnixEpoch) / 1000 - now) / 1000))
 			: 0
 	);
 
@@ -99,9 +114,10 @@
 		active?: boolean;
 	};
 
-	const abilities = $derived((): [AbilitySlot, AbilitySlot] => {
+	const abilities = $derived((): [AbilitySlot, AbilitySlot, AbilitySlot] => {
 		const cls = myState?.classChoice as ClassId | undefined;
-		const none: [AbilitySlot, AbilitySlot] = [
+		const none: [AbilitySlot, AbilitySlot, AbilitySlot] = [
+			{ label: '—', input: '', color: '#555', cdFrac: 0 },
 			{ label: '—', input: '', color: '#555', cdFrac: 0 },
 			{ label: '—', input: '', color: '#555', cdFrac: 0 }
 		];
@@ -109,7 +125,7 @@
 
 		const { stats, abilities: ab } = CLASSES[cls];
 		const color = stats.color;
-		const [a0, a1] = ab;
+		const [a0, a1, a2] = ab;
 
 		// Map each class ability to its abilityState cooldown key
 		const cd0: Record<ClassId, number> = {
@@ -121,9 +137,12 @@
 		const cd1: Record<ClassId, number> = {
 			spotter: Math.max(0, (abilityState.pingCooldownUntil - now) / a1.cooldownMs),
 			gunner: Math.max(0, (abilityState.adrenalineCooldownUntil - now) / a1.cooldownMs),
-			tank: Math.max(0, (abilityState.braceCooldownUntil - now) / a1.cooldownMs),
-			healer: cdFrac(myState?.reviveCooldownUntil?.microsSinceUnixEpoch, a1.cooldownMs)
+			tank: Math.max(0, (abilityState.chargeCooldownUntil - now) / a1.cooldownMs),
+			healer: cdFrac(myHealerState?.reviveCooldownUntil?.microsSinceUnixEpoch, a1.cooldownMs)
 		};
+		const ultCdFrac = a2
+			? Math.max(0, (abilityState.ultimateCooldownUntil - now) / a2.cooldownMs)
+			: 0;
 
 		// Dynamic label overrides
 		const label0 =
@@ -139,8 +158,11 @@
 				color,
 				cdFrac: cd1[cls],
 				cdMs: a1.cooldownMs || undefined,
-				active: cls === 'tank' ? myState?.isBracing : undefined
-			}
+				active: cls === 'tank' ? myTankState?.isCharging ?? false : undefined
+			},
+			a2
+				? { label: a2.hudLabel, input: a2.input, color: '#ffcc44', cdFrac: ultCdFrac, cdMs: a2.cooldownMs }
+				: { label: '—', input: '', color: '#555', cdFrac: 0 }
 		];
 	});
 </script>
@@ -174,7 +196,7 @@
 			<p
 				style="margin: 0 0 0.4rem; font-size: 0.75rem; color: #ff4466; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase;"
 			>
-				⚠ BOSS
+				⚠ {boss.bossType.replace(/_/g, ' ').toUpperCase()}
 			</p>
 			<div class="boss-bar-track">
 				<div class="boss-bar-fill" style="width: {hpPercent(boss.hp, boss.maxHp)}%;"></div>

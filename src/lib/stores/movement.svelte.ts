@@ -18,7 +18,7 @@ const input = $state<InputState>({
 const localPos = $state({ x: 0, y: 0, z: 0 });
 const localVelocity = $state({ x: 0, z: 0 });
 export const localAim = $state({ x: 0, z: 0 });
-export const fpsCamera = $state({ yaw: 0, pitch: 0 });
+export const tpsCamera = $state({ yaw: 0 });
 export const cameraFollow = $state({
 	active: false,
 	x: 0,
@@ -56,8 +56,7 @@ export function resetMovement() {
 	cameraFollow.z = 0;
 	cameraFollow.aimX = 0;
 	cameraFollow.aimZ = 0;
-	fpsCamera.yaw = 0;
-	fpsCamera.pitch = 0;
+	tpsCamera.yaw = 0;
 	bossShake.intensity = 0;
 }
 
@@ -66,16 +65,38 @@ export function updateLocalMovement(
 	playerClass: string,
 	hasStamina: boolean,
 	cameraYaw: number,
-	isBracing: boolean = false
+	isBracing: boolean = false,
+	isStunned: boolean = false,
+	slowMultiplier: number = 1.0,
+	chargeYaw: number = 0
 ) {
-	if (isBracing) {
+	if (isStunned) {
 		localVelocity.x = 0;
 		localVelocity.z = 0;
 		return;
 	}
+
+	if (isBracing) {
+		// Tank charge: force movement in locked charge direction at high speed
+		const CHARGE_SPEED = 14; // world units/s
+		const sin = Math.sin(chargeYaw);
+		const cos = Math.cos(chargeYaw);
+		localPos.x += sin * CHARGE_SPEED * dt;
+		localPos.z += cos * CHARGE_SPEED * dt;
+		localVelocity.x = sin * CHARGE_SPEED;
+		localVelocity.z = cos * CHARGE_SPEED;
+		// Arena clamp
+		const rSq = localPos.x * localPos.x + localPos.z * localPos.z;
+		if (rSq > ARENA_PLAY_RADIUS * ARENA_PLAY_RADIUS) {
+			const r = Math.sqrt(rSq);
+			localPos.x = (localPos.x / r) * ARENA_PLAY_RADIUS;
+			localPos.z = (localPos.z / r) * ARENA_PLAY_RADIUS;
+		}
+		return;
+	}
 	const speeds = CLASS_SPEED[playerClass] ?? CLASS_SPEED.gunner;
 	const isSprinting = input.sprint && hasStamina;
-	const speed = isSprinting ? speeds.sprint : speeds.walk;
+	const speed = (isSprinting ? speeds.sprint : speeds.walk) * slowMultiplier;
 
 	let right = 0;
 	let forward = 0;

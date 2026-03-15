@@ -12,5 +12,4 @@ import {
 
 export default {
   sessionId: __t.u64(),
-  targetIdentity: __t.identity(),
 };

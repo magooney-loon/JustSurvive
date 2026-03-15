@@ -20,6 +20,29 @@ export const AcidPool = __t.object("AcidPool", {
 });
 export type AcidPool = __Infer<typeof AcidPool>;
 
+export const Boss = __t.object("Boss", {
+  id: __t.u64(),
+  sessionId: __t.u64(),
+  bossType: __t.string(),
+  hp: __t.u64(),
+  maxHp: __t.u64(),
+  posX: __t.i64(),
+  posZ: __t.i64(),
+  phase: __t.u64(),
+  isAlive: __t.bool(),
+  isDazed: __t.bool(),
+  dazedUntil: __t.option(__t.timestamp()),
+  isMarked: __t.bool(),
+  markedUntil: __t.option(__t.timestamp()),
+  spawnedAt: __t.timestamp(),
+  diedAt: __t.option(__t.timestamp()),
+  ability1CooldownUntil: __t.option(__t.timestamp()),
+  ability2CooldownUntil: __t.option(__t.timestamp()),
+  isHidden: __t.bool(),
+  isBurrowed: __t.bool(),
+});
+export type Boss = __Infer<typeof Boss>;
+
 export const BossSpawnJob = __t.object("BossSpawnJob", {
   scheduledId: __t.u64(),
   scheduledAt: __t.scheduleAt(),
@@ -40,6 +63,16 @@ export const DayPhaseJob = __t.object("DayPhaseJob", {
   sessionId: __t.u64(),
 });
 export type DayPhaseJob = __Infer<typeof DayPhaseJob>;
+
+export const DroppedItem = __t.object("DroppedItem", {
+  id: __t.u64(),
+  sessionId: __t.u64(),
+  itemType: __t.string(),
+  posX: __t.i64(),
+  posZ: __t.i64(),
+  spawnedAt: __t.timestamp(),
+});
+export type DroppedItem = __Infer<typeof DroppedItem>;
 
 export const Enemy = __t.object("Enemy", {
   id: __t.u64(),
@@ -84,8 +117,10 @@ export const GameSession = __t.object("GameSession", {
   dayPhase: __t.string(),
   cycleNumber: __t.u64(),
   phaseStartedAt: __t.timestamp(),
-  fogActive: __t.bool(),
+  fogStartedAt: __t.option(__t.timestamp()),
+  fogEndsAt: __t.option(__t.timestamp()),
   mapSeed: __t.u64(),
+  bossSpawnCount: __t.u64(),
 });
 export type GameSession = __Infer<typeof GameSession>;
 
@@ -100,6 +135,31 @@ export const GlobalStats = __t.object("GlobalStats", {
   classHealer: __t.u64(),
 });
 export type GlobalStats = __Infer<typeof GlobalStats>;
+
+export const GunnerState = __t.object("GunnerState", {
+  id: __t.u64(),
+  sessionId: __t.u64(),
+  playerIdentity: __t.identity(),
+  adrenalineCooldownUntil: __t.option(__t.timestamp()),
+  ultimateCooldownUntil: __t.option(__t.timestamp()),
+  lastUltimateAt: __t.option(__t.timestamp()),
+});
+export type GunnerState = __Infer<typeof GunnerState>;
+
+export const HealerState = __t.object("HealerState", {
+  id: __t.u64(),
+  sessionId: __t.u64(),
+  playerIdentity: __t.identity(),
+  healCooldownUntil: __t.option(__t.timestamp()),
+  reviveCooldownUntil: __t.option(__t.timestamp()),
+  lastHealAt: __t.option(__t.timestamp()),
+  healTargetIdentity: __t.option(__t.identity()),
+  chainHealTargetIdentity: __t.option(__t.identity()),
+  ultimateCooldownUntil: __t.option(__t.timestamp()),
+  lastUltimateAt: __t.option(__t.timestamp()),
+  regenCarry: __t.u64(),
+});
+export type HealerState = __Infer<typeof HealerState>;
 
 export const Lobby = __t.object("Lobby", {
   id: __t.u64(),
@@ -200,19 +260,11 @@ export const PlayerState = __t.object("PlayerState", {
   status: __t.string(),
   score: __t.u64(),
   facingAngle: __t.i64(),
-  isBracing: __t.bool(),
-  braceStartAt: __t.option(__t.timestamp()),
-  braceCooldownUntil: __t.option(__t.timestamp()),
   speedBoostUntil: __t.option(__t.timestamp()),
-  reviveCooldownUntil: __t.option(__t.timestamp()),
-  healCooldownUntil: __t.option(__t.timestamp()),
-  markCooldownUntil: __t.option(__t.timestamp()),
-  pingCooldownUntil: __t.option(__t.timestamp()),
-  bashCooldownUntil: __t.option(__t.timestamp()),
-  adrenalineCooldownUntil: __t.option(__t.timestamp()),
-  lastHealAt: __t.option(__t.timestamp()),
-  healTargetIdentity: __t.option(__t.identity()),
-  lastFlashAt: __t.option(__t.timestamp()),
+  doubleDamageUntil: __t.option(__t.timestamp()),
+  stunUntil: __t.option(__t.timestamp()),
+  slowedUntil: __t.option(__t.timestamp()),
+  lastDamagedAt: __t.option(__t.timestamp()),
 });
 export type PlayerState = __Infer<typeof PlayerState>;
 
@@ -235,6 +287,18 @@ export const ReviveCompleteJob = __t.object("ReviveCompleteJob", {
 });
 export type ReviveCompleteJob = __Infer<typeof ReviveCompleteJob>;
 
+export const SpotterState = __t.object("SpotterState", {
+  id: __t.u64(),
+  sessionId: __t.u64(),
+  playerIdentity: __t.identity(),
+  steadyShotCooldownUntil: __t.option(__t.timestamp()),
+  flashCooldownUntil: __t.option(__t.timestamp()),
+  lastFlashAt: __t.option(__t.timestamp()),
+  ultimateCooldownUntil: __t.option(__t.timestamp()),
+  lastUltimateAt: __t.option(__t.timestamp()),
+});
+export type SpotterState = __Infer<typeof SpotterState>;
+
 export const SquadRecord = __t.object("SquadRecord", {
   id: __t.u64(),
   combo: __t.string(),
@@ -243,4 +307,21 @@ export const SquadRecord = __t.object("SquadRecord", {
   bestSurvivalSecs: __t.u64(),
 });
 export type SquadRecord = __Infer<typeof SquadRecord>;
+
+export const TankState = __t.object("TankState", {
+  id: __t.u64(),
+  sessionId: __t.u64(),
+  playerIdentity: __t.identity(),
+  isCharging: __t.bool(),
+  chargeUntil: __t.option(__t.timestamp()),
+  chargeDirX: __t.i64(),
+  chargeDirZ: __t.i64(),
+  chargeCooldownUntil: __t.option(__t.timestamp()),
+  axeSwingCooldownUntil: __t.option(__t.timestamp()),
+  lastAxeSwingAt: __t.option(__t.timestamp()),
+  lastChargeAt: __t.option(__t.timestamp()),
+  ultimateCooldownUntil: __t.option(__t.timestamp()),
+  lastUltimateAt: __t.option(__t.timestamp()),
+});
+export type TankState = __Infer<typeof TankState>;
 
