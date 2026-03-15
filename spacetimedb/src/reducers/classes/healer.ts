@@ -188,6 +188,7 @@ export function healerUltimate(ctx: any, { sessionId }: any) {
 		if (healed) scoreAdd += 3n;
 	}
 
-	ctx.db.playerState.id.update({ ...healer, score: (healer.score as bigint) + scoreAdd, lastShotAt: ctx.timestamp });
+	const healerNewHp = (healer.hp as bigint) + HEAL_AMOUNT > (healer.maxHp as bigint) ? healer.maxHp : (healer.hp as bigint) + HEAL_AMOUNT;
+	ctx.db.playerState.id.update({ ...healer, hp: healerNewHp, speedBoostUntil, score: (healer.score as bigint) + scoreAdd, lastShotAt: ctx.timestamp });
 	ctx.db.healerState.id.update({ ...hs, ultimateCooldownUntil: ts(now + ULTIMATE_COOLDOWN_US), lastUltimateAt: ctx.timestamp });
 }
