@@ -77,10 +77,16 @@
 
 	let countdownValue = $state(3);
 
-	// If our lobbyPlayer row disappears while we're in the lobby (kicked / lobby deleted),
+	// Track whether we've ever seen our lobby entry (prevents false redirect on initial load)
+	let hasHadEntry = $state(false);
+	$effect(() => {
+		if (myEntry) hasHadEntry = true;
+	});
+
+	// If our lobbyPlayer row disappears after we had one (kicked / lobby deleted),
 	// clean up and go back to menu immediately.
 	$effect(() => {
-		if (!myEntry && !leaving && lobbyState.currentLobbyId !== null) {
+		if (hasHadEntry && !myEntry && !leaving) {
 			lobbyState.currentLobbyId = null;
 			lobbyState.currentSessionId = null;
 			stageActions.setStage('menu');

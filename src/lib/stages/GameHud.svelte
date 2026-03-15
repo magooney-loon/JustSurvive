@@ -17,7 +17,6 @@
 	const [players] = useTable(tables.playerState);
 	const [sessions] = useTable(tables.gameSession);
 	const [bosses] = useTable(tables.boss);
-	const [bossTimers] = useTable(tables.bossTimer);
 	const [tankStates] = useTable(tables.tankState);
 	const [healerStates] = useTable(tables.healerState);
 
@@ -53,12 +52,34 @@
 	const boss = $derived(
 		$bosses.find((b) => b.sessionId === lobbyState.currentSessionId && b.isAlive)
 	);
-	const bossTimer = $derived(
-		$bossTimers.find((bt) => bt.sessionId === lobbyState.currentSessionId)
-	);
+	const BOSS_SPAWN_INTERVAL_MS = 90_000;
+	let bossTimerStartMs = $state<number | null>(null);
+	let hadBoss = $state(false);
+
+	// Track boss death → restart countdown
+	$effect(() => {
+		if (boss) {
+			hadBoss = true;
+		} else if (hadBoss) {
+			hadBoss = false;
+			bossTimerStartMs = Date.now();
+		}
+	});
+
+	// Initialize countdown at game start (before first boss)
+	$effect(() => {
+		if (session?.status === 'active' && !boss && bossTimerStartMs === null) {
+			bossTimerStartMs = lobbyState.gameStartedAt ?? Date.now();
+		}
+		if (session?.status !== 'active') {
+			bossTimerStartMs = null;
+			hadBoss = false;
+		}
+	});
+
 	const bossSecsLeft = $derived(
-		bossTimer
-			? Math.max(0, Math.ceil((Number(bossTimer.spawnAt.microsSinceUnixEpoch) / 1000 - now) / 1000))
+		!boss && bossTimerStartMs !== null
+			? Math.max(0, Math.ceil((BOSS_SPAWN_INTERVAL_MS - (now - bossTimerStartMs)) / 1000))
 			: 0
 	);
 
