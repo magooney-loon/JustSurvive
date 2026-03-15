@@ -56,12 +56,12 @@ export const CLASSES: Record<ClassId, ClassData> = {
 				input: 'RMB',
 				cooldown: '3s',
 				cooldownMs: 3000,
-				desc: 'Fire a 90° flash cone up to 9 units. Deals 10 damage and dazes all enemies in range for 3.5s. +10 score per stunned enemy.'
+				desc: 'Fire a 90° flash cone up to 9 units. Deals 10 damage and dazes all enemies in range for 3.5s. +5 score per stunned enemy.'
 			},
 			{
 				name: 'Barrage',
 				hudLabel: 'BARRAGE',
-				input: 'Q',
+				input: 'Space',
 				cooldown: '35s',
 				cooldownMs: 35000,
 				isUltimate: true,
@@ -95,7 +95,7 @@ export const CLASSES: Record<ClassId, ClassData> = {
 				input: 'LMB',
 				cooldown: 'None',
 				cooldownMs: 0,
-				desc: 'Fire at an enemy within 10 units. Deals 15 damage (25 vs marked targets). Every 3rd consecutive shot on the same target suppresses it — dazing for 1s. +2 score on kill.'
+				desc: 'Fire at an enemy within 10 units. Deals 15 damage (25 vs marked targets). Every 3rd consecutive shot on the same target suppresses it — dazing for 1s. +1 score per hit, +2 on kill.'
 			},
 			{
 				name: 'Adrenaline',
@@ -108,7 +108,7 @@ export const CLASSES: Record<ClassId, ClassData> = {
 			{
 				name: 'Frenzy',
 				hudLabel: 'FRENZY',
-				input: 'Q',
+				input: 'Space',
 				cooldown: '35s',
 				cooldownMs: 35000,
 				isUltimate: true,
@@ -142,7 +142,7 @@ export const CLASSES: Record<ClassId, ClassData> = {
 				input: 'LMB',
 				cooldown: '0.5s',
 				cooldownMs: 500,
-				desc: 'Swing your axe in a 90° cone up to 4 units. Deals 25 damage to all enemies in range, knocks them back, and dazes them for 1.5s. Score: +5 per hit, +2 per kill.'
+				desc: 'Swing your axe in a 90° cone up to 4 units. Deals 25 damage to all enemies in range, knocks them back, and dazes them for 1.5s. Score: +1 per hit, +2 per kill, +25/+50 vs boss.'
 			},
 			{
 				name: 'Charge',
@@ -150,12 +150,12 @@ export const CLASSES: Record<ClassId, ClassData> = {
 				input: 'RMB',
 				cooldown: '8s',
 				cooldownMs: 8000,
-				desc: 'Charge forward in your facing direction for 0.7s. You cannot move during the charge — the server pushes you. Enemies in your path take 35 damage and are knocked sideways. On completion you get a 3s speed boost.'
+				desc: 'Rush forward in your facing direction for 0.7s. Enemies in your path take 35 damage and are knocked sideways. On completion you get a 3s speed boost. 8s cooldown.'
 			},
 			{
 				name: 'Ground Slam',
 				hudLabel: 'SLAM',
-				input: 'Q',
+				input: 'Space',
 				cooldown: '35s',
 				cooldownMs: 35000,
 				isUltimate: true,
@@ -165,9 +165,9 @@ export const CLASSES: Record<ClassId, ClassData> = {
 		tips: [
 			'Axe Swing hits every enemy in the cone at 0.5s cooldown — spam into packs for constant knockback and daze chains.',
 			'Daze from axe swing lasts 1.5s and cooldown is 0.5s — chain swings to keep enemies permanently staggered.',
-			'You can move while bracing. Use it to slowly walk into a mob, absorbing hits, then axe swing as they pile in.',
+			'Charge locks your direction at click time — aim before activating. The 3s speed boost after charge lets you reposition.',
 			'Ground Slam is 360° with double damage and double knockback — use it when surrounded or opening a boss fight.',
-			'Your slow speed means you cannot escape — axe swing clears space, brace absorbs the rest.'
+			'Your slow speed means you cannot escape — use Charge to blow through packs and Axe Swing to keep them staggered.'
 		]
 	},
 	healer: {
@@ -202,19 +202,19 @@ export const CLASSES: Record<ClassId, ClassData> = {
 			{
 				name: 'Revitalize',
 				hudLabel: 'REVITALIZE',
-				input: 'Q',
+				input: 'Space',
 				cooldown: '35s',
 				cooldownMs: 35000,
 				isUltimate: true,
-				desc: 'Surge healing energy to all alive teammates within 10 units — heals each for 30 HP and grants a 3s speed boost. Score: +3 per teammate healed.'
+				desc: 'Surge healing energy to all alive teammates within 10 units — heals each for 30 HP and grants them a 3s speed boost. Score: +3 per teammate healed.'
 			}
 		],
 		tips: [
+			'You passively regen HP: 2 HP/s normally, ramping to 10 HP/s after 5s without taking damage — stay out of melee.',
 			'Chain Heal auto-targets the lowest HP teammate — no need to aim. Stay mobile and keep your position between your team.',
 			'The chain heal bounces 30% (9 HP) to a second ally in range — position yourself between two players to double the value.',
 			'Reviving fully heals you on success — risky channel, huge payoff. The 80 HP shield lets you tank incoming hits while channeling.',
-			'Revitalize gives everyone a 3s speed boost — powerful during boss fights or when the team is getting swarmed.',
-			'Prioritize keeping the Tank alive — they absorb the most damage and free you up to heal others.'
+			'Revitalize gives everyone a 3s speed boost — powerful during boss fights or when the team is getting swarmed.'
 		]
 	}
 };
@@ -572,31 +572,6 @@ export const TIPS: GameTip[] = [
 		color: '#f88',
 		text: '4% of spawns. Fires a beam from 8 units and strafes unpredictably. Suppress it first.'
 	},
-	{
-		tag: 'Boss',
-		color: '#f44',
-		text: 'Spawns every 90 seconds if no boss is alive. Kills all enemies on spawn. 4 boss types cycle in a random order — you face all 4 before any repeat.'
-	},
-	{
-		tag: 'Boss: Ghost Dragon',
-		color: '#f44',
-		text: '1800 HP, fast. Deals 7 damage per hit. High mobility — keep moving and use Flash or Frenzy to create distance.'
-	},
-	{
-		tag: 'Boss: Root Colossus',
-		color: '#f44',
-		text: '2800 HP, slow. Deals 14 damage per hit. Highest HP of all bosses — bring your ultimates and focus fire.'
-	},
-	{
-		tag: 'Boss: Shadow Stalker',
-		color: '#f44',
-		text: '1200 HP, very fast. Deals 5 damage per hit. Lowest HP but hardest to escape — Flash, Slam, or Frenzy it.'
-	},
-	{
-		tag: 'Boss: Plague Shaman',
-		color: '#f44',
-		text: '1500 HP, medium speed. Deals 4 damage per hit. Stay mobile — expect area hazards.'
-	},
 	...Object.values(CLASSES).flatMap((c) =>
 		c.tips.map((tip) => ({
 			tag: c.stats.name,
@@ -607,6 +582,149 @@ export const TIPS: GameTip[] = [
 ];
 
 export const CLASS_LIST = ['spotter', 'gunner', 'tank', 'healer'] as const;
+
+// ─── Boss Data ────────────────────────────────────────────────────────────────
+
+export type BossId = 'ghost_dragon' | 'worm_monster' | 'rabid_dog' | 'scp_096';
+
+export interface BossAbility {
+	name: string;
+	cooldown: string;
+	desc: string;
+}
+
+export interface BossData {
+	id: BossId;
+	name: string;
+	hp: number;
+	/** world units/s (server value ÷ 1000) */
+	speed: number;
+	/** base melee damage per hit (0.5s cooldown); ×1.5 when enraged */
+	meleeDamage: number;
+	/** HP threshold for enrage (20% of max HP) */
+	enrageHp: number;
+	color: string;
+	threat: 'low' | 'medium' | 'high' | 'extreme';
+	abilities: [BossAbility, BossAbility];
+	tips: string[];
+}
+
+export const BOSSES: Record<BossId, BossData> = {
+	ghost_dragon: {
+		id: 'ghost_dragon',
+		name: 'Ghost Dragon',
+		hp: 2500,
+		speed: 4.8,
+		meleeDamage: 12,
+		enrageHp: 500,
+		color: '#8af',
+		threat: 'high',
+		abilities: [
+			{
+				name: 'Hide & Seek',
+				cooldown: '20s',
+				desc: 'Turns invisible for 3s and charges the furthest player at 2× speed. Hard to track — watch for movement on the ground.'
+			},
+			{
+				name: 'Ice Ball',
+				cooldown: '10s',
+				desc: 'Freezes up to 2 players in place for 1s. Stay spread out so not everyone gets hit simultaneously.'
+			}
+		],
+		tips: [
+			'When invisible it targets the FURTHEST player — cluster together to draw it in and counter-ambush.',
+			'Ice Ball only stuns 2 players — if you\'re frozen, teammates can still reposition and attack.',
+			'Enrages at 500 HP: melee climbs to 18/hit and it moves faster. Burst it down from range.',
+			'Spotter Flash or Gunner suppress can daze it mid-hide — best time to DPS dump.'
+		]
+	},
+	worm_monster: {
+		id: 'worm_monster',
+		name: 'Worm Monster',
+		hp: 3500,
+		speed: 3.5,
+		meleeDamage: 9,
+		enrageHp: 700,
+		color: '#a84',
+		threat: 'extreme',
+		abilities: [
+			{
+				name: 'Chain Charge',
+				cooldown: '12s',
+				desc: 'Deals damage to ALL players within 20 units simultaneously. Spread out — don\'t cluster.'
+			},
+			{
+				name: 'Burrow',
+				cooldown: '20s',
+				desc: 'Goes underground for 2.5s and teleports to a random position 20–40 units from center. Watch your minimap.'
+			}
+		],
+		tips: [
+			'Highest HP of all bosses at 3500 — prioritize it when it spawns, don\'t ignore it.',
+			'Chain Charge hits everyone in 20 units — always stay spread: 3+ units apart.',
+			'After Burrow it appears in the outer ring — hold position and wait for it to come back.',
+			'Slow speed (3.5 u/s) makes it easy to kite — Spotter and Gunner shine here.'
+		]
+	},
+	rabid_dog: {
+		id: 'rabid_dog',
+		name: 'Rabid Dog',
+		hp: 1500,
+		speed: 7.0,
+		meleeDamage: 8,
+		enrageHp: 300,
+		color: '#f64',
+		threat: 'high',
+		abilities: [
+			{
+				name: 'Leap',
+				cooldown: '7s',
+				desc: 'Instantly teleports behind the closest player. No warning — always watch your back.'
+			},
+			{
+				name: 'Stun Attack',
+				cooldown: '12s',
+				desc: 'Stuns a player for 2s and deals 16 damage. Only activates within 8 units — keep distance.'
+			}
+		],
+		tips: [
+			'Fastest boss at 7 u/s — you cannot outrun it. Use stuns and knockback to create space.',
+			'Leap puts it directly behind you — spin after it leaps and counter-attack.',
+			'Lowest HP at 1500 — focus fire immediately, especially if the healer is busy.',
+			'Stun Attack needs 8 unit range — Tank charge or Spotter Flash can interrupt the approach.'
+		]
+	},
+	scp_096: {
+		id: 'scp_096',
+		name: 'SCP-096',
+		hp: 2000,
+		speed: 5.0,
+		meleeDamage: 6,
+		enrageHp: 400,
+		color: '#ddd',
+		threat: 'medium',
+		abilities: [
+			{
+				name: 'AoE Slam',
+				cooldown: '14s',
+				desc: 'Knocks back ALL players within 15 units and slows them by 55% for 3s. Stay outside 15 units or you\'ll be scattered.'
+			},
+			{
+				name: 'Charge',
+				cooldown: '9s',
+				desc: 'Dashes toward a random player at 2× speed. Target changes every 8s — don\'t assume it\'s always chasing you.'
+			}
+		],
+		tips: [
+			'Lowest base damage (6/hit) but Charge makes it unpredictable — always track its current target.',
+			'AoE Slam can scatter the whole team — position near the edge of its 15-unit range to dodge.',
+			'It changes charge targets every 8s — communicate who it\'s chasing so teammates can draw it away.',
+			'Healer should stay outside 15 units to avoid Slam — you can\'t heal if you\'re knocked away.'
+		]
+	}
+};
+
+export const BOSS_LIST: BossId[] = ['ghost_dragon', 'worm_monster', 'rabid_dog', 'scp_096'];
 
 export function getActiveSynergy(classCounts: Record<string, number>): SynergyData | null {
 	const key = Object.entries(classCounts)

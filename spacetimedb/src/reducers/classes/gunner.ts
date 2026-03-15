@@ -67,7 +67,11 @@ export function attackEnemy(ctx: any, { sessionId, enemyId, suppress }: any) {
 		} else {
 			ctx.db.enemy.id.update(updatedTarget);
 		}
-		ctx.db.playerState.id.update({ ...ps, lastShotAt: ctx.timestamp });
+		ctx.db.playerState.id.update({
+			...ps,
+			score: (ps.score as bigint) + (isBoss ? 10n : 1n),
+			lastShotAt: ctx.timestamp
+		});
 	}
 }
 

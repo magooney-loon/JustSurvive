@@ -40,8 +40,9 @@
 		const key = keyMap[e.code];
 		if (key) input[key] = true;
 
-		// Ultimate — Q
-		if (e.code === 'KeyQ' && !e.repeat) {
+		// Ultimate — Space
+		if (e.code === 'Space' && !e.repeat) {
+			e.preventDefault();
 			fireUltimate();
 		}
 	}

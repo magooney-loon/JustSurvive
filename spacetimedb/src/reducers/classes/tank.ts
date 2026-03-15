@@ -92,7 +92,7 @@ export function axeSwing(ctx: any, { sessionId }: any) {
 				isDazed: true,
 				dazedUntil
 			});
-			scoreAdd += 5n;
+			scoreAdd += 1n;
 		}
 	}
 

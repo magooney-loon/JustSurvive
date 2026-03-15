@@ -6,7 +6,7 @@
 	import { useSpacetimeDB, useTable } from 'spacetimedb/svelte';
 	import { tables } from '$bindings/index.js';
 	import { soundActions } from '$root/Sound.svelte';
-	import { CLASSES, getActiveSynergy, TIPS } from './classData.js';
+	import { CLASSES, getActiveSynergy, TIPS, BOSSES, BOSS_LIST } from './classData.js';
 
 	const base = import.meta.env.BASE_URL;
 
@@ -122,6 +122,14 @@
 		const id = setInterval(() => {
 			tipIndex = (tipIndex + 1) % TIPS.length;
 		}, 5000);
+		return () => clearInterval(id);
+	});
+
+	let bossIndex = $state(0);
+	$effect(() => {
+		const id = setInterval(() => {
+			bossIndex = (bossIndex + 1) % BOSS_LIST.length;
+		}, 6000);
 		return () => clearInterval(id);
 	});
 
@@ -585,6 +593,51 @@
 							>Mouse - Aim</span
 						>
 					</div>
+				</div>
+
+				<!-- Boss info carousel -->
+				<div style="padding-top: 0.5rem; border-top: 1px solid rgba(255,255,255,0.08);">
+					<p class="rpgui-center" style="margin-bottom: 0.4rem; font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.1em; opacity: 0.5;">Boss Field Guide</p>
+					<!-- dot indicators -->
+					<div style="display: flex; justify-content: center; gap: 0.3rem; margin-bottom: 0.5rem;">
+						{#each BOSS_LIST as _, i}
+							<span style="width: 6px; height: 6px; border-radius: 50%; display: inline-block; background: {i === bossIndex ? BOSSES[BOSS_LIST[i]].color : 'rgba(255,255,255,0.2)'}; transition: background 0.3s;"></span>
+						{/each}
+					</div>
+					{#key bossIndex}
+						{@const boss = BOSSES[BOSS_LIST[bossIndex]]}
+						{@const threatColor = boss.threat === 'extreme' ? '#f44' : boss.threat === 'high' ? '#f84' : boss.threat === 'medium' ? '#fa4' : '#4f8'}
+						<div in:fade={{ duration: 300 }} style="display: flex; flex-direction: column; gap: 0.4rem;">
+							<!-- Name + threat -->
+							<div style="display: flex; align-items: center; justify-content: space-between;">
+								<span style="font-size: 0.9rem; font-weight: 700; color: {boss.color};">{boss.name}</span>
+								<span style="font-size: 0.55rem; text-transform: uppercase; letter-spacing: 0.1em; font-weight: 700; padding: 0.15rem 0.45rem; border-radius: 0.25rem; background: {threatColor}22; border: 1px solid {threatColor}55; color: {threatColor};">{boss.threat}</span>
+							</div>
+							<!-- Stats grid -->
+							<div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.3rem;">
+								{#each [['HP', String(boss.hp), '#f66'], ['Speed', boss.speed + ' u/s', '#4af'], ['Dmg', boss.meleeDamage + '/hit', '#fa4'], ['Enrage', '≤' + boss.enrageHp + ' HP', '#f84']] as [label, value, col]}
+									<div style="background: rgba(0,0,0,0.3); border-radius: 0.25rem; padding: 0.3rem 0.2rem; text-align: center; border-top: 2px solid {col}44;">
+										<div style="font-size: 0.7rem; font-weight: 700; color: {col}; line-height: 1.1;">{value}</div>
+										<div style="font-size: 0.5rem; color: rgba(255,255,255,0.35); text-transform: uppercase; letter-spacing: 0.05em; margin-top: 0.15rem;">{label}</div>
+									</div>
+								{/each}
+							</div>
+							<!-- Abilities -->
+							{#each boss.abilities as ab}
+								<div style="padding: 0.3rem 0.5rem; background: rgba(0,0,0,0.25); border-radius: 0.25rem; border-left: 2px solid {boss.color}60;">
+									<div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.15rem;">
+										<span style="font-size: 0.68rem; font-weight: 700; color: {boss.color};">{ab.name}</span>
+										<span style="font-size: 0.55rem; background: rgba(255,255,255,0.07); padding: 0.1rem 0.3rem; border-radius: 0.2rem; color: rgba(255,255,255,0.4);">CD {ab.cooldown}</span>
+									</div>
+									<span style="font-size: 0.6rem; color: rgba(255,255,255,0.5); line-height: 1.35;">{ab.desc}</span>
+								</div>
+							{/each}
+							<!-- Tactical tip -->
+							<div style="padding: 0.3rem 0.5rem; background: rgba(255,200,80,0.06); border-radius: 0.25rem; border-left: 2px solid rgba(255,200,80,0.4);">
+								<span style="font-size: 0.6rem; color: rgba(255,200,100,0.7); line-height: 1.35; font-style: italic;">💡 {boss.tips[0]}</span>
+							</div>
+						</div>
+					{/key}
 				</div>
 
 				<!-- Cycling tips -->

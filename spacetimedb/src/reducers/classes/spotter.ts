@@ -228,7 +228,7 @@ export function spotterFlash(ctx: any, { sessionId }: any) {
 		stunned += 10n;
 	}
 
-	ctx.db.playerState.id.update({ ...ps, score: (ps.score as bigint) + stunned * 10n });
+	ctx.db.playerState.id.update({ ...ps, score: (ps.score as bigint) + stunned * 5n });
 	ctx.db.spotterState.id.update({
 		...ss,
 		flashCooldownUntil: ts(now + FLASH_COOLDOWN_US),
