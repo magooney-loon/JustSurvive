@@ -17,7 +17,7 @@ export const ENEMY_BASE_SPEED: Record<string, bigint> = {
 };
 
 export const ENEMY_CAP = 36; // 4-player cap; scales down per player count
-export const ENEMY_CAP_BY_PLAYERS: Record<number, number> = { 1: 12, 2: 18, 3: 27, 4: 36 };
+export const ENEMY_CAP_BY_PLAYERS: Record<number, number> = { 1: 7, 2: 18, 3: 27, 4: 36 };
 export const MELEE_RANGE = 2000n;
 export const BOSS_MELEE_RANGE = 4200n; // Boss attacks within 4 units
 export const BOSS_STOP_DIST = 4000n; // Boss stops walking at 4 units (visual deadzone)
