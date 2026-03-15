@@ -3,7 +3,13 @@
 	import { AudioListener } from '@threlte/extras';
 	import { stageState } from '$root/stage.svelte.js';
 	import { log, settingsState } from '$root/settings.svelte.js';
-	import { localPos, tpsCamera, cameraFollow, bossShake } from '$lib/stores/movement.svelte.js';
+	import {
+		localPos,
+		localVelocity,
+		tpsCamera,
+		cameraFollow,
+		bossShake
+	} from '$lib/stores/movement.svelte.js';
 	import type { PerspectiveCamera } from 'three';
 
 	const { renderer } = useThrelte();
@@ -15,6 +21,19 @@
 	const TPS_PITCH = -Math.atan2(TPS_Y, TPS_Z);
 	const EYE_Y_BASE = 1.658; // spectate eye level
 	const BASE_SENS = 0.002;
+
+	// Camera smoothing
+	let camTargetX = 0;
+	let camTargetY = 0;
+	let camTargetZ = 0;
+	let camYawSmooth = 0;
+	const LERP_POS = 0.04;
+	const LERP_YAW = 0.06;
+
+	// Movement bob
+	let bobPhase = 0;
+	const BOB_SPEED = 12;
+	const BOB_AMPLITUDE = 0.08;
 
 	$effect(() => {
 		const canvas = renderer.domElement;
@@ -46,7 +65,7 @@
 		}
 	});
 
-	useTask(() => {
+	useTask((delta) => {
 		if (!camera || stageState.currentStage !== 'game') return;
 		camera.rotation.order = 'YXZ';
 		if (cameraFollow.active) {
@@ -60,15 +79,37 @@
 			camera.rotation.x = 0;
 		} else {
 			// TPS: hover above and behind the player, orbiting via yaw
-			const behindX = Math.sin(tpsCamera.yaw) * TPS_Z;
-			const behindZ = Math.cos(tpsCamera.yaw) * TPS_Z;
+
+			// Smooth yaw follow
+			camYawSmooth += (tpsCamera.yaw - camYawSmooth) * LERP_YAW;
+			const smoothBehindX = Math.sin(camYawSmooth) * TPS_Z;
+			const smoothBehindZ = Math.cos(camYawSmooth) * TPS_Z;
+
+			// Movement bob
+			const speed = Math.sqrt(
+				localVelocity.x * localVelocity.x + localVelocity.z * localVelocity.z
+			);
+			if (speed > 0.5) {
+				bobPhase += delta * BOB_SPEED;
+			}
+			const bob = Math.sin(bobPhase) * BOB_AMPLITUDE * Math.min(speed / 5, 1);
+
+			// Look-ahead based on velocity
+			const lookAhead = 0.3;
+			const targetX = localPos.x + smoothBehindX + localVelocity.x * lookAhead;
+			const targetY = localPos.y + TPS_Y + bob;
+			const targetZ = localPos.z + smoothBehindZ + localVelocity.z * lookAhead;
+
+			// Smooth camera position
+			camTargetX += (targetX - camTargetX) * LERP_POS;
+			camTargetY += (targetY - camTargetY) * LERP_POS;
+			camTargetZ += (targetZ - camTargetZ) * LERP_POS;
+
+			// Boss shake
 			const shakeY = bossShake.intensity;
 			const shakeX = bossShake.intensity * Math.sin(Date.now() * 0.031) * 0.4;
-			camera.position.set(
-				localPos.x + behindX + shakeX,
-				localPos.y + TPS_Y + shakeY,
-				localPos.z + behindZ
-			);
+
+			camera.position.set(camTargetX + shakeX, camTargetY + shakeY, camTargetZ);
 			camera.rotation.y = tpsCamera.yaw;
 			camera.rotation.x = TPS_PITCH;
 		}
