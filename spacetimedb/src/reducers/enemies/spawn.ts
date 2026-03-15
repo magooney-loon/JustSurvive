@@ -50,8 +50,8 @@ export function spawnEnemy(ctx: any, { arg }: any) {
 		return;
 	}
 
-	// Pause spawning for 30 seconds after a boss spawns
-	const BOSS_SPAWN_PAUSE_US = 30_000_000n;
+	// Pause spawning for 15 seconds after a boss spawns
+	const BOSS_SPAWN_PAUSE_US = 15_000_000n;
 	const now2 = ctx.timestamp.microsSinceUnixEpoch as bigint;
 	for (const b of ctx.db.boss.boss_session_id.filter(arg.sessionId)) {
 		if (b.isAlive && b.spawnedAt) {
@@ -74,8 +74,7 @@ export function spawnEnemy(ctx: any, { arg }: any) {
 		}
 	}
 
-	const seedBase =
-		(ctx.timestamp.microsSinceUnixEpoch as bigint) + (session.mapSeed as bigint);
+	const seedBase = (ctx.timestamp.microsSinceUnixEpoch as bigint) + (session.mapSeed as bigint);
 	const spawnIdx = Number(seedBase % BigInt(SPAWN_POINT_COUNT));
 	const spawnAngle = ((spawnIdx + 0.5) / SPAWN_POINT_COUNT) * Math.PI * 2;
 	const spawnX = BigInt(Math.round(Math.cos(spawnAngle) * WALL_SPAWN_RADIUS));
@@ -158,8 +157,8 @@ export function fireBossSpawn(ctx: any, { arg }: any) {
 	// Cycle through all 4 boss types in a shuffled order before repeating.
 	// bossSpawnCount tracks total bosses spawned across the whole session.
 	const spawnCount = session.bossSpawnCount as bigint;
-	const cycleNum = spawnCount / 4n;       // which 4-boss cycle we're in
-	const posInCycle = spawnCount % 4n;     // slot within that cycle (0–3)
+	const cycleNum = spawnCount / 4n; // which 4-boss cycle we're in
+	const posInCycle = spawnCount % 4n; // slot within that cycle (0–3)
 	const shuffleSeed = (session.mapSeed as bigint) ^ cycleNum;
 	const bossType = shuffledBossTypes(shuffleSeed)[Number(posInCycle)];
 

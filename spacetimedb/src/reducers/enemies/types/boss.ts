@@ -8,6 +8,7 @@
 import { ts, bigintSqrt as bs } from '../../../helpers.js';
 import {
 	BOSS_MELEE_RANGE,
+	BOSS_MELEE_COOLDOWN_US,
 	BOSS_HP,
 	BOSS_SPEED,
 	BOSS_DAMAGE,
@@ -72,8 +73,13 @@ function bossAttack(
 	dx: bigint,
 	dz: bigint,
 	distSq: bigint,
-	damageAccum: Map<bigint, bigint>
+	damageAccum: Map<bigint, bigint>,
+	now: bigint
 ) {
+	// Rate-limit melee hits — fires once per BOSS_MELEE_COOLDOWN_US window
+	const tickUs = TICK_MS * 1000n;
+	if (now % BOSS_MELEE_COOLDOWN_US >= tickUs) return false;
+
 	const isEnraged = (boss.phase as bigint) === 1n;
 	const baseDamage = BOSS_DAMAGE[boss.bossType] ?? 4n;
 	const damage = isEnraged ? (baseDamage * 3n) / 2n : baseDamage;
@@ -158,7 +164,7 @@ function handleGhostDragon(
 	}
 
 	const speedBoost = boss.isHidden ? 200n : 100n; // 2x speed while hidden
-	const attacked = bossAttack(boss, chosen, dx, dz, chosenDistSq, damageAccum);
+	const attacked = bossAttack(boss, chosen, dx, dz, chosenDistSq, damageAccum, now);
 	if (!attacked) {
 		boss = bossMove(ctx, boss, dx, dz, chosenDistSq, speedBoost, now);
 	}
@@ -239,7 +245,7 @@ function handleWormMonster(
 		return boss;
 	}
 
-	const attacked = bossAttack(boss, chosen, dx, dz, chosenDistSq, damageAccum);
+	const attacked = bossAttack(boss, chosen, dx, dz, chosenDistSq, damageAccum, now);
 	if (!attacked) boss = bossMove(ctx, boss, dx, dz, chosenDistSq, 100n, now);
 	return boss;
 }
@@ -299,7 +305,7 @@ function handleRabidDog(
 		return boss;
 	}
 
-	const attacked = bossAttack(boss, chosen, dx, dz, chosenDistSq, damageAccum);
+	const attacked = bossAttack(boss, chosen, dx, dz, chosenDistSq, damageAccum, now);
 	if (!attacked) boss = bossMove(ctx, boss, dx, dz, chosenDistSq, 100n, now);
 	return boss;
 }
@@ -380,7 +386,7 @@ function handleScp096(
 	const cdx = (chargeTarget.posX as bigint) - (boss.posX as bigint);
 	const cdz = (chargeTarget.posZ as bigint) - (boss.posZ as bigint);
 	const cdist = cdx * cdx + cdz * cdz;
-	const attacked = bossAttack(boss, chosen, dx, dz, chosenDistSq, damageAccum);
+	const attacked = bossAttack(boss, chosen, dx, dz, chosenDistSq, damageAccum, now);
 	if (!attacked) boss = bossMove(ctx, boss, cdx, cdz, cdist, 100n, now);
 	return boss;
 }

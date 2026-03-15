@@ -40,10 +40,10 @@ export const ENEMY_HP: Record<string, bigint> = {
 export const BOSS_SPAWN_INTERVAL_US = 10_000_000n; // 10 seconds (testing)
 
 export const BOSS_HP: Record<string, bigint> = {
-	ghost_dragon: 1800n,
-	worm_monster: 2500n,
-	rabid_dog: 1000n,
-	scp_096: 1500n
+	ghost_dragon: 2500n,
+	worm_monster: 3500n,
+	rabid_dog: 1500n,
+	scp_096: 2000n
 };
 
 export const BOSS_SPEED: Record<string, bigint> = {
@@ -54,11 +54,13 @@ export const BOSS_SPEED: Record<string, bigint> = {
 };
 
 export const BOSS_DAMAGE: Record<string, bigint> = {
-	ghost_dragon: 2n,
-	worm_monster: 3n,
-	rabid_dog: 2n,
-	scp_096: 1n
+	ghost_dragon: 5n,
+	worm_monster: 7n,
+	rabid_dog: 4n,
+	scp_096: 3n
 };
+
+export const BOSS_MELEE_COOLDOWN_US = 1_000_000n; // 1s between melee hits
 
 // ─── Boss Ability Constants ────────────────────────────────────────────────────
 // Ghost Dragon

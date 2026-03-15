@@ -52,7 +52,13 @@
 	let footstepTimer = 0;
 	let hasPlayedIntro = false;
 
-	const onceAnimations: Scp096Action[] = ['Attack', 'Panik', 'Sit Down', 'Sit Up', 'Sit Transition'];
+	const onceAnimations: Scp096Action[] = [
+		'Attack',
+		'Panik',
+		'Sit Down',
+		'Sit Up',
+		'Sit Transition'
+	];
 
 	let footstepAudio = $state.raw<THREE.PositionalAudio | undefined>(undefined);
 	let attackAudio = $state.raw<THREE.PositionalAudio | undefined>(undefined);
@@ -138,7 +144,11 @@
 			const name = e.action.getClip().name as Scp096Action;
 			if (name === 'Attack' || name === 'Panik') {
 				const idle = $actions[isEnraged ? 'Idle' : 'Sit'];
-				if (idle) { idle.enabled = true; idle.play(); currentAction = isEnraged ? 'Idle' : 'Sit'; }
+				if (idle) {
+					idle.enabled = true;
+					idle.play();
+					currentAction = isEnraged ? 'Idle' : 'Sit';
+				}
 			}
 		};
 		mixer.addEventListener('finished', onFinished as (e: THREE.Event) => void);
@@ -186,29 +196,45 @@
 
 <PositionalAudio
 	src="{import.meta.env.BASE_URL}sounds/boss_footstep.mp3"
-	refDistance={3} maxDistance={22} rolloffFactor={1.5}
-	oncreate={(a) => { footstepAudio = a; }}
+	refDistance={3}
+	maxDistance={22}
+	rolloffFactor={1.5}
+	oncreate={(a) => {
+		footstepAudio = a;
+	}}
 />
 <PositionalAudio
 	src="{import.meta.env.BASE_URL}sounds/boss_attack.mp3"
-	refDistance={5} maxDistance={25} rolloffFactor={1.5}
-	oncreate={(a) => { attackAudio = a; }}
+	refDistance={5}
+	maxDistance={25}
+	rolloffFactor={1.5}
+	oncreate={(a) => {
+		attackAudio = a;
+	}}
 />
 <PositionalAudio
 	src="{import.meta.env.BASE_URL}sounds/boss_dead.mp3"
-	refDistance={8} maxDistance={30} rolloffFactor={1.5}
-	oncreate={(a) => { deadAudio = a; }}
+	refDistance={8}
+	maxDistance={30}
+	rolloffFactor={1.5}
+	oncreate={(a) => {
+		deadAudio = a;
+	}}
 />
 <PositionalAudio
 	src="{import.meta.env.BASE_URL}sounds/boss_daze.mp3"
-	refDistance={5} maxDistance={25} rolloffFactor={1.5}
-	oncreate={(a) => { dazeAudio = a; }}
+	refDistance={5}
+	maxDistance={25}
+	rolloffFactor={1.5}
+	oncreate={(a) => {
+		dazeAudio = a;
+	}}
 />
 
 <GLTF
 	bind:gltf={$gltf}
 	url="{import.meta.env.BASE_URL}models/enemies/boss/scp_096/scene.gltf"
 	rotation.y={Math.PI}
-	position.y={0.3}
+	position.y={1.4}
 	scale={3.5}
 />
