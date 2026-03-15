@@ -8,6 +8,7 @@
 import { ts, bigintSqrt as bs } from '../../../helpers.js';
 import {
 	BOSS_MELEE_RANGE,
+	BOSS_STOP_DIST,
 	BOSS_MELEE_COOLDOWN_US,
 	BOSS_HP,
 	BOSS_SPEED,
@@ -48,6 +49,7 @@ function bossMove(
 ) {
 	const ageSec = bossAgeSec(boss, now);
 	if (ageSec < 2) return boss; // Wait 2s before moving
+	if (distSq <= BOSS_STOP_DIST * BOSS_STOP_DIST) return boss; // Deadzone — don't walk into player
 	const timeBonus = BigInt(Math.min(30, Math.floor(ageSec * Number(ENEMY_SPEED_PER_SEC))));
 	const baseSpeed = BOSS_SPEED[boss.bossType] ?? 4000n;
 	const isEnraged = (boss.phase as bigint) === 1n;

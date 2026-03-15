@@ -216,7 +216,7 @@
 </script>
 
 <PositionalAudio
-	src="{import.meta.env.BASE_URL}sounds/boss_footstep.mp3"
+	src="{import.meta.env.BASE_URL}sounds/enemies/boss_footstep.mp3"
 	refDistance={3}
 	maxDistance={20}
 	rolloffFactor={1.5}
@@ -225,7 +225,7 @@
 	}}
 />
 <PositionalAudio
-	src="{import.meta.env.BASE_URL}sounds/boss_attack.mp3"
+	src="{import.meta.env.BASE_URL}sounds/enemies/boss_attack.mp3"
 	refDistance={5}
 	maxDistance={25}
 	rolloffFactor={1.5}
@@ -234,7 +234,7 @@
 	}}
 />
 <PositionalAudio
-	src="{import.meta.env.BASE_URL}sounds/boss_dead.mp3"
+	src="{import.meta.env.BASE_URL}sounds/enemies/boss_dead.mp3"
 	refDistance={8}
 	maxDistance={30}
 	rolloffFactor={1.5}
@@ -243,7 +243,7 @@
 	}}
 />
 <PositionalAudio
-	src="{import.meta.env.BASE_URL}sounds/boss_daze.mp3"
+	src="{import.meta.env.BASE_URL}sounds/enemies/boss_daze.mp3"
 	refDistance={5}
 	maxDistance={25}
 	rolloffFactor={1.5}

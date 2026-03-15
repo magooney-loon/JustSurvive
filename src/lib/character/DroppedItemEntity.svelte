@@ -19,7 +19,7 @@
 		double_speed:  0x44aaff
 	};
 
-	const colorHex = ITEM_COLORS[itemType as ItemType] ?? 0xffffff;
+	const colorHex = $derived(ITEM_COLORS[itemType as ItemType] ?? 0xffffff);
 
 	const x = $derived(Number(posX) / 1000);
 	const z = $derived(Number(posZ) / 1000);

@@ -11,7 +11,8 @@ export const ENEMY_BASE_SPEED: Record<string, bigint> = {
 export const ENEMY_CAP = 36; // 4-player cap; scales down per player count
 export const ENEMY_CAP_BY_PLAYERS: Record<number, number> = { 1: 12, 2: 18, 3: 27, 4: 36 };
 export const MELEE_RANGE = 2000n;
-export const BOSS_MELEE_RANGE = 4000n; // Boss stops 4 units away
+export const BOSS_MELEE_RANGE = 4200n; // Boss attacks within 4 units
+export const BOSS_STOP_DIST = 4000n; // Boss stops walking at 4 units (visual deadzone)
 export const SPITTER_RANGE_SQ = 144_000_000n; // 12 world units squared
 export const SPITTER_MIN_DIST_SQ = 36_000_000n; // 6 world units — flee closer than this
 export const CASTER_RANGE_SQ = 64_000_000n; // 8 world units squared
@@ -37,7 +38,7 @@ export const ENEMY_HP: Record<string, bigint> = {
 	caster: 120n
 };
 
-export const BOSS_SPAWN_INTERVAL_US = 90_000_000n; // 90 seconds
+export const BOSS_SPAWN_INTERVAL_US = 10_000_000n; // 90 seconds
 
 export const BOSS_HP: Record<string, bigint> = {
 	ghost_dragon: 2500n,
