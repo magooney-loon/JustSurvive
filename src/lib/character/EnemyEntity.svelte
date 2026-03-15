@@ -26,6 +26,7 @@
 	import SpitterRig from '$lib/character/enemies/spitter/SpitterRig.svelte';
 	import CasterRig from '$lib/character/enemies/caster/CasterRig.svelte';
 	import JumperRig from '$lib/character/enemies/jumper/JumperRig.svelte';
+	import OgreRig from '$lib/character/enemies/ogre/OgreRig.svelte';
 	import BossRig from '$lib/character/enemies/boss/BossRig.svelte';
 	import { settingsState } from '$root/settings.svelte.js';
 
@@ -303,6 +304,8 @@
 				<SpitterRig {speed} {attackPhase} isDead={dead} />
 			{:else if enemy.enemyType === 'caster' || enemy.enemyType.startsWith('caster_')}
 				<CasterRig enemyType={enemy.enemyType as any} {speed} {attackPhase} {beamTimer} isDead={dead} />
+			{:else if enemy.enemyType === 'ogre' || enemy.enemyType === 'ogre_berserker' || enemy.enemyType === 'ogre_stalker'}
+				<OgreRig enemyType={enemy.enemyType as any} {speed} {attackPhase} isDead={dead} />
 			{:else}
 				<BasicRig {speed} {attackPhase} isDead={dead} />
 			{/if}

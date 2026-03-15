@@ -13,7 +13,7 @@
 	} from './md2Cache.js';
 
 	export type MD2EnemyCharacterProps = {
-		enemyType: 'basic' | 'fast' | 'brute' | 'spitter' | 'caster' | 'caster_railgun' | 'caster_chaingun' | 'caster_bfg' | 'caster_shotgun' | 'jumper';
+		enemyType: 'basic' | 'fast' | 'brute' | 'spitter' | 'caster' | 'caster_railgun' | 'caster_chaingun' | 'caster_bfg' | 'caster_shotgun' | 'jumper' | 'ogre' | 'ogre_berserker' | 'ogre_stalker';
 		speed: number;
 		attackPhase?: number;
 		isDead?: boolean;
@@ -31,7 +31,7 @@
 	let weaponMixer = $state<THREE.AnimationMixer | null>(null);
 	let weaponCurrentAction = $state<THREE.AnimationAction | null>(null);
 
-	const ENEMY_ANIMS = {
+	const ENEMY_ANIMS: Record<string, { idle: string[]; move: string[]; attack: string[]; death: string[]; moveCycleInterval?: number }> = {
 		basic: {
 			idle: ['crstand'],
 			move: ['crwalk'],
@@ -57,14 +57,14 @@
 			death: ['crdeath']
 		},
 		caster: {
-			idle: ['stand'],
-			move: ['run'],
+			idle: ['crstand'],
+			move: ['crwalk'],
 			attack: ['taunt'],
 			death: ['crdeath']
 		},
 		caster_railgun: {
-			idle: ['stand'],
-			move: ['run'],
+			idle: ['crstand'],
+			move: ['crwalk'],
 			attack: ['taunt'],
 			death: ['crdeath']
 		},
@@ -91,6 +91,24 @@
 			move: ['jump'],
 			attack: ['salute'],
 			death: ['crdeath']
+		},
+		ogre: {
+			idle: ['stand'],
+			move: ['run'],
+			attack: ['attack'],
+			death: ['death']
+		},
+		ogre_berserker: {
+			idle: ['stand'],
+			move: ['jump'],
+			attack: ['attack'],
+			death: ['death']
+		},
+		ogre_stalker: {
+			idle: ['cstand'],
+			move: ['cwalk'],
+			attack: ['crattack'],
+			death: ['death']
 		}
 	};
 
@@ -199,6 +217,13 @@
 
 			if (newCategory === 'idle' && !hasCycledOnce && cycleTimer > 3) {
 				hasCycledOnce = true;
+				const anim = getAnimationFromState(speed, attackPhase, isDead);
+				setAnimation(anim);
+			}
+
+			const moveInterval = ENEMY_ANIMS[enemyType]?.moveCycleInterval;
+			if (newCategory === 'move' && moveInterval && cycleTimer > moveInterval) {
+				cycleTimer = 0;
 				const anim = getAnimationFromState(speed, attackPhase, isDead);
 				setAnimation(anim);
 			}

@@ -151,12 +151,14 @@ export function fireBossSpawn(ctx: any, { arg }: any) {
 	// bossSpawnCount tracks total bosses spawned across the whole session.
 	const spawnCount = session.bossSpawnCount as bigint;
 
-	// Scale boss HP by total player count in session (1→50%, 2→100%, 3→150%, 4→200%)
+	// Scale boss HP by player count — tighter range so solo isn't trivial, 4p isn't absurd
 	const totalPlayers = [...ctx.db.playerState.player_state_session_id.filter(arg.sessionId)];
-	const playerScale = BigInt(totalPlayers.length) * 5n; // 1→50, 2→100, 3→150, 4→200 (percentage)
+	const PLAYER_SCALE_TABLE: Record<number, bigint> = { 1: 80n, 2: 100n, 3: 120n, 4: 140n };
+	const playerScale = PLAYER_SCALE_TABLE[Math.min(totalPlayers.length, 4)] ?? 100n;
 
-	// 10% HP increase per boss spawn
-	const spawnBonus = 100n + spawnCount * 10n; // 100%, 110%, 120%, etc.
+	// 5% HP increase per boss spawn (capped at +50%)
+	const rawBonus = spawnCount * 5n;
+	const spawnBonus = 100n + (rawBonus > 50n ? 50n : rawBonus); // 100%…150% max
 
 	const cycleNum = spawnCount / 4n; // which 4-boss cycle we're in
 	const posInCycle = spawnCount % 4n; // slot within that cycle (0–3)

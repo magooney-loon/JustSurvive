@@ -10,7 +10,10 @@ export const ENEMY_BASE_SPEED: Record<string, bigint> = {
 	caster_chaingun: 1800n,
 	caster_bfg: 5000n,
 	caster_shotgun: 1500n,
-	jumper: 4800n
+	jumper: 4800n,
+	ogre: 2500n,
+	ogre_berserker: 4200n,
+	ogre_stalker: 1600n
 };
 
 export const ENEMY_CAP = 36; // 4-player cap; scales down per player count
@@ -28,16 +31,19 @@ export const TARGET_JITTER = 0.08; // +-8% distance jitter
 export const ENEMY_SPEED_PER_SEC = 2n; // +2% speed per second alive (capped at +50%)
 
 export const ENEMY_WEIGHTS = [
-	{ type: 'basic', weight: 34 },
-	{ type: 'fast', weight: 20 },
-	{ type: 'brute', weight: 10 },
+	{ type: 'basic', weight: 18 },
+	{ type: 'fast', weight: 12 },
+	{ type: 'brute', weight: 8 },
 	{ type: 'spitter', weight: 8 },
-	{ type: 'caster', weight: 8 },
-	{ type: 'caster_chaingun', weight: 5 },
-	{ type: 'caster_railgun', weight: 4 },
-	{ type: 'caster_shotgun', weight: 3 },
-	{ type: 'caster_bfg', weight: 2 },
-	{ type: 'jumper', weight: 6 }
+	{ type: 'jumper', weight: 8 },
+	{ type: 'ogre', weight: 8 },
+	{ type: 'caster', weight: 7 },
+	{ type: 'caster_chaingun', weight: 6 },
+	{ type: 'ogre_berserker', weight: 6 },
+	{ type: 'ogre_stalker', weight: 6 },
+	{ type: 'caster_railgun', weight: 5 },
+	{ type: 'caster_shotgun', weight: 5 },
+	{ type: 'caster_bfg', weight: 3 }
 ];
 
 export const ENEMY_HP: Record<string, bigint> = {
@@ -50,7 +56,10 @@ export const ENEMY_HP: Record<string, bigint> = {
 	caster_chaingun: 90n,
 	caster_bfg: 180n,
 	caster_shotgun: 110n,
-	jumper: 65n
+	jumper: 65n,
+	ogre: 250n,
+	ogre_berserker: 150n,
+	ogre_stalker: 350n
 };
 
 export const BOSS_SPAWN_INTERVAL_US = 90_000_000n; // 90 seconds
