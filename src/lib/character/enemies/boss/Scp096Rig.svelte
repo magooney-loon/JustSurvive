@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { useTask } from '@threlte/core';
+	import { T, useTask } from '@threlte/core';
 	import { GLTF, useGltfAnimations, PositionalAudio } from '@threlte/extras';
 	import * as THREE from 'three';
 	import { localPos, bossShake } from '$lib/stores/movement.svelte.js';
@@ -29,6 +29,8 @@
 		isEnraged?: boolean;
 		bossX?: number;
 		bossZ?: number;
+		slamCooldownMs?: number;
+		chargeCooldownMs?: number;
 	};
 
 	let {
@@ -38,7 +40,9 @@
 		isDazed = false,
 		isEnraged = false,
 		bossX = 0,
-		bossZ = 0
+		bossZ = 0,
+		slamCooldownMs = 0,
+		chargeCooldownMs = 0
 	}: Props = $props();
 
 	const SHAKE_MAX_DIST = 25;
@@ -51,6 +55,10 @@
 	let shakeTimer = 0;
 	let footstepTimer = 0;
 	let hasPlayedIntro = false;
+	let slamFlashT = $state(0);
+	let chargeFlashT = $state(0);
+	let prevSlamCooldownMs = $state(0);
+	let prevChargeCooldownMs = $state(0);
 
 	const onceAnimations: Scp096Action[] = [
 		'Attack',
@@ -89,6 +97,9 @@
 	useTask((dt) => {
 		if (mixer) mixer.update(dt);
 
+		slamFlashT = Math.max(0, slamFlashT - dt / 1.1);
+		chargeFlashT = Math.max(0, chargeFlashT - dt / 0.55);
+
 		const isWalking = !isDead && !isDazed && speed > 0.05;
 		if (isWalking) {
 			shakeTimer += dt;
@@ -105,6 +116,19 @@
 		} else {
 			bossShake.intensity = Math.max(0, bossShake.intensity - dt * 3);
 			footstepTimer = 0;
+		}
+	});
+
+	$effect(() => {
+		if (slamCooldownMs > 0 && slamCooldownMs !== prevSlamCooldownMs) {
+			prevSlamCooldownMs = slamCooldownMs;
+			slamFlashT = 1;
+		}
+	});
+	$effect(() => {
+		if (chargeCooldownMs > 0 && chargeCooldownMs !== prevChargeCooldownMs) {
+			prevChargeCooldownMs = chargeCooldownMs;
+			chargeFlashT = 1;
 		}
 	});
 
@@ -238,3 +262,47 @@
 	position.y={1.4}
 	scale={3.5}
 />
+
+<!-- AoE Slam VFX: massive white shockwave + cracks -->
+{#if slamFlashT > 0}
+    {#each Array.from({ length: 8 }, (_, i) => ({ angle: (i / 8) * Math.PI * 2, px: Math.sin((i / 8) * Math.PI * 2) * 7 * (1 - slamFlashT), pz: Math.cos((i / 8) * Math.PI * 2) * 7 * (1 - slamFlashT) })) as s}
+        <T.Mesh position={[s.px, 0.04, s.pz]} rotation={[-Math.PI / 2, 0, s.angle]}>
+            <T.BoxGeometry args={[0.1, 15, 0.01]} />
+            <T.MeshBasicMaterial color="#ffffff" transparent opacity={slamFlashT * 0.75} blending={THREE.AdditiveBlending} depthWrite={false} />
+        </T.Mesh>
+    {/each}
+    <T.Mesh position={[0, 0.06, 0]} rotation={[-Math.PI / 2, 0, 0]} scale={Math.max(0.1, (1 - slamFlashT) * 15)}>
+        <T.RingGeometry args={[0.88, 1, 32]} />
+        <T.MeshBasicMaterial color="#ffffff" transparent opacity={slamFlashT * 0.95} blending={THREE.AdditiveBlending} depthWrite={false} />
+    </T.Mesh>
+    <T.Mesh position={[0, 0.06, 0]} rotation={[-Math.PI / 2, 0, 0]} scale={Math.max(0.1, (1 - slamFlashT) * 10)}>
+        <T.RingGeometry args={[0.82, 1, 32]} />
+        <T.MeshBasicMaterial color="#aaddff" transparent opacity={slamFlashT * 0.7} blending={THREE.AdditiveBlending} depthWrite={false} />
+    </T.Mesh>
+    <T.Mesh position={[0, 0.05, 0]} rotation={[-Math.PI / 2, 0, 0]} scale={0.8 + (1 - slamFlashT) * 3}>
+        <T.CircleGeometry args={[1, 24]} />
+        <T.MeshBasicMaterial color="#ffffff" transparent opacity={slamFlashT * 0.4} blending={THREE.AdditiveBlending} depthWrite={false} />
+    </T.Mesh>
+    <T.Mesh position={[0, 1.0, 0]} scale={0.5 + (1 - slamFlashT) * 1.0}>
+        <T.SphereGeometry args={[1, 8, 6]} />
+        <T.MeshBasicMaterial color="#ffffff" transparent opacity={slamFlashT * 0.8} blending={THREE.AdditiveBlending} depthWrite={false} />
+    </T.Mesh>
+{/if}
+
+<!-- Charge VFX: blue-white speed streak -->
+{#if chargeFlashT > 0}
+    {#each Array.from({ length: 5 }, (_, i) => ({ angle: (i / 5) * Math.PI * 2, idx: i })) as s}
+        <T.Mesh position={[0, 0.9 + s.idx * 0.15, 0]} rotation={[0, s.angle, 0]}>
+            <T.BoxGeometry args={[0.06, 0.06, 3.5]} />
+            <T.MeshBasicMaterial color="#88ccff" transparent opacity={chargeFlashT * 0.8} blending={THREE.AdditiveBlending} depthWrite={false} />
+        </T.Mesh>
+    {/each}
+    <T.Mesh position={[0, 0.06, 0]} rotation={[-Math.PI / 2, 0, 0]} scale={Math.max(0.1, (1 - chargeFlashT) * 5)}>
+        <T.RingGeometry args={[0.8, 1, 24]} />
+        <T.MeshBasicMaterial color="#4488ff" transparent opacity={chargeFlashT * 0.75} blending={THREE.AdditiveBlending} depthWrite={false} />
+    </T.Mesh>
+    <T.Mesh position={[0, 1.0, 0]} scale={0.2 + (1 - chargeFlashT) * 0.4}>
+        <T.SphereGeometry args={[1, 8, 6]} />
+        <T.MeshBasicMaterial color="#aaddff" transparent opacity={chargeFlashT * 0.9} blending={THREE.AdditiveBlending} depthWrite={false} />
+    </T.Mesh>
+{/if}

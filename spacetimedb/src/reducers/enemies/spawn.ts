@@ -115,14 +115,14 @@ export function spawnEnemy(ctx: any, { arg }: any) {
 // each cycle so the sequence is never predictable.
 
 function shuffledBossTypes(seed: bigint): string[] {
-	const arr = ['ghost_dragon', 'worm_monster', 'rabid_dog', 'scp_096'];
+	const arr = ['ghost_dragon', 'worm_monster', 'rabid_dog', 'scp_096', 'terror_reaper'];
 	// Knuth LCG — good avalanche for small sequences
 	let s = seed ^ 0xdeadbeefcafe1234n;
 	const next = () => {
 		s = (s * 6364136223846793005n + 1442695040888963407n) & 0xffffffffffffffffn;
 		return s;
 	};
-	for (let i = 3; i > 0; i--) {
+	for (let i = 4; i > 0; i--) {
 		const j = Number(next() % BigInt(i + 1));
 		[arr[i], arr[j]] = [arr[j], arr[i]];
 	}
@@ -160,8 +160,8 @@ export function fireBossSpawn(ctx: any, { arg }: any) {
 	const rawBonus = spawnCount * 5n;
 	const spawnBonus = 100n + (rawBonus > 50n ? 50n : rawBonus); // 100%…150% max
 
-	const cycleNum = spawnCount / 4n; // which 4-boss cycle we're in
-	const posInCycle = spawnCount % 4n; // slot within that cycle (0–3)
+	const cycleNum = spawnCount / 5n; // which 5-boss cycle we're in
+	const posInCycle = spawnCount % 5n; // slot within that cycle (0–4)
 	const shuffleSeed = (session.mapSeed as bigint) ^ cycleNum;
 	const bossType = shuffledBossTypes(shuffleSeed)[Number(posInCycle)];
 

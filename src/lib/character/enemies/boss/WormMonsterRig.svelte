@@ -16,6 +16,7 @@
 		isEnraged?: boolean;
 		bossX?: number;
 		bossZ?: number;
+		chargeCooldownMs?: number;
 	};
 
 	let {
@@ -26,7 +27,8 @@
 		isBurrowed = false,
 		isEnraged = false,
 		bossX = 0,
-		bossZ = 0
+		bossZ = 0,
+		chargeCooldownMs = 0
 	}: Props = $props();
 
 	const SHAKE_MAX_DIST = 30;
@@ -42,6 +44,10 @@
 	// Burrow animation state
 	let burrowY = $state(0);
 	let burrowRotX = $state(0);
+	let chargeFlashT = $state(0);
+	let burrowFlashT = $state(0);
+	let prevBurrowed = $state(false);
+	let prevChargeCooldownMs = $state(0);
 
 	let footstepAudio = $state.raw<THREE.PositionalAudio | undefined>(undefined);
 	let attackAudio = $state.raw<THREE.PositionalAudio | undefined>(undefined);
@@ -71,6 +77,9 @@
 		const targetRotX = isBurrowed ? -Math.PI / 2 : 0;
 		burrowY += (targetY - burrowY) * Math.min(1, dt * 2.5);
 		burrowRotX += (targetRotX - burrowRotX) * Math.min(1, dt * 2.5);
+
+		chargeFlashT = Math.max(0, chargeFlashT - dt / 1.0);
+		burrowFlashT = Math.max(0, burrowFlashT - dt / 0.65);
 
 		const isWalking = !isDead && !isDazed && speed > 0.05;
 		if (isWalking) {
@@ -147,6 +156,19 @@
 	});
 
 	$effect(() => {
+		if (chargeCooldownMs > 0 && chargeCooldownMs !== prevChargeCooldownMs) {
+			prevChargeCooldownMs = chargeCooldownMs;
+			chargeFlashT = 1;
+		}
+	});
+	$effect(() => {
+		if (isBurrowed !== prevBurrowed) {
+			prevBurrowed = isBurrowed;
+			burrowFlashT = 1;
+		}
+	});
+
+	$effect(() => {
 		// While burrowed use Walk so it looks like it's tunneling
 		const next: WormAction = isDead
 			? 'Dead'
@@ -212,3 +234,43 @@
 		scale={270.0}
 	/>
 </T.Group>
+
+<!-- Chain Charge VFX: orange AoE ring -->
+{#if chargeFlashT > 0}
+    {#each Array.from({ length: 8 }, (_, i) => ({ angle: (i / 8) * Math.PI * 2, px: Math.sin((i / 8) * Math.PI * 2) * 9 * (1 - chargeFlashT), pz: Math.cos((i / 8) * Math.PI * 2) * 9 * (1 - chargeFlashT) })) as s}
+        <T.Mesh position={[s.px, 0.12, s.pz]} rotation={[0, s.angle, 0]}>
+            <T.BoxGeometry args={[0.1, 0.1, 20]} />
+            <T.MeshBasicMaterial color="#ff6600" transparent opacity={chargeFlashT * 0.85} blending={THREE.AdditiveBlending} depthWrite={false} />
+        </T.Mesh>
+    {/each}
+    <T.Mesh position={[0, 0.06, 0]} rotation={[-Math.PI / 2, 0, 0]} scale={Math.max(0.1, (1 - chargeFlashT) * 20)}>
+        <T.RingGeometry args={[0.88, 1, 32]} />
+        <T.MeshBasicMaterial color="#ff4400" transparent opacity={chargeFlashT * 0.9} blending={THREE.AdditiveBlending} depthWrite={false} />
+    </T.Mesh>
+    <T.Mesh position={[0, 0.06, 0]} rotation={[-Math.PI / 2, 0, 0]} scale={Math.max(0.1, (1 - chargeFlashT) * 12)}>
+        <T.RingGeometry args={[0.82, 1, 32]} />
+        <T.MeshBasicMaterial color="#ffaa00" transparent opacity={chargeFlashT * 0.65} blending={THREE.AdditiveBlending} depthWrite={false} />
+    </T.Mesh>
+    <T.Mesh position={[0, 1.0, 0]} scale={0.4 + (1 - chargeFlashT) * 0.8}>
+        <T.SphereGeometry args={[1, 8, 6]} />
+        <T.MeshBasicMaterial color="#ff5500" transparent opacity={chargeFlashT * 0.9} blending={THREE.AdditiveBlending} depthWrite={false} />
+    </T.Mesh>
+{/if}
+
+<!-- Burrow/Emerge VFX: earth dust -->
+{#if burrowFlashT > 0}
+    <T.Mesh position={[0, 0.06, 0]} rotation={[-Math.PI / 2, 0, 0]} scale={Math.max(0.1, (1 - burrowFlashT) * 5)}>
+        <T.RingGeometry args={[0.75, 1, 24]} />
+        <T.MeshBasicMaterial color="#886633" transparent opacity={burrowFlashT * 0.8} blending={THREE.AdditiveBlending} depthWrite={false} />
+    </T.Mesh>
+    <T.Mesh position={[0, 0.06, 0]} rotation={[-Math.PI / 2, 0, 0]} scale={Math.max(0.1, (1 - burrowFlashT) * 3)}>
+        <T.CircleGeometry args={[1, 20]} />
+        <T.MeshBasicMaterial color="#aa8855" transparent opacity={burrowFlashT * 0.45} blending={THREE.AdditiveBlending} depthWrite={false} />
+    </T.Mesh>
+    {#if !isBurrowed}
+        <T.Mesh position={[0, 0.5, 0]} scale={0.3 + (1 - burrowFlashT) * 0.7}>
+            <T.SphereGeometry args={[1, 8, 6]} />
+            <T.MeshBasicMaterial color="#ffffff" transparent opacity={burrowFlashT * 0.75} blending={THREE.AdditiveBlending} depthWrite={false} />
+        </T.Mesh>
+    {/if}
+{/if}

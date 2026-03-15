@@ -59,6 +59,7 @@
 	let attackPhase = $state(0);
 	let attackCycle = 0;
 	let beamTimer = $state(0);
+	let deathScale = $state(1);
 	let prevSpitAt = $state<bigint | undefined>(undefined);
 	let t = 0;
 	useTask((dt) => {
@@ -78,7 +79,11 @@
 		}
 
 		if (!enemy.isAlive && deathAt === null) deathAt = nowMs;
-		if (enemy.isAlive && deathAt !== null) deathAt = null;
+		if (enemy.isAlive && deathAt !== null) { deathAt = null; deathScale = 1; }
+
+		if (deathAt !== null) {
+			deathScale = Math.max(0, deathScale - dt * 0.7);
+		}
 
 		const LERP = 1 - Math.pow(0.0001, dt);
 		const prevX = displayX;
@@ -255,7 +260,7 @@
 	<T.Group
 		position={[displayX, bossDropY, displayZ]}
 		rotation={[0, facing, 0]}
-		scale={cubicOut(spawnT)}
+		scale={cubicOut(spawnT) * deathScale}
 	>
 		<PositionalAudio
 			src={`${import.meta.env.BASE_URL}sounds/enemies/enemy_killed.mp3`}

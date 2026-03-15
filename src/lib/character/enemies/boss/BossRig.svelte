@@ -13,7 +13,7 @@
 </script>
 
 <script lang="ts">
-	import { useTask } from '@threlte/core';
+	import { T, useTask } from '@threlte/core';
 	import { GLTF, useGltfAnimations, PositionalAudio } from '@threlte/extras';
 	import * as THREE from 'three';
 	import { localPos, bossShake } from '$lib/stores/movement.svelte.js';
@@ -30,6 +30,7 @@
 		bossX?: number;
 		bossZ?: number;
 		iceBallCooldownMs?: number;
+		hideAbilityCooldownMs?: number;
 	};
 
 	let {
@@ -41,7 +42,8 @@
 		isEnraged = false,
 		bossX = 0,
 		bossZ = 0,
-		iceBallCooldownMs = 0
+		iceBallCooldownMs = 0,
+		hideAbilityCooldownMs = 0
 	}: Props = $props();
 
 	const SHAKE_MAX_DIST = 28;
@@ -60,6 +62,9 @@
 	let prevIceBallCooldownMs = $state(0);
 	let isCasting = $state(false);
 	let castTimer = $state(0);
+	let iceBallFlashT = $state(0);
+	let hideFlashT = $state(0);
+	let prevHideCooldownMs = $state(0);
 
 	const attackAnimations: BossAction[] = ['attack_3', 'attack_2', 'attack_4'];
 
@@ -102,6 +107,9 @@
 			if (castTimer > 2.0) isCasting = false;
 		}
 
+		iceBallFlashT = Math.max(0, iceBallFlashT - dt / 0.9);
+		hideFlashT = Math.max(0, hideFlashT - dt / 0.7);
+
 		const isWalking = !isDead && speed > 0.05;
 		if (isWalking) {
 			shakeTimer += dt;
@@ -136,6 +144,14 @@
 			prevIceBallCooldownMs = iceBallCooldownMs;
 			isCasting = true;
 			castTimer = 0;
+			iceBallFlashT = 1;
+		}
+	});
+
+	$effect(() => {
+		if (hideAbilityCooldownMs > 0 && hideAbilityCooldownMs !== prevHideCooldownMs) {
+			prevHideCooldownMs = hideAbilityCooldownMs;
+			hideFlashT = 1;
 		}
 	});
 
@@ -258,3 +274,43 @@
 	rotation.y={Math.PI}
 	scale={5.4}
 />
+
+<!-- Ice Ball VFX: expanding cyan rings + spokes -->
+{#if iceBallFlashT > 0}
+    {#each Array.from({ length: 6 }, (_, i) => ({ angle: (i / 6) * Math.PI * 2 })) as s}
+        <T.Mesh position={[Math.sin(s.angle) * 2 * (1 - iceBallFlashT), 1.2, Math.cos(s.angle) * 2 * (1 - iceBallFlashT)]} rotation={[0, s.angle, 0]}>
+            <T.BoxGeometry args={[0.06, 0.06, 3.5]} />
+            <T.MeshBasicMaterial color="#88eeff" transparent opacity={iceBallFlashT * 0.9} blending={THREE.AdditiveBlending} depthWrite={false} />
+        </T.Mesh>
+    {/each}
+    <T.Mesh position={[0, 0.06, 0]} rotation={[-Math.PI / 2, 0, 0]} scale={Math.max(0.1, (1 - iceBallFlashT) * 8)}>
+        <T.RingGeometry args={[0.85, 1, 32]} />
+        <T.MeshBasicMaterial color="#22ccff" transparent opacity={iceBallFlashT * 0.8} blending={THREE.AdditiveBlending} depthWrite={false} />
+    </T.Mesh>
+    <T.Mesh position={[0, 0.06, 0]} rotation={[-Math.PI / 2, 0, 0]} scale={Math.max(0.1, (1 - iceBallFlashT) * 5)}>
+        <T.RingGeometry args={[0.8, 1, 32]} />
+        <T.MeshBasicMaterial color="#aaddff" transparent opacity={iceBallFlashT * 0.6} blending={THREE.AdditiveBlending} depthWrite={false} />
+    </T.Mesh>
+    <T.Mesh position={[0, 1.2, 0]} scale={0.2 + (1 - iceBallFlashT) * 0.5}>
+        <T.SphereGeometry args={[1, 8, 6]} />
+        <T.MeshBasicMaterial color="#ffffff" transparent opacity={iceBallFlashT * 0.95} blending={THREE.AdditiveBlending} depthWrite={false} />
+    </T.Mesh>
+{/if}
+
+<!-- Hide/Seek VFX: purple spectral burst on vanish -->
+{#if hideFlashT > 0}
+    {#each Array.from({ length: 8 }, (_, i) => ({ angle: (i / 8) * Math.PI * 2 })) as s}
+        <T.Mesh position={[Math.sin(s.angle) * 1.5 * (1 - hideFlashT), 1.0, Math.cos(s.angle) * 1.5 * (1 - hideFlashT)]} rotation={[0, s.angle, 0]}>
+            <T.BoxGeometry args={[0.08, 0.08, 3]} />
+            <T.MeshBasicMaterial color="#aa44ff" transparent opacity={hideFlashT * 0.85} blending={THREE.AdditiveBlending} depthWrite={false} />
+        </T.Mesh>
+    {/each}
+    <T.Mesh position={[0, 1.0, 0]} scale={0.3 + (1 - hideFlashT) * 0.6}>
+        <T.SphereGeometry args={[1, 8, 6]} />
+        <T.MeshBasicMaterial color="#cc88ff" transparent opacity={hideFlashT * 0.9} blending={THREE.AdditiveBlending} depthWrite={false} />
+    </T.Mesh>
+    <T.Mesh position={[0, 0.06, 0]} rotation={[-Math.PI / 2, 0, 0]} scale={Math.max(0.1, (1 - hideFlashT) * 4)}>
+        <T.RingGeometry args={[0.82, 1, 28]} />
+        <T.MeshBasicMaterial color="#9933ff" transparent opacity={hideFlashT * 0.7} blending={THREE.AdditiveBlending} depthWrite={false} />
+    </T.Mesh>
+{/if}

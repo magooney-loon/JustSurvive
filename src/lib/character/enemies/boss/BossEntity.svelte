@@ -7,6 +7,7 @@
 	import WormMonsterRig from './WormMonsterRig.svelte';
 	import RabidDogRig from './RabidDogRig.svelte';
 	import Scp096Rig from './Scp096Rig.svelte';
+	import TerrorReaperRig from './TerrorReaperRig.svelte';
 
 	type Props = { boss: Boss };
 	let { boss }: Props = $props();
@@ -45,6 +46,45 @@
 	// Ice ball cooldown as ms timestamp — BossRig watches this for changes to trigger cast_1 anim
 	const iceBallCooldownMs = $derived(
 		boss.bossType === 'ghost_dragon' && (boss as any).ability2CooldownUntil
+			? Number((boss as any).ability2CooldownUntil.microsSinceUnixEpoch) / 1000
+			: 0
+	);
+	// Hide cooldown (ability1) for ghost_dragon
+	const hideAbilityCooldownMs = $derived(
+		boss.bossType === 'ghost_dragon' && (boss as any).ability1CooldownUntil
+			? Number((boss as any).ability1CooldownUntil.microsSinceUnixEpoch) / 1000
+			: 0
+	);
+	// Worm ability cooldowns
+	const wormChargeCooldownMs = $derived(
+		boss.bossType === 'worm_monster' && (boss as any).ability1CooldownUntil
+			? Number((boss as any).ability1CooldownUntil.microsSinceUnixEpoch) / 1000
+			: 0
+	);
+	// Dog stun attack cooldown
+	const dogStunCooldownMs = $derived(
+		boss.bossType === 'rabid_dog' && (boss as any).ability2CooldownUntil
+			? Number((boss as any).ability2CooldownUntil.microsSinceUnixEpoch) / 1000
+			: 0
+	);
+	// SCP-096 ability cooldowns
+	const scpSlamCooldownMs = $derived(
+		boss.bossType === 'scp_096' && (boss as any).ability1CooldownUntil
+			? Number((boss as any).ability1CooldownUntil.microsSinceUnixEpoch) / 1000
+			: 0
+	);
+	const scpChargeCooldownMs = $derived(
+		boss.bossType === 'scp_096' && (boss as any).ability2CooldownUntil
+			? Number((boss as any).ability2CooldownUntil.microsSinceUnixEpoch) / 1000
+			: 0
+	);
+	const reaperSoulDrainCooldownMs = $derived(
+		boss.bossType === 'terror_reaper' && (boss as any).ability1CooldownUntil
+			? Number((boss as any).ability1CooldownUntil.microsSinceUnixEpoch) / 1000
+			: 0
+	);
+	const reaperDeathBlinkCooldownMs = $derived(
+		boss.bossType === 'terror_reaper' && (boss as any).ability2CooldownUntil
 			? Number((boss as any).ability2CooldownUntil.microsSinceUnixEpoch) / 1000
 			: 0
 	);
@@ -112,6 +152,7 @@
 					bossX={displayX}
 					bossZ={displayZ}
 					{iceBallCooldownMs}
+					{hideAbilityCooldownMs}
 				/>
 			{:else if boss.bossType === 'worm_monster'}
 				<WormMonsterRig
@@ -123,6 +164,7 @@
 					{isEnraged}
 					bossX={displayX}
 					bossZ={displayZ}
+					chargeCooldownMs={wormChargeCooldownMs}
 				/>
 			{:else if boss.bossType === 'rabid_dog'}
 				<RabidDogRig
@@ -134,6 +176,7 @@
 					bossX={displayX}
 					bossZ={displayZ}
 					{leapCooldownMs}
+					stunCooldownMs={dogStunCooldownMs}
 				/>
 			{:else if boss.bossType === 'scp_096'}
 				<Scp096Rig
@@ -144,6 +187,20 @@
 					{isEnraged}
 					bossX={displayX}
 					bossZ={displayZ}
+					slamCooldownMs={scpSlamCooldownMs}
+					chargeCooldownMs={scpChargeCooldownMs}
+				/>
+			{:else if boss.bossType === 'terror_reaper'}
+				<TerrorReaperRig
+					{speed}
+					{attackPhase}
+					isDead={dead}
+					isDazed={dazed}
+					{isEnraged}
+					bossX={displayX}
+					bossZ={displayZ}
+					soulDrainCooldownMs={reaperSoulDrainCooldownMs}
+					deathBlinkCooldownMs={reaperDeathBlinkCooldownMs}
 				/>
 			{/if}
 
