@@ -4,7 +4,7 @@
 	import { tables } from '$bindings/index.js';
 	import { lobbyState } from '$lib/stores/lobby.svelte.js';
 	import { combatActions } from '$lib/stores/combat.svelte.js';
-	import { localPos, localAim, fpsCamera } from '$lib/stores/movement.svelte.js';
+	import { localPos, localAim, tpsCamera } from '$lib/stores/movement.svelte.js';
 	import {
 		abilityState,
 		healBeam,
@@ -177,7 +177,7 @@
 		} else if (cls === 'tank') {
 			combatActions.tankUltimate(sid);
 			axeSwingFlash.active = true;
-			axeSwingFlash.yaw = fpsCamera.yaw;
+			axeSwingFlash.yaw = tpsCamera.yaw;
 			axeSwingFlash.until = Date.now() + AXE_SWING_FLASH_MS;
 			logAbility.info('TANK: ground slam ultimate');
 		} else if (cls === 'healer') {
@@ -202,7 +202,7 @@
 					soundActions.playHitmarker();
 					abilityState.markCooldownUntil = Date.now() + 1500;
 					steadyShotFlash.until = Date.now() + STEADY_SHOT_FLASH_MS;
-					steadyShotFlash.yaw = fpsCamera.yaw;
+					steadyShotFlash.yaw = tpsCamera.yaw;
 					logAbility.info('SPOTTER: steady shot enemy', enemy.id);
 				}
 			} else if (e.button === 2) {
@@ -211,7 +211,7 @@
 				soundActions.playSpotterPing();
 				abilityState.pingCooldownUntil = Date.now() + 3000;
 				spotterFlash.active = true;
-				spotterFlash.yaw = fpsCamera.yaw;
+				spotterFlash.yaw = tpsCamera.yaw;
 				spotterFlash.until = Date.now() + SPOTTER_FLASH_MS;
 				logAbility.info('SPOTTER: flash');
 			}
@@ -253,7 +253,7 @@
 				soundActions.playHitmarker();
 				abilityState.bashCooldownUntil = Date.now() + 500;
 				axeSwingFlash.active = true;
-				axeSwingFlash.yaw = fpsCamera.yaw;
+				axeSwingFlash.yaw = tpsCamera.yaw;
 				axeSwingFlash.until = Date.now() + AXE_SWING_FLASH_MS;
 				logAbility.info('TANK: axe swing');
 			} else if (e.button === 2) {
@@ -261,6 +261,7 @@
 				combatActions.chargeActivate(sid);
 				soundActions.playTankBrace();
 
+				abilityState.chargeYaw = tpsCamera.yaw + Math.PI;
 				abilityState.chargeCooldownUntil = Date.now() + CHARGE_COOLDOWN_MS;
 				logAbility.info('TANK: charge');
 			}

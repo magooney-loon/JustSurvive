@@ -11,10 +11,10 @@
 		updateLocalMovement,
 		resetMovement,
 		localAim,
-		fpsCamera,
+		tpsCamera,
 		cameraFollow
 	} from '$lib/stores/movement.svelte.js';
-	import { resetAbilities } from '$lib/stores/abilities.svelte.js';
+	import { resetAbilities, abilityState } from '$lib/stores/abilities.svelte.js';
 	import { localHealthState, skyState, devSky } from '$lib/stores/sky.svelte.js';
 	import { onMount } from 'svelte';
 	import PlayerEntity from '$lib/character/PlayerEntity.svelte';
@@ -205,14 +205,14 @@
 		cameraFollow.active = false;
 		if (!myState || myState.status !== 'alive') return;
 
-		// FPS aim: project camera forward ray onto the ground plane
+		// TPS aim: project camera forward onto the ground plane
 		const range = CLASS_RANGE[myState?.classChoice ?? 'gunner'] ?? 10;
-		localAim.x = localPos.x + -Math.sin(fpsCamera.yaw) * range;
-		localAim.z = localPos.z + -Math.cos(fpsCamera.yaw) * range;
+		localAim.x = localPos.x + -Math.sin(tpsCamera.yaw) * range;
+		localAim.z = localPos.z + -Math.cos(tpsCamera.yaw) * range;
 
 		const hasStamina = myState.stamina > 0n;
 		// camYaw for movement: camera forward is (-sin(yaw), -cos(yaw)), so pass yaw+π
-		const camYaw = fpsCamera.yaw + Math.PI;
+		const camYaw = tpsCamera.yaw + Math.PI;
 		const nowMs = Date.now();
 		const isStunned = myState.stunUntil
 			? Number(myState.stunUntil.microsSinceUnixEpoch) / 1000 > nowMs
@@ -229,7 +229,8 @@
 			camYaw,
 			myTankState?.isCharging ?? false,
 			isStunned,
-			slowMultiplier
+			slowMultiplier,
+			abilityState.chargeYaw
 		);
 
 		sendTimer += dt;

@@ -18,7 +18,7 @@ const input = $state<InputState>({
 const localPos = $state({ x: 0, y: 0, z: 0 });
 const localVelocity = $state({ x: 0, z: 0 });
 export const localAim = $state({ x: 0, z: 0 });
-export const fpsCamera = $state({ yaw: 0, pitch: 0 });
+export const tpsCamera = $state({ yaw: 0 });
 export const cameraFollow = $state({
 	active: false,
 	x: 0,
@@ -56,8 +56,7 @@ export function resetMovement() {
 	cameraFollow.z = 0;
 	cameraFollow.aimX = 0;
 	cameraFollow.aimZ = 0;
-	fpsCamera.yaw = 0;
-	fpsCamera.pitch = 0;
+	tpsCamera.yaw = 0;
 	bossShake.intensity = 0;
 }
 
