@@ -172,6 +172,7 @@
 
 		const cls = myState.classChoice;
 		ultimateFlash.until = Date.now() + ULTIMATE_FLASH_MS;
+		soundActions.playUltimate();
 		if (cls === 'spotter') {
 			combatActions.spotterUltimate(sid);
 			logAbility.info('SPOTTER: barrage ultimate');
