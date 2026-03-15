@@ -204,6 +204,7 @@ export function spotterFlash(ctx: any, { sessionId }: any) {
 		stunned += 1n;
 	}
 
+	const FLASH_BOSS_COOLDOWN_US = 10_000_000n; // 10s between boss stuns (stun itself is 3.5s)
 	for (const b of ctx.db.boss.boss_session_id.filter(sessionId)) {
 		if (!b.isAlive) continue;
 		const bx = Number(b.posX) - Number(ps.posX);
@@ -212,19 +213,25 @@ export function spotterFlash(ctx: any, { sessionId }: any) {
 		if (dist > FLASH_CONE_RANGE || dist < 1) continue;
 		const dot = (bx * fwdX + bz * fwdZ) / dist;
 		if (dot < cosHalf) continue;
-		const dazedUntil = ts(now + FLASH_STUN_US);
+		const lastDazedUntil = b.dazedUntil ? (b.dazedUntil.microsSinceUnixEpoch as bigint) : 0n;
+		const canStun = now >= lastDazedUntil + FLASH_BOSS_COOLDOWN_US;
 		const newHp = (b.hp as bigint) > flashDmg ? (b.hp as bigint) - flashDmg : 0n;
 		if (newHp <= 0n) {
 			ctx.db.boss.id.update({
 				...b,
 				hp: 0n,
 				isAlive: false,
-				isDazed: true,
-				dazedUntil,
+				isDazed: canStun,
+				dazedUntil: canStun ? ts(now + FLASH_STUN_US) : b.dazedUntil,
 				diedAt: ts(now)
 			});
 		} else {
-			ctx.db.boss.id.update({ ...b, hp: newHp, isDazed: true, dazedUntil });
+			ctx.db.boss.id.update({
+				...b,
+				hp: newHp,
+				isDazed: canStun,
+				dazedUntil: canStun ? ts(now + FLASH_STUN_US) : b.dazedUntil
+			});
 		}
 		stunned += 10n;
 	}

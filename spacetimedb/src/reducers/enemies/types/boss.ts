@@ -173,7 +173,7 @@ function handleGhostDragon(
 
 	if (boss.isDazed) {
 		if (boss.dazedUntil && now >= (boss.dazedUntil.microsSinceUnixEpoch as bigint)) {
-			boss = { ...boss, isDazed: false, dazedUntil: undefined };
+			boss = { ...boss, isDazed: false };
 			ctx.db.boss.id.update(boss);
 		}
 		return boss;
@@ -270,7 +270,7 @@ function handleWormMonster(
 
 	if (boss.isDazed) {
 		if (boss.dazedUntil && now >= (boss.dazedUntil.microsSinceUnixEpoch as bigint)) {
-			boss = { ...boss, isDazed: false, dazedUntil: undefined };
+			boss = { ...boss, isDazed: false };
 			ctx.db.boss.id.update(boss);
 		}
 		return boss;
@@ -344,7 +344,7 @@ function handleRabidDog(
 
 	if (boss.isDazed) {
 		if (boss.dazedUntil && now >= (boss.dazedUntil.microsSinceUnixEpoch as bigint)) {
-			boss = { ...boss, isDazed: false, dazedUntil: undefined };
+			boss = { ...boss, isDazed: false };
 			ctx.db.boss.id.update(boss);
 		}
 		return boss;
@@ -436,7 +436,7 @@ function handleScp096(
 
 	if (boss.isDazed) {
 		if (boss.dazedUntil && now >= (boss.dazedUntil.microsSinceUnixEpoch as bigint)) {
-			boss = { ...boss, isDazed: false, dazedUntil: undefined };
+			boss = { ...boss, isDazed: false };
 			ctx.db.boss.id.update(boss);
 		}
 		return boss;
@@ -473,7 +473,7 @@ export function handleBoss(
 
 	// Daze expiry
 	if (boss.isDazed && boss.dazedUntil && now >= (boss.dazedUntil.microsSinceUnixEpoch as bigint)) {
-		boss = { ...boss, isDazed: false, dazedUntil: undefined };
+		boss = { ...boss, isDazed: false };
 		ctx.db.boss.id.update(boss);
 	}
 

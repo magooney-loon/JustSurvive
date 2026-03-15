@@ -60,12 +60,12 @@ export function attackEnemy(ctx: any, { sessionId, enemyId, suppress }: any) {
 	} else {
 		let updatedTarget = { ...target, hp: newHp };
 		if (suppress && isBoss) {
-			// Check if boss was already dazed recently — 5 second cooldown
-			const GUNNER_SUPPRESS_COOLDOWN_US = 5_000_000n;
-			const canSuppress =
-				!target.isDazed ||
-				!target.dazedUntil ||
-				now >= (target.dazedUntil.microsSinceUnixEpoch as bigint) + GUNNER_SUPPRESS_COOLDOWN_US;
+			// Cooldown measured from when the last suppress daze ENDED (dazedUntil stays set after expiry)
+			const GUNNER_SUPPRESS_COOLDOWN_US = 8_000_000n;
+			const lastDazedUntil = target.dazedUntil
+				? (target.dazedUntil.microsSinceUnixEpoch as bigint)
+				: 0n;
+			const canSuppress = now >= lastDazedUntil + GUNNER_SUPPRESS_COOLDOWN_US;
 			if (canSuppress) {
 				updatedTarget = { ...updatedTarget, isDazed: true, dazedUntil: ts(now + 1_000_000n) };
 			}

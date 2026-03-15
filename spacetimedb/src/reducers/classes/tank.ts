@@ -96,6 +96,7 @@ export function axeSwing(ctx: any, { sessionId }: any) {
 		}
 	}
 
+	const AXE_BOSS_DAZE_COOLDOWN_US = 6_000_000n; // 6s between boss daze procs from axe
 	for (const b of ctx.db.boss.boss_session_id.filter(sessionId)) {
 		if (!b.isAlive) continue;
 		const bx = Number(b.posX) - Number(ps.posX);
@@ -106,13 +107,15 @@ export function axeSwing(ctx: any, { sessionId }: any) {
 		if (dot < cosHalf) continue;
 
 		const newHp = (b.hp as bigint) > axeDmg ? (b.hp as bigint) - axeDmg : 0n;
-		const dazedUntil = ts(now + AXE_SWING_DAZE_US);
+		const lastDazedUntil = b.dazedUntil ? (b.dazedUntil.microsSinceUnixEpoch as bigint) : 0n;
+		const canDaze = now >= lastDazedUntil + AXE_BOSS_DAZE_COOLDOWN_US;
+		const dazedUntil = canDaze ? ts(now + AXE_SWING_DAZE_US) : b.dazedUntil;
 		if (newHp <= 0n) {
 			ctx.db.boss.id.update({
 				...b,
 				hp: 0n,
 				isAlive: false,
-				isDazed: true,
+				isDazed: canDaze,
 				dazedUntil,
 				diedAt: ts(now)
 			});
@@ -129,7 +132,7 @@ export function axeSwing(ctx: any, { sessionId }: any) {
 				mag > 0n
 					? (b.posZ as bigint) + (bdz * AXE_SWING_KNOCKBACK) / mag
 					: (b.posZ as bigint) + AXE_SWING_KNOCKBACK;
-			ctx.db.boss.id.update({ ...b, hp: newHp, posX: newX, posZ: newZ, isDazed: true, dazedUntil });
+			ctx.db.boss.id.update({ ...b, hp: newHp, posX: newX, posZ: newZ, isDazed: canDaze, dazedUntil });
 			scoreAdd += 25n;
 		}
 	}
