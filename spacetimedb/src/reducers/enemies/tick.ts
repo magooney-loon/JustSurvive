@@ -11,13 +11,14 @@ import {
 	BOSS_SPAWN_INTERVAL_US,
 	TARGET_JITTER,
 	MAX_ENEMIES_PER_PLAYER,
-	CHARGE_SPEED,
+	HEALER_REGEN_BASE,
+	HEALER_REGEN_MAX,
+	HEALER_REGEN_RAMP_US,
 	CHARGE_COOLDOWN_US,
 	CHARGE_BOOST_US,
 	CHARGE_DAMAGE,
 	CHARGE_KNOCKBACK,
-	CHARGE_HIT_RADIUS,
-	ARENA_RADIUS_SRV
+	CHARGE_HIT_RADIUS
 } from '../../constants.js';
 import { applyAccumulatedDamage } from '../shared.js';
 import { handleSpitter } from './types/spitter.js';
@@ -60,20 +61,16 @@ export function enemyTick(ctx: any, { arg }: any) {
 	}
 
 	// ── Tank charge tick ─────────────────────────────────────────────────────
-	// Per tick (100ms): advance charging tanks, hit enemies in path, end charge
-	const CHARGE_SPEED_PER_TICK = (CHARGE_SPEED * TICK_MS) / 1000n; // server units per tick
+	// Client drives movement during charge (high speed cap in movePlayer).
+	// Per tick: check expiry → end charge + speed boost; hit nearby enemies.
 	const CHARGE_HIT_RADIUS_SQ = CHARGE_HIT_RADIUS * CHARGE_HIT_RADIUS;
 	for (const [playerId, tankSt] of tankStateMap) {
 		if (!tankSt.isCharging) continue;
 		const p = players.find((pl: any) => pl.id === playerId);
 		if (!p) continue;
 
-		const chargeExpired =
-			tankSt.chargeUntil &&
-			now >= (tankSt.chargeUntil.microsSinceUnixEpoch as bigint);
-
-		if (chargeExpired) {
-			// End charge — apply speed boost to player
+		if (tankSt.chargeUntil && now >= (tankSt.chargeUntil.microsSinceUnixEpoch as bigint)) {
+			// End charge — apply speed boost
 			ctx.db.playerState.id.update({ ...p, speedBoostUntil: ts(now + CHARGE_BOOST_US) });
 			const updated = {
 				...tankSt,
@@ -88,47 +85,23 @@ export function enemyTick(ctx: any, { arg }: any) {
 			continue;
 		}
 
-		// Move tank forward in charge direction
-		const moveX = (tankSt.chargeDirX * CHARGE_SPEED_PER_TICK) / 1000n;
-		const moveZ = (tankSt.chargeDirZ * CHARGE_SPEED_PER_TICK) / 1000n;
-		const newX = (p.posX as bigint) + moveX;
-		const newZ = (p.posZ as bigint) + moveZ;
-		// Clamp to arena
-		if (newX * newX + newZ * newZ < ARENA_RADIUS_SRV * ARENA_RADIUS_SRV) {
-			ctx.db.playerState.id.update({ ...p, posX: newX, posZ: newZ, lastMoveAt: ctx.timestamp });
-		}
-
-		// Hit enemies in charge radius — knock them sideways
+		// Hit enemies near the charging tank (use current server position from movePlayer calls)
 		for (const e of ctx.db.enemy.enemy_session_id.filter(arg.sessionId)) {
 			if (!e.isAlive) continue;
-			const ex = (e.posX as bigint) - newX;
-			const ez = (e.posZ as bigint) - newZ;
+			const ex = (e.posX as bigint) - (p.posX as bigint);
+			const ez = (e.posZ as bigint) - (p.posZ as bigint);
 			if (ex * ex + ez * ez > CHARGE_HIT_RADIUS_SQ) continue;
 
-			// Determine which side of charge path the enemy is on (2D cross product)
 			const cross = tankSt.chargeDirX * ez - tankSt.chargeDirZ * ex;
-			// Perpendicular direction (right if cross>=0, left otherwise), scale ×1000
 			const perpX = cross >= 0n ? tankSt.chargeDirZ : -tankSt.chargeDirZ;
 			const perpZ = cross >= 0n ? -tankSt.chargeDirX : tankSt.chargeDirX;
 			const knockX = (perpX * CHARGE_KNOCKBACK) / 1000n;
 			const knockZ = (perpZ * CHARGE_KNOCKBACK) / 1000n;
 			const newHp = (e.hp as bigint) > CHARGE_DAMAGE ? (e.hp as bigint) - CHARGE_DAMAGE : 0n;
 			if (newHp <= 0n) {
-				ctx.db.enemy.id.update({
-					...e,
-					hp: 0n,
-					isAlive: false,
-					posX: (e.posX as bigint) + knockX,
-					posZ: (e.posZ as bigint) + knockZ,
-					diedAt: ts(now)
-				});
+				ctx.db.enemy.id.update({ ...e, hp: 0n, isAlive: false, posX: (e.posX as bigint) + knockX, posZ: (e.posZ as bigint) + knockZ, diedAt: ts(now) });
 			} else {
-				ctx.db.enemy.id.update({
-					...e,
-					hp: newHp,
-					posX: (e.posX as bigint) + knockX,
-					posZ: (e.posZ as bigint) + knockZ
-				});
+				ctx.db.enemy.id.update({ ...e, hp: newHp, posX: (e.posX as bigint) + knockX, posZ: (e.posZ as bigint) + knockZ });
 			}
 		}
 	}
@@ -237,6 +210,39 @@ export function enemyTick(ctx: any, { arg }: any) {
 
 	// Apply all accumulated damage — one write per player
 	applyAccumulatedDamage(ctx, arg.sessionId, players, damageAccum);
+
+	// Healer passive self-regen: 2 HP/s base, ramps to 10 HP/s after 5s without damage
+	// Uses milliHP carry in HealerState to handle fractional per-tick rates
+	const healerStateMap = new Map<bigint, any>();
+	for (const hs of ctx.db.healerState.healer_state_session_id.filter(arg.sessionId)) {
+		const p = players.find((pl: any) => pl.playerIdentity.isEqual(hs.playerIdentity));
+		if (p) healerStateMap.set(p.id as bigint, hs);
+	}
+
+	for (const p of players) {
+		if (p.classChoice !== 'healer') continue;
+		if ((p.hp as bigint) >= (p.maxHp as bigint)) continue;
+		const hs = healerStateMap.get(p.id as bigint);
+		if (!hs) continue;
+
+		const timeSinceDmg = p.lastDamagedAt
+			? now - (p.lastDamagedAt.microsSinceUnixEpoch as bigint)
+			: HEALER_REGEN_RAMP_US;
+		const rate = timeSinceDmg >= HEALER_REGEN_RAMP_US ? HEALER_REGEN_MAX : HEALER_REGEN_BASE;
+
+		const newCarry = (hs.regenCarry as bigint) + rate;
+		const hpToHeal = newCarry / 1000n;
+		const remainCarry = newCarry % 1000n;
+
+		ctx.db.healerState.id.update({ ...hs, regenCarry: remainCarry });
+
+		if (hpToHeal > 0n) {
+			const newHp = (p.hp as bigint) + hpToHeal > (p.maxHp as bigint)
+				? p.maxHp
+				: (p.hp as bigint) + hpToHeal;
+			ctx.db.playerState.id.update({ ...p, hp: newHp });
+		}
+	}
 
 	// ── Boss dead cleanup + boss AI ──────────────────────────────────────────
 	const BOSS_DEAD_CLEANUP_US = 5_000_000n;

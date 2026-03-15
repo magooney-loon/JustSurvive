@@ -23,11 +23,12 @@ export function movePlayer(
 	}
 	if (!ps || ps.status !== 'alive') return;
 
-	// Block movement input while tank is charging — server drives position
+	// Check if tank is charging — allow much higher speed during charge
+	let isTankCharging = false;
 	if (ps.classChoice === 'tank') {
 		for (const tankSt of ctx.db.tankState.tank_state_session_id.filter(sessionId)) {
 			if (tankSt.playerIdentity.isEqual(ctx.sender)) {
-				if (tankSt.isCharging) return;
+				isTankCharging = tankSt.isCharging;
 				break;
 			}
 		}
@@ -94,7 +95,8 @@ export function movePlayer(
 				: (CLASS_WALK[ps.classChoice] ?? 4500n);
 		const hasSpeedBoost =
 			ps.speedBoostUntil && (ps.speedBoostUntil.microsSinceUnixEpoch as bigint) > now;
-		const maxSpeed = hasSpeedBoost ? (baseSpeed * 3n) / 2n : baseSpeed;
+		// During charge allow 6x base speed; post-charge speed boost is 1.5x
+		const maxSpeed = isTankCharging ? baseSpeed * 6n : hasSpeedBoost ? (baseSpeed * 3n) / 2n : baseSpeed;
 		const maxDist = (maxSpeed * dtMicros * 3n) / (2n * 1_000_000n);
 		const dx = (posX as bigint) - (ps.posX as bigint);
 		const dz = (posZ as bigint) - (ps.posZ as bigint);

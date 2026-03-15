@@ -124,7 +124,8 @@ export const PlayerState = table(
 		facingAngle: t.i64(), // milliradians * 1000, e.g. PI = 3142
 		speedBoostUntil: t.timestamp().optional(),
 		stunUntil: t.timestamp().optional(),  // player stun from boss abilities
-		slowedUntil: t.timestamp().optional() // player slow from scp_096 slam
+		slowedUntil: t.timestamp().optional(), // player slow from scp_096 slam
+		lastDamagedAt: t.timestamp().optional() // healer regen ramp tracking
 	}
 );
 
@@ -420,7 +421,8 @@ export const HealerState = table(
 		healTargetIdentity: t.identity().optional(),         // VFX: primary beam target
 		chainHealTargetIdentity: t.identity().optional(),    // VFX: chain beam target
 		ultimateCooldownUntil: t.timestamp().optional(),
-		lastUltimateAt: t.timestamp().optional()             // VFX: when ultimate was last fired
+		lastUltimateAt: t.timestamp().optional(),            // VFX: when ultimate was last fired
+		regenCarry: t.u64()                                  // milliHP carry for fractional regen (1000 = 1 HP)
 	}
 );
 

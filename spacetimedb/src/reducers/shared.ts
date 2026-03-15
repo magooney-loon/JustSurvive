@@ -31,7 +31,7 @@ export function applyPlayerDamage(ctx: any, sessionId: bigint, ps: any, damage: 
 
 	const newHp = ps.hp > remainingDamage ? ps.hp - remainingDamage : 0n;
 	if (newHp <= 0n && ps.status === 'alive') {
-		ctx.db.playerState.id.update({ ...ps, hp: 0n, status: 'downed' });
+		ctx.db.playerState.id.update({ ...ps, hp: 0n, status: 'downed', lastDamagedAt: ctx.timestamp });
 
 		// Interrupt any revive this player was healing
 		for (const c of ctx.db.reviveChannel.revive_channel_session_id.filter(sessionId)) {
@@ -50,7 +50,7 @@ export function applyPlayerDamage(ctx: any, sessionId: bigint, ps: any, damage: 
 			endSession(ctx, sessionId);
 		}
 	} else {
-		ctx.db.playerState.id.update({ ...ps, hp: newHp });
+		ctx.db.playerState.id.update({ ...ps, hp: newHp, lastDamagedAt: ctx.timestamp });
 	}
 }
 
@@ -89,7 +89,8 @@ export function applyAccumulatedDamage(
 		ctx.db.playerState.id.update({
 			...ps,
 			hp: willDown ? 0n : newHp,
-			status: willDown ? 'downed' : ps.status
+			status: willDown ? 'downed' : ps.status,
+			lastDamagedAt: ctx.timestamp
 		});
 		if (willDown) {
 			newlyDownedIds.add(playerId);

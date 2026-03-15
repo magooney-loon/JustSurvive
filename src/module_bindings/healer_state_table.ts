@@ -21,4 +21,5 @@ export default __t.row({
   chainHealTargetIdentity: __t.option(__t.identity()).name("chain_heal_target_identity"),
   ultimateCooldownUntil: __t.option(__t.timestamp()).name("ultimate_cooldown_until"),
   lastUltimateAt: __t.option(__t.timestamp()).name("last_ultimate_at"),
+  regenCarry: __t.u64().name("regen_carry"),
 });

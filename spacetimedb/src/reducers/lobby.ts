@@ -376,7 +376,8 @@ export function fireStartGame(ctx: any, { arg }: any) {
 			status: 'alive',
 			score: 0n,
 			facingAngle: 0n,
-			speedBoostUntil: undefined
+			speedBoostUntil: undefined,
+			lastDamagedAt: undefined
 		});
 
 		if (p.classChoice === 'spotter') {
@@ -426,7 +427,8 @@ export function fireStartGame(ctx: any, { arg }: any) {
 				healTargetIdentity: undefined,
 				chainHealTargetIdentity: undefined,
 				ultimateCooldownUntil: undefined,
-				lastUltimateAt: undefined
+				lastUltimateAt: undefined,
+				regenCarry: 0n
 			});
 		}
 	}

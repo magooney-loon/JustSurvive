@@ -6,6 +6,7 @@ export const abilityState = $state({
 	bashCooldownUntil: 0,      // ms (tank axe swing, 0.5s)
 	healCooldownUntil: 0,      // ms (healer chain heal, 3s)
 	chargeCooldownUntil: 0,    // ms (tank charge, 8s cooldown)
+	chargeYaw: 0,              // camera yaw locked at charge activation
 	pingCooldownUntil: 0,      // ms (spotter flash, 3s)
 	adrenalineCooldownUntil: 0,// ms (gunner adrenaline, 5s)
 	ultimateCooldownUntil: 0,  // ms (all classes, 35s)

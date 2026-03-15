@@ -68,11 +68,31 @@ export function updateLocalMovement(
 	cameraYaw: number,
 	isBracing: boolean = false,
 	isStunned: boolean = false,
-	slowMultiplier: number = 1.0
+	slowMultiplier: number = 1.0,
+	chargeYaw: number = 0
 ) {
-	if (isBracing || isStunned) {
+	if (isStunned) {
 		localVelocity.x = 0;
 		localVelocity.z = 0;
+		return;
+	}
+
+	if (isBracing) {
+		// Tank charge: force movement in locked charge direction at high speed
+		const CHARGE_SPEED = 14; // world units/s
+		const sin = Math.sin(chargeYaw);
+		const cos = Math.cos(chargeYaw);
+		localPos.x += sin * CHARGE_SPEED * dt;
+		localPos.z += cos * CHARGE_SPEED * dt;
+		localVelocity.x = sin * CHARGE_SPEED;
+		localVelocity.z = cos * CHARGE_SPEED;
+		// Arena clamp
+		const rSq = localPos.x * localPos.x + localPos.z * localPos.z;
+		if (rSq > ARENA_PLAY_RADIUS * ARENA_PLAY_RADIUS) {
+			const r = Math.sqrt(rSq);
+			localPos.x = (localPos.x / r) * ARENA_PLAY_RADIUS;
+			localPos.z = (localPos.z / r) * ARENA_PLAY_RADIUS;
+		}
 		return;
 	}
 	const speeds = CLASS_SPEED[playerClass] ?? CLASS_SPEED.gunner;

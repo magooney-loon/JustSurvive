@@ -54,33 +54,33 @@ export const BOSS_SPEED: Record<string, bigint> = {
 };
 
 export const BOSS_DAMAGE: Record<string, bigint> = {
-	ghost_dragon: 5n,
-	worm_monster: 7n,
-	rabid_dog: 4n,
-	scp_096: 3n
+	ghost_dragon: 12n,
+	worm_monster: 9n,
+	rabid_dog: 8n,
+	scp_096: 6n
 };
 
-export const BOSS_MELEE_COOLDOWN_US = 1_000_000n; // 1s between melee hits
+export const BOSS_MELEE_COOLDOWN_US = 500_000n; // 0.5s between melee hits
 
 // ─── Boss Ability Constants ────────────────────────────────────────────────────
 // Ghost Dragon
 export const GHOST_ABILITY1_COOLDOWN_US = 20_000_000n; // 20s hide & seek
-export const GHOST_HIDE_DURATION_US = 3_000_000n;       // 3s invisible window
-export const GHOST_ABILITY2_COOLDOWN_US = 10_000_000n;  // 10s ice ball
+export const GHOST_HIDE_DURATION_US = 3_000_000n; // 3s invisible window
+export const GHOST_ABILITY2_COOLDOWN_US = 10_000_000n; // 10s ice ball
 // Worm Monster
-export const WORM_ABILITY1_COOLDOWN_US = 12_000_000n;   // 12s chain charge
-export const WORM_ABILITY2_COOLDOWN_US = 20_000_000n;   // 20s burrow
-export const WORM_BURROW_DURATION_US = 2_500_000n;      // 2.5s underground
+export const WORM_ABILITY1_COOLDOWN_US = 12_000_000n; // 12s chain charge
+export const WORM_ABILITY2_COOLDOWN_US = 20_000_000n; // 20s burrow
+export const WORM_BURROW_DURATION_US = 2_500_000n; // 2.5s underground
 // Rabid Dog
-export const DOG_ABILITY1_COOLDOWN_US = 7_000_000n;     // 7s leap
-export const DOG_ABILITY2_COOLDOWN_US = 12_000_000n;    // 12s stun attack
+export const DOG_ABILITY1_COOLDOWN_US = 7_000_000n; // 7s leap
+export const DOG_ABILITY2_COOLDOWN_US = 12_000_000n; // 12s stun attack
 // SCP-096
 export const SCP096_ABILITY1_COOLDOWN_US = 14_000_000n; // 14s aoe slam
-export const SCP096_ABILITY2_COOLDOWN_US = 9_000_000n;  // 9s charge
+export const SCP096_ABILITY2_COOLDOWN_US = 9_000_000n; // 9s charge
 // Shared
-export const BOSS_PLAYER_STUN_US = 1_000_000n;          // 1s stun (ice ball)
-export const BOSS_PLAYER_LONG_STUN_US = 2_000_000n;     // 2s stun (rabid dog)
-export const BOSS_PLAYER_SLOW_US = 3_000_000n;          // 3s slow (scp_096)
+export const BOSS_PLAYER_STUN_US = 1_000_000n; // 1s stun (ice ball)
+export const BOSS_PLAYER_LONG_STUN_US = 2_000_000n; // 2s stun (rabid dog)
+export const BOSS_PLAYER_SLOW_US = 3_000_000n; // 3s slow (scp_096)
 
 export const ENEMY_HP_CYCLE_BONUS = 8n; // +8 HP per cycle
 export const ENEMY_HP_MAX_MULTIPLIER = 300n; // Hard cap at 3x base HP
@@ -123,14 +123,21 @@ export const AXE_SWING_KNOCKBACK = 4000n;
 export const AXE_SWING_SELF_HEAL = 5n; // tank heals 5 HP per enemy hit
 
 // ─── Tank: Charge ────────────────────────────────────────────────────────────
-export const CHARGE_DURATION_US = 700_000n;   // 0.7s charge
-export const CHARGE_SPEED = 15000n;           // 15 units/s (server units/s)
+export const CHARGE_DURATION_US = 700_000n; // 0.7s charge
+export const CHARGE_SPEED = 15000n; // 15 units/s (server units/s)
 export const CHARGE_COOLDOWN_US = 8_000_000n; // 8s cooldown
-export const CHARGE_DAMAGE = 35n;             // damage to enemies hit
-export const CHARGE_KNOCKBACK = 6000n;        // lateral knockback (server units)
-export const CHARGE_BOOST_US = 3_000_000n;    // 3s speed boost after charge
-export const CHARGE_HIT_RADIUS = 2500n;       // hit enemies within 2.5 units radius
+export const CHARGE_DAMAGE = 35n; // damage to enemies hit
+export const CHARGE_KNOCKBACK = 6000n; // lateral knockback (server units)
+export const CHARGE_BOOST_US = 3_000_000n; // 3s speed boost after charge
+export const CHARGE_HIT_RADIUS = 2500n; // hit enemies within 2.5 units radius
 export const ULTIMATE_COOLDOWN_US = 35_000_000n; // 35 seconds
+
+// ─── Healer: Passive Self-Regen ──────────────────────────────────────────────
+// milliHP per tick (1000 milliHP = 1 HP). Tick = 100ms.
+// 2 HP/s base → 200 milliHP/tick; 10 HP/s max → 1000 milliHP/tick
+export const HEALER_REGEN_BASE = 200n;      // 2 HP/s
+export const HEALER_REGEN_MAX = 1000n;      // 10 HP/s
+export const HEALER_REGEN_RAMP_US = 5_000_000n; // ramp time: 5 seconds without damage
 
 // ─── Healer: Revive Shield ────────────────────────────────────────────────────
 export const REVIVE_SHIELD_HP = 80n; // shield absorbs 80 damage before revive is interrupted

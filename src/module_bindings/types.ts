@@ -147,6 +147,7 @@ export const HealerState = __t.object("HealerState", {
   chainHealTargetIdentity: __t.option(__t.identity()),
   ultimateCooldownUntil: __t.option(__t.timestamp()),
   lastUltimateAt: __t.option(__t.timestamp()),
+  regenCarry: __t.u64(),
 });
 export type HealerState = __Infer<typeof HealerState>;
 
@@ -252,6 +253,7 @@ export const PlayerState = __t.object("PlayerState", {
   speedBoostUntil: __t.option(__t.timestamp()),
   stunUntil: __t.option(__t.timestamp()),
   slowedUntil: __t.option(__t.timestamp()),
+  lastDamagedAt: __t.option(__t.timestamp()),
 });
 export type PlayerState = __Infer<typeof PlayerState>;
 

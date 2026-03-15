@@ -32,4 +32,5 @@ export default __t.row({
   speedBoostUntil: __t.option(__t.timestamp()).name("speed_boost_until"),
   stunUntil: __t.option(__t.timestamp()).name("stun_until"),
   slowedUntil: __t.option(__t.timestamp()).name("slowed_until"),
+  lastDamagedAt: __t.option(__t.timestamp()).name("last_damaged_at"),
 });

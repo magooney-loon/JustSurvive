@@ -260,6 +260,7 @@
 				if (abilityState.chargeCooldownUntil > Date.now()) return;
 				combatActions.chargeActivate(sid);
 				soundActions.playTankBrace();
+
 				abilityState.chargeCooldownUntil = Date.now() + CHARGE_COOLDOWN_MS;
 				logAbility.info('TANK: charge');
 			}
@@ -292,11 +293,6 @@
 			return;
 		}
 	}
-
 </script>
 
-<svelte:window
-	onkeydown={onKeyDown}
-	onkeyup={onKeyUp}
-	onmousedown={onMouseDown}
-/>
+<svelte:window onkeydown={onKeyDown} onkeyup={onKeyUp} onmousedown={onMouseDown} />
