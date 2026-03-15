@@ -17,21 +17,21 @@ type CasterConfig = {
 const CASTER_CONFIGS: Record<string, CasterConfig> = {
 	// Default caster — blaster, medium range, medium damage
 	caster: {
-		damage: 6n,
+		damage: 4n,
 		cooldownUs: 2_500_000n,
 		rangeSq: 64_000_000n, // 8 units
 		minDistSq: 25_000_000n // 5 units
 	},
 	// Railgun — long range sniper, slow fire, high damage
 	caster_railgun: {
-		damage: 10n,
+		damage: 9n,
 		cooldownUs: 5_000_000n,
 		rangeSq: 196_000_000n, // 14 units
 		minDistSq: 36_000_000n // 6 units — kites from further away
 	},
 	// Chaingun — short range, rapid fire, low per-hit damage
 	caster_chaingun: {
-		damage: 3n,
+		damage: 2n,
 		cooldownUs: 500_000n,
 		rangeSq: 36_000_000n, // 6 units
 		minDistSq: 16_000_000n // 4 units
@@ -45,7 +45,7 @@ const CASTER_CONFIGS: Record<string, CasterConfig> = {
 	},
 	// Shotgun — medium range, semi-auto, moderate damage
 	caster_shotgun: {
-		damage: 9n,
+		damage: 5n,
 		cooldownUs: 1_800_000n,
 		rangeSq: 49_000_000n, // 7 units
 		minDistSq: 25_000_000n // 5 units
