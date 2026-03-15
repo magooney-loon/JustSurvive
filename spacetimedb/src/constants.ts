@@ -47,10 +47,10 @@ export const BOSS_HP: Record<string, bigint> = {
 };
 
 export const BOSS_SPEED: Record<string, bigint> = {
-	ghost_dragon: 180n,
-	root_colossus: 80n,
-	shadow_stalker: 250n,
-	plague_shaman: 120n
+	ghost_dragon: 2400n,
+	root_colossus: 1600n,
+	shadow_stalker: 3200n,
+	plague_shaman: 2000n
 };
 
 export const BOSS_DAMAGE: Record<string, bigint> = {
