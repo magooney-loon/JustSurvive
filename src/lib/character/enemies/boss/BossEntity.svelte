@@ -2,7 +2,6 @@
 	import { T, useTask } from '@threlte/core';
 	import { untrack } from 'svelte';
 	import { cubicOut } from 'svelte/easing';
-	import * as THREE from 'three';
 	import type { Boss } from '$bindings/types.js';
 	import BossRig from './BossRig.svelte';
 	import WormMonsterRig from './WormMonsterRig.svelte';
@@ -52,6 +51,7 @@
 
 	let attackPhase = $state(0);
 	let attackCycle = 0;
+	let deathScale = $state(1);
 
 	useTask((dt) => {
 		nowMs = Date.now();
@@ -60,7 +60,11 @@
 		else spawnT = 1;
 
 		if (!boss.isAlive && deathAt === null) deathAt = nowMs;
-		if (boss.isAlive && deathAt !== null) deathAt = null;
+		if (boss.isAlive && deathAt !== null) { deathAt = null; deathScale = 1; }
+
+		if (deathAt !== null) {
+			deathScale = Math.max(0, deathScale - dt * 0.55);
+		}
 
 		const LERP = 1 - Math.pow(0.0001, dt);
 		const prevX = displayX;
@@ -94,7 +98,7 @@
 	<T.Group
 		position={[displayX, bossDropY, displayZ]}
 		rotation={[0, facing, 0]}
-		scale={cubicOut(spawnT)}
+		scale={cubicOut(spawnT) * deathScale}
 	>
 		<T.Group scale={isEnraged ? 1.3 : 1.0}>
 			{#if boss.bossType === 'ghost_dragon'}
@@ -104,6 +108,7 @@
 					isDead={dead}
 					isDazed={dazed}
 					{isHidden}
+					{isEnraged}
 					bossX={displayX}
 					bossZ={displayZ}
 					{iceBallCooldownMs}
@@ -115,6 +120,7 @@
 					isDead={dead}
 					isDazed={dazed}
 					{isBurrowed}
+					{isEnraged}
 					bossX={displayX}
 					bossZ={displayZ}
 				/>
@@ -124,6 +130,7 @@
 					{attackPhase}
 					isDead={dead}
 					isDazed={dazed}
+					{isEnraged}
 					bossX={displayX}
 					bossZ={displayZ}
 					{leapCooldownMs}
@@ -140,45 +147,6 @@
 				/>
 			{/if}
 
-			<!-- Ghost Dragon: faint blue aura when hidden (visible even though model is not) -->
-			{#if isHidden}
-				<T.Mesh position={[0, 2.5, 0]}>
-					<T.SphereGeometry args={[1.8, 10, 6]} />
-					<T.MeshBasicMaterial
-						color="#88aaff"
-						transparent
-						opacity={0.08}
-						blending={THREE.AdditiveBlending}
-						depthWrite={false}
-					/>
-				</T.Mesh>
-			{/if}
-
-			<!-- Enrage aura (all bosses) -->
-			{#if isEnraged}
-				<T.Mesh position={[0, 2.5, 0]}>
-					<T.SphereGeometry args={[2.2, 12, 8]} />
-					<T.MeshBasicMaterial
-						color="#ff2200"
-						transparent
-						opacity={0.2}
-						blending={THREE.AdditiveBlending}
-						depthWrite={false}
-						side={THREE.DoubleSide}
-					/>
-				</T.Mesh>
-				<T.Mesh position={[0, 2.5, 0]}>
-					<T.SphereGeometry args={[2.6, 10, 6]} />
-					<T.MeshBasicMaterial
-						color="#ff4400"
-						transparent
-						opacity={0.08}
-						blending={THREE.AdditiveBlending}
-						depthWrite={false}
-						side={THREE.BackSide}
-					/>
-				</T.Mesh>
-			{/if}
 		</T.Group>
 	</T.Group>
 {/if}

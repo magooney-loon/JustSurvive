@@ -13,6 +13,7 @@
 		attackPhase?: number;
 		isDead?: boolean;
 		isDazed?: boolean;
+		isEnraged?: boolean;
 		bossX?: number;
 		bossZ?: number;
 		leapCooldownMs?: number; // ms timestamp of last leap cooldown end — changes trigger leap anim
@@ -23,6 +24,7 @@
 		attackPhase = 0,
 		isDead = false,
 		isDazed = false,
+		isEnraged = false,
 		bossX = 0,
 		bossZ = 0,
 		leapCooldownMs = 0
@@ -110,6 +112,20 @@
 			hasPlayedIntro = true;
 			soundActions.playBossIntro();
 		}
+	});
+
+	$effect(() => {
+		if (!$gltf) return;
+		$gltf.scene.traverse((obj: any) => {
+			if (!obj.isMesh) return;
+			const mats = Array.isArray(obj.material) ? obj.material : [obj.material];
+			for (const mat of mats) {
+				if ('emissive' in mat) {
+					mat.emissive.set(isEnraged ? '#cc1100' : '#000000');
+					mat.emissiveIntensity = isEnraged ? 0.6 : 0;
+				}
+			}
+		});
 	});
 
 	$effect(() => {

@@ -13,7 +13,7 @@
 </script>
 
 <script lang="ts">
-	import { T, useTask } from '@threlte/core';
+	import { useTask } from '@threlte/core';
 	import { GLTF, useGltfAnimations, PositionalAudio } from '@threlte/extras';
 	import * as THREE from 'three';
 	import { localPos, bossShake } from '$lib/stores/movement.svelte.js';
@@ -26,6 +26,7 @@
 		isDead?: boolean;
 		isDazed?: boolean;
 		isHidden?: boolean;
+		isEnraged?: boolean;
 		bossX?: number;
 		bossZ?: number;
 		iceBallCooldownMs?: number;
@@ -37,6 +38,7 @@
 		isDead = false,
 		isDazed = false,
 		isHidden = false,
+		isEnraged = false,
 		bossX = 0,
 		bossZ = 0,
 		iceBallCooldownMs = 0
@@ -165,6 +167,23 @@
 	});
 
 	$effect(() => {
+		if (!$gltf) return;
+		$gltf.scene.traverse((obj: any) => {
+			if (!obj.isMesh) return;
+			const mats = Array.isArray(obj.material) ? obj.material : [obj.material];
+			for (const mat of mats) {
+				if ('emissive' in mat) {
+					mat.emissive.set(isEnraged ? '#cc1100' : '#000000');
+					mat.emissiveIntensity = isEnraged ? 0.6 : 0;
+				}
+				mat.transparent = isHidden;
+				mat.opacity = isHidden ? 0.18 : 1;
+				mat.depthWrite = !isHidden;
+			}
+		});
+	});
+
+	$effect(() => {
 		const currentAttack = attackAnimations[attackIndex];
 		const next: BossAction = isDead
 			? 'dead'
@@ -233,11 +252,9 @@
 	}}
 />
 
-<T.Group visible={!isHidden}>
-	<GLTF
-		bind:gltf={$gltf}
-		url="{import.meta.env.BASE_URL}models/enemies/boss/ghost_dragon/scene.gltf"
-		rotation.y={Math.PI}
-		scale={5.4}
-	/>
-</T.Group>
+<GLTF
+	bind:gltf={$gltf}
+	url="{import.meta.env.BASE_URL}models/enemies/boss/ghost_dragon/scene.gltf"
+	rotation.y={Math.PI}
+	scale={5.4}
+/>

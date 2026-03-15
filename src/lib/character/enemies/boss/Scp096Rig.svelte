@@ -110,6 +110,20 @@
 	});
 
 	$effect(() => {
+		if (!$gltf) return;
+		$gltf.scene.traverse((obj: any) => {
+			if (!obj.isMesh) return;
+			const mats = Array.isArray(obj.material) ? obj.material : [obj.material];
+			for (const mat of mats) {
+				if ('emissive' in mat) {
+					mat.emissive.set(isEnraged ? '#cc1100' : '#000000');
+					mat.emissiveIntensity = isEnraged ? 0.6 : 0;
+				}
+			}
+		});
+	});
+
+	$effect(() => {
 		for (const key of onceAnimations as Scp096Action[]) {
 			const action = $actions[key];
 			if (!action) continue;
@@ -195,5 +209,6 @@
 	bind:gltf={$gltf}
 	url="{import.meta.env.BASE_URL}models/enemies/boss/scp_096/scene.gltf"
 	rotation.y={Math.PI}
+	position.y={0.3}
 	scale={3.5}
 />

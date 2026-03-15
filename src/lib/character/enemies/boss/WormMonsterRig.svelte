@@ -13,6 +13,7 @@
 		isDead?: boolean;
 		isDazed?: boolean;
 		isBurrowed?: boolean;
+		isEnraged?: boolean;
 		bossX?: number;
 		bossZ?: number;
 	};
@@ -23,6 +24,7 @@
 		isDead = false,
 		isDazed = false,
 		isBurrowed = false,
+		isEnraged = false,
 		bossX = 0,
 		bossZ = 0
 	}: Props = $props();
@@ -120,6 +122,20 @@
 	$effect(() => {
 		if (!$actions?.['Idle']) return;
 		$actions['Idle'].play();
+	});
+
+	$effect(() => {
+		if (!$gltf) return;
+		$gltf.scene.traverse((obj: any) => {
+			if (!obj.isMesh) return;
+			const mats = Array.isArray(obj.material) ? obj.material : [obj.material];
+			for (const mat of mats) {
+				if ('emissive' in mat) {
+					mat.emissive.set(isEnraged ? '#cc1100' : '#000000');
+					mat.emissiveIntensity = isEnraged ? 0.6 : 0;
+				}
+			}
+		});
 	});
 
 	$effect(() => {
