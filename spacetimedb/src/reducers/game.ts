@@ -135,33 +135,11 @@ export function advanceDayPhase(ctx: any, { arg }: any) {
 	const nextPhase = DAY_PHASES[nextIdx];
 	const newCycle = nextIdx === 0 ? (session.cycleNumber as bigint) + 1n : session.cycleNumber;
 
-	// ─── Fog event ────────────────────────────────────────────────────────────
-	// Once per cycle: fog triggers on either 'sunset' OR 'dusk' (not both).
-	// Which phase and duration are derived from mapSeed so they're consistent
-	// for all players but vary unpredictably across sessions and cycles.
-	const now = ctx.timestamp.microsSinceUnixEpoch as bigint;
-	let fogStartedAt = session.fogStartedAt;
-	let fogEndsAt = session.fogEndsAt;
-
-	if (nextPhase === 'sunset' || nextPhase === 'dusk') {
-		const fogSeed = (session.mapSeed as bigint) ^ (newCycle as bigint);
-		// bit 0: which phase gets fog (0 = sunset, 1 = dusk)
-		const fogPhase = (fogSeed & 1n) === 0n ? 'sunset' : 'dusk';
-		if (nextPhase === fogPhase) {
-			// duration 15–30 seconds from bits 1–4
-			const durationUs = (15n + (fogSeed >> 1n) % 16n) * 1_000_000n;
-			fogStartedAt = ctx.timestamp;
-			fogEndsAt = ts(now + durationUs);
-		}
-	}
-
 	ctx.db.gameSession.id.update({
 		...session,
 		dayPhase: nextPhase,
 		cycleNumber: newCycle,
-		phaseStartedAt: ctx.timestamp,
-		fogStartedAt,
-		fogEndsAt
+		phaseStartedAt: ctx.timestamp
 	});
 
 	// Revive all downed players at the end of each phase

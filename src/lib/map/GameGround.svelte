@@ -11,6 +11,25 @@
 	const grimeGeoB = new THREE.RingGeometry(ARENA_RADIUS - 18, ARENA_RADIUS - 7, 64);
 	const grimeGeoC = new THREE.RingGeometry(ARENA_RADIUS - 30, ARENA_RADIUS - 17, 64);
 
+	// ── Terrain Ring (outside arena) ─────────────────────────────────────────
+	// Simple cliff-like ring that drops off from arena wall
+	const TERRAIN_INNER = ARENA_RADIUS + 1;
+	const TERRAIN_OUTER = ARENA_RADIUS + 25;
+	const terrainGeo = new THREE.RingGeometry(TERRAIN_INNER, TERRAIN_OUTER, 32, 4);
+
+	// Simple slope - high near arena, drops off
+	const pos = terrainGeo.attributes.position;
+	for (let i = 0; i < pos.count; i++) {
+		const x = pos.getX(i);
+		const y = pos.getY(i);
+		const dist = Math.sqrt(x * x + y * y);
+		const t = (dist - TERRAIN_INNER) / (TERRAIN_OUTER - TERRAIN_INNER);
+		// Linear slope from 2.5 (wall top) down to -5
+		const height = 2.5 - t * 7.5;
+		pos.setZ(i, height);
+	}
+	terrainGeo.computeVertexNormals();
+
 	// ── Materials (solid fallback) ─────────────────────────────────────────────
 	const groundMat = new THREE.MeshStandardMaterial({ color: '#2a5218', roughness: 0.95 });
 	const wallMat = new THREE.MeshStandardMaterial({
@@ -19,6 +38,12 @@
 		roughness: 0.95
 	});
 	const wallCapMat = new THREE.MeshStandardMaterial({ color: '#302a22', roughness: 0.9 });
+	const terrainMat = new THREE.MeshStandardMaterial({
+		color: '#1a1a10',
+		roughness: 1.0,
+		flatShading: true,
+		side: THREE.FrontSide
+	});
 	const spikeMat = new THREE.MeshStandardMaterial({
 		color: '#1a1a1a',
 		roughness: 0.5,
@@ -322,6 +347,8 @@
 		groundMat,
 		wallMat,
 		wallCapMat,
+		terrainGeo,
+		terrainMat,
 		grimeMatA,
 		grimeMatB,
 		grimeMatC,
@@ -392,8 +419,18 @@
 		clock += dt;
 	});
 
-	const torchVolume = $derived(settingsState.audio.effectsEnabled ? settingsState.audio.effectsVolume : 0);
+	const torchVolume = $derived(
+		settingsState.audio.effectsEnabled ? settingsState.audio.effectsVolume : 0
+	);
 </script>
+
+<!-- Terrain Ring (outside arena) - cliff dropping off from wall -->
+<T.Mesh
+	geometry={terrainGeo}
+	material={terrainMat}
+	position={[0, 0, 0]}
+	rotation={[-Math.PI / 2, 0, 0]}
+/>
 
 {#await groundTexture then tex}
 	<T.Mesh

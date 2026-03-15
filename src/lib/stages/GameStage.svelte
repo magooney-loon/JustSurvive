@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { T, useTask } from '@threlte/core';
+	import { useTask } from '@threlte/core';
 	import { useSpacetimeDB, useTable } from 'spacetimedb/svelte';
 	import { tables } from '$bindings/index.js';
 	import { lobbyState } from '$lib/stores/lobby.svelte.js';
@@ -213,7 +213,13 @@
 		const hasStamina = myState.stamina > 0n;
 		// camYaw for movement: camera forward is (-sin(yaw), -cos(yaw)), so pass yaw+π
 		const camYaw = fpsCamera.yaw + Math.PI;
-		updateLocalMovement(dt, myState.classChoice, hasStamina, camYaw, myTankState?.isBracing ?? false);
+		updateLocalMovement(
+			dt,
+			myState.classChoice,
+			hasStamina,
+			camYaw,
+			myTankState?.isBracing ?? false
+		);
 
 		sendTimer += dt;
 		if (sendTimer >= SEND_INTERVAL) {
@@ -259,14 +265,6 @@
 {#each $bosses.filter((b) => b.sessionId === lobbyState.currentSessionId) as boss (boss.id)}
 	<BossEntity {boss} />
 {/each}
-
-<!-- Fog placeholder: red box at arena center when fog is active -->
-{#if session?.fogEndsAt && Number(session.fogEndsAt.microsSinceUnixEpoch) / 1000 > Date.now()}
-	<T.Mesh position={[0, 1, 0]}>
-		<T.BoxGeometry args={[4, 2, 4]} />
-		<T.MeshBasicMaterial color="#ff0000" transparent opacity={0.5} />
-	</T.Mesh>
-{/if}
 
 <!-- Acid pools -->
 {#each livePools as pool (pool.id)}
