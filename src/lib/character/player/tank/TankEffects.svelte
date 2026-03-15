@@ -20,22 +20,36 @@
 		$tankStates.find((t) => t.playerIdentity.toHexString() === player.playerIdentity.toHexString())
 	);
 
-	const swingUntil = $derived.by(() => {
-		if (isLocal && axeSwingFlash.active) return axeSwingFlash.until;
-		if (!myTankState?.lastAxeSwingAt) return 0;
-		return Number(myTankState.lastAxeSwingAt.microsSinceUnixEpoch) / 1000 + AXE_SWING_FLASH_MS;
+	let remoteSwingUntil = $state(0);
+	let prevSwingMicros: bigint | undefined;
+	$effect(() => {
+		if (!isLocal) {
+			const micros = myTankState?.lastAxeSwingAt?.microsSinceUnixEpoch;
+			if (micros !== prevSwingMicros && micros != null) {
+				remoteSwingUntil = Date.now() + AXE_SWING_FLASH_MS;
+			}
+			prevSwingMicros = micros;
+		}
 	});
+	const swingUntil = $derived(isLocal && axeSwingFlash.active ? axeSwingFlash.until : remoteSwingUntil);
 
 	const t = $derived(Math.max(0, (swingUntil - now) / AXE_SWING_FLASH_MS));
 	const effectiveYaw = $derived(isLocal && axeSwingFlash.active ? axeSwingFlash.yaw : yaw);
 
 	// ─── Ground Slam ultimate ────────────────────────────────────────────────
 
-	const ultimateUntil = $derived.by(() => {
-		if (isLocal) return ultimateFlash.until;
-		if (!myTankState?.lastUltimateAt) return 0;
-		return Number(myTankState.lastUltimateAt.microsSinceUnixEpoch) / 1000 + ULTIMATE_FLASH_MS;
+	let remoteUltimateUntil = $state(0);
+	let prevUltimateMicros: bigint | undefined;
+	$effect(() => {
+		if (!isLocal) {
+			const micros = myTankState?.lastUltimateAt?.microsSinceUnixEpoch;
+			if (micros !== prevUltimateMicros && micros != null) {
+				remoteUltimateUntil = Date.now() + ULTIMATE_FLASH_MS;
+			}
+			prevUltimateMicros = micros;
+		}
 	});
+	const ultimateUntil = $derived(isLocal ? ultimateFlash.until : remoteUltimateUntil);
 	const ut = $derived(Math.max(0, (ultimateUntil - now) / ULTIMATE_FLASH_MS));
 
 	const SLAM_R = 8;

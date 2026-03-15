@@ -29,11 +29,18 @@
 		$spotterStates.find((s) => s.playerIdentity.toHexString() === player.playerIdentity.toHexString())
 	);
 
-	const flashUntil = $derived.by(() => {
-		if (isLocal && spotterFlash.active) return spotterFlash.until;
-		if (!mySpotterState?.lastFlashAt) return 0;
-		return Number(mySpotterState.lastFlashAt.microsSinceUnixEpoch) / 1000 + SPOTTER_FLASH_MS;
+	let remoteFlashUntil = $state(0);
+	let prevFlashMicros: bigint | undefined;
+	$effect(() => {
+		if (!isLocal) {
+			const micros = mySpotterState?.lastFlashAt?.microsSinceUnixEpoch;
+			if (micros !== prevFlashMicros && micros != null) {
+				remoteFlashUntil = Date.now() + SPOTTER_FLASH_MS;
+			}
+			prevFlashMicros = micros;
+		}
 	});
+	const flashUntil = $derived(isLocal && spotterFlash.active ? spotterFlash.until : remoteFlashUntil);
 
 	const ft = $derived(Math.max(0, (flashUntil - now) / SPOTTER_FLASH_MS));
 	const effectiveFlashYaw = $derived(isLocal && spotterFlash.active ? spotterFlash.yaw : yaw);
@@ -72,11 +79,18 @@
 
 	// ─── Barrage ultimate ──────────────────────────────────────────────────────
 
-	const ultimateUntil = $derived.by(() => {
-		if (isLocal) return ultimateFlash.until;
-		if (!mySpotterState?.lastUltimateAt) return 0;
-		return Number(mySpotterState.lastUltimateAt.microsSinceUnixEpoch) / 1000 + ULTIMATE_FLASH_MS;
+	let remoteUltimateUntil = $state(0);
+	let prevUltimateMicros: bigint | undefined;
+	$effect(() => {
+		if (!isLocal) {
+			const micros = mySpotterState?.lastUltimateAt?.microsSinceUnixEpoch;
+			if (micros !== prevUltimateMicros && micros != null) {
+				remoteUltimateUntil = Date.now() + ULTIMATE_FLASH_MS;
+			}
+			prevUltimateMicros = micros;
+		}
 	});
+	const ultimateUntil = $derived(isLocal ? ultimateFlash.until : remoteUltimateUntil);
 	const ut = $derived(Math.max(0, (ultimateUntil - now) / ULTIMATE_FLASH_MS));
 
 	const BARRAGE_R = 15;

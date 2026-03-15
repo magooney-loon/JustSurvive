@@ -24,20 +24,34 @@
 
 	// Adrenaline: 180ms burst effect
 	const ADRENALINE_VFX_MS = 180;
-	const adrenalineUntil = $derived.by(() => {
-		if (isLocal) return abilityState.adrenalineUntil;
-		if (!myGunnerState?.lastAdrenalineAt) return 0;
-		return Number(myGunnerState.lastAdrenalineAt.microsSinceUnixEpoch) / 1000 + ADRENALINE_VFX_MS;
+	let remoteAdrenalineUntil = $state(0);
+	let prevAdrenalineMicros: bigint | undefined;
+	$effect(() => {
+		if (!isLocal) {
+			const micros = myGunnerState?.lastAdrenalineAt?.microsSinceUnixEpoch;
+			if (micros !== prevAdrenalineMicros && micros != null) {
+				remoteAdrenalineUntil = Date.now() + ADRENALINE_VFX_MS;
+			}
+			prevAdrenalineMicros = micros;
+		}
 	});
+	const adrenalineUntil = $derived(isLocal ? abilityState.adrenalineUntil : remoteAdrenalineUntil);
 	const adrenalineT = $derived(Math.max(0, (adrenalineUntil - now) / ADRENALINE_VFX_MS));
 	const pulse = $derived(0.8 + 0.2 * Math.sin(time * 25));
 
 	// ─── Frenzy ultimate ──────────────────────────────────────────────────────
-	const ultimateUntil = $derived.by(() => {
-		if (isLocal) return ultimateFlash.until;
-		if (!myGunnerState?.lastUltimateAt) return 0;
-		return Number(myGunnerState.lastUltimateAt.microsSinceUnixEpoch) / 1000 + ULTIMATE_FLASH_MS;
+	let remoteUltimateUntil = $state(0);
+	let prevUltimateMicros: bigint | undefined;
+	$effect(() => {
+		if (!isLocal) {
+			const micros = myGunnerState?.lastUltimateAt?.microsSinceUnixEpoch;
+			if (micros !== prevUltimateMicros && micros != null) {
+				remoteUltimateUntil = Date.now() + ULTIMATE_FLASH_MS;
+			}
+			prevUltimateMicros = micros;
+		}
 	});
+	const ultimateUntil = $derived(isLocal ? ultimateFlash.until : remoteUltimateUntil);
 	const ut = $derived(Math.max(0, (ultimateUntil - now) / ULTIMATE_FLASH_MS));
 
 	const FRENZY_R = 15;

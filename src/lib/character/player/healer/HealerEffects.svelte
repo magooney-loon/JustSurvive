@@ -36,17 +36,32 @@
 		$healerStates.find((h) => h.playerIdentity.toHexString() === player.playerIdentity.toHexString())
 	);
 
+	// Remote beam: record local receive time + snapshot targets when lastHealAt changes
+	let remoteBeamUntil = $state(0);
+	let remoteHealTargetId = $state<any>(null);
+	let remoteChainTargetId = $state<any>(null);
+	let prevHealMicros: bigint | undefined;
+	$effect(() => {
+		if (!isLocal) {
+			const micros = myHealerState?.lastHealAt?.microsSinceUnixEpoch;
+			if (micros !== prevHealMicros && micros != null) {
+				remoteBeamUntil = Date.now() + HEAL_BEAM_MS;
+				remoteHealTargetId = myHealerState?.healTargetIdentity ?? null;
+				remoteChainTargetId = myHealerState?.chainHealTargetIdentity ?? null;
+			}
+			prevHealMicros = micros;
+		}
+	});
+
 	const activeBeam = $derived.by((): Beam | null => {
 		// Local: use optimistic store
 		if (isLocal && healBeam.active && healBeam.until > now) {
 			return { fromX: localPos.x, fromZ: localPos.z, toX: healBeam.toX, toZ: healBeam.toZ, until: healBeam.until };
 		}
-		// Remote: derive from HealerState timestamp + healTargetIdentity
-		if (!myHealerState?.lastHealAt || !myHealerState?.healTargetIdentity) return null;
-		const until = Number(myHealerState.lastHealAt.microsSinceUnixEpoch) / 1000 + HEAL_BEAM_MS;
-		if (now >= until) return null;
+		// Remote: use receive-time until + snapshotted target identity
+		if (!remoteHealTargetId || remoteBeamUntil <= now) return null;
 		const target = allPlayers.find(
-			(p) => p.sessionId === sessionId && p.playerIdentity.isEqual(myHealerState!.healTargetIdentity!)
+			(p) => p.sessionId === sessionId && p.playerIdentity.isEqual(remoteHealTargetId)
 		);
 		if (!target) return null;
 		return {
@@ -54,20 +69,17 @@
 			fromZ: z,
 			toX: Number(target.posX) / 1000,
 			toZ: Number(target.posZ) / 1000,
-			until
+			until: remoteBeamUntil
 		};
 	});
 
 	const activeChainBeam = $derived.by((): Beam | null => {
-		if (!myHealerState?.lastHealAt || !myHealerState?.chainHealTargetIdentity) return null;
-		const until = Number(myHealerState.lastHealAt.microsSinceUnixEpoch) / 1000 + HEAL_BEAM_MS;
-		if (now >= until) return null;
-		// Chain beam starts from primary target's position
+		if (!remoteHealTargetId || !remoteChainTargetId || remoteBeamUntil <= now) return null;
 		const primaryTarget = allPlayers.find(
-			(p) => p.sessionId === sessionId && myHealerState?.healTargetIdentity && p.playerIdentity.isEqual(myHealerState.healTargetIdentity!)
+			(p) => p.sessionId === sessionId && p.playerIdentity.isEqual(remoteHealTargetId)
 		);
 		const chainTarget = allPlayers.find(
-			(p) => p.sessionId === sessionId && p.playerIdentity.isEqual(myHealerState!.chainHealTargetIdentity!)
+			(p) => p.sessionId === sessionId && p.playerIdentity.isEqual(remoteChainTargetId)
 		);
 		if (!primaryTarget || !chainTarget) return null;
 		return {
@@ -75,7 +87,7 @@
 			fromZ: Number(primaryTarget.posZ) / 1000,
 			toX: Number(chainTarget.posX) / 1000,
 			toZ: Number(chainTarget.posZ) / 1000,
-			until
+			until: remoteBeamUntil
 		};
 	});
 
@@ -115,11 +127,18 @@
 
 	// ─── Revitalize ultimate ─────────────────────────────────────────────────
 
-	const ultimateUntil = $derived.by(() => {
-		if (isLocal) return ultimateFlash.until;
-		if (!myHealerState?.lastUltimateAt) return 0;
-		return Number(myHealerState.lastUltimateAt.microsSinceUnixEpoch) / 1000 + ULTIMATE_FLASH_MS;
+	let remoteUltimateUntil = $state(0);
+	let prevUltimateMicros: bigint | undefined;
+	$effect(() => {
+		if (!isLocal) {
+			const micros = myHealerState?.lastUltimateAt?.microsSinceUnixEpoch;
+			if (micros !== prevUltimateMicros && micros != null) {
+				remoteUltimateUntil = Date.now() + ULTIMATE_FLASH_MS;
+			}
+			prevUltimateMicros = micros;
+		}
 	});
+	const ultimateUntil = $derived(isLocal ? ultimateFlash.until : remoteUltimateUntil);
 	const ut = $derived(Math.max(0, (ultimateUntil - now) / ULTIMATE_FLASH_MS));
 
 	const REVIT_R = 10;
