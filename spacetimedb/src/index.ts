@@ -350,9 +350,9 @@ spacetimedb.clientDisconnected((ctx) => {
 	// Lobby cleanup
 	for (const p of ctx.db.lobbyPlayer.lobby_player_identity.filter(ctx.sender)) {
 		const lobby = ctx.db.lobby.id.find(p.lobbyId);
-		// Public: kick on disconnect unless game is active. Private: only kick if waiting.
+		// Public: kick on disconnect unless game is in progress. Private: only kick if waiting.
 		const shouldKick =
-			lobby && (lobby.isPublic ? lobby.status !== 'active' : lobby.status === 'waiting');
+			lobby && (lobby.isPublic ? lobby.status !== 'in_progress' : lobby.status === 'waiting');
 		if (shouldKick) {
 			ctx.db.lobbyPlayer.id.delete(p.id);
 			const remaining = [...ctx.db.lobbyPlayer.lobby_player_lobby_id.filter(p.lobbyId)];

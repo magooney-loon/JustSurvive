@@ -76,19 +76,14 @@
 	};
 
 	let countdownValue = $state(3);
-	let connectingCountdown = $state(10);
 
+	// If our lobbyPlayer row disappears while we're in the lobby (kicked / lobby deleted),
+	// clean up and go back to menu immediately.
 	$effect(() => {
-		if (!currentLobby && lobbyState.currentLobbyId === null) {
-			connectingCountdown = 10;
-			const interval = setInterval(() => {
-				connectingCountdown--;
-				if (connectingCountdown <= 0) {
-					clearInterval(interval);
-					stageActions.setStage('menu');
-				}
-			}, 1000);
-			return () => clearInterval(interval);
+		if (!myEntry && !leaving && lobbyState.currentLobbyId !== null) {
+			lobbyState.currentLobbyId = null;
+			lobbyState.currentSessionId = null;
+			stageActions.setStage('menu');
 		}
 	});
 
@@ -227,20 +222,7 @@
 		<!-- Left: Lobby panel -->
 		<div style="width: 630px; flex-shrink: 0;">
 			{#if !currentLobby && !leaving}
-				<p>Connecting to lobby... or kicked...</p>
-				<p>
-					Canceling in {connectingCountdown}s...
-				</p>
-				<button
-					class="rpgui-button"
-					onclick={() => {
-						soundActions.playClick();
-						lobbyState.currentLobbyId = null;
-						stageActions.setStage('menu');
-					}}
-				>
-					<p>Back</p>
-				</button>
+				<p>Connecting...</p>
 			{:else}
 				<!-- Header -->
 				<div
