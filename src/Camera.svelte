@@ -24,8 +24,8 @@
 	let camRotYaw = 0;
 	const LERP_POS = 0.12;
 	const LERP_YAW = 0.18;
-	const LERP_ROT = 0.25;
-	const LOOK_AHEAD = 0.06;
+	const LERP_ROT = 0.14;
+	const LOOK_AHEAD = 0.03;
 
 	$effect(() => {
 		const canvas = renderer.domElement;
