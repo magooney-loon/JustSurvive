@@ -17,6 +17,9 @@
 		color: string;
 		walkPhase: number;
 		speed: number;
+		facing: number;
+		velX: number;
+		velZ: number;
 		shotPulse?: number;
 		phase?: string;
 		isBracing?: boolean;
@@ -27,6 +30,9 @@
 		color,
 		walkPhase,
 		speed,
+		facing,
+		velX,
+		velZ,
 		shotPulse = 0,
 		phase = 'sunset',
 		isBracing = false,
@@ -56,6 +62,9 @@
 	{color}
 	{walkPhase}
 	{speed}
+	{facing}
+	{velX}
+	{velZ}
 	{shotPulse}
 	{phase}
 	{isBracing}

@@ -137,6 +137,8 @@
 	let shotPulse = $state(0);
 	let walkPhase = $state(0);
 	let speed = $state(0);
+	let velX = $state(0);
+	let velZ = $state(0);
 	let prevX = $state(0);
 	let prevZ = $state(0);
 
@@ -187,6 +189,8 @@
 			}
 			if (overrideVel) {
 				speed = Math.hypot(overrideVel.x, overrideVel.z);
+				velX = overrideVel.x;
+				velZ = overrideVel.z;
 			}
 		} else {
 			const LERP = 1 - Math.pow(0.001, dt);
@@ -196,6 +200,8 @@
 			const vx = (displayX - prevX) / Math.max(0.0001, dt);
 			const vz = (displayZ - prevZ) / Math.max(0.0001, dt);
 			speed = Math.hypot(vx, vz);
+			velX = vx;
+			velZ = vz;
 		}
 
 		prevX = displayX;
@@ -220,6 +226,9 @@
 				color={CLASS_COLORS[player.classChoice] ?? '#fff'}
 				{walkPhase}
 				{speed}
+				{facing}
+				{velX}
+				{velZ}
 				{shotPulse}
 				{phase}
 				isBracing={false}
@@ -230,6 +239,9 @@
 				color={CLASS_COLORS[player.classChoice] ?? '#fff'}
 				{walkPhase}
 				{speed}
+				{facing}
+				{velX}
+				{velZ}
 				{shotPulse}
 				{phase}
 				isBracing={false}
@@ -241,6 +253,9 @@
 				color={CLASS_COLORS[player.classChoice] ?? '#fff'}
 				{walkPhase}
 				{speed}
+				{facing}
+				{velX}
+				{velZ}
 				{shotPulse}
 				{phase}
 				isBracing={false}
@@ -251,6 +266,9 @@
 				color={CLASS_COLORS[player.classChoice] ?? '#fff'}
 				{walkPhase}
 				{speed}
+				{facing}
+				{velX}
+				{velZ}
 				{shotPulse}
 				{phase}
 				isBracing={false}
@@ -262,6 +280,9 @@
 				color={CLASS_COLORS[player.classChoice] ?? '#fff'}
 				{walkPhase}
 				{speed}
+				{facing}
+				{velX}
+				{velZ}
 				{shotPulse}
 				{phase}
 				{isCharging}
@@ -272,6 +293,9 @@
 				color={CLASS_COLORS[player.classChoice] ?? '#fff'}
 				{walkPhase}
 				{speed}
+				{facing}
+				{velX}
+				{velZ}
 				{shotPulse}
 				{phase}
 				{isCharging}
@@ -283,6 +307,9 @@
 				color={CLASS_COLORS[player.classChoice] ?? '#fff'}
 				{walkPhase}
 				{speed}
+				{facing}
+				{velX}
+				{velZ}
 				{shotPulse}
 				{phase}
 				isBracing={false}
@@ -293,6 +320,9 @@
 				color={CLASS_COLORS[player.classChoice] ?? '#fff'}
 				{walkPhase}
 				{speed}
+				{facing}
+				{velX}
+				{velZ}
 				{shotPulse}
 				{phase}
 				isBracing={false}

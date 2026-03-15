@@ -18,6 +18,9 @@
 		color: string;
 		walkPhase: number;
 		speed: number;
+		facing: number;
+		velX: number;
+		velZ: number;
 		shotPulse: number;
 		phase?: string;
 		isBracing?: boolean;
@@ -29,32 +32,28 @@
 		color,
 		walkPhase,
 		speed,
+		facing,
+		velX,
+		velZ,
 		shotPulse: _shotPulse,
 		phase: _phase,
 		isBracing: _isBracing,
 		texture = null
 	}: PlayerRigProps = $props();
 
-	const limbR = $derived(classChoice === 'tank' ? 0.09 : classChoice === 'gunner' ? 0.075 : 0.065);
-
 	const moveIntensity = $derived(Math.min(speed / 6, 1));
 	const sinWalk = $derived(Math.sin(walkPhase));
 	const sinHalf = $derived(Math.sin(walkPhase * 0.5));
-	const swing = $derived(sinWalk * 1.1 * moveIntensity);
 	const bob = $derived(Math.abs(sinWalk) * 0.07 * moveIntensity);
 	const sway = $derived(sinHalf * 0.18 * moveIntensity);
 	const hipShift = $derived(sinWalk * 0.06 * moveIntensity);
 	const torsoTwist = $derived(sinWalk * 0.18 * moveIntensity);
 	const headTilt = $derived(sinHalf * 0.12 * moveIntensity);
-	const footRoll = $derived(Math.cos(walkPhase) * 0.3 * moveIntensity);
 	const isSprinting = $derived(speed > 6);
 
 	const leanForward = $derived((isSprinting ? 0.22 : 0.08) * moveIntensity);
 
 	const plateTint = $derived(classChoice === 'gunner' ? '#2b2620' : '#2f271f');
-
-	const kneeBendL = $derived(0.07 + Math.max(0, sinWalk) * 0.95 * moveIntensity);
-	const kneeBendR = $derived(0.07 + Math.max(0, -sinWalk) * 0.95 * moveIntensity);
 
 	const visorColor = $derived(
 		classChoice === 'spotter'
@@ -69,7 +68,7 @@
 	const emblemGlow = $derived(0.55);
 </script>
 
-<StickRig {color} {walkPhase} {speed} {texture} limbRadius={limbR} />
+<StickRig {color} {walkPhase} {speed} {facing} {velX} {velZ} {texture} />
 
 <T.Group position={[hipShift, bob, 0]} rotation={[sway * 0.08, torsoTwist, sway * 0.12]}>
 	<T.Mesh position={[-0.2, 0.78, 0.04]} rotation={[0, 0, Math.PI / 2]}>
@@ -123,59 +122,5 @@
 			<T.CircleGeometry args={[0.033, 8]} />
 			<T.MeshBasicMaterial color={visorColor} transparent opacity={visorGlow} />
 		</T.Mesh>
-	</T.Group>
-
-	<T.Group position={[-0.14, 0.75, 0]} rotation={[swing, 0, 0]}>
-		<T.Mesh position={[0, -0.17, 0.075]}>
-			<T.BoxGeometry args={[limbR * 2.1, limbR * 2.5, limbR * 1.15]} />
-			<T.MeshStandardMaterial color={plateTint} roughness={0.4} metalness={0.25} />
-		</T.Mesh>
-		<T.Mesh position={[0, -0.42, 0.09]}>
-			<T.BoxGeometry args={[limbR * 1.9, limbR * 1.1, limbR * 0.9]} />
-			<T.MeshStandardMaterial color={plateTint} roughness={0.35} metalness={0.35} />
-		</T.Mesh>
-		<T.Group position={[0, -0.42, 0]} rotation={[-kneeBendL, 0, 0]}>
-			<T.Mesh position={[0, -0.24, 0.075]}>
-				<T.CapsuleGeometry args={[limbR * 0.42, limbR * 2.1, 4, 8]} />
-				<T.MeshStandardMaterial color={plateTint} roughness={0.4} metalness={0.25} />
-			</T.Mesh>
-			<T.Group position={[0, -0.54, 0]} rotation={[footRoll, 0, 0]}>
-				<T.Mesh position={[0, -0.1, 0.09]}>
-					<T.CapsuleGeometry args={[limbR * 0.52, limbR * 1.9, 4, 8]} />
-					<T.MeshStandardMaterial color="#1c1c1c" roughness={0.82} />
-				</T.Mesh>
-				<T.Mesh position={[0, -0.122, -0.025]}>
-					<T.BoxGeometry args={[limbR * 2.15, limbR * 0.32, limbR * 3.1]} />
-					<T.MeshStandardMaterial color="#090909" roughness={0.95} />
-				</T.Mesh>
-			</T.Group>
-		</T.Group>
-	</T.Group>
-
-	<T.Group position={[0.14, 0.75, 0]} rotation={[-swing, 0, 0]}>
-		<T.Mesh position={[0, -0.17, 0.075]}>
-			<T.BoxGeometry args={[limbR * 2.1, limbR * 2.5, limbR * 1.15]} />
-			<T.MeshStandardMaterial color={plateTint} roughness={0.4} metalness={0.25} />
-		</T.Mesh>
-		<T.Mesh position={[0, -0.42, 0.09]}>
-			<T.BoxGeometry args={[limbR * 1.9, limbR * 1.1, limbR * 0.9]} />
-			<T.MeshStandardMaterial color={plateTint} roughness={0.35} metalness={0.35} />
-		</T.Mesh>
-		<T.Group position={[0, -0.42, 0]} rotation={[-kneeBendR, 0, 0]}>
-			<T.Mesh position={[0, -0.24, 0.075]}>
-				<T.CapsuleGeometry args={[limbR * 0.42, limbR * 2.1, 4, 8]} />
-				<T.MeshStandardMaterial color={plateTint} roughness={0.4} metalness={0.25} />
-			</T.Mesh>
-			<T.Group position={[0, -0.54, 0]} rotation={[-footRoll, 0, 0]}>
-				<T.Mesh position={[0, -0.1, 0.09]}>
-					<T.CapsuleGeometry args={[limbR * 0.52, limbR * 1.9, 4, 8]} />
-					<T.MeshStandardMaterial color="#1c1c1c" roughness={0.82} />
-				</T.Mesh>
-				<T.Mesh position={[0, -0.122, -0.025]}>
-					<T.BoxGeometry args={[limbR * 2.15, limbR * 0.32, limbR * 3.1]} />
-					<T.MeshStandardMaterial color="#090909" roughness={0.95} />
-				</T.Mesh>
-			</T.Group>
-		</T.Group>
 	</T.Group>
 </T.Group>
