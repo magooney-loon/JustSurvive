@@ -10,8 +10,8 @@ import { enemyMoveAvoid } from '../movement.js';
 type CasterConfig = {
 	damage: bigint;
 	cooldownUs: bigint;
-	rangeSq: bigint;     // max attack range (server units²)
-	minDistSq: bigint;   // flee closer than this
+	rangeSq: bigint; // max attack range (server units²)
+	minDistSq: bigint; // flee closer than this
 };
 
 const CASTER_CONFIGS: Record<string, CasterConfig> = {
@@ -19,36 +19,36 @@ const CASTER_CONFIGS: Record<string, CasterConfig> = {
 	caster: {
 		damage: 6n,
 		cooldownUs: 2_500_000n,
-		rangeSq: 64_000_000n,   // 8 units
-		minDistSq: 25_000_000n  // 5 units
+		rangeSq: 64_000_000n, // 8 units
+		minDistSq: 25_000_000n // 5 units
 	},
 	// Railgun — long range sniper, slow fire, high damage
 	caster_railgun: {
-		damage: 18n,
+		damage: 10n,
 		cooldownUs: 5_000_000n,
-		rangeSq: 196_000_000n,  // 14 units
-		minDistSq: 36_000_000n  // 6 units — kites from further away
+		rangeSq: 196_000_000n, // 14 units
+		minDistSq: 36_000_000n // 6 units — kites from further away
 	},
 	// Chaingun — short range, rapid fire, low per-hit damage
 	caster_chaingun: {
 		damage: 3n,
 		cooldownUs: 500_000n,
-		rangeSq: 36_000_000n,   // 6 units
-		minDistSq: 16_000_000n  // 4 units
+		rangeSq: 36_000_000n, // 6 units
+		minDistSq: 16_000_000n // 4 units
 	},
 	// BFG — massive single shot, very slow, devastating damage
 	caster_bfg: {
-		damage: 30n,
+		damage: 12n,
 		cooldownUs: 8_000_000n,
-		rangeSq: 100_000_000n,  // 10 units
-		minDistSq: 36_000_000n  // 6 units
+		rangeSq: 100_000_000n, // 10 units
+		minDistSq: 36_000_000n // 6 units
 	},
 	// Shotgun — medium range, semi-auto, moderate damage
 	caster_shotgun: {
 		damage: 9n,
 		cooldownUs: 1_800_000n,
-		rangeSq: 49_000_000n,   // 7 units
-		minDistSq: 25_000_000n  // 5 units
+		rangeSq: 49_000_000n, // 7 units
+		minDistSq: 25_000_000n // 5 units
 	}
 };
 
@@ -66,8 +66,7 @@ export function handleCaster(
 	const cfg = CASTER_CONFIGS[enemy.enemyType as string] ?? CASTER_CONFIGS['caster'];
 
 	const canBeam =
-		!enemy.lastSpitAt ||
-		now >= (enemy.lastSpitAt.microsSinceUnixEpoch as bigint) + cfg.cooldownUs;
+		!enemy.lastSpitAt || now >= (enemy.lastSpitAt.microsSinceUnixEpoch as bigint) + cfg.cooldownUs;
 
 	if (chosenDist <= cfg.rangeSq && !enemy.isDazed && canBeam) {
 		damageAccum.set(chosen.id, (damageAccum.get(chosen.id) ?? 0n) + cfg.damage);
