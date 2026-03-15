@@ -1,11 +1,19 @@
 <script module lang="ts">
 	import * as THREE from 'three';
-	const downedMarkerGeo = new THREE.ConeGeometry(0.1, 0.22, 3);
+	const downedMarkerGeo = new THREE.ConeGeometry(0.22, 0.5, 3);
 	const downedMarkerMat = new THREE.MeshBasicMaterial({
-		color: '#ffffff',
+		color: '#ff2222',
 		transparent: true,
-		opacity: 0.18,
+		opacity: 0.92,
 		depthWrite: false
+	});
+	const downedRingGeo = new THREE.RingGeometry(0.28, 0.42, 24);
+	const downedRingMat = new THREE.MeshBasicMaterial({
+		color: '#ff2222',
+		transparent: true,
+		opacity: 0.5,
+		depthWrite: false,
+		side: THREE.DoubleSide
 	});
 </script>
 
@@ -291,11 +299,19 @@
 		{/if}
 	</T.Group>
 	{#if isDowned}
+		<!-- Downward-pointing arrow, bobbing above body -->
 		<T.Mesh
-			position={[displayX, displayY + 1.5 + Math.sin(downedBob * 1.5) * 0.08, displayZ]}
+			position={[displayX, displayY + 2.2 + Math.sin(downedBob * 2) * 0.12, displayZ]}
 			rotation={[Math.PI, 0, 0]}
 			geometry={downedMarkerGeo}
 			material={downedMarkerMat}
+		/>
+		<!-- Pulsing ground ring -->
+		<T.Mesh
+			position={[displayX, displayY + 0.02, displayZ]}
+			rotation={[-Math.PI / 2, 0, 0]}
+			geometry={downedRingGeo}
+			material={downedRingMat}
 		/>
 	{/if}
 

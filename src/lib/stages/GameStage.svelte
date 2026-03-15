@@ -12,7 +12,8 @@
 		resetMovement,
 		localAim,
 		tpsCamera,
-		cameraFollow
+		cameraFollow,
+		spectateState
 	} from '$lib/stores/movement.svelte.js';
 	import { resetAbilities, abilityState } from '$lib/stores/abilities.svelte.js';
 	import { localHealthState, skyState, devSky } from '$lib/stores/sky.svelte.js';
@@ -205,7 +206,18 @@
 		skyState.stormIntensity += (skyTarget.storm - skyState.stormIntensity) * t;
 
 		cameraFollow.active = false;
-		if (!myState || myState.status !== 'alive') return;
+		if (!myState || myState.status !== 'alive') {
+			// Spectate alive teammates when downed — move localPos to target so TPS camera follows them
+			if (myState?.status === 'downed') {
+				const alivePeers = otherPlayers.filter((p) => p.status === 'alive');
+				if (alivePeers.length > 0) {
+					const target = alivePeers[spectateState.index % alivePeers.length];
+					localPos.x = Number(target.posX) / 1000;
+					localPos.z = Number(target.posZ) / 1000;
+				}
+			}
+			return;
+		}
 
 		// TPS aim: project camera forward onto the ground plane
 		const range = CLASS_RANGE[myState?.classChoice ?? 'gunner'] ?? 10;
@@ -252,17 +264,21 @@
 	});
 </script>
 
-<!-- Local player (predicted position, rotated toward aim) -->
+<!-- Local player (predicted position when alive, server position when downed) -->
 {#if myState}
-	<PlayerEntity
-		player={myState}
-		isLocal={true}
-		{phase}
-		overridePos={{ x: localPos.x, y: localPos.y, z: localPos.z }}
-		overrideFacing={aimAngle}
-		overrideAim={{ x: localAim.x, z: localAim.z }}
-		overrideVel={{ x: localVelocity.x, z: localVelocity.z }}
-	/>
+	{#if myState.status === 'alive'}
+		<PlayerEntity
+			player={myState}
+			isLocal={true}
+			{phase}
+			overridePos={{ x: localPos.x, y: localPos.y, z: localPos.z }}
+			overrideFacing={aimAngle}
+			overrideAim={{ x: localAim.x, z: localAim.z }}
+			overrideVel={{ x: localVelocity.x, z: localVelocity.z }}
+		/>
+	{:else}
+		<PlayerEntity player={myState} isLocal={true} {phase} />
+	{/if}
 {/if}
 
 <!-- Remote players (server position, interpolated) -->

@@ -5,7 +5,7 @@
 	import { lobbyState } from '$lib/stores/lobby.svelte.js';
 	import { abilityState } from '$lib/stores/abilities.svelte.js';
 	import { CLASSES, type ClassId } from '$lib/lobby/classData.js';
-	import { bossShake } from '$lib/stores/movement.svelte.js';
+	import { bossShake, spectateState } from '$lib/stores/movement.svelte.js';
 	import ReviveChannelHud from '$lib/character/ui/ReviveChannelHud.svelte';
 	import { stageActions } from '$root/stage.svelte.js';
 	import { soundActions } from '$root/Sound.svelte';
@@ -51,6 +51,10 @@
 	);
 	const boss = $derived(
 		$bosses.find((b) => b.sessionId === lobbyState.currentSessionId && b.isAlive)
+	);
+	const alivePeers = $derived(teammates.filter((p) => p.status === 'alive'));
+	const spectateTarget = $derived(
+		alivePeers.length > 0 ? alivePeers[spectateState.index % alivePeers.length] : null
 	);
 	const BOSS_SPAWN_INTERVAL_MS = 90_000;
 	let bossTimerStartMs = $state<number | null>(null);
@@ -179,10 +183,16 @@
 				color,
 				cdFrac: cd1[cls],
 				cdMs: a1.cooldownMs || undefined,
-				active: cls === 'tank' ? myTankState?.isCharging ?? false : undefined
+				active: cls === 'tank' ? (myTankState?.isCharging ?? false) : undefined
 			},
 			a2
-				? { label: a2.hudLabel, input: a2.input, color: '#ffcc44', cdFrac: ultCdFrac, cdMs: a2.cooldownMs }
+				? {
+						label: a2.hudLabel,
+						input: a2.input,
+						color: '#ffcc44',
+						cdFrac: ultCdFrac,
+						cdMs: a2.cooldownMs
+					}
 				: { label: '—', input: '', color: '#555', cdFrac: 0 }
 		];
 	});
@@ -318,27 +328,37 @@
 				</div>
 			</div>
 		</div>
-		<!-- Score — bottom center -->
-		<div
-			class="rpgui-container framed"
-			style="position: absolute; bottom: 2rem; left: 50%; transform: translateX(-50%); padding: 0.35rem 1.5rem; white-space: nowrap; text-align: center;"
-		>
-			<span style="font-size: 1.2rem; font-weight: 700; color: #ffd060;"
-				>{Number(myState.score).toLocaleString()} pts</span
+		<!-- Score — bottom center (hidden when downed, replaced by downed banner) -->
+		{#if myState.status === 'alive'}
+			<div
+				class="rpgui-container framed"
+				style="position: absolute; bottom: 2rem; left: 50%; transform: translateX(-50%); padding: 0.35rem 1.5rem; white-space: nowrap; text-align: center;"
 			>
-		</div>
+				<span style="font-size: 1.2rem; font-weight: 700; color: #ffd060;"
+					>{Number(myState.score).toLocaleString()} pts</span
+				>
+			</div>
+		{/if}
 	{/if}
 
 	<!-- Teammate status — top center -->
-	<div style="position: absolute; top: 1rem; left: 50%; transform: translateX(-50%); display: flex; flex-direction: column; gap: 0.4rem; align-items: center;">
+	<div
+		style="position: absolute; top: 1rem; left: 50%; transform: translateX(-50%); display: flex; flex-direction: column; gap: 0.4rem; align-items: center;"
+	>
 		{#each teammates as p (p.id)}
 			<div class="teammate-card" style="color: {p.status === 'downed' ? '#f66' : 'inherit'};">
 				<div style="display: flex; align-items: center; gap: 0.4rem; margin-bottom: 0.2rem;">
-					<span style="text-transform: capitalize; font-weight: 600; flex: 1; font-size: 0.8rem;">{p.classChoice}</span>
+					<span style="text-transform: capitalize; font-weight: 600; flex: 1; font-size: 0.8rem;"
+						>{p.classChoice}</span
+					>
 					{#if p.status === 'downed'}
-						<span style="color: #f66; font-size: 0.6rem; font-weight: 700; letter-spacing: 0.04em;">DOWN</span>
+						<span style="color: #f66; font-size: 0.6rem; font-weight: 700; letter-spacing: 0.04em;"
+							>DOWN</span
+						>
 					{:else}
-						<span style="font-size: 0.65rem; color: rgba(255,255,255,0.5);">{Number(p.hp)}/{Number(p.maxHp)}</span>
+						<span style="font-size: 0.65rem; color: rgba(255,255,255,0.5);"
+							>{Number(p.hp)}/{Number(p.maxHp)}</span
+						>
 					{/if}
 				</div>
 				{#if p.status !== 'downed'}
@@ -350,23 +370,29 @@
 		{/each}
 	</div>
 
-	<!-- Downed state overlay -->
+	<!-- Downed state — lower-center -->
 	{#if myState?.status === 'downed'}
-		<div
-			style="position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
-			       background: rgba(0,0,0,0.55); pointer-events: none; backdrop-filter: blur(3px);"
+		<button
+			type="button"
+			disabled={alivePeers.length === 0}
+			style="position: absolute; bottom: 7rem; left: 50%; transform: translateX(-50%);
+			       background: none; border: none; padding: 0; cursor: {alivePeers.length > 0 ? 'pointer' : 'default'};"
+			onclick={() => spectateState.index++}
 		>
-			<div class="rpgui-container framed" style="text-align: center; padding: 2rem 3rem;">
-				<h2
-					style="font-size: 2rem; margin: 0 0 0.5rem; color: #f66; font-weight: 800; letter-spacing: 0.06em;"
-				>
+			<div class="rpgui-container framed" style="text-align: center; padding: 1.25rem 3rem; min-width: 340px;">
+				<div style="font-size: 2rem; color: #f44; font-weight: 900; letter-spacing: 0.1em; text-shadow: 0 0 18px #f004; margin-bottom: 0.5rem;">
 					YOU'RE DOWN
-				</h2>
-				<p style="font-size: 1rem; color: rgba(255,255,255,0.6); margin: 0;">
-					Waiting for Healer...
-				</p>
+				</div>
+				{#if spectateTarget}
+					<div style="font-size: 1rem; color: rgba(255,255,255,0.85); text-transform: capitalize; font-weight: 600; margin-bottom: 0.25rem;">
+						Spectating: {spectateTarget.classChoice}
+					</div>
+					<div style="font-size: 0.8rem; color: rgba(255,255,255,0.4);">Click to switch player</div>
+				{:else}
+					<div style="font-size: 0.95rem; color: rgba(255,255,255,0.55);">Waiting for Healer or next cycle...</div>
+				{/if}
 			</div>
-		</div>
+		</button>
 	{/if}
 
 	<!-- Revive channel progress (healer only) -->

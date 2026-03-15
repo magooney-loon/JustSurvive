@@ -31,6 +31,7 @@ export const cameraFollow = $state({
 export { input, localPos, localVelocity };
 
 export const bossShake = $state({ intensity: 0 });
+export const spectateState = $state({ index: 0 });
 
 export const CLASS_SPEED: Record<string, { walk: number; sprint: number }> = {
 	spotter: { walk: 5, sprint: 9 },
@@ -58,6 +59,7 @@ export function resetMovement() {
 	cameraFollow.aimZ = 0;
 	tpsCamera.yaw = 0;
 	bossShake.intensity = 0;
+	spectateState.index = 0;
 }
 
 export function updateLocalMovement(
