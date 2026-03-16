@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { useTask } from '@threlte/core';
 	import { GLTF, useGltfAnimations } from '@threlte/extras';
+	import { input } from '$lib/stores/movement.svelte.js';
 
 	type LegsAnim = 'Idle' | 'Forward' | 'ForwardLeft' | 'ForwardRight';
 
@@ -15,6 +16,8 @@
 	const base = import.meta.env.BASE_URL;
 	const { gltf, actions, mixer } = useGltfAnimations<LegsAnim>();
 
+	let legsRotation = $state(0);
+
 	// Start all actions playing at weight 0, idle at 1
 	$effect(() => {
 		if (!$actions?.['Idle']) return;
@@ -28,6 +31,25 @@
 
 	useTask((dt) => {
 		if (!mixer) return;
+
+		// Calculate leg rotation based on input direction (only for strafing)
+		// Left strafe: rotate left, Right strafe: rotate right
+		// Forward/back: no rotation (animation plays in reverse for back)
+		let targetRotation = 0;
+		const left = input.left ? 1 : 0;
+		const right = input.right ? 1 : 0;
+		const back = input.back ? 1 : 0;
+		const isBackwards = back > 0;
+
+		if (left && !right) {
+			targetRotation = isBackwards ? -0.4 : 0.4; // invert when going backwards
+		} else if (right && !left) {
+			targetRotation = isBackwards ? 0.4 : -0.4; // invert when going backwards
+		}
+
+		// Smooth rotation
+		const rotDiff = targetRotation - legsRotation;
+		legsRotation += rotDiff * Math.min(1, dt * 12);
 
 		// Facing direction vectors (game convention: facing=0 → -Z)
 		const fwdX = -Math.sin(facing);
@@ -71,6 +93,6 @@
 	bind:gltf={$gltf}
 	url="{base}models/player/legs.glb"
 	position={[0, 0, 0]}
-	rotation={[0, Math.PI, 0]}
+	rotation={[0, Math.PI + legsRotation, 0]}
 	scale={0.05}
 />

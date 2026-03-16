@@ -71,7 +71,7 @@ export const BOSS_HP: Record<string, bigint> = {
 	rabid_dog: 1500n,
 	scp_096: 2000n,
 	terror_reaper: 2200n,
-	katze_miu: 6000n
+	katze_miu: 3000n
 };
 
 export const BOSS_SPEED: Record<string, bigint> = {
@@ -80,7 +80,7 @@ export const BOSS_SPEED: Record<string, bigint> = {
 	rabid_dog: 7000n,
 	scp_096: 5000n,
 	terror_reaper: 3800n,
-	katze_miu: 6000n
+	katze_miu: 5400n
 };
 
 export const BOSS_DAMAGE: Record<string, bigint> = {
