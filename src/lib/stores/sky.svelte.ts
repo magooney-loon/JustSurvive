@@ -4,8 +4,9 @@ export const localHealthState = $state({ ratio: 1 });
 // Dev override — set by SkyExtension in studio mode, null = use session phase
 export const devSky = $state({ forcedPhase: null as string | null });
 
-// Sky state — written by GameStage (lerped per phase), read by Skybox
+// Sky state — written by GameStage (lerped per phase), read by Skybox and Renderer
 export const skyState = $state({
+	phase: 'sunset' as string,
 	elevation: -3,
 	azimuth: 250,
 	turbidity: 8,

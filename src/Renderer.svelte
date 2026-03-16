@@ -18,8 +18,7 @@
 		BrightnessContrastEffect
 	} from 'postprocessing';
 	import { settingsState, log } from '$root/settings.svelte.js';
-	import { localHealthState } from '$lib/stores/sky.svelte.js';
-	import { devSky } from '$lib/stores/sky.svelte.js';
+	import { localHealthState, skyState } from '$lib/stores/sky.svelte.js';
 
 	const { scene, renderer, camera, size, autoRender, renderStage } = useThrelte();
 
@@ -162,7 +161,7 @@
 				}
 			}
 			if (hueSatEffect && brightnessContrastEffect) {
-				const phase = devSky.forcedPhase ?? 'sunset';
+				const phase = skyState.phase;
 				const grading =
 					PHASE_COLOR_GRADING[phase as keyof typeof PHASE_COLOR_GRADING] ??
 					PHASE_COLOR_GRADING.sunset;

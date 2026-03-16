@@ -160,7 +160,7 @@
 		<StarsComponent
 			count={starCounts.stars1}
 			radius={20}
-			depth={20}
+			depth={25}
 			factor={1.45}
 			fade={true}
 			lightness={0.4}

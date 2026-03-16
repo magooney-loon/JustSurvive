@@ -199,6 +199,7 @@
 		// ── Sky lerp (always runs) ──────────────────────────────────────────
 		const skyTarget = PHASE_SKY[phase as keyof typeof PHASE_SKY] ?? PHASE_SKY.sunset;
 		const t = Math.min(1, dt * 1.5);
+		skyState.phase = phase;
 		skyState.elevation += (skyTarget.elevation - skyState.elevation) * t;
 		skyState.azimuth += (skyTarget.azimuth - skyState.azimuth) * t;
 		skyState.turbidity += (skyTarget.turbidity - skyState.turbidity) * t;
