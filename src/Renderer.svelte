@@ -13,10 +13,13 @@
 		VignetteEffect,
 		PixelationEffect,
 		GlitchEffect,
-		GlitchMode
+		GlitchMode,
+		HueSaturationEffect,
+		BrightnessContrastEffect
 	} from 'postprocessing';
 	import { settingsState, log } from '$root/settings.svelte.js';
 	import { localHealthState } from '$lib/stores/sky.svelte.js';
+	import { devSky } from '$lib/stores/sky.svelte.js';
 
 	const { scene, renderer, camera, size, autoRender, renderStage } = useThrelte();
 
@@ -27,16 +30,26 @@
 	let vignetteEffect: VignetteEffect | null = null;
 	let pixelationEffect: PixelationEffect | null = null;
 	let glitchEffect: GlitchEffect | null = null;
+	let hueSatEffect: HueSaturationEffect | null = null;
+	let brightnessContrastEffect: BrightnessContrastEffect | null = null;
 
 	const VIGNETTE_BASE = 0.75;
 	const VIGNETTE_MAX = 1.8;
 	const VIGNETTE_LERP = 4; // lerp speed (units/sec)
 
-	const PIXELATION_GRANULARITY = 3;
+	const PIXELATION_GRANULARITY = 2.5;
 
 	const GLITCH_START = 0.5;
 	const GLITCH_MAX_STRENGTH = 0.3;
 	const GLITCH_MIN_STRENGTH = 0.05;
+
+	const PHASE_COLOR_GRADING = {
+		sunset: { hue: 0.08, saturation: 0.15, brightness: 0.05, contrast: 0 },
+		dusk: { hue: -0.05, saturation: 0.1, brightness: -0.05, contrast: 0 },
+		twilight: { hue: -0.1, saturation: -0.05, brightness: -0.1, contrast: 0 },
+		night: { hue: -0.15, saturation: -0.25, brightness: -0.2, contrast: 0 },
+		deep_night: { hue: -0.2, saturation: -0.4, brightness: -0.35, contrast: 0 }
+	} as const;
 
 	const setupEffectComposer = () => {
 		// Remove all existing passes to prevent duplicates
@@ -44,6 +57,8 @@
 		vignetteEffect = null;
 		pixelationEffect = null;
 		glitchEffect = null;
+		hueSatEffect = null;
+		brightnessContrastEffect = null;
 
 		// Add the render pass
 		const renderPass = new RenderPass(scene, $camera);
@@ -91,7 +106,17 @@
 		});
 		glitchEffect.mode = GlitchMode.DISABLED;
 
-		const effectPass = new EffectPass($camera, bloomEffect, smaaEffect, vignetteEffect);
+		hueSatEffect = new HueSaturationEffect({ hue: 0, saturation: 0 });
+		brightnessContrastEffect = new BrightnessContrastEffect({ brightness: 0, contrast: 1 });
+
+		const effectPass = new EffectPass(
+			$camera,
+			brightnessContrastEffect,
+			hueSatEffect,
+			bloomEffect,
+			smaaEffect,
+			vignetteEffect
+		);
 		composer.addPass(effectPass);
 
 		const pixelPass = new EffectPass($camera, pixelationEffect, glitchEffect);
@@ -135,6 +160,19 @@
 				} else {
 					glitchEffect.mode = GlitchMode.DISABLED;
 				}
+			}
+			if (hueSatEffect && brightnessContrastEffect) {
+				const phase = devSky.forcedPhase ?? 'sunset';
+				const grading =
+					PHASE_COLOR_GRADING[phase as keyof typeof PHASE_COLOR_GRADING] ??
+					PHASE_COLOR_GRADING.sunset;
+				hueSatEffect.hue += (grading.hue - hueSatEffect.hue) * Math.min(1, delta * 2);
+				hueSatEffect.saturation +=
+					(grading.saturation - hueSatEffect.saturation) * Math.min(1, delta * 2);
+				brightnessContrastEffect.brightness +=
+					(grading.brightness - brightnessContrastEffect.brightness) * Math.min(1, delta * 2);
+				brightnessContrastEffect.contrast +=
+					(grading.contrast - brightnessContrastEffect.contrast) * Math.min(1, delta * 2);
 			}
 			composer.render(delta);
 		},
