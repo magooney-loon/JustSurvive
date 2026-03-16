@@ -74,19 +74,20 @@ export function bossAttack(
 	now: bigint,
 	playerScale: bigint = 100n
 ) {
-	// Rate-limit melee hits — fires once per BOSS_MELEE_COOLDOWN_US window
-	const tickUs = TICK_MS * 1000n;
-	if (now % BOSS_MELEE_COOLDOWN_US >= tickUs) return false;
-
-	const isEnraged = (boss.phase as bigint) === 1n;
-	const baseDamage = BOSS_DAMAGE[boss.bossType] ?? 4n;
-	const damage = ((isEnraged ? (baseDamage * 3n) / 2n : baseDamage) * playerScale) / 100n;
+	// Out of range — keep chasing
 	const range = BOSS_MELEE_RANGE;
-	if (distSq <= range * range) {
+	if (distSq > range * range) return false;
+
+	// In range: always stop moving (return true).
+	// Rate-limit actual damage — fires ~20% of ticks so the boss "swings" at a steady cadence.
+	const tickUs = TICK_MS * 1000n;
+	if (now % BOSS_MELEE_COOLDOWN_US < tickUs) {
+		const isEnraged = (boss.phase as bigint) === 1n;
+		const baseDamage = BOSS_DAMAGE[boss.bossType] ?? 4n;
+		const damage = ((isEnraged ? (baseDamage * 3n) / 2n : baseDamage) * playerScale) / 100n;
 		damageAccum.set(chosen.id as bigint, (damageAccum.get(chosen.id as bigint) ?? 0n) + damage);
-		return true;
 	}
-	return false;
+	return true;
 }
 
 // ─── Main entry point ──────────────────────────────────────────────────────────
