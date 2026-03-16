@@ -181,15 +181,15 @@
 	const torchFlameMat = new THREE.MeshBasicMaterial({ color: '#ff4400' });
 	const torchFlameInnerMat = new THREE.MeshBasicMaterial({ color: '#ffdd44' });
 	const torchGlowMat = new THREE.MeshBasicMaterial({
-		color: '#ff9933',
+		color: '#ffaa44',
 		transparent: true,
-		opacity: 0.65,
+		opacity: 0.9,
 		depthWrite: false
 	});
 	const torchHaloMat = new THREE.MeshBasicMaterial({
 		color: '#ff6600',
 		transparent: true,
-		opacity: 0.08,
+		opacity: 0.02,
 		depthWrite: false
 	});
 
@@ -296,7 +296,7 @@
 		halo.name = 'halo';
 		group.add(halo);
 
-		const light = new THREE.PointLight('#ff7722', 10, 28, 2);
+		const light = new THREE.PointLight('#ff7722', 18, 28, 2);
 		light.position.set(0, 1.9, 0);
 		light.name = 'light';
 		group.add(light);
@@ -539,11 +539,11 @@
 		{/if}
 		{#if halo}
 			{@const m = halo}
-			{m.scale.set(li * 1.2, li * 0.9, li * 1.2)}
+			{m.scale.set(fs * 0.8, fs * 0.5, fs * 0.8)}
 		{/if}
 		{#if light}
 			{@const l = light as THREE.PointLight}
-			{(l.intensity = li * 10)}
+			{(l.intensity = li * 18)}
 		{/if}
 		<T is={group} />
 	{/each}
