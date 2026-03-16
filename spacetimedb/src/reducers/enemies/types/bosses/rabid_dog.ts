@@ -11,7 +11,7 @@ import {
 	BOSS_PLAYER_LONG_STUN_US,
 	DOG_LEAP_DISTANCE
 } from '../../../../constants.js';
-import { bossMove, bossAttack } from '../boss.js';
+import { bossMove, bossAttack } from '../boss_helpers.js';
 
 export function handleRabidDog(
 	ctx: any,

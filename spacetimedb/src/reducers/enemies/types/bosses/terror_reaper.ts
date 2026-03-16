@@ -10,7 +10,7 @@ import {
 	REAPER_SOUL_DRAIN_RANGE_SQ,
 	BOSS_PLAYER_LONG_STUN_US
 } from '../../../../constants.js';
-import { bossMove, bossAttack } from '../boss.js';
+import { bossMove, bossAttack } from '../boss_helpers.js';
 
 export function handleTerrorReaper(
 	ctx: any,

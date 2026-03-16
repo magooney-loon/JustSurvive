@@ -11,7 +11,7 @@ import {
 	SCP096_CHARGE_INTERVAL_US,
 	BOSS_PLAYER_SLOW_US
 } from '../../../../constants.js';
-import { bossMove, bossAttack } from '../boss.js';
+import { bossMove, bossAttack } from '../boss_helpers.js';
 
 export function handleScp096(
 	ctx: any,

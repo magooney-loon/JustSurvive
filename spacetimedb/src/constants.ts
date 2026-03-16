@@ -265,7 +265,7 @@ export const DOG_LEAP_DISTANCE = 2500n; // distance behind player the dog telepo
 
 // ─── Gunner ───────────────────────────────────────────────────────────────────
 export const GUNNER_ATTACK_RANGE_SQ = 100_000_000n; // 10 world units max shot range (squared)
-export const GUNNER_SUPPRESS_COOLDOWN_US = 8_000_000n; // 8s between suppress dazes on bosses
+export const GUNNER_SUPPRESS_COOLDOWN_US = 5_000_000n; // 5s between suppress dazes on bosses
 export const GUNNER_SUPPRESS_DAZE_US = 1_000_000n; // 1s daze applied by suppression shot
 export const GUNNER_ADRENALINE_COOLDOWN_US = 5_000_000n; // 5s cooldown on adrenaline ability
 export const GUNNER_FRENZY_RANGE_SQ = 225_000_000n; // 15 world units — frenzy ultimate radius (squared)
@@ -274,10 +274,10 @@ export const GUNNER_FRENZY_DAZE_US = 2_000_000n; // 2s daze applied by frenzy ul
 // ─── Spotter ──────────────────────────────────────────────────────────────────
 export const STEADY_SHOT_PIERCE_WIDTH_SQ = 2_250_000n; // 1.5 world units perpendicular pierce width (squared)
 export const BARRAGE_DAMAGE = 20n; // damage per enemy hit by spotter ultimate (Barrage)
-export const FLASH_BOSS_COOLDOWN_US = 10_000_000n; // 10s between flash stuns on the same boss
+export const FLASH_BOSS_COOLDOWN_US = 7_000_000n; // 7s between flash stuns on the same boss
 
 // ─── Tank ─────────────────────────────────────────────────────────────────────
-export const AXE_BOSS_DAZE_COOLDOWN_US = 6_000_000n; // 6s between axe daze procs on bosses
+export const AXE_BOSS_DAZE_COOLDOWN_US = 4_000_000n; // 4s between axe daze procs on bosses
 export const SLAM_DAZE_US = 2_000_000n; // 2s daze applied by ground slam ultimate
 
 // ─── Healer ───────────────────────────────────────────────────────────────────

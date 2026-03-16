@@ -9,7 +9,7 @@ import {
 	GHOST_ABILITY2_COOLDOWN_US,
 	BOSS_PLAYER_STUN_US
 } from '../../../../constants.js';
-import { bossMove, bossAttack } from '../boss.js';
+import { bossMove, bossAttack } from '../boss_helpers.js';
 
 export function handleGhostDragon(
 	ctx: any,

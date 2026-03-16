@@ -10,7 +10,7 @@ import {
 	WORM_BURROW_DURATION_US,
 	WORM_CHAIN_RANGE_SQ
 } from '../../../../constants.js';
-import { bossMove, bossAttack } from '../boss.js';
+import { bossMove, bossAttack } from '../boss_helpers.js';
 
 export function handleWormMonster(
 	ctx: any,
