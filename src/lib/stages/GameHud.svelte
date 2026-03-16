@@ -201,12 +201,29 @@
 <div
 	transition:fly={{ x: -20, duration: 300 }}
 	class="rpgui-content"
-	style="position: absolute; inset: 0; pointer-events: none;"
+	style="
+		position: absolute;
+		inset: 0;
+		pointer-events: none;
+		perspective: 1200px;
+		transform-style: preserve-3d;
+	"
 >
 	<!-- Day phase indicator — top left -->
 	<div
 		class="rpgui-container framed"
-		style="position: absolute; top: 1rem; left: 1rem; padding: 0.35rem 1rem; display: inline-flex; align-items: center; gap: 0.6rem; white-space: nowrap;"
+		style="
+			position: absolute;
+			top: 1rem;
+			left: 1rem;
+			padding: 0.35rem 1rem;
+			display: inline-flex;
+			align-items: center;
+			gap: 0.6rem;
+			white-space: nowrap;
+			transform: rotateY(8deg) skewY(-1deg);
+			transform-origin: left center;
+		"
 	>
 		<span style="font-size: 0.9rem; font-weight: 500;"
 			>{DAY_PHASE_LABELS[session?.dayPhase ?? 'sunset'] ?? ''}</span
@@ -222,7 +239,16 @@
 	{#if boss}
 		<div
 			class="rpgui-container framed"
-			style="position: absolute; top: 1rem; right: 1rem; min-width: 260px; padding: 0.5rem 1.25rem; text-align: center;"
+			style="
+				position: absolute;
+				top: 1rem;
+				right: 1rem;
+				min-width: 260px;
+				padding: 0.5rem 1.25rem;
+				text-align: center;
+				transform: rotateY(-8deg) skewY(1deg);
+				transform-origin: right center;
+			"
 		>
 			<p
 				style="margin: 0 0 0.4rem; font-size: 0.75rem; color: #ff4466; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase;"
@@ -239,16 +265,29 @@
 	{:else}
 		<div
 			class="rpgui-container framed"
-			style="position: absolute; top: 1rem; right: 1rem; padding: 0.4rem 1.25rem; white-space: nowrap; text-align: center;"
+			style="
+				position: absolute;
+				top: 1rem;
+				right: 1rem;
+				padding: 0.4rem 1.25rem;
+				white-space: nowrap;
+				text-align: center;
+				transform: rotateY(-8deg) skewY(1deg);
+				transform-origin: right center;
+			"
 		>
 			<span
 				style="font-size: 0.75rem; color: rgba(255,100,130,0.8); font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em;"
-				>Boss in</span
 			>
-			<span
-				style="font-size: 1.5rem; font-weight: 800; color: #ff4466; margin-left: 0.5rem; font-variant-numeric: tabular-nums;"
-				>{bossSecsLeft}s</span
-			>
+				<span
+					style="font-size: 0.75rem; color: rgba(255,100,130,0.8); font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em;"
+					>Boss in</span
+				>
+				<span
+					style="font-size: 1.5rem; font-weight: 800; color: #ff4466; margin-left: 0.5rem; font-variant-numeric: tabular-nums;"
+					>{bossSecsLeft}s</span
+				>
+			</span>
 		</div>
 	{/if}
 
@@ -256,7 +295,16 @@
 	{#if myState && myState.status === 'alive'}
 		{@const slots = abilities()}
 		<div
-			style="position: absolute; bottom: 2rem; right: 1.25rem; display: flex; gap: 0.75rem; pointer-events: none;"
+			style="
+				position: absolute;
+				bottom: 2rem;
+				right: 1.25rem;
+				display: flex;
+				gap: 0.75rem;
+				pointer-events: none;
+				transform: rotateY(-8deg) skewY(1deg);
+				transform-origin: right bottom;
+			"
 		>
 			{#each slots as slot}
 				<div
@@ -300,7 +348,15 @@
 	{#if myState}
 		<div
 			class="rpgui-container framed"
-			style="position: absolute; bottom: 2rem; left: 1.25rem; width: 270px; padding: 0.75rem 1rem;"
+			style="
+				position: absolute;
+				bottom: 2rem;
+				left: 1.25rem;
+				width: 270px;
+				padding: 0.75rem 1rem;
+				transform: rotateY(8deg) skewY(-1deg);
+				transform-origin: left bottom;
+			"
 		>
 			<!-- HP bar -->
 			<div style="margin-bottom: 0.55rem;">
@@ -332,7 +388,15 @@
 		{#if myState.status === 'alive'}
 			<div
 				class="rpgui-container framed"
-				style="position: absolute; bottom: 2rem; left: 50%; transform: translateX(-50%); padding: 0.35rem 1.5rem; white-space: nowrap; text-align: center;"
+				style="
+					position: absolute;
+					bottom: 2rem;
+					left: 50%;
+			transform: translateX(-50%) skewY(-0.3deg);
+					padding: 0.35rem 1.5rem;
+					white-space: nowrap;
+					text-align: center;
+				"
 			>
 				<span style="font-size: 1.2rem; font-weight: 700; color: #ffd060;"
 					>{Number(myState.score).toLocaleString()} pts</span
@@ -343,7 +407,16 @@
 
 	<!-- Teammate status — top center -->
 	<div
-		style="position: absolute; top: 1rem; left: 50%; transform: translateX(-50%); display: flex; flex-direction: column; gap: 0.4rem; align-items: center;"
+		style="
+			position: absolute;
+			top: 1rem;
+			left: 50%;
+			transform: translateX(-50%) skewY(0.3deg);
+			display: flex;
+			flex-direction: column;
+			gap: 0.4rem;
+			align-items: center;
+		"
 	>
 		{#each teammates as p (p.id)}
 			<div class="teammate-card" style="color: {p.status === 'downed' ? '#f66' : 'inherit'};">
@@ -376,20 +449,31 @@
 			type="button"
 			disabled={alivePeers.length === 0}
 			style="position: absolute; bottom: 7rem; left: 50%; transform: translateX(-50%);
-			       background: none; border: none; padding: 0; cursor: {alivePeers.length > 0 ? 'pointer' : 'default'};"
+			       background: none; border: none; padding: 0; cursor: {alivePeers.length > 0
+				? 'pointer'
+				: 'default'};"
 			onclick={() => spectateState.index++}
 		>
-			<div class="rpgui-container framed" style="text-align: center; padding: 1.25rem 3rem; min-width: 340px;">
-				<div style="font-size: 2rem; color: #f44; font-weight: 900; letter-spacing: 0.1em; text-shadow: 0 0 18px #f004; margin-bottom: 0.5rem;">
+			<div
+				class="rpgui-container framed"
+				style="text-align: center; padding: 1.25rem 3rem; min-width: 340px;"
+			>
+				<div
+					style="font-size: 2rem; color: #f44; font-weight: 900; letter-spacing: 0.1em; text-shadow: 0 0 18px #f004; margin-bottom: 0.5rem;"
+				>
 					YOU'RE DOWN
 				</div>
 				{#if spectateTarget}
-					<div style="font-size: 1rem; color: rgba(255,255,255,0.85); text-transform: capitalize; font-weight: 600; margin-bottom: 0.25rem;">
+					<div
+						style="font-size: 1rem; color: rgba(255,255,255,0.85); text-transform: capitalize; font-weight: 600; margin-bottom: 0.25rem;"
+					>
 						Spectating: {spectateTarget.classChoice}
 					</div>
 					<div style="font-size: 0.8rem; color: rgba(255,255,255,0.4);">Click to switch player</div>
 				{:else}
-					<div style="font-size: 0.95rem; color: rgba(255,255,255,0.55);">Waiting for Healer or next cycle...</div>
+					<div style="font-size: 0.95rem; color: rgba(255,255,255,0.55);">
+						Waiting for Healer or next cycle...
+					</div>
 				{/if}
 			</div>
 		</button>
