@@ -169,13 +169,16 @@
 	);
 
 	const isDowned = $derived(player.status === 'downed');
-	const nowMs = Date.now();
-	const isStunned = $derived(
-		player.stunUntil ? Number(player.stunUntil.microsSinceUnixEpoch) / 1000 > nowMs : false
-	);
-	const isSlowed = $derived(
-		player.slowedUntil ? Number(player.slowedUntil.microsSinceUnixEpoch) / 1000 > nowMs : false
-	);
+	const isStunned = $derived.by(() => {
+		const nowMs = Date.now();
+		return player.stunUntil ? Number(player.stunUntil.microsSinceUnixEpoch) / 1000 > nowMs : false;
+	});
+	const isSlowed = $derived.by(() => {
+		const nowMs = Date.now();
+		return player.slowedUntil
+			? Number(player.slowedUntil.microsSinceUnixEpoch) / 1000 > nowMs
+			: false;
+	});
 	const downedTilt = $derived(isDowned ? -Math.PI / 2 : 0);
 	const downedYOffset = $derived(isDowned ? -0.35 : 0);
 
@@ -251,6 +254,29 @@
 
 <!-- Stun/Slow visual indicator -->
 {#if (isStunned || isSlowed) && !isDowned}
+	<!-- Ground ring effect -->
+	<T.Mesh position={[displayX, displayY + 0.02, displayZ]} rotation.x={-Math.PI / 2}>
+		<T.RingGeometry args={[0.6, 0.8, 24]} />
+		<T.MeshBasicMaterial
+			color={isStunned ? '#ffaa00' : '#44aaff'}
+			transparent
+			opacity={0.5}
+			side={THREE.DoubleSide}
+			depthWrite={false}
+		/>
+	</T.Mesh>
+	<!-- Inner ground ring -->
+	<T.Mesh position={[displayX, displayY + 0.02, displayZ]} rotation.x={-Math.PI / 2}>
+		<T.RingGeometry args={[0.3, 0.45, 24]} />
+		<T.MeshBasicMaterial
+			color={isStunned ? '#ffcc44' : '#66ccff'}
+			transparent
+			opacity={0.35}
+			side={THREE.DoubleSide}
+			depthWrite={false}
+		/>
+	</T.Mesh>
+	<!-- Floating sphere indicator -->
 	<T.Mesh position={[displayX, displayY + 1.2, displayZ]}>
 		<T.SphereGeometry args={[0.5, 12, 8]} />
 		<T.MeshBasicMaterial
