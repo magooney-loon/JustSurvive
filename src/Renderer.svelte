@@ -47,8 +47,8 @@
 		);
 
 		const bloomEffect = new BloomEffect({
-			intensity: isHighQuality ? 6 : 4,
-			luminanceThreshold: isHighQuality ? 0.01 : 0.005,
+			intensity: isHighQuality ? 3 : 1,
+			luminanceThreshold: isHighQuality ? 0.03 : 0.01,
 			height: isHighQuality ? 1024 : 512,
 			width: isHighQuality ? 1024 : 512,
 			luminanceSmoothing: isHighQuality ? 0.08 : 0.06,
