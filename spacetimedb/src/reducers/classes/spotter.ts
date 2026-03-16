@@ -109,7 +109,7 @@ export function steadyShot(ctx: any, { sessionId, enemyId }: any) {
 	const distSq = dx * dx + dz * dz;
 	const pierceTargets: Array<{ e: any; proj: bigint }> = [];
 	for (const e of ctx.db.enemy.enemy_session_id.filter(sessionId)) {
-		if (!e.isAlive || (e.id as bigint) === (enemy.id as bigint)) continue;
+		if (!e.isAlive || (e.id as bigint) === (enemyId as bigint)) continue;
 		const ex = (e.posX as bigint) - (ps.posX as bigint);
 		const ez = (e.posZ as bigint) - (ps.posZ as bigint);
 		const proj = ex * dx + ez * dz;
