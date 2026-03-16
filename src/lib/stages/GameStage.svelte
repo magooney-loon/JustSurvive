@@ -270,20 +270,19 @@
 		<PlayerEntity
 			player={myState}
 			isLocal={true}
-			{phase}
 			overridePos={{ x: localPos.x, y: localPos.y, z: localPos.z }}
 			overrideFacing={aimAngle}
 			overrideAim={{ x: localAim.x, z: localAim.z }}
 			overrideVel={{ x: localVelocity.x, z: localVelocity.z }}
 		/>
 	{:else}
-		<PlayerEntity player={myState} isLocal={true} {phase} />
+		<PlayerEntity player={myState} isLocal={true} />
 	{/if}
 {/if}
 
 <!-- Remote players (server position, interpolated) -->
 {#each otherPlayers as player (player.id)}
-	<PlayerEntity {player} {phase} />
+	<PlayerEntity {player} />
 {/each}
 
 <!-- Enemies (interpolated) -->
@@ -298,7 +297,12 @@
 
 <!-- Item drops -->
 {#each $droppedItems.filter((i) => i.sessionId === lobbyState.currentSessionId) as item (item.id)}
-	<DroppedItemEntity posX={item.posX} posZ={item.posZ} itemType={item.itemType} spawnedAt={item.spawnedAt as any} />
+	<DroppedItemEntity
+		posX={item.posX}
+		posZ={item.posZ}
+		itemType={item.itemType}
+		spawnedAt={item.spawnedAt as any}
+	/>
 {/each}
 
 <!-- Acid pools -->

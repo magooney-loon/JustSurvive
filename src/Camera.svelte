@@ -16,9 +16,9 @@
 	let camera = $state.raw<PerspectiveCamera>();
 
 	// TPS: camera offset above and behind the player
-	const TPS_Y = 8;
-	const TPS_Z = 10;
-	const TPS_PITCH = -Math.atan2(TPS_Y, TPS_Z);
+	const TPS_Y = 4;
+	const TPS_Z = 5;
+	const TPS_PITCH = -Math.atan2(TPS_Y, TPS_Z) * 0.6; // look more towards sky
 	const EYE_Y_BASE = 1.658; // spectate eye level
 	const BASE_SENS = 0.002;
 
