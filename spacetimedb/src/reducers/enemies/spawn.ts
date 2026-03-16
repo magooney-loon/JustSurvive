@@ -16,6 +16,9 @@ import {
 	BOSS_HP
 } from '../../constants.js';
 
+// ─── Debug: Force a specific boss type (set to null for shuffle) ───────────────
+const DEBUG_FORCE_BOSS: string | null = 'katze_miu'; // null = use shuffled rotation
+
 // ─── spawn_enemy (scheduled) ──────────────────────────────────────────────────
 
 export function spawnEnemy(ctx: any, { arg }: any) {
@@ -170,7 +173,7 @@ export function fireBossSpawn(ctx: any, { arg }: any) {
 	const cycleNum = spawnCount / 6n; // which 6-boss cycle we're in
 	const posInCycle = spawnCount % 6n; // slot within that cycle (0–5)
 	const shuffleSeed = (session.mapSeed as bigint) ^ cycleNum;
-	const bossType = shuffledBossTypes(shuffleSeed)[Number(posInCycle)];
+	const bossType = DEBUG_FORCE_BOSS ?? shuffledBossTypes(shuffleSeed)[Number(posInCycle)];
 
 	const baseHp = BOSS_HP[bossType] ?? 1500n;
 	const hp = (baseHp * playerScale * spawnBonus) / (100n * 100n);

@@ -72,7 +72,7 @@ export function handleKatzeMiu(
 		const dmg = (baseDmg * playerScale) / 100n;
 		damageAccum.set(chosen.id as bigint, (damageAccum.get(chosen.id as bigint) ?? 0n) + dmg);
 		// Knockback - push them back significantly
-		const magnitude = BigInt(Math.sqrt(Number(chosenDistSq)));
+		const magnitude = BigInt(Math.round(Math.sqrt(Number(chosenDistSq))));
 		if (magnitude > 0n) {
 			const knockX =
 				(((boss.posX as bigint) - (chosen.posX as bigint)) * KATZE_SPIN_KNOCKBACK) / magnitude;
@@ -103,7 +103,7 @@ export function handleKatzeMiu(
 			if (pDist <= KATZE_SPIN_RANGE_SQ) {
 				hitAny = true;
 				// Knockback away from boss
-				const pMag = BigInt(Math.sqrt(Number(pDist)));
+				const pMag = BigInt(Math.round(Math.sqrt(Number(pDist))));
 				if (pMag > 0n) {
 					const knockX = (pdx * KATZE_SPIN_KNOCKBACK) / pMag;
 					const knockZ = (pdz * KATZE_SPIN_KNOCKBACK) / pMag;
