@@ -9,6 +9,7 @@
 //   bosses/rabid_dog.ts      — leap + stun attack
 //   bosses/scp_096.ts        — aoe slam + random charge
 //   bosses/terror_reaper.ts  — soul drain + death blink
+//   bosses/katze_miu.ts      — uppercut + fist spin
 
 import { bossAgeSec } from './boss_helpers.js';
 import { handleGhostDragon } from './bosses/ghost_dragon.js';
@@ -16,6 +17,7 @@ import { handleWormMonster } from './bosses/worm_monster.js';
 import { handleRabidDog } from './bosses/rabid_dog.js';
 import { handleScp096 } from './bosses/scp_096.js';
 import { handleTerrorReaper } from './bosses/terror_reaper.js';
+import { handleKatzeMiu } from './bosses/katze_miu.js';
 
 export { bossAgeSec, bossMove, bossAttack } from './boss_helpers.js';
 
@@ -63,6 +65,9 @@ export function handleBoss(
 			break;
 		case 'terror_reaper':
 			handleTerrorReaper(ctx, boss, players, now, damageAccum, abilitiesLocked, playerScale);
+			break;
+		case 'katze_miu':
+			handleKatzeMiu(ctx, boss, players, now, damageAccum, abilitiesLocked, playerScale);
 			break;
 	}
 }

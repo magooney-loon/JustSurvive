@@ -30,4 +30,6 @@ export default __t.row({
   ability2CooldownUntil: __t.option(__t.timestamp()).name("ability_2_cooldown_until"),
   isHidden: __t.bool().name("is_hidden"),
   isBurrowed: __t.bool().name("is_burrowed"),
+  isChanneling: __t.bool().name("is_channeling"),
+  knockedPlayerId: __t.option(__t.u64()).name("knocked_player_id"),
 });

@@ -77,8 +77,8 @@ export const GameSession = table(
 		dayPhase: t.string(),
 		cycleNumber: t.u64(),
 		phaseStartedAt: t.timestamp(),
-		fogStartedAt: t.timestamp().optional(),  // VFX: when current fog event began
-		fogEndsAt: t.timestamp().optional(),      // VFX: when current fog event ends
+		fogStartedAt: t.timestamp().optional(), // VFX: when current fog event began
+		fogEndsAt: t.timestamp().optional(), // VFX: when current fog event ends
 		mapSeed: t.u64(),
 		bossSpawnCount: t.u64()
 	}
@@ -124,7 +124,7 @@ export const PlayerState = table(
 		facingAngle: t.i64(), // milliradians * 1000, e.g. PI = 3142
 		speedBoostUntil: t.timestamp().optional(),
 		doubleDamageUntil: t.timestamp().optional(), // item: double damage buff
-		stunUntil: t.timestamp().optional(),  // player stun from boss abilities
+		stunUntil: t.timestamp().optional(), // player stun from boss abilities
 		slowedUntil: t.timestamp().optional(), // player slow from scp_096 slam
 		lastDamagedAt: t.timestamp().optional() // healer regen ramp tracking
 	}
@@ -299,7 +299,7 @@ export const Boss = table(
 	{
 		id: t.u64().primaryKey().autoInc(),
 		sessionId: t.u64(),
-		bossType: t.string(), // 'ghost_dragon' | 'worm_monster' | 'rabid_dog' | 'scp_096'
+		bossType: t.string(), // 'ghost_dragon' | 'worm_monster' | 'rabid_dog' | 'scp_096' | 'terror_reaper' | 'katze_miu'
 		hp: t.u64(),
 		maxHp: t.u64(),
 		posX: t.i64(),
@@ -314,8 +314,10 @@ export const Boss = table(
 		diedAt: t.timestamp().optional(),
 		ability1CooldownUntil: t.timestamp().optional(),
 		ability2CooldownUntil: t.timestamp().optional(),
-		isHidden: t.bool(),   // ghost_dragon: invisible during hide & seek
-		isBurrowed: t.bool()  // worm_monster: underground during burrow
+		isHidden: t.bool(), // ghost_dragon: invisible during hide & seek
+		isBurrowed: t.bool(), // worm_monster: underground during burrow
+		isChanneling: t.bool(), // katze_miu: spinning during fist spin
+		knockedPlayerId: t.u64().optional() // katze_miu: player being knocked by uppercut
 	}
 );
 
@@ -363,7 +365,7 @@ export const SpotterState = table(
 		playerIdentity: t.identity(),
 		steadyShotCooldownUntil: t.timestamp().optional(),
 		flashCooldownUntil: t.timestamp().optional(),
-		lastFlashAt: t.timestamp().optional(),   // VFX: when flash cone was fired
+		lastFlashAt: t.timestamp().optional(), // VFX: when flash cone was fired
 		ultimateCooldownUntil: t.timestamp().optional(),
 		lastUltimateAt: t.timestamp().optional() // VFX: when ultimate was last fired
 	}
@@ -387,7 +389,7 @@ export const GunnerState = table(
 		sessionId: t.u64(),
 		playerIdentity: t.identity(),
 		adrenalineCooldownUntil: t.timestamp().optional(),
-		lastAdrenalineAt: t.timestamp().optional(),      // VFX: when adrenaline was last used
+		lastAdrenalineAt: t.timestamp().optional(), // VFX: when adrenaline was last used
 		ultimateCooldownUntil: t.timestamp().optional(),
 		lastUltimateAt: t.timestamp().optional() // VFX: when ultimate was last fired
 	}
@@ -416,10 +418,10 @@ export const TankState = table(
 		chargeDirZ: t.i64(),
 		chargeCooldownUntil: t.timestamp().optional(),
 		axeSwingCooldownUntil: t.timestamp().optional(),
-		lastAxeSwingAt: t.timestamp().optional(),   // VFX: when axe was last swung
-		lastChargeAt: t.timestamp().optional(),     // VFX: when charge was last activated
+		lastAxeSwingAt: t.timestamp().optional(), // VFX: when axe was last swung
+		lastChargeAt: t.timestamp().optional(), // VFX: when charge was last activated
 		ultimateCooldownUntil: t.timestamp().optional(),
-		lastUltimateAt: t.timestamp().optional()  // VFX: when ultimate was last fired
+		lastUltimateAt: t.timestamp().optional() // VFX: when ultimate was last fired
 	}
 );
 
@@ -442,12 +444,12 @@ export const HealerState = table(
 		playerIdentity: t.identity(),
 		healCooldownUntil: t.timestamp().optional(),
 		reviveCooldownUntil: t.timestamp().optional(),
-		lastHealAt: t.timestamp().optional(),                // VFX: primary heal beam
-		healTargetIdentity: t.identity().optional(),         // VFX: primary beam target
-		chainHealTargetIdentity: t.identity().optional(),    // VFX: chain beam target
+		lastHealAt: t.timestamp().optional(), // VFX: primary heal beam
+		healTargetIdentity: t.identity().optional(), // VFX: primary beam target
+		chainHealTargetIdentity: t.identity().optional(), // VFX: chain beam target
 		ultimateCooldownUntil: t.timestamp().optional(),
-		lastUltimateAt: t.timestamp().optional(),            // VFX: when ultimate was last fired
-		regenCarry: t.u64()                                  // milliHP carry for fractional regen (1000 = 1 HP)
+		lastUltimateAt: t.timestamp().optional(), // VFX: when ultimate was last fired
+		regenCarry: t.u64() // milliHP carry for fractional regen (1000 = 1 HP)
 	}
 );
 
