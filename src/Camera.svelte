@@ -18,7 +18,7 @@
 	// TPS: camera offset above and behind the player
 	const TPS_Y = 3.5;
 	const TPS_Z = 3.5;
-	const TPS_PITCH = -Math.atan2(TPS_Y, TPS_Z) * 0.5; // look more towards sky
+	const TPS_PITCH = -Math.atan2(TPS_Y, TPS_Z) * 0.36; // look more towards sky
 	const EYE_Y_BASE = 1.658; // spectate eye level
 	const BASE_SENS = 0.002;
 

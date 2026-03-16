@@ -38,7 +38,7 @@
 
 	const PIXELATION_GRANULARITY = 2.5;
 
-	const GLITCH_START = 0.5;
+	const GLITCH_START = 0.2;
 	const GLITCH_MAX_STRENGTH = 0.3;
 	const GLITCH_MIN_STRENGTH = 0.05;
 
