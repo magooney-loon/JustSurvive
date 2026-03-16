@@ -8,7 +8,8 @@ import {
 	SCP096_ABILITY2_COOLDOWN_US,
 	SCP096_AOE_RANGE_SQ,
 	SCP096_CHARGE_INTERVAL_US,
-	BOSS_PLAYER_SLOW_US
+	BOSS_PLAYER_SLOW_US,
+	BOSS_MELEE_RANGE
 } from '../../../../constants.js';
 import { bossMove, bossAttack } from '../boss_helpers.js';
 
@@ -45,12 +46,15 @@ export function handleScp096(
 		!abilitiesLocked &&
 		(!boss.ability1CooldownUntil ||
 			now >= (boss.ability1CooldownUntil.microsSinceUnixEpoch as bigint));
-	if (canAbility1) {
+	const slamRangeSq = BOSS_MELEE_RANGE * BOSS_MELEE_RANGE * 56n; // ~15 units (SCP096_AOE_RANGE_SQ)
+	if (canAbility1 && players.length > 0) {
+		let hitAny = false;
 		for (const p of players) {
 			const pdx = (p.posX as bigint) - (boss.posX as bigint);
 			const pdz = (p.posZ as bigint) - (boss.posZ as bigint);
 			const pDist = pdx * pdx + pdz * pdz;
-			if (pDist <= SCP096_AOE_RANGE_SQ) {
+			if (pDist <= slamRangeSq) {
+				hitAny = true;
 				// Apply slow only (removed knockback)
 				ctx.db.playerState.id.update({
 					...p,
@@ -58,9 +62,12 @@ export function handleScp096(
 				});
 			}
 		}
-		boss = { ...boss, ability1CooldownUntil: ts(now + SCP096_ABILITY1_COOLDOWN_US) };
-		ctx.db.boss.id.update(boss);
-		return boss;
+		// Only trigger cooldown if we hit at least one player
+		if (hitAny) {
+			boss = { ...boss, ability1CooldownUntil: ts(now + SCP096_ABILITY1_COOLDOWN_US) };
+			ctx.db.boss.id.update(boss);
+			return boss;
+		}
 	}
 
 	// Ability 2: Charge — dash toward random player at 2x speed

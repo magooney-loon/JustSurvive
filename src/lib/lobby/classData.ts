@@ -784,10 +784,10 @@ export const BOSSES: Record<BossId, BossData> = {
 	katze_miu: {
 		id: 'katze_miu',
 		name: 'Katze Miu',
-		hp: 6000,
-		speed: 6.0,
+		hp: 3000,
+		speed: 5.4,
 		meleeDamage: 10,
-		enrageHp: 1200,
+		enrageHp: 600,
 		color: '#ff6644',
 		threat: 'extreme',
 		abilities: [
@@ -805,8 +805,8 @@ export const BOSSES: Record<BossId, BossData> = {
 		tips: [
 			"Uppercut stuns for 2s — communicate who's targeted so teammates can provide cover.",
 			'Fist Spin slows for 3s — back away from the boss when it starts channeling the spin animation.',
-			"High HP pool (6000) but slower attack cadence than other bosses — focus fire when it's stunned.",
-			'Enrages at 1200 HP: melee damage increases significantly. Burst it down quickly when enraged.'
+			"High HP pool (3000) but slower attack cadence than other bosses — focus fire when it's stunned.",
+			'Enrages at 600 HP: melee damage increases significantly. Burst it down quickly when enraged.'
 		]
 	}
 };

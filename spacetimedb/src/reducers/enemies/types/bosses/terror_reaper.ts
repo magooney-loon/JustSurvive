@@ -8,7 +8,8 @@ import {
 	REAPER_ABILITY1_COOLDOWN_US,
 	REAPER_ABILITY2_COOLDOWN_US,
 	REAPER_SOUL_DRAIN_RANGE_SQ,
-	BOSS_PLAYER_LONG_STUN_US
+	BOSS_PLAYER_LONG_STUN_US,
+	BOSS_MELEE_RANGE
 } from '../../../../constants.js';
 import { bossMove, bossAttack } from '../boss_helpers.js';
 
@@ -54,9 +55,10 @@ export function handleTerrorReaper(
 			}
 		}
 		if (totalHealing > 0n) {
-			const newHp = ((boss.hp as bigint) + totalHealing) > (boss.maxHp as bigint)
-				? (boss.maxHp as bigint)
-				: (boss.hp as bigint) + totalHealing;
+			const newHp =
+				(boss.hp as bigint) + totalHealing > (boss.maxHp as bigint)
+					? (boss.maxHp as bigint)
+					: (boss.hp as bigint) + totalHealing;
 			boss = { ...boss, hp: newHp };
 		}
 		boss = { ...boss, ability1CooldownUntil: ts(now + REAPER_ABILITY1_COOLDOWN_US) };
@@ -69,7 +71,8 @@ export function handleTerrorReaper(
 		!abilitiesLocked &&
 		(!boss.ability2CooldownUntil ||
 			now >= (boss.ability2CooldownUntil.microsSinceUnixEpoch as bigint));
-	if (canAbility2) {
+	const blinkRangeSq = BOSS_MELEE_RANGE * BOSS_MELEE_RANGE * 49n; // ~14 units (matches Soul Drain range)
+	if (canAbility2 && chosenDistSq <= blinkRangeSq) {
 		// Teleport directly to chosen player
 		boss = {
 			...boss,

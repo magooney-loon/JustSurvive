@@ -169,6 +169,13 @@
 	);
 
 	const isDowned = $derived(player.status === 'downed');
+	const nowMs = Date.now();
+	const isStunned = $derived(
+		player.stunUntil ? Number(player.stunUntil.microsSinceUnixEpoch) / 1000 > nowMs : false
+	);
+	const isSlowed = $derived(
+		player.slowedUntil ? Number(player.slowedUntil.microsSinceUnixEpoch) / 1000 > nowMs : false
+	);
 	const downedTilt = $derived(isDowned ? -Math.PI / 2 : 0);
 	const downedYOffset = $derived(isDowned ? -0.35 : 0);
 
@@ -241,6 +248,20 @@
 	<LegsModel {speed} />
 	<TorsoModel {speed} isShooting={0} />
 </T.Group>
+
+<!-- Stun/Slow visual indicator -->
+{#if (isStunned || isSlowed) && !isDowned}
+	<T.Mesh position={[displayX, displayY + 1.2, displayZ]}>
+		<T.SphereGeometry args={[0.5, 12, 8]} />
+		<T.MeshBasicMaterial
+			color={isStunned ? '#ffaa00' : '#44aaff'}
+			transparent
+			opacity={0.25}
+			side={THREE.DoubleSide}
+			depthWrite={false}
+		/>
+	</T.Mesh>
+{/if}
 
 <!-- Local player reticle floating in air closer to player -->
 {#if isLocal && !isDowned}
