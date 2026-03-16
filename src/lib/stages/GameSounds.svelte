@@ -14,6 +14,7 @@
 	const [players] = useTable(tables.playerState);
 	const [sessions] = useTable(tables.gameSession);
 	const [enemies] = useTable(tables.enemy);
+	const [itemPickupEvents] = useTable(tables.itemPickupEvent);
 
 	const myState = $derived(
 		$players.find(
@@ -135,8 +136,12 @@
 	let prevHp = $state<bigint | undefined>(undefined);
 	$effect(() => {
 		const hp = myState?.hp;
-		if (hp !== undefined && prevHp !== undefined && hp < prevHp) {
-			untrack(() => soundActions.playPlayerDamage());
+		if (hp !== undefined && prevHp !== undefined) {
+			if (hp < prevHp) {
+				untrack(() => soundActions.playPlayerDamage());
+			} else if (hp > prevHp && hp - prevHp <= 50n) {
+				untrack(() => soundActions.playHealthPickup());
+			}
 		}
 		prevHp = hp;
 	});
@@ -148,6 +153,39 @@
 		if (status !== prevStatus) {
 			if (status === 'downed') untrack(() => soundActions.playPlayerDown());
 			prevStatus = status;
+		}
+	});
+
+	// ─── Item pickup sounds (server-side events) ──────────────────────────────
+	let knownPickupEvents = $state(new Set<string>());
+	$effect(() => {
+		const sessionId = lobbyState.currentSessionId;
+		if (!sessionId) {
+			knownPickupEvents = new Set();
+			return;
+		}
+		const myIdentity = $conn.identity;
+		if (!myIdentity) return;
+
+		for (const event of $itemPickupEvents ?? []) {
+			if (event.sessionId !== sessionId) continue;
+			if (!event.playerIdentity.isEqual(myIdentity)) continue;
+
+			const eventKey = `${event.id}`;
+			if (knownPickupEvents.has(eventKey)) continue;
+			knownPickupEvents.add(eventKey);
+
+			untrack(() => {
+				if (event.itemType === 'hp') {
+					soundActions.playHealthPickup();
+				} else if (event.itemType === 'stamina') {
+					soundActions.playStaminaPickup();
+				} else if (event.itemType === 'double_damage') {
+					soundActions.playDoubleDamagePickup();
+				} else if (event.itemType === 'double_speed') {
+					soundActions.playDoubleSpeedPickup();
+				}
+			});
 		}
 	});
 </script>

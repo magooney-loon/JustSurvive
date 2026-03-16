@@ -37,7 +37,12 @@
 		// Enemy spawn
 		enemySpawn: 0,
 		// Ultimate ability
-		ultimate: 0
+		ultimate: 0,
+		// Item pickups
+		healthPickup: 0,
+		staminaPickup: 0,
+		doubleDamagePickup: 0,
+		doubleSpeedPickup: 0
 	});
 
 	export const soundActions = {
@@ -128,6 +133,18 @@
 		},
 		playUltimate() {
 			soundTriggers.ultimate++;
+		},
+		playHealthPickup() {
+			soundTriggers.healthPickup++;
+		},
+		playStaminaPickup() {
+			soundTriggers.staminaPickup++;
+		},
+		playDoubleDamagePickup() {
+			soundTriggers.doubleDamagePickup++;
+		},
+		playDoubleSpeedPickup() {
+			soundTriggers.doubleSpeedPickup++;
 		}
 	};
 </script>
@@ -162,6 +179,10 @@
 	const GUNNER_ADRENALINE_URL = `${base}sounds/classAbility/gunner_adrenaline.wav`;
 	const COUNTDOWN_URL = `${base}sounds/map/countdown.mp3`;
 	const ULTIMATE_URL = `${base}sounds/classAbility/ultimate.mp3`;
+	const HEALTH_PICKUP_URL = `${base}sounds/player/health_refill.mp3`;
+	const STAMINA_PICKUP_URL = `${base}sounds/player/stamina_refill.mp3`;
+	const DOUBLE_DAMAGE_URL = `${base}sounds/player/double_damage.mp3`;
+	const DOUBLE_SPEED_URL = `${base}sounds/player/double_speed.mp3`;
 
 	// $state.raw — prevents Svelte 5 from wrapping class instances in a Proxy
 	let ostAudio = $state.raw<ThreeAudio>();
@@ -186,6 +207,10 @@
 	let gunnerAdrenalineAudio = $state.raw<ThreeAudio>();
 	let countdownAudio = $state.raw<ThreeAudio>();
 	let ultimateAudio = $state.raw<ThreeAudio>();
+	let healthPickupAudio = $state.raw<ThreeAudio>();
+	let staminaPickupAudio = $state.raw<ThreeAudio>();
+	let doubleDamageAudio = $state.raw<ThreeAudio>();
+	let doubleSpeedAudio = $state.raw<ThreeAudio>();
 
 	// ─── Playback helpers ─────────────────────────────────────────────────────
 
@@ -315,8 +340,7 @@
 	});
 
 	$effect(() => {
-		if (soundTriggers.thunder > 0 && settingsState.audio.ambienceEnabled)
-			playOneShot(thunderAudio);
+		if (soundTriggers.thunder > 0 && settingsState.audio.ambienceEnabled) playOneShot(thunderAudio);
 	});
 
 	$effect(() => {
@@ -430,8 +454,7 @@
 			playOneShot(countdownAudio);
 	});
 	$effect(() => {
-		if (soundTriggers.gameEnd > 0 && settingsState.audio.effectsEnabled)
-			playOneShot(gameEndAudio);
+		if (soundTriggers.gameEnd > 0 && settingsState.audio.effectsEnabled) playOneShot(gameEndAudio);
 	});
 	$effect(() => {
 		if (soundTriggers.gunnerAdrenaline > 0 && settingsState.audio.effectsEnabled)
@@ -440,6 +463,22 @@
 	$effect(() => {
 		if (soundTriggers.ultimate > 0 && settingsState.audio.effectsEnabled)
 			playOneShot(ultimateAudio);
+	});
+	$effect(() => {
+		if (soundTriggers.healthPickup > 0 && settingsState.audio.effectsEnabled)
+			playOneShot(healthPickupAudio);
+	});
+	$effect(() => {
+		if (soundTriggers.staminaPickup > 0 && settingsState.audio.effectsEnabled)
+			playOneShot(staminaPickupAudio);
+	});
+	$effect(() => {
+		if (soundTriggers.doubleDamagePickup > 0 && settingsState.audio.effectsEnabled)
+			playOneShot(doubleDamageAudio);
+	});
+	$effect(() => {
+		if (soundTriggers.doubleSpeedPickup > 0 && settingsState.audio.effectsEnabled)
+			playOneShot(doubleSpeedAudio);
 	});
 </script>
 
@@ -640,6 +679,36 @@
 	src={ULTIMATE_URL}
 	oncreate={(a) => {
 		ultimateAudio = a;
+	}}
+	userData={{ hideInTree: true, selectable: false }}
+/>
+
+<!-- Item pickup sounds -->
+<Audio
+	src={HEALTH_PICKUP_URL}
+	oncreate={(a) => {
+		healthPickupAudio = a;
+	}}
+	userData={{ hideInTree: true, selectable: false }}
+/>
+<Audio
+	src={STAMINA_PICKUP_URL}
+	oncreate={(a) => {
+		staminaPickupAudio = a;
+	}}
+	userData={{ hideInTree: true, selectable: false }}
+/>
+<Audio
+	src={DOUBLE_DAMAGE_URL}
+	oncreate={(a) => {
+		doubleDamageAudio = a;
+	}}
+	userData={{ hideInTree: true, selectable: false }}
+/>
+<Audio
+	src={DOUBLE_SPEED_URL}
+	oncreate={(a) => {
+		doubleSpeedAudio = a;
 	}}
 	userData={{ hideInTree: true, selectable: false }}
 />

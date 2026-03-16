@@ -343,6 +343,30 @@ export const DroppedItem = table(
 	}
 );
 
+// ─── Item Pickup Events ─────────────────────────────────────────────────────
+
+export const ItemPickupEvent = table(
+	{
+		name: 'item_pickup_event',
+		public: true,
+		indexes: [
+			{
+				name: 'item_pickup_event_session_id',
+				accessor: 'item_pickup_event_session_id',
+				algorithm: 'btree',
+				columns: ['sessionId']
+			}
+		]
+	},
+	{
+		id: t.u64().primaryKey().autoInc(),
+		sessionId: t.u64(),
+		playerIdentity: t.identity(),
+		itemType: t.string(), // 'hp' | 'stamina' | 'double_damage' | 'double_speed'
+		pickedUpAt: t.timestamp()
+	}
+);
+
 // ─── Class State Tables ───────────────────────────────────────────────────────
 
 export const SpotterState = table(

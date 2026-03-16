@@ -383,8 +383,23 @@ export function enemyTick(ctx: any, { arg }: any) {
 			}
 			ctx.db.playerState.id.update(updated);
 			ctx.db.droppedItem.id.delete(item.id);
+			ctx.db.itemPickupEvent.insert({
+				id: 0n,
+				sessionId: arg.sessionId,
+				playerIdentity: p.playerIdentity,
+				itemType: item.itemType,
+				pickedUpAt: ts(now)
+			});
 			pickedUp.add(p.id as bigint);
 			break;
+		}
+	}
+
+	// ── Clean up old item pickup events ───────────────────────────────────────
+	const EVENT_CLEANUP_US = 5_000_000n; // 5 seconds
+	for (const event of ctx.db.itemPickupEvent.item_pickup_event_session_id.filter(arg.sessionId)) {
+		if (now - (event.pickedUpAt.microsSinceUnixEpoch as bigint) >= EVENT_CLEANUP_US) {
+			ctx.db.itemPickupEvent.id.delete(event.id);
 		}
 	}
 

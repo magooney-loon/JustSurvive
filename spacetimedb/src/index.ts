@@ -17,6 +17,7 @@ import {
 	BossTimer,
 	Boss,
 	DroppedItem,
+	ItemPickupEvent,
 	SpotterState,
 	GunnerState,
 	TankState,
@@ -43,8 +44,17 @@ import { movePlayer, advanceDayPhase } from './reducers/game.js';
 import { enemyTick } from './reducers/enemies/tick.js';
 import { spawnEnemy, fireBossSpawn } from './reducers/enemies/spawn.js';
 import { steadyShot, spotterFlash, spotterUltimate } from './reducers/classes/spotter.js';
-import { attackEnemy, adrenaline as adrenalineImpl, gunnerUltimate } from './reducers/classes/gunner.js';
-import { healPlayer, reviveStart, completeRevive, healerUltimate } from './reducers/classes/healer.js';
+import {
+	attackEnemy,
+	adrenaline as adrenalineImpl,
+	gunnerUltimate
+} from './reducers/classes/gunner.js';
+import {
+	healPlayer,
+	reviveStart,
+	completeRevive,
+	healerUltimate
+} from './reducers/classes/healer.js';
 import { axeSwing, chargeActivate, tankUltimate } from './reducers/classes/tank.js';
 import { clearLobbyMessages, endSession } from './reducers/shared.js';
 
@@ -172,6 +182,7 @@ const spacetimedb = schema({
 	bossTimer: BossTimer,
 	boss: Boss,
 	droppedItem: DroppedItem,
+	itemPickupEvent: ItemPickupEvent,
 	spotterState: SpotterState,
 	gunnerState: GunnerState,
 	tankState: TankState,
@@ -207,30 +218,18 @@ export const set_class = spacetimedb.reducer(
 	setClass
 );
 
-export const set_ready = spacetimedb.reducer(
-	{ lobbyId: t.u64(), isReady: t.bool() },
-	setReady
-);
+export const set_ready = spacetimedb.reducer({ lobbyId: t.u64(), isReady: t.bool() }, setReady);
 
-export const leave_lobby = spacetimedb.reducer(
-	{ lobbyId: t.u64() },
-	leaveLobby
-);
+export const leave_lobby = spacetimedb.reducer({ lobbyId: t.u64() }, leaveLobby);
 
 export const kick_player = spacetimedb.reducer(
 	{ lobbyId: t.u64(), playerIdentity: t.identity() },
 	kickPlayer
 );
 
-export const start_countdown = spacetimedb.reducer(
-	{ lobbyId: t.u64() },
-	startCountdown
-);
+export const start_countdown = spacetimedb.reducer({ lobbyId: t.u64() }, startCountdown);
 
-export const fire_start_game = spacetimedb.reducer(
-	{ arg: LobbyCountdown.rowType },
-	fireStartGame
-);
+export const fire_start_game = spacetimedb.reducer({ arg: LobbyCountdown.rowType }, fireStartGame);
 
 export const fire_lobby_afk_kick = spacetimedb.reducer(
 	{ arg: LobbyAfkJob.rowType },
@@ -256,25 +255,13 @@ export const move_player = spacetimedb.reducer(
 	movePlayer
 );
 
-export const enemy_tick = spacetimedb.reducer(
-	{ arg: EnemyTickJob.rowType },
-	enemyTick
-);
+export const enemy_tick = spacetimedb.reducer({ arg: EnemyTickJob.rowType }, enemyTick);
 
-export const spawn_enemy = spacetimedb.reducer(
-	{ arg: EnemySpawnJob.rowType },
-	spawnEnemy
-);
+export const spawn_enemy = spacetimedb.reducer({ arg: EnemySpawnJob.rowType }, spawnEnemy);
 
-export const advance_day_phase = spacetimedb.reducer(
-	{ arg: DayPhaseJob.rowType },
-	advanceDayPhase
-);
+export const advance_day_phase = spacetimedb.reducer({ arg: DayPhaseJob.rowType }, advanceDayPhase);
 
-export const fire_boss_spawn = spacetimedb.reducer(
-	{ arg: BossSpawnJob.rowType },
-	fireBossSpawn
-);
+export const fire_boss_spawn = spacetimedb.reducer({ arg: BossSpawnJob.rowType }, fireBossSpawn);
 
 // ─── Ability Reducers ─────────────────────────────────────────────────────────
 
@@ -283,56 +270,28 @@ export const steady_shot = spacetimedb.reducer(
 	steadyShot
 );
 
-export const spotter_flash = spacetimedb.reducer(
-	{ sessionId: t.u64() },
-	spotterFlash
-);
+export const spotter_flash = spacetimedb.reducer({ sessionId: t.u64() }, spotterFlash);
 
 export const attack_enemy = spacetimedb.reducer(
 	{ sessionId: t.u64(), enemyId: t.u64(), suppress: t.bool() },
 	attackEnemy
 );
 
-export const heal_player = spacetimedb.reducer(
-	{ sessionId: t.u64() },
-	healPlayer
-);
+export const heal_player = spacetimedb.reducer({ sessionId: t.u64() }, healPlayer);
 
-export const adrenaline = spacetimedb.reducer(
-	{ sessionId: t.u64() },
-	adrenalineImpl
-);
+export const adrenaline = spacetimedb.reducer({ sessionId: t.u64() }, adrenalineImpl);
 
-export const axe_swing = spacetimedb.reducer(
-	{ sessionId: t.u64() },
-	axeSwing
-);
+export const axe_swing = spacetimedb.reducer({ sessionId: t.u64() }, axeSwing);
 
+export const charge_activate = spacetimedb.reducer({ sessionId: t.u64() }, chargeActivate);
 
-export const charge_activate = spacetimedb.reducer(
-	{ sessionId: t.u64() },
-	chargeActivate
-);
+export const spotter_ultimate = spacetimedb.reducer({ sessionId: t.u64() }, spotterUltimate);
 
-export const spotter_ultimate = spacetimedb.reducer(
-	{ sessionId: t.u64() },
-	spotterUltimate
-);
+export const gunner_ultimate = spacetimedb.reducer({ sessionId: t.u64() }, gunnerUltimate);
 
-export const gunner_ultimate = spacetimedb.reducer(
-	{ sessionId: t.u64() },
-	gunnerUltimate
-);
+export const tank_ultimate = spacetimedb.reducer({ sessionId: t.u64() }, tankUltimate);
 
-export const tank_ultimate = spacetimedb.reducer(
-	{ sessionId: t.u64() },
-	tankUltimate
-);
-
-export const healer_ultimate = spacetimedb.reducer(
-	{ sessionId: t.u64() },
-	healerUltimate
-);
+export const healer_ultimate = spacetimedb.reducer({ sessionId: t.u64() }, healerUltimate);
 
 export const revive_start = spacetimedb.reducer(
 	{ sessionId: t.u64(), targetIdentity: t.identity() },

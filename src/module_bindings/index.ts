@@ -70,6 +70,7 @@ import GameSessionRow from "./game_session_table";
 import GlobalStatsRow from "./global_stats_table";
 import GunnerStateRow from "./gunner_state_table";
 import HealerStateRow from "./healer_state_table";
+import ItemPickupEventRow from "./item_pickup_event_table";
 import LobbyRow from "./lobby_table";
 import LobbyMessageRow from "./lobby_message_table";
 import LobbyPlayerRow from "./lobby_player_table";
@@ -209,6 +210,20 @@ const tablesSchema = __schema({
       { name: 'healer_state_id_key', constraint: 'unique', columns: ['id'] },
     ],
   }, HealerStateRow),
+  itemPickupEvent: __table({
+    name: 'item_pickup_event',
+    indexes: [
+      { name: 'id', algorithm: 'btree', columns: [
+        'id',
+      ] },
+      { name: 'item_pickup_event_session_id', algorithm: 'btree', columns: [
+        'sessionId',
+      ] },
+    ],
+    constraints: [
+      { name: 'item_pickup_event_id_key', constraint: 'unique', columns: ['id'] },
+    ],
+  }, ItemPickupEventRow),
   lobby: __table({
     name: 'lobby',
     indexes: [

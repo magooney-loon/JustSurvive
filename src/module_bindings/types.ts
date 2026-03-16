@@ -163,6 +163,15 @@ export const HealerState = __t.object("HealerState", {
 });
 export type HealerState = __Infer<typeof HealerState>;
 
+export const ItemPickupEvent = __t.object("ItemPickupEvent", {
+  id: __t.u64(),
+  sessionId: __t.u64(),
+  playerIdentity: __t.identity(),
+  itemType: __t.string(),
+  pickedUpAt: __t.timestamp(),
+});
+export type ItemPickupEvent = __Infer<typeof ItemPickupEvent>;
+
 export const Lobby = __t.object("Lobby", {
   id: __t.u64(),
   hostIdentity: __t.identity(),
