@@ -13,12 +13,10 @@
 		VignetteEffect,
 		PixelationEffect,
 		GlitchEffect,
-		GlitchMode,
-		HueSaturationEffect,
-		BrightnessContrastEffect
+		GlitchMode
 	} from 'postprocessing';
 	import { settingsState, log } from '$root/settings.svelte.js';
-	import { localHealthState, skyState, PHASE_COLOR_GRADING } from '$lib/stores/sky.svelte.js';
+	import { localHealthState } from '$lib/stores/sky.svelte.js';
 
 	const { scene, renderer, camera, size, autoRender, renderStage } = useThrelte();
 
@@ -29,8 +27,6 @@
 	let vignetteEffect: VignetteEffect | null = null;
 	let pixelationEffect: PixelationEffect | null = null;
 	let glitchEffect: GlitchEffect | null = null;
-	let hueSatEffect: HueSaturationEffect | null = null;
-	let brightnessContrastEffect: BrightnessContrastEffect | null = null;
 
 	const VIGNETTE_BASE = 0.75;
 	const VIGNETTE_MAX = 1.8;
@@ -48,8 +44,6 @@
 		vignetteEffect = null;
 		pixelationEffect = null;
 		glitchEffect = null;
-		hueSatEffect = null;
-		brightnessContrastEffect = null;
 
 		// Add the render pass
 		const renderPass = new RenderPass(scene, $camera);
@@ -97,17 +91,7 @@
 		});
 		glitchEffect.mode = GlitchMode.DISABLED;
 
-		hueSatEffect = new HueSaturationEffect({ hue: 0, saturation: 0 });
-		brightnessContrastEffect = new BrightnessContrastEffect({ brightness: 0, contrast: 1 });
-
-		const effectPass = new EffectPass(
-			$camera,
-			brightnessContrastEffect,
-			hueSatEffect,
-			bloomEffect,
-			smaaEffect,
-			vignetteEffect
-		);
+		const effectPass = new EffectPass($camera, bloomEffect, smaaEffect, vignetteEffect);
 		composer.addPass(effectPass);
 
 		const pixelPass = new EffectPass($camera, pixelationEffect, glitchEffect);
@@ -151,19 +135,6 @@
 				} else {
 					glitchEffect.mode = GlitchMode.DISABLED;
 				}
-			}
-			if (hueSatEffect && brightnessContrastEffect) {
-				const phase = skyState.phase;
-				const grading =
-					PHASE_COLOR_GRADING[phase as keyof typeof PHASE_COLOR_GRADING] ??
-					PHASE_COLOR_GRADING.sunset;
-				hueSatEffect.hue += (grading.hue - hueSatEffect.hue) * Math.min(1, delta * 2);
-				hueSatEffect.saturation +=
-					(grading.saturation - hueSatEffect.saturation) * Math.min(1, delta * 2);
-				brightnessContrastEffect.brightness +=
-					(grading.brightness - brightnessContrastEffect.brightness) * Math.min(1, delta * 2);
-				brightnessContrastEffect.contrast +=
-					(grading.contrast - brightnessContrastEffect.contrast) * Math.min(1, delta * 2);
 			}
 			composer.render(delta);
 		},

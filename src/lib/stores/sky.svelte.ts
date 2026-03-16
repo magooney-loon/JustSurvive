@@ -78,15 +78,6 @@ export const PHASE_SKY = {
 	}
 } as const;
 
-// Color grading per phase — used by Renderer for post-processing
-export const PHASE_COLOR_GRADING = {
-	sunset: { hue: 0.08, saturation: 0.15, brightness: 0.05, contrast: 0 },
-	dusk: { hue: -0.05, saturation: 0.1, brightness: -0.05, contrast: 0 },
-	twilight: { hue: -0.1, saturation: -0.05, brightness: -0.1, contrast: 0 },
-	night: { hue: -0.15, saturation: -0.25, brightness: -0.2, contrast: 0 },
-	deep_night: { hue: -0.2, saturation: -0.4, brightness: -0.35, contrast: 0 }
-} as const;
-
 // Sky state — written by GameStage (lerped per phase), read by Skybox and Renderer
 export const skyState = $state({
 	phase: 'sunset' as string,
