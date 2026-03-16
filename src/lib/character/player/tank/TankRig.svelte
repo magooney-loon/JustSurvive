@@ -23,6 +23,7 @@
 		shotPulse?: number;
 		phase?: string;
 		isCharging?: boolean;
+		isBracing?: boolean;
 		texture?: Texture | null;
 	};
 
