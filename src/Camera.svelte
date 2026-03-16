@@ -3,7 +3,13 @@
 	import { AudioListener } from '@threlte/extras';
 	import { stageState } from '$root/stage.svelte.js';
 	import { log, settingsState } from '$root/settings.svelte.js';
-	import { localPos, localVelocity, tpsCamera, cameraFollow, bossShake } from '$lib/stores/movement.svelte.js';
+	import {
+		localPos,
+		localVelocity,
+		tpsCamera,
+		cameraFollow,
+		bossShake
+	} from '$lib/stores/movement.svelte.js';
 	import type { PerspectiveCamera } from 'three';
 
 	const { renderer } = useThrelte();
@@ -50,10 +56,24 @@
 		};
 	});
 
-	// Release pointer lock whenever we leave the game stage
+	// Release pointer lock and reset camera whenever we leave the game stage
 	$effect(() => {
 		if (stageState.currentStage !== 'game') {
 			document.exitPointerLock();
+
+			// Reset camera smoothing variables so next game starts fresh
+			camTargetX = 0;
+			camTargetY = 0;
+			camTargetZ = 0;
+			camYawSmooth = 0;
+			camRotYaw = 0;
+
+			// Reset camera to default menu position when not in game
+			if (camera) {
+				camera.position.set(0, 0, 0);
+				camera.rotation.set(0, 0, 0);
+				camera.lookAt(0, 0, 0);
+			}
 		}
 	});
 
