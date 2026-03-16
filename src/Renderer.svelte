@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { useThrelte, useTask } from '@threlte/core';
 	import { onMount } from 'svelte';
+	import * as THREE from 'three';
 	import {
 		EffectComposer,
 		EffectPass,
@@ -9,7 +10,10 @@
 		SMAAPreset,
 		BloomEffect,
 		KernelSize,
-		VignetteEffect
+		VignetteEffect,
+		PixelationEffect,
+		GlitchEffect,
+		GlitchMode
 	} from 'postprocessing';
 	import { settingsState, log } from '$root/settings.svelte.js';
 	import { localHealthState } from '$lib/stores/sky.svelte.js';
@@ -21,15 +25,25 @@
 	// we use SMAA post-processing anti-aliasing instead for better control
 	const composer = new EffectComposer(renderer);
 	let vignetteEffect: VignetteEffect | null = null;
+	let pixelationEffect: PixelationEffect | null = null;
+	let glitchEffect: GlitchEffect | null = null;
 
 	const VIGNETTE_BASE = 0.75;
 	const VIGNETTE_MAX = 1.8;
 	const VIGNETTE_LERP = 4; // lerp speed (units/sec)
 
+	const PIXELATION_GRANULARITY = 3;
+
+	const GLITCH_START = 0.5;
+	const GLITCH_MAX_STRENGTH = 0.3;
+	const GLITCH_MIN_STRENGTH = 0.05;
+
 	const setupEffectComposer = () => {
 		// Remove all existing passes to prevent duplicates
 		composer.removeAllPasses();
 		vignetteEffect = null;
+		pixelationEffect = null;
+		glitchEffect = null;
 
 		// Add the render pass
 		const renderPass = new RenderPass(scene, $camera);
@@ -67,8 +81,21 @@
 			darkness: VIGNETTE_BASE
 		});
 
+		pixelationEffect = new PixelationEffect(PIXELATION_GRANULARITY);
+
+		glitchEffect = new GlitchEffect({
+			delay: new THREE.Vector2(1.5, 3.5),
+			duration: new THREE.Vector2(0.6, 1.0),
+			strength: new THREE.Vector2(0.3, 1.0),
+			ratio: 0.85
+		});
+		glitchEffect.mode = GlitchMode.DISABLED;
+
 		const effectPass = new EffectPass($camera, bloomEffect, smaaEffect, vignetteEffect);
 		composer.addPass(effectPass);
+
+		const pixelPass = new EffectPass($camera, pixelationEffect, glitchEffect);
+		composer.addPass(pixelPass);
 	};
 
 	$effect(() => {
@@ -95,6 +122,19 @@
 					VIGNETTE_BASE + (VIGNETTE_MAX - VIGNETTE_BASE) * (1 - localHealthState.ratio);
 				vignetteEffect.darkness +=
 					(target - vignetteEffect.darkness) * Math.min(1, VIGNETTE_LERP * delta);
+			}
+			if (glitchEffect) {
+				const ratio = localHealthState.ratio;
+				if (ratio < GLITCH_START) {
+					const intensity = (GLITCH_START - ratio) / GLITCH_START;
+					glitchEffect.mode = GlitchMode.SPORADIC;
+					const strength =
+						GLITCH_MIN_STRENGTH + (GLITCH_MAX_STRENGTH - GLITCH_MIN_STRENGTH) * intensity;
+					glitchEffect.minStrength = strength;
+					glitchEffect.maxStrength = strength * 2;
+				} else {
+					glitchEffect.mode = GlitchMode.DISABLED;
+				}
 			}
 			composer.render(delta);
 		},
