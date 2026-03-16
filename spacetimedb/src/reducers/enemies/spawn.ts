@@ -17,7 +17,7 @@ import {
 } from '../../constants.js';
 
 // ─── Debug: Force a specific boss type (set to null for shuffle) ───────────────
-const DEBUG_FORCE_BOSS: string | null = 'katze_miu'; // null = use shuffled rotation
+const DEBUG_FORCE_BOSS: string | null = 'null'; // null = use shuffled rotation
 
 // ─── spawn_enemy (scheduled) ──────────────────────────────────────────────────
 
