@@ -3,7 +3,7 @@
 // Called from enemies/tick.ts after brace/shield pre-checks.
 
 import { ts, bigintSqrt as bs } from '../../../helpers.js';
-import { ENEMY_BASE_SPEED, ENEMY_SPEED_PER_SEC, TICK_MS } from '../../../constants.js';
+import { ENEMY_BASE_SPEED, ENEMY_SPEED_PER_SEC, TICK_MS, STRAFE_MIN_DIST_SQ, STRAFE_PERIOD_US, MELEE_DAMAGE } from '../../../constants.js';
 import { enemyMoveAvoid } from '../movement.js';
 
 export function handleMelee(
@@ -18,10 +18,7 @@ export function handleMelee(
 	enemyRange: bigint
 ): void {
 	if (chosenDist <= enemyRange * enemyRange && !enemy.isDazed) {
-		const damage =
-			enemy.enemyType === 'ogre_stalker' ? 4n :
-			enemy.enemyType === 'brute' || enemy.enemyType === 'ogre_berserker' ? 3n :
-			enemy.enemyType === 'ogre' ? 2n : 1n;
+		const damage = MELEE_DAMAGE[enemy.enemyType as string] ?? MELEE_DAMAGE['default'];
 		damageAccum.set(chosen.id, (damageAccum.get(chosen.id) ?? 0n) + damage);
 	} else if (!enemy.isDazed) {
 		const ageSec = enemy.spawnedAt
@@ -34,12 +31,10 @@ export function handleMelee(
 		const moveAmount = (speed * TICK_MS) / 1000n;
 		const magnitude = bs(chosenDist);
 		if (magnitude > 0n) {
-			const STRAFE_MIN_DIST_SQ = 36_000_000n;
 			const perpX = -dz;
 			const perpZ = dx;
 			let strafeBias = 0;
 			if (chosenDist > STRAFE_MIN_DIST_SQ) {
-				const STRAFE_PERIOD_US = 2_500_000n;
 				const strafePhase = Number((now / STRAFE_PERIOD_US + (enemy.id as bigint) * 7n) % 12n);
 				if (enemy.enemyType === 'fast') {
 					if (strafePhase < 3) strafeBias = -1;

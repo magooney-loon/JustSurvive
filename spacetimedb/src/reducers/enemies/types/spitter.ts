@@ -7,7 +7,10 @@ import {
 	SPITTER_MIN_DIST_SQ,
 	ENEMY_BASE_SPEED,
 	ENEMY_SPEED_PER_SEC,
-	TICK_MS
+	TICK_MS,
+	SPIT_COOLDOWN_US,
+	ACID_POOL_LIFETIME_US,
+	ACID_POOL_RADIUS
 } from '../../../constants.js';
 import { enemyMoveAvoid } from '../movement.js';
 
@@ -22,19 +25,18 @@ export function handleSpitter(
 	damageAccum: Map<bigint, bigint>,
 	sessionId: bigint
 ): void {
-	const SPIT_COOLDOWN_US = 7_000_000n;
 	const canSpit =
 		!enemy.lastSpitAt ||
 		now >= (enemy.lastSpitAt.microsSinceUnixEpoch as bigint) + SPIT_COOLDOWN_US;
 
 	if (chosenDist <= SPITTER_RANGE_SQ && !enemy.isDazed && canSpit) {
-		const poolExpiry = now + 10_000_000n;
+		const poolExpiry = now + ACID_POOL_LIFETIME_US;
 		ctx.db.acidPool.insert({
 			id: 0n,
 			sessionId,
 			posX: enemy.posX + dx / 2n,
 			posZ: enemy.posZ + dz / 2n,
-			radius: 2000n,
+			radius: ACID_POOL_RADIUS,
 			expiresAt: ts(poolExpiry)
 		});
 		ctx.db.enemy.id.update({ ...enemy, lastSpitAt: ts(now) });

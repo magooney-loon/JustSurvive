@@ -40,6 +40,7 @@ export const Boss = __t.object("Boss", {
   ability2CooldownUntil: __t.option(__t.timestamp()),
   isHidden: __t.bool(),
   isBurrowed: __t.bool(),
+  isChanneling: __t.bool(),
 });
 export type Boss = __Infer<typeof Boss>;
 

@@ -14,7 +14,10 @@ import {
 	FLASH_COOLDOWN_US,
 	FLASH_STUN_US,
 	FLASH_DAMAGE,
-	ULTIMATE_COOLDOWN_US
+	ULTIMATE_COOLDOWN_US,
+	STEADY_SHOT_PIERCE_WIDTH_SQ,
+	BARRAGE_DAMAGE,
+	FLASH_BOSS_COOLDOWN_US
 } from '../../constants.js';
 
 function findSpotterState(ctx: any, sessionId: any, identity: any): any {
@@ -103,17 +106,16 @@ export function steadyShot(ctx: any, { sessionId, enemyId }: any) {
 	// Width: 1.5 world units perpendicular to shot direction.
 	// Damage falls off 75% → 50% → 25% per step.
 	// Only the last pierced enemy gets marked.
-	const PIERCE_WIDTH_SQ = 2_250_000n;
 	const distSq = dx * dx + dz * dz;
 	const pierceTargets: Array<{ e: any; proj: bigint }> = [];
 	for (const e of ctx.db.enemy.enemy_session_id.filter(sessionId)) {
-		if (!e.isAlive || (e.id as bigint) === (enemy.id as bigint)) continue;
+		if (!e.isAlive || (e.id as bigint) === (enemyId as bigint)) continue;
 		const ex = (e.posX as bigint) - (ps.posX as bigint);
 		const ez = (e.posZ as bigint) - (ps.posZ as bigint);
 		const proj = ex * dx + ez * dz;
 		if (proj <= 0n || proj * proj > STEADY_SHOT_RANGE_SQ * distSq) continue;
 		const cross = ex * dz - ez * dx;
-		if (cross * cross > PIERCE_WIDTH_SQ * distSq) continue;
+		if (cross * cross > STEADY_SHOT_PIERCE_WIDTH_SQ * distSq) continue;
 		pierceTargets.push({ e, proj });
 	}
 	pierceTargets.sort((a, b) => Number(a.proj - b.proj));
@@ -204,7 +206,6 @@ export function spotterFlash(ctx: any, { sessionId }: any) {
 		stunned += 1n;
 	}
 
-	const FLASH_BOSS_COOLDOWN_US = 10_000_000n; // 10s between boss stuns (stun itself is 3.5s)
 	for (const b of ctx.db.boss.boss_session_id.filter(sessionId)) {
 		if (!b.isAlive) continue;
 		const bx = Number(b.posX) - Number(ps.posX);
@@ -264,7 +265,6 @@ export function spotterUltimate(ctx: any, { sessionId }: any) {
 	if (ss.ultimateCooldownUntil && now < (ss.ultimateCooldownUntil.microsSinceUnixEpoch as bigint))
 		return;
 
-	const BARRAGE_DAMAGE = 20n;
 	const markedUntil = ts(now + MARK_DURATION_US);
 	let scoreAdd = 0n;
 

@@ -16,6 +16,9 @@ import {
 	BOSS_HP
 } from '../../constants.js';
 
+// ─── Debug: Force a specific boss type (set to null for shuffle) ───────────────
+const DEBUG_FORCE_BOSS: string | null = 'katze_miu'; // null = use shuffled rotation // 'boss_name' for fixed
+
 // ─── spawn_enemy (scheduled) ──────────────────────────────────────────────────
 
 export function spawnEnemy(ctx: any, { arg }: any) {
@@ -110,19 +113,26 @@ export function spawnEnemy(ctx: any, { arg }: any) {
 }
 
 // ─── Deterministic boss shuffle ───────────────────────────────────────────────
-// Fisher-Yates over 4 elements using a 64-bit LCG seeded by mapSeed ^ cycleNum.
-// Guarantees all 4 boss types appear before any repeats, in a different order
+// Fisher-Yates over 6 elements using a 64-bit LCG seeded by mapSeed ^ cycleNum.
+// Guarantees all 6 boss types appear before any repeats, in a different order
 // each cycle so the sequence is never predictable.
 
 function shuffledBossTypes(seed: bigint): string[] {
-	const arr = ['ghost_dragon', 'worm_monster', 'rabid_dog', 'scp_096', 'terror_reaper'];
+	const arr = [
+		'ghost_dragon',
+		'worm_monster',
+		'rabid_dog',
+		'scp_096',
+		'terror_reaper',
+		'katze_miu'
+	];
 	// Knuth LCG — good avalanche for small sequences
 	let s = seed ^ 0xdeadbeefcafe1234n;
 	const next = () => {
 		s = (s * 6364136223846793005n + 1442695040888963407n) & 0xffffffffffffffffn;
 		return s;
 	};
-	for (let i = 4; i > 0; i--) {
+	for (let i = 5; i > 0; i--) {
 		const j = Number(next() % BigInt(i + 1));
 		[arr[i], arr[j]] = [arr[j], arr[i]];
 	}
@@ -147,7 +157,7 @@ export function fireBossSpawn(ctx: any, { arg }: any) {
 		ctx.db.bossTimer.id.delete(bt.id);
 	}
 
-	// Cycle through all 4 boss types in a shuffled order before repeating.
+	// Cycle through all 6 boss types in a shuffled order before repeating.
 	// bossSpawnCount tracks total bosses spawned across the whole session.
 	const spawnCount = session.bossSpawnCount as bigint;
 
@@ -160,10 +170,10 @@ export function fireBossSpawn(ctx: any, { arg }: any) {
 	const rawBonus = spawnCount * 5n;
 	const spawnBonus = 100n + (rawBonus > 50n ? 50n : rawBonus); // 100%…150% max
 
-	const cycleNum = spawnCount / 5n; // which 5-boss cycle we're in
-	const posInCycle = spawnCount % 5n; // slot within that cycle (0–4)
+	const cycleNum = spawnCount / 6n; // which 6-boss cycle we're in
+	const posInCycle = spawnCount % 6n; // slot within that cycle (0–5)
 	const shuffleSeed = (session.mapSeed as bigint) ^ cycleNum;
-	const bossType = shuffledBossTypes(shuffleSeed)[Number(posInCycle)];
+	const bossType = DEBUG_FORCE_BOSS ?? shuffledBossTypes(shuffleSeed)[Number(posInCycle)];
 
 	const baseHp = BOSS_HP[bossType] ?? 1500n;
 	const hp = (baseHp * playerScale * spawnBonus) / (100n * 100n);

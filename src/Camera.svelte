@@ -3,16 +3,22 @@
 	import { AudioListener } from '@threlte/extras';
 	import { stageState } from '$root/stage.svelte.js';
 	import { log, settingsState } from '$root/settings.svelte.js';
-	import { localPos, localVelocity, tpsCamera, cameraFollow, bossShake } from '$lib/stores/movement.svelte.js';
+	import {
+		localPos,
+		localVelocity,
+		tpsCamera,
+		cameraFollow,
+		bossShake
+	} from '$lib/stores/movement.svelte.js';
 	import type { PerspectiveCamera } from 'three';
 
 	const { renderer } = useThrelte();
 	let camera = $state.raw<PerspectiveCamera>();
 
 	// TPS: camera offset above and behind the player
-	const TPS_Y = 8;
-	const TPS_Z = 10;
-	const TPS_PITCH = -Math.atan2(TPS_Y, TPS_Z);
+	const TPS_Y = 4;
+	const TPS_Z = 5;
+	const TPS_PITCH = -Math.atan2(TPS_Y, TPS_Z) * 0.6; // look more towards sky
 	const EYE_Y_BASE = 1.658; // spectate eye level
 	const BASE_SENS = 0.002;
 
@@ -50,10 +56,24 @@
 		};
 	});
 
-	// Release pointer lock whenever we leave the game stage
+	// Release pointer lock and reset camera whenever we leave the game stage
 	$effect(() => {
 		if (stageState.currentStage !== 'game') {
 			document.exitPointerLock();
+
+			// Reset camera smoothing variables so next game starts fresh
+			camTargetX = 0;
+			camTargetY = 0;
+			camTargetZ = 0;
+			camYawSmooth = 0;
+			camRotYaw = 0;
+
+			// Reset camera to default menu position when not in game
+			if (camera) {
+				camera.position.set(0, 0, 0);
+				camera.rotation.set(0, 0, 0);
+				camera.lookAt(0, 0, 0);
+			}
 		}
 	});
 

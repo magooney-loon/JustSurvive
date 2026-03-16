@@ -8,6 +8,7 @@
 	import RabidDogRig from './RabidDogRig.svelte';
 	import Scp096Rig from './Scp096Rig.svelte';
 	import TerrorReaperRig from './TerrorReaperRig.svelte';
+	import KatzeMiuRig from './KatzeMiuRig.svelte';
 
 	type Props = { boss: Boss };
 	let { boss }: Props = $props();
@@ -88,6 +89,15 @@
 			? Number((boss as any).ability2CooldownUntil.microsSinceUnixEpoch) / 1000
 			: 0
 	);
+	// Katze Miu ability cooldowns
+	const katzeUppercutCooldownMs = $derived(
+		boss.bossType === 'katze_miu' && (boss as any).ability1CooldownUntil
+			? Number((boss as any).ability1CooldownUntil.microsSinceUnixEpoch) / 1000
+			: 0
+	);
+	const katzeIsChanneling = $derived(
+		boss.bossType === 'katze_miu' && ((boss as any).isChanneling ?? false)
+	);
 
 	let attackPhase = $state(0);
 	let attackCycle = 0;
@@ -100,7 +110,10 @@
 		else spawnT = 1;
 
 		if (!boss.isAlive && deathAt === null) deathAt = nowMs;
-		if (boss.isAlive && deathAt !== null) { deathAt = null; deathScale = 1; }
+		if (boss.isAlive && deathAt !== null) {
+			deathAt = null;
+			deathScale = 1;
+		}
 
 		if (deathAt !== null) {
 			deathScale = Math.max(0, deathScale - dt * 0.55);
@@ -202,8 +215,19 @@
 					soulDrainCooldownMs={reaperSoulDrainCooldownMs}
 					deathBlinkCooldownMs={reaperDeathBlinkCooldownMs}
 				/>
+			{:else if boss.bossType === 'katze_miu'}
+				<KatzeMiuRig
+					{speed}
+					{attackPhase}
+					isDead={dead}
+					isDazed={dazed}
+					{isEnraged}
+					isChanneling={katzeIsChanneling}
+					bossX={displayX}
+					bossZ={displayZ}
+					uppercutCooldownMs={katzeUppercutCooldownMs}
+				/>
 			{/if}
-
 		</T.Group>
 	</T.Group>
 {/if}

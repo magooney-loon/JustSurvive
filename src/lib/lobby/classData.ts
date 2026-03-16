@@ -610,7 +610,13 @@ export const CLASS_LIST = ['spotter', 'gunner', 'tank', 'healer'] as const;
 
 // ─── Boss Data ────────────────────────────────────────────────────────────────
 
-export type BossId = 'ghost_dragon' | 'worm_monster' | 'rabid_dog' | 'scp_096' | 'terror_reaper';
+export type BossId =
+	| 'ghost_dragon'
+	| 'worm_monster'
+	| 'rabid_dog'
+	| 'scp_096'
+	| 'terror_reaper'
+	| 'katze_miu';
 
 export interface BossAbility {
 	name: string;
@@ -658,7 +664,7 @@ export const BOSSES: Record<BossId, BossData> = {
 		],
 		tips: [
 			'When invisible it targets the FURTHEST player — cluster together to draw it in and counter-ambush.',
-			'Ice Ball only stuns 2 players — if you\'re frozen, teammates can still reposition and attack.',
+			"Ice Ball only stuns 2 players — if you're frozen, teammates can still reposition and attack.",
 			'Enrages at 500 HP: melee climbs to 18/hit and it moves faster. Burst it down from range.',
 			'Spotter Flash or Gunner suppress can daze it mid-hide — best time to DPS dump.'
 		]
@@ -676,7 +682,7 @@ export const BOSSES: Record<BossId, BossData> = {
 			{
 				name: 'Chain Charge',
 				cooldown: '12s',
-				desc: 'Deals damage to ALL players within 20 units simultaneously. Spread out — don\'t cluster.'
+				desc: "Deals damage to ALL players within 20 units simultaneously. Spread out — don't cluster."
 			},
 			{
 				name: 'Burrow',
@@ -685,7 +691,7 @@ export const BOSSES: Record<BossId, BossData> = {
 			}
 		],
 		tips: [
-			'Highest HP of all bosses at 3500 — prioritize it when it spawns, don\'t ignore it.',
+			"Highest HP of all bosses at 3500 — prioritize it when it spawns, don't ignore it.",
 			'Chain Charge hits everyone in 20 units — always stay spread: 3+ units apart.',
 			'After Burrow it appears in the outer ring — hold position and wait for it to come back.',
 			'Slow speed (3.5 u/s) makes it easy to kite — Spotter and Gunner shine here.'
@@ -732,19 +738,19 @@ export const BOSSES: Record<BossId, BossData> = {
 			{
 				name: 'AoE Slam',
 				cooldown: '14s',
-				desc: 'Knocks back ALL players within 15 units and slows them by 55% for 3s. Stay outside 15 units or you\'ll be scattered.'
+				desc: 'Slams the ground and slows ALL players within 15 units by 55% for 3s. Stay outside 15 units to avoid the slow.'
 			},
 			{
 				name: 'Charge',
 				cooldown: '9s',
-				desc: 'Dashes toward a random player at 2× speed. Target changes every 8s — don\'t assume it\'s always chasing you.'
+				desc: "Dashes toward a random player at 2× speed. Target changes every 8s — don't assume it's always chasing you."
 			}
 		],
 		tips: [
 			'Lowest base damage (6/hit) but Charge makes it unpredictable — always track its current target.',
 			'AoE Slam can scatter the whole team — position near the edge of its 15-unit range to dodge.',
-			'It changes charge targets every 8s — communicate who it\'s chasing so teammates can draw it away.',
-			'Healer should stay outside 15 units to avoid Slam — you can\'t heal if you\'re knocked away.'
+			"It changes charge targets every 8s — communicate who it's chasing so teammates can draw it away.",
+			"Healer should stay outside 15 units to avoid Slam — you can't heal if you're knocked away."
 		]
 	},
 	terror_reaper: {
@@ -760,7 +766,7 @@ export const BOSSES: Record<BossId, BossData> = {
 			{
 				name: 'Soul Drain',
 				cooldown: '10s',
-				desc: 'Drains life from ALL players within 14 units — heals itself for 40% of damage dealt. Don\'t cluster near it or it becomes unkillable.'
+				desc: "Drains life from ALL players within 14 units — heals itself for 40% of damage dealt. Don't cluster near it or it becomes unkillable."
 			},
 			{
 				name: 'Death Blink',
@@ -770,14 +776,49 @@ export const BOSSES: Record<BossId, BossData> = {
 		],
 		tips: [
 			'Soul Drain heals it — if multiple players are in range it can fully recover. Stay beyond 14 units.',
-			'Death Blink always targets the closest player — rotate who\'s nearest so no one gets repeatedly stunned.',
+			"Death Blink always targets the closest player — rotate who's nearest so no one gets repeatedly stunned.",
 			'High melee damage (11/hit, 16.5 when enraged) — Tank should be the primary target absorber.',
-			'Enrages at 440 HP: melee jumps to 16.5/hit. Burst it down fast when it\'s below half HP.'
+			"Enrages at 440 HP: melee jumps to 16.5/hit. Burst it down fast when it's below half HP."
+		]
+	},
+	katze_miu: {
+		id: 'katze_miu',
+		name: 'Katze Miu',
+		hp: 6000,
+		speed: 6.0,
+		meleeDamage: 10,
+		enrageHp: 1200,
+		color: '#ff6644',
+		threat: 'extreme',
+		abilities: [
+			{
+				name: 'Uppercut',
+				cooldown: '8s',
+				desc: 'Launches the closest player into the air and stuns them for 2s. Stay spread to avoid being the target.'
+			},
+			{
+				name: 'Fist Spin',
+				cooldown: '12s',
+				desc: 'Spins 360° and slows all nearby players for 3s. The spin has a 3-unit radius — back off when it starts channeling.'
+			}
+		],
+		tips: [
+			"Uppercut stuns for 2s — communicate who's targeted so teammates can provide cover.",
+			'Fist Spin slows for 3s — back away from the boss when it starts channeling the spin animation.',
+			"High HP pool (6000) but slower attack cadence than other bosses — focus fire when it's stunned.",
+			'Enrages at 1200 HP: melee damage increases significantly. Burst it down quickly when enraged.'
 		]
 	}
 };
 
-export const BOSS_LIST: BossId[] = ['ghost_dragon', 'worm_monster', 'rabid_dog', 'scp_096', 'terror_reaper'];
+export const BOSS_LIST: BossId[] = [
+	'ghost_dragon',
+	'worm_monster',
+	'rabid_dog',
+	'scp_096',
+	'terror_reaper',
+	'katze_miu'
+];
 
 export function getActiveSynergy(classCounts: Record<string, number>): SynergyData | null {
 	const key = Object.entries(classCounts)

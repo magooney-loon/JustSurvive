@@ -12,7 +12,9 @@ import {
 	AXE_SWING_KNOCKBACK,
 	CHARGE_DURATION_US,
 	CHARGE_COOLDOWN_US,
-	ULTIMATE_COOLDOWN_US
+	ULTIMATE_COOLDOWN_US,
+	AXE_BOSS_DAZE_COOLDOWN_US,
+	SLAM_DAZE_US
 } from '../../constants.js';
 
 function findTankState(ctx: any, sessionId: any, identity: any): any {
@@ -96,7 +98,6 @@ export function axeSwing(ctx: any, { sessionId }: any) {
 		}
 	}
 
-	const AXE_BOSS_DAZE_COOLDOWN_US = 6_000_000n; // 6s between boss daze procs from axe
 	for (const b of ctx.db.boss.boss_session_id.filter(sessionId)) {
 		if (!b.isAlive) continue;
 		const bx = Number(b.posX) - Number(ps.posX);
@@ -214,7 +215,6 @@ export function tankUltimate(ctx: any, { sessionId }: any) {
 
 	const SLAM_DAMAGE = AXE_SWING_DAMAGE * 2n * damageMultiplier(ps, now);
 	const SLAM_KNOCKBACK = AXE_SWING_KNOCKBACK * 2n;
-	const SLAM_DAZE_US = 2_000_000n;
 	let scoreAdd = 0n;
 
 	for (const e of ctx.db.enemy.enemy_session_id.filter(sessionId)) {
