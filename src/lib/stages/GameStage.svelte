@@ -29,7 +29,7 @@
 	import BossEntity from '$lib/character/enemies/boss/BossEntity.svelte';
 	import AcidPoolEntity from '$lib/character/enemies/AcidPoolEntity.svelte';
 	import DroppedItemEntity from '$lib/character/DroppedItemEntity.svelte';
-	import MarkOverlay from '$lib/character/ui/MarkOverlay.svelte';
+
 	import GameSounds from '$lib/stages/GameSounds.svelte';
 
 	const conn = useSpacetimeDB();
@@ -251,6 +251,4 @@
 	<AcidPoolEntity {pool} />
 {/each}
 
-<!-- Mark / ping overlays -->
 <GameSounds />
-<MarkOverlay />

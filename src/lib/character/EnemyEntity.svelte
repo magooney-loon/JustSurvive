@@ -79,7 +79,10 @@
 		}
 
 		if (!enemy.isAlive && deathAt === null) deathAt = nowMs;
-		if (enemy.isAlive && deathAt !== null) { deathAt = null; deathScale = 1; }
+		if (enemy.isAlive && deathAt !== null) {
+			deathAt = null;
+			deathScale = 1;
+		}
 
 		if (deathAt !== null) {
 			deathScale = Math.max(0, deathScale - dt * 0.7);
@@ -118,7 +121,10 @@
 					const px = Number(p.posX) / 1000;
 					const pz = Number(p.posZ) / 1000;
 					const d = (px - displayX) ** 2 + (pz - displayZ) ** 2;
-					if (d < nearestDistSq) { nearestDistSq = d; nearestPlayer = p; }
+					if (d < nearestDistSq) {
+						nearestDistSq = d;
+						nearestPlayer = p;
+					}
 				}
 				const px = Number(nearestPlayer.posX) / 1000;
 				const pz = Number(nearestPlayer.posZ) / 1000;
@@ -241,7 +247,12 @@
 					p.x += p.vx * dt;
 					p.y += p.vy * dt;
 					p.z += p.vz * dt;
-					if (p.y < 0.015) { p.y = 0.015; p.vy = 0; p.vx *= 0.25; p.vz *= 0.25; }
+					if (p.y < 0.015) {
+						p.y = 0.015;
+						p.vy = 0;
+						p.vx *= 0.25;
+						p.vz *= 0.25;
+					}
 					const localAge = bloodAge - p.delay;
 					const scaleMult = p.scale * Math.max(0.4, 1 - localAge * 0.6);
 					_dummy.position.set(p.x, p.y + scaleMult * 0.3, p.z);
@@ -308,7 +319,13 @@
 			{:else if enemy.enemyType === 'spitter'}
 				<SpitterRig {speed} {attackPhase} isDead={dead} />
 			{:else if enemy.enemyType === 'caster' || enemy.enemyType.startsWith('caster_')}
-				<CasterRig enemyType={enemy.enemyType as any} {speed} {attackPhase} {beamTimer} isDead={dead} />
+				<CasterRig
+					enemyType={enemy.enemyType as any}
+					{speed}
+					{attackPhase}
+					{beamTimer}
+					isDead={dead}
+				/>
 			{:else if enemy.enemyType === 'ogre' || enemy.enemyType === 'ogre_berserker' || enemy.enemyType === 'ogre_stalker'}
 				<OgreRig enemyType={enemy.enemyType as any} {speed} {attackPhase} isDead={dead} />
 			{:else}
@@ -324,7 +341,12 @@
 				geometry={splatCircleGeo}
 				renderOrder={1}
 			>
-				<T.MeshBasicMaterial color="#4a0f0f" transparent opacity={0.7 * splatT} depthWrite={false} />
+				<T.MeshBasicMaterial
+					color="#4a0f0f"
+					transparent
+					opacity={0.7 * splatT}
+					depthWrite={false}
+				/>
 			</T.Mesh>
 			<T.Mesh
 				position={[0, 0.012, 0]}
@@ -333,7 +355,12 @@
 				geometry={splatRingGeo}
 				renderOrder={1}
 			>
-				<T.MeshBasicMaterial color="#2b0606" transparent opacity={0.3 * splatT} depthWrite={false} />
+				<T.MeshBasicMaterial
+					color="#2b0606"
+					transparent
+					opacity={0.3 * splatT}
+					depthWrite={false}
+				/>
 			</T.Mesh>
 		{/if}
 
@@ -341,7 +368,10 @@
 			<T.InstancedMesh
 				args={[bloodGeo, perBloodMat, MAX_BLOOD_PER_ENEMY]}
 				frustumCulled={false}
-				oncreate={(m) => { bloodMeshRef = m; m.count = 0; }}
+				oncreate={(m) => {
+					bloodMeshRef = m;
+					m.count = 0;
+				}}
 			/>
 		{/if}
 
@@ -375,13 +405,12 @@
 
 		{#if enemy.isMarked && !dead}
 			<T.Mesh
-				position={[0, 2.2, 0]}
+				position={[0, 2.7, 0]}
 				rotation={[Math.PI / 4, 0, 0]}
 				scale={[pulse, pulse, pulse]}
 				geometry={markRingGeo}
 				material={markMat}
 			/>
-			<T.Mesh position={[0, 1.6, 0]} geometry={markStemGeo} material={markMat} />
 		{/if}
 	</T.Group>
 {/if}

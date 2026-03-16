@@ -32,8 +32,8 @@
 	let bobPhase = 0;
 	const BOB_SPEED_WALK = 8;
 	const BOB_SPEED_RUN = 14;
-	const BOB_AMOUNT = 0.06;
-	const BOB_RUN_MULT = 1.8;
+	const BOB_AMOUNT = 0.12;
+	const BOB_RUN_MULT = 2.2;
 	let camBob = 0;
 
 	// Camera smoothing
@@ -124,11 +124,13 @@
 
 			// Movement bob - subtle vertical bounce based on speed
 			const speed = Math.hypot(localVelocity.x, localVelocity.z);
-			const isRunning = speed > 5;
-			const bobSpeed = isRunning ? BOB_SPEED_RUN : BOB_SPEED_WALK;
-			const bobMult = isRunning ? BOB_RUN_MULT : 1;
-			bobPhase += dt * bobSpeed;
-			camBob = Math.abs(Math.sin(bobPhase)) * BOB_AMOUNT * Math.min(1, speed / 3) * bobMult;
+			const targetBobSpeed = speed > 2 ? (speed > 5 ? BOB_SPEED_RUN : BOB_SPEED_WALK) : 0;
+			// Smooth transition between bob speeds
+			bobPhase += dt * targetBobSpeed;
+			// Lerp the bob amplitude so it fades in/out smoothly
+			const targetBobAmt = BOB_AMOUNT * Math.min(1, speed / 3) * (speed > 5 ? BOB_RUN_MULT : 1);
+			camBob += (targetBobAmt - camBob) * 0.1;
+			camBob = Math.abs(Math.sin(bobPhase)) * camBob;
 
 			const targetX = localPos.x + smoothBehindX + rightX * camSway + localVelocity.x * LOOK_AHEAD;
 			const targetY = localPos.y + TPS_Y;
