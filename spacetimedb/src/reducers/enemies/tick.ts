@@ -342,7 +342,7 @@ export function enemyTick(ctx: any, { arg }: any) {
 			const bossDamageAccum = new Map<bigint, bigint>();
 			// Scale boss damage by total player count (1→50%, 2→100%, 3→150%, 4→200%)
 			const totalPlayers = [...ctx.db.playerState.player_state_session_id.filter(arg.sessionId)];
-			const playerScale = BigInt(totalPlayers.length) * 5n; // percentage
+			const playerScale = BigInt(totalPlayers.length) * 50n; // percentage
 			for (const boss of aliveBosses) {
 				handleBoss(ctx, boss, players, now, bossDamageAccum, arg.sessionId, playerScale);
 			}
