@@ -42,8 +42,8 @@
 	let shakeTimer = 0;
 	let footstepTimer = 0;
 	let hasPlayedIntro = false;
+	let modelRotation = $state(0);
 
-	// Uppercut animation state
 	let prevUppercutCooldownMs = $state(0);
 	let isUppercutting = $state(false);
 	let uppercutTimer = $state(0);
@@ -69,12 +69,25 @@
 	useTask((dt) => {
 		if (mixer) mixer.update(dt);
 
-		// Uppercut timer
-		let uppercutFlashT = $state(0);
+		// Spin rotation when channeling - full 360 spin then reset
+		if (isChanneling) {
+			modelRotation += dt * 6; // ~1 rotation per second
+			// After full 360 (2*PI), reset to 0 so model faces original direction
+			if (modelRotation >= Math.PI * 2) {
+				modelRotation = 0;
+			}
+		} else {
+			modelRotation = 0;
+		}
+
+		// Uppercut timer and VFX
 		if (isUppercutting) {
 			uppercutTimer += dt;
-			uppercutFlashT = Math.max(0, uppercutFlashT - dt / 0.5);
-			if (uppercutTimer > 0.5) isUppercutting = false;
+			uppercutFlashT = Math.max(0, 1 - uppercutTimer / 0.5);
+			if (uppercutTimer > 0.5) {
+				isUppercutting = false;
+				uppercutFlashT = 0;
+			}
 		}
 
 		const isWalking = !isDead && !isDazed && !isChanneling && speed > 0.05;
@@ -96,13 +109,15 @@
 		}
 	});
 
-	// Detect uppercut ability trigger
+	// Detect uppercut ability trigger - when cooldown is newly set
 	$effect(() => {
 		if (uppercutCooldownMs > 0 && uppercutCooldownMs !== prevUppercutCooldownMs) {
 			prevUppercutCooldownMs = uppercutCooldownMs;
 			isUppercutting = true;
 			uppercutTimer = 0;
 			uppercutFlashT = 1;
+		} else if (uppercutCooldownMs === 0) {
+			prevUppercutCooldownMs = 0;
 		}
 	});
 
@@ -207,12 +222,14 @@
 	}}
 />
 
-<GLTF
-	bind:gltf={$gltf}
-	url="{import.meta.env.BASE_URL}models/enemies/boss/katze_miu/model.glb"
-	rotation.y={Math.PI}
-	scale={2.2}
-/>
+<T.Group rotation.y={modelRotation}>
+	<GLTF
+		bind:gltf={$gltf}
+		url="{import.meta.env.BASE_URL}models/enemies/boss/katze_miu/model.glb"
+		rotation.y={Math.PI}
+		scale={2.2}
+	/>
+</T.Group>
 
 <!-- Uppercut VFX: vertical impact ring -->
 {#if uppercutFlashT > 0}

@@ -111,10 +111,9 @@ export const DOG_ABILITY2_COOLDOWN_US = 12_000_000n; // 12s stun attack
 export const DOG_LEAP_DISTANCE = 2500n; // distance behind player the dog teleports to on leap
 
 // ─── Boss: SCP-096 ────────────────────────────────────────────────────────────
-export const SCP096_ABILITY1_COOLDOWN_US = 14_000_000n; // 14s aoe slam
+export const SCP096_ABILITY1_COOLDOWN_US = 14_000_000n; // 14s aoe slam (slow)
 export const SCP096_ABILITY2_COOLDOWN_US = 9_000_000n; // 9s charge
 export const SCP096_AOE_RANGE_SQ = 15000n * 15000n; // 15 world units — AoE slam radius
-export const SCP096_AOE_KNOCKBACK = 8000n; // knockback applied to players hit by AoE slam
 export const SCP096_CHARGE_INTERVAL_US = 8_000_000n; // 8s period for cycling charge target
 
 // ─── Boss: Terror Reaper ──────────────────────────────────────────────────────
@@ -123,13 +122,10 @@ export const REAPER_ABILITY2_COOLDOWN_US = 15_000_000n; // 15s death blink
 export const REAPER_SOUL_DRAIN_RANGE_SQ = 196_000_000n; // 14 world units — soul drain radius
 
 // ─── Boss: Katze Miu ───────────────────────────────────────────────────────────
-export const KATZE_ABILITY1_COOLDOWN_US = 8_000_000n; // 8s uppercut
-export const KATZE_ABILITY2_COOLDOWN_US = 12_000_000n; // 12s fist spin
+export const KATZE_ABILITY1_COOLDOWN_US = 8_000_000n; // 8s uppercut (stun)
+export const KATZE_ABILITY2_COOLDOWN_US = 12_000_000n; // 12s fist spin (slow)
 export const KATZE_UPPERCUT_RANGE_SQ = 4_000_000n; // 2 world units — uppercut range
 export const KATZE_SPIN_RANGE_SQ = 9_000_000n; // 3 world units — fist spin radius
-export const KATZE_SPIN_KNOCKBACK = 3000n; // knockback distance
-export const KATZE_SPIN_DURATION_US = 800_000n; // 0.8s spin duration
-export const KATZE_KNOCKBACK_DURATION_US = 1_000_000n; // 1s knockback duration
 
 // ─── Boss: Shared Effects ───────────────────────────────────────────────────────
 export const BOSS_PLAYER_STUN_US = 1_000_000n; // 1s stun (ice ball)

@@ -41,7 +41,6 @@ export const Boss = __t.object("Boss", {
   isHidden: __t.bool(),
   isBurrowed: __t.bool(),
   isChanneling: __t.bool(),
-  knockedPlayerId: __t.option(__t.u64()),
 });
 export type Boss = __Infer<typeof Boss>;
 

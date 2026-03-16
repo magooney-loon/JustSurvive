@@ -316,8 +316,7 @@ export const Boss = table(
 		ability2CooldownUntil: t.timestamp().optional(),
 		isHidden: t.bool(), // ghost_dragon: invisible during hide & seek
 		isBurrowed: t.bool(), // worm_monster: underground during burrow
-		isChanneling: t.bool(), // katze_miu: spinning during fist spin
-		knockedPlayerId: t.u64().optional() // katze_miu: player being knocked by uppercut
+		isChanneling: t.bool() // katze_miu: spinning during fist spin
 	}
 );
 

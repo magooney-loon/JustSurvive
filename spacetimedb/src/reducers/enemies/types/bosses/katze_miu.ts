@@ -1,6 +1,6 @@
 // ─── Katze Miu Boss Handler ─────────────────────────────────────────────────
-// Ability 1: Uppercut — launch closest player into the air
-// Ability 2: Fist Spin — 360° knockback all nearby players
+// Ability 1: Uppercut — stun closest player for 2s
+// Ability 2: Fist Spin — slow all nearby players for 3s
 
 import { ts } from '../../../../helpers.js';
 import {
@@ -9,9 +9,8 @@ import {
 	KATZE_ABILITY2_COOLDOWN_US,
 	KATZE_UPPERCUT_RANGE_SQ,
 	KATZE_SPIN_RANGE_SQ,
-	KATZE_SPIN_KNOCKBACK,
-	KATZE_SPIN_DURATION_US,
-	KATZE_KNOCKBACK_DURATION_US
+	BOSS_PLAYER_LONG_STUN_US,
+	BOSS_PLAYER_SLOW_US
 } from '../../../../constants.js';
 import { bossMove, bossAttack } from '../boss_helpers.js';
 
@@ -24,21 +23,11 @@ export function handleKatzeMiu(
 	abilitiesLocked: boolean,
 	playerScale: bigint = 100n
 ): any {
-	// Clear knockedPlayerId after knockback duration (1s) for client animation sync
-	if (boss.knockedPlayerId && boss.ability1CooldownUntil) {
-		const abilityFiredAt =
-			(boss.ability1CooldownUntil.microsSinceUnixEpoch as bigint) - KATZE_ABILITY1_COOLDOWN_US;
-		if (now >= abilityFiredAt + KATZE_KNOCKBACK_DURATION_US) {
-			boss = { ...boss, knockedPlayerId: undefined };
-			ctx.db.boss.id.update(boss);
-		}
-	}
-
 	// Auto-stop channeling after spin duration
 	if (boss.isChanneling && boss.ability2CooldownUntil) {
 		const firedAt =
 			(boss.ability2CooldownUntil.microsSinceUnixEpoch as bigint) - KATZE_ABILITY2_COOLDOWN_US;
-		if (now >= firedAt + KATZE_SPIN_DURATION_US) {
+		if (now >= firedAt + 800000n) {
 			boss = { ...boss, isChanneling: false };
 			ctx.db.boss.id.update(boss);
 		}
@@ -62,7 +51,7 @@ export function handleKatzeMiu(
 	const dx = (chosen.posX as bigint) - (boss.posX as bigint);
 	const dz = (chosen.posZ as bigint) - (boss.posZ as bigint);
 
-	// Ability 1: Uppercut — launch closest player (when in range)
+	// Ability 1: Uppercut — stun closest player for 2s
 	const canAbility1 =
 		!abilitiesLocked &&
 		(!boss.ability1CooldownUntil ||
@@ -71,25 +60,14 @@ export function handleKatzeMiu(
 		const baseDmg = BOSS_DAMAGE[boss.bossType] ?? 10n;
 		const dmg = (baseDmg * playerScale) / 100n;
 		damageAccum.set(chosen.id as bigint, (damageAccum.get(chosen.id as bigint) ?? 0n) + dmg);
-		// Knockback - push them back significantly
-		const magnitude = BigInt(Math.round(Math.sqrt(Number(chosenDistSq))));
-		if (magnitude > 0n) {
-			const knockX =
-				(((boss.posX as bigint) - (chosen.posX as bigint)) * KATZE_SPIN_KNOCKBACK) / magnitude;
-			const knockZ =
-				(((boss.posZ as bigint) - (chosen.posZ as bigint)) * KATZE_SPIN_KNOCKBACK) / magnitude;
-			const newX = (chosen.posX as bigint) + knockX;
-			const newZ = (chosen.posZ as bigint) + knockZ;
-			ctx.db.playerState.id.update({ ...chosen, posX: newX, posZ: newZ });
-		}
-		// Track which player is knocked (for client animation sync)
-		boss = { ...boss, knockedPlayerId: chosen.id as bigint };
+		// Apply 2s stun instead of knockback
+		ctx.db.playerState.id.update({ ...chosen, stunUntil: ts(now + BOSS_PLAYER_LONG_STUN_US) });
 		boss = { ...boss, ability1CooldownUntil: ts(now + KATZE_ABILITY1_COOLDOWN_US) };
 		ctx.db.boss.id.update(boss);
 		return boss;
 	}
 
-	// Ability 2: Fist Spin — 360° knockback all nearby players
+	// Ability 2: Fist Spin — slow all nearby players for 3s
 	const canAbility2 =
 		!abilitiesLocked &&
 		(!boss.ability2CooldownUntil ||
@@ -102,15 +80,11 @@ export function handleKatzeMiu(
 			const pDist = pdx * pdx + pdz * pdz;
 			if (pDist <= KATZE_SPIN_RANGE_SQ) {
 				hitAny = true;
-				// Knockback away from boss
-				const pMag = BigInt(Math.round(Math.sqrt(Number(pDist))));
-				if (pMag > 0n) {
-					const knockX = (pdx * KATZE_SPIN_KNOCKBACK) / pMag;
-					const knockZ = (pdz * KATZE_SPIN_KNOCKBACK) / pMag;
-					const newX = (p.posX as bigint) + knockX;
-					const newZ = (p.posZ as bigint) + knockZ;
-					ctx.db.playerState.id.update({ ...p, posX: newX, posZ: newZ });
-				}
+				// Apply slow instead of knockback
+				ctx.db.playerState.id.update({
+					...p,
+					slowedUntil: ts(now + BOSS_PLAYER_SLOW_US)
+				});
 			}
 		}
 		// Only trigger cooldown if we hit at least one player

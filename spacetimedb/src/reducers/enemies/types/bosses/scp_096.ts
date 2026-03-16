@@ -1,13 +1,12 @@
 // ─── SCP-096 Boss Handler ──────────────────────────────────────────────────────
-// Ability 1: AoE Slam — knock back and slow all players within 15 units
+// Ability 1: AoE Slam — slow all players within 15 units
 // Ability 2: Charge — dash toward random player at 2x speed
 
-import { ts, bigintSqrt as bs } from '../../../../helpers.js';
+import { ts } from '../../../../helpers.js';
 import {
 	SCP096_ABILITY1_COOLDOWN_US,
 	SCP096_ABILITY2_COOLDOWN_US,
 	SCP096_AOE_RANGE_SQ,
-	SCP096_AOE_KNOCKBACK,
 	SCP096_CHARGE_INTERVAL_US,
 	BOSS_PLAYER_SLOW_US
 } from '../../../../constants.js';
@@ -52,19 +51,9 @@ export function handleScp096(
 			const pdz = (p.posZ as bigint) - (boss.posZ as bigint);
 			const pDist = pdx * pdx + pdz * pdz;
 			if (pDist <= SCP096_AOE_RANGE_SQ) {
-				const pMag = bs(pDist);
-				const newX =
-					pMag > 0n
-						? (p.posX as bigint) + (pdx * SCP096_AOE_KNOCKBACK) / pMag
-						: (p.posX as bigint) + SCP096_AOE_KNOCKBACK;
-				const newZ =
-					pMag > 0n
-						? (p.posZ as bigint) + (pdz * SCP096_AOE_KNOCKBACK) / pMag
-						: (p.posZ as bigint) + SCP096_AOE_KNOCKBACK;
+				// Apply slow only (removed knockback)
 				ctx.db.playerState.id.update({
 					...p,
-					posX: newX,
-					posZ: newZ,
 					slowedUntil: ts(now + BOSS_PLAYER_SLOW_US)
 				});
 			}

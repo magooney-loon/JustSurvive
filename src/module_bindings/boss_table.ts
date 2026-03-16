@@ -31,5 +31,4 @@ export default __t.row({
   isHidden: __t.bool().name("is_hidden"),
   isBurrowed: __t.bool().name("is_burrowed"),
   isChanneling: __t.bool().name("is_channeling"),
-  knockedPlayerId: __t.option(__t.u64()).name("knocked_player_id"),
 });
