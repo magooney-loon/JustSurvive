@@ -21,18 +21,25 @@ export function handleWormMonster(
 	abilitiesLocked: boolean,
 	playerScale: bigint = 100n
 ): any {
-	// Auto-emerge after WORM_BURROW_DURATION_US — teleport to destination on emerge (not on burrow-in)
+	// Auto-emerge after WORM_BURROW_DURATION_US — teleport near a random player on emerge
 	if (boss.isBurrowed && boss.ability2CooldownUntil) {
 		const firedAt =
 			(boss.ability2CooldownUntil.microsSinceUnixEpoch as bigint) - WORM_ABILITY2_COOLDOWN_US;
 		if (now >= firedAt + WORM_BURROW_DURATION_US) {
-			// Recompute target position from fire timestamp (same seed as when ability fired)
-			const seed = firedAt % 1000n;
-			const angle = (Number(seed) / 1000) * Math.PI * 2;
-			const radius = 20000 + Number((firedAt / 7n) % 20000n);
-			const newX = BigInt(Math.round(Math.cos(angle) * radius));
-			const newZ = BigInt(Math.round(Math.sin(angle) * radius));
-			boss = { ...boss, isBurrowed: false, posX: newX, posZ: newZ };
+			// Pick a random player based on firedAt seed
+			if (players.length > 0) {
+				const playerIndex = Number(firedAt % BigInt(players.length));
+				const targetPlayer = players[playerIndex];
+				// Random offset from player
+				const offsetSeed = firedAt % 1000n;
+				const angle = (Number(offsetSeed) / 1000) * Math.PI * 2;
+				const distance = 5000 + Number((firedAt / 13n) % 10000n); // 5000-15000 units away
+				const offsetX = BigInt(Math.round(Math.cos(angle) * distance));
+				const offsetZ = BigInt(Math.round(Math.sin(angle) * distance));
+				const newX = (targetPlayer.posX as bigint) + offsetX;
+				const newZ = (targetPlayer.posZ as bigint) + offsetZ;
+				boss = { ...boss, isBurrowed: false, posX: newX, posZ: newZ };
+			}
 			ctx.db.boss.id.update(boss);
 		}
 	}

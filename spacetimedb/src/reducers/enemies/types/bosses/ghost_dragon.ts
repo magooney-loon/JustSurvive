@@ -4,6 +4,7 @@
 
 import { ts } from '../../../../helpers.js';
 import {
+	BOSS_MELEE_RANGE,
 	GHOST_ABILITY1_COOLDOWN_US,
 	GHOST_HIDE_DURATION_US,
 	GHOST_ABILITY2_COOLDOWN_US,
@@ -70,12 +71,13 @@ export function handleGhostDragon(
 		return boss;
 	}
 
-	// Ability 2: Ice Ball — stun up to 2 players for 1s
+	// Ability 2: Ice Ball — stun up to 2 players for 1s (only when in range)
 	const canAbility2 =
 		!abilitiesLocked &&
 		(!boss.ability2CooldownUntil ||
 			now >= (boss.ability2CooldownUntil.microsSinceUnixEpoch as bigint));
-	if (canAbility2 && !boss.isHidden && players.length > 0) {
+	const iceBallRangeSq = BOSS_MELEE_RANGE * BOSS_MELEE_RANGE * 4n; // ~2x melee range
+	if (canAbility2 && !boss.isHidden && players.length > 0 && chosenDistSq <= iceBallRangeSq) {
 		const stunUntil = ts(now + BOSS_PLAYER_STUN_US);
 		const targets = players.slice(0, 2);
 		for (const t of targets) {

@@ -37,12 +37,13 @@ export function handleRabidDog(
 	const dx = (chosen.posX as bigint) - (boss.posX as bigint);
 	const dz = (chosen.posZ as bigint) - (boss.posZ as bigint);
 
-	// Ability 1: Leap — teleport behind closest player
+	// Ability 1: Leap — teleport behind closest player (only when within range)
 	const canAbility1 =
 		!abilitiesLocked &&
 		(!boss.ability1CooldownUntil ||
 			now >= (boss.ability1CooldownUntil.microsSinceUnixEpoch as bigint));
-	if (canAbility1) {
+	const leapRangeSq = DOG_LEAP_DISTANCE * DOG_LEAP_DISTANCE * 9n; // 3x leap distance
+	if (canAbility1 && chosenDistSq <= leapRangeSq) {
 		const facingRad = Number(chosen.facingAngle) / 1000;
 		const behindX = BigInt(Math.round(Math.cos(facingRad + Math.PI) * Number(DOG_LEAP_DISTANCE)));
 		const behindZ = BigInt(Math.round(Math.sin(facingRad + Math.PI) * Number(DOG_LEAP_DISTANCE)));
