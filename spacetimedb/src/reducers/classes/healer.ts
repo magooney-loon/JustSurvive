@@ -12,7 +12,11 @@ import {
 	REVIVE_COOLDOWN_US,
 	REVIVE_CHANNEL_US,
 	REVIVE_SHIELD_HP,
-	ULTIMATE_COOLDOWN_US
+	ULTIMATE_COOLDOWN_US,
+	HEAL_COOLDOWN_US,
+	REVIVE_RANGE_SQ,
+	REVIVE_SPEED_BOOST_US,
+	HEALER_ULTIMATE_SPEED_BOOST_US
 } from '../../constants.js';
 
 function findHealerState(ctx: any, sessionId: any, identity: any): any {
@@ -70,7 +74,7 @@ export function healPlayer(ctx: any, { sessionId }: any) {
 	ctx.db.playerState.id.update({ ...healer, score: (healer.score as bigint) + (healed ? 5n : 0n), lastShotAt: ctx.timestamp });
 	ctx.db.healerState.id.update({
 		...hs,
-		healCooldownUntil: ts(now + 3_000_000n),
+		healCooldownUntil: ts(now + HEAL_COOLDOWN_US),
 		lastHealAt: ctx.timestamp,
 		healTargetIdentity: target.playerIdentity,
 		chainHealTargetIdentity: chainTarget ? chainTarget.playerIdentity : undefined
@@ -101,7 +105,7 @@ export function reviveStart(ctx: any, { sessionId, targetIdentity }: any) {
 
 	const dx = (healer.posX as bigint) - (target.posX as bigint);
 	const dz = (healer.posZ as bigint) - (target.posZ as bigint);
-	if (dx * dx + dz * dz > 9_000_000n) throw new SenderError('Too far from downed player');
+	if (dx * dx + dz * dz > REVIVE_RANGE_SQ) throw new SenderError('Too far from downed player');
 
 	ctx.db.reviveChannel.insert({
 		id: 0n,
@@ -145,7 +149,7 @@ export function completeRevive(ctx: any, { arg }: any) {
 	}
 
 	const now = ctx.timestamp.microsSinceUnixEpoch as bigint;
-	const speedBoostUntil = ts(now + 5_000_000n);
+	const speedBoostUntil = ts(now + REVIVE_SPEED_BOOST_US);
 	ctx.db.playerState.id.update({ ...target, hp: 50n, status: 'alive', speedBoostUntil });
 	ctx.db.playerState.id.update({ ...healer, hp: healer.maxHp, score: (healer.score as bigint) + 20n });
 
@@ -173,7 +177,7 @@ export function healerUltimate(ctx: any, { sessionId }: any) {
 	const now = ctx.timestamp.microsSinceUnixEpoch as bigint;
 	if (hs.ultimateCooldownUntil && now < (hs.ultimateCooldownUntil.microsSinceUnixEpoch as bigint)) return;
 
-	const speedBoostUntil = ts(now + 3_000_000n);
+	const speedBoostUntil = ts(now + HEALER_ULTIMATE_SPEED_BOOST_US);
 	let scoreAdd = 0n;
 
 	for (const p of ctx.db.playerState.player_state_session_id.filter(sessionId)) {

@@ -4,7 +4,18 @@
 
 import { ScheduleAt } from 'spacetimedb';
 import { ts, classBaseRegen, classRampRegen } from '../helpers.js';
-import { DAY_PHASES, ARENA_RADIUS_SRV } from '../constants.js';
+import {
+	DAY_PHASES,
+	ARENA_RADIUS_SRV,
+	SPRINT_STAMINA_DRAIN,
+	STAMINA_RAMP_TIME_US,
+	STAMINA_REGEN_DELAY_US,
+	MICROS_PER_SEC,
+	CLASS_WALK_SPEED,
+	CLASS_SPRINT_SPEED,
+	DAY_PHASE_DURATION_US,
+	PHASE_REVIVE_SPEED_BOOST_US
+} from '../constants.js';
 import { hitsTorch } from './enemies/movement.js';
 import { applyPlayerDamage } from './shared.js';
 
@@ -34,12 +45,8 @@ export function movePlayer(
 		}
 	}
 
-	const SPRINT_DRAIN = 3n;
 	const BASE_REGEN_PER_SEC = classBaseRegen(ps.classChoice);
 	const RAMP_REGEN_PER_SEC = classRampRegen(ps.classChoice);
-	const RAMP_TIME_MICROS = 5_000_000n;
-	const REGEN_DELAY_MICROS = 1_000_000n;
-	const MICROS_PER_SEC = 1_000_000n;
 	const now = ctx.timestamp.microsSinceUnixEpoch as bigint;
 	const lastMoveAt = (ps.lastMoveAt?.microsSinceUnixEpoch ?? now) as bigint;
 	const dtMicros = now > lastMoveAt ? now - lastMoveAt : 0n;
@@ -47,18 +54,18 @@ export function movePlayer(
 	let regenStartAt = ps.staminaRegenStartAt;
 	let regenCarry = ps.staminaRegenCarry ?? 0n;
 	if (isSprinting && ps.stamina > 0n) {
-		newStamina = ps.stamina > SPRINT_DRAIN ? ps.stamina - SPRINT_DRAIN : 0n;
+		newStamina = ps.stamina > SPRINT_STAMINA_DRAIN ? ps.stamina - SPRINT_STAMINA_DRAIN : 0n;
 		regenStartAt = undefined;
 		regenCarry = 0n;
 	} else if (!isSprinting && ps.stamina < ps.maxStamina && dtMicros > 0n) {
 		if (!regenStartAt) regenStartAt = ctx.timestamp;
 		const sinceStart = now - (regenStartAt.microsSinceUnixEpoch as bigint);
-		if (sinceStart >= REGEN_DELAY_MICROS) {
-			const rampMicros = sinceStart - REGEN_DELAY_MICROS;
+		if (sinceStart >= STAMINA_REGEN_DELAY_US) {
+			const rampMicros = sinceStart - STAMINA_REGEN_DELAY_US;
 			const ramp =
-				rampMicros >= RAMP_TIME_MICROS
+				rampMicros >= STAMINA_RAMP_TIME_US
 					? RAMP_REGEN_PER_SEC
-					: (RAMP_REGEN_PER_SEC * rampMicros) / RAMP_TIME_MICROS;
+					: (RAMP_REGEN_PER_SEC * rampMicros) / STAMINA_RAMP_TIME_US;
 			const regenRate = BASE_REGEN_PER_SEC + ramp;
 			const totalMicros = regenRate * dtMicros + regenCarry;
 			const regenAdd = totalMicros / MICROS_PER_SEC;
@@ -77,27 +84,15 @@ export function movePlayer(
 	if (hitsTorch(posX as bigint, posZ as bigint)) return;
 
 	if (dtMicros > 0n && ps.lastMoveAt) {
-		const CLASS_WALK: Record<string, bigint> = {
-			spotter: 5000n,
-			gunner: 4500n,
-			tank: 2500n,
-			healer: 5000n
-		};
-		const CLASS_SPRINT: Record<string, bigint> = {
-			spotter: 9000n,
-			gunner: 7500n,
-			tank: 3500n,
-			healer: 8500n
-		};
 		const baseSpeed =
 			isSprinting && ps.stamina > 0n
-				? (CLASS_SPRINT[ps.classChoice] ?? 7500n)
-				: (CLASS_WALK[ps.classChoice] ?? 4500n);
+				? (CLASS_SPRINT_SPEED[ps.classChoice] ?? 7500n)
+				: (CLASS_WALK_SPEED[ps.classChoice] ?? 4500n);
 		const hasSpeedBoost =
 			ps.speedBoostUntil && (ps.speedBoostUntil.microsSinceUnixEpoch as bigint) > now;
 		// During charge allow 6x base speed; post-charge speed boost is 1.5x
 		const maxSpeed = isTankCharging ? baseSpeed * 6n : hasSpeedBoost ? (baseSpeed * 3n) / 2n : baseSpeed;
-		const maxDist = (maxSpeed * dtMicros * 3n) / (2n * 1_000_000n);
+		const maxDist = (maxSpeed * dtMicros * 3n) / (2n * MICROS_PER_SEC);
 		const dx = (posX as bigint) - (ps.posX as bigint);
 		const dz = (posZ as bigint) - (ps.posZ as bigint);
 		if (dx * dx + dz * dz > maxDist * maxDist) return;
@@ -157,11 +152,11 @@ export function advanceDayPhase(ctx: any, { arg }: any) {
 	// Revive all downed players at the end of each phase
 	for (const p of ctx.db.playerState.player_state_session_id.filter(arg.sessionId)) {
 		if (p.status !== 'downed') continue;
-		const speedBoostUntil = ts((ctx.timestamp.microsSinceUnixEpoch as bigint) + 3_000_000n);
+		const speedBoostUntil = ts((ctx.timestamp.microsSinceUnixEpoch as bigint) + PHASE_REVIVE_SPEED_BOOST_US);
 		ctx.db.playerState.id.update({ ...p, hp: 50n, status: 'alive', speedBoostUntil });
 	}
 
-	const nextAdvance = (ctx.timestamp.microsSinceUnixEpoch as bigint) + 60_000_000n;
+	const nextAdvance = (ctx.timestamp.microsSinceUnixEpoch as bigint) + DAY_PHASE_DURATION_US;
 	ctx.db.dayPhaseJob.insert({
 		scheduledId: 0n,
 		scheduledAt: ScheduleAt.time(nextAdvance),

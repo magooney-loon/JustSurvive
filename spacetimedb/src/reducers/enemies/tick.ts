@@ -26,7 +26,9 @@ import {
 	ITEM_DROP_HP_MAX,
 	ITEM_DROP_STAMINA_MAX,
 	ITEM_DROP_DMG_MAX,
-	ITEM_DROP_SPD_MAX
+	ITEM_DROP_SPD_MAX,
+	ENEMY_DEAD_CLEANUP_US,
+	BOSS_DEAD_CLEANUP_US
 } from '../../constants.js';
 import { applyAccumulatedDamage } from '../shared.js';
 import { handleSpitter } from './types/spitter.js';
@@ -61,12 +63,11 @@ export function enemyTick(ctx: any, { arg }: any) {
 	}
 
 	// Clean up dead enemies after 5 seconds — roll item drop on cleanup
-	const DEAD_CLEANUP_US = 5_000_000n;
 	for (const e of ctx.db.enemy.enemy_session_id.filter(arg.sessionId)) {
 		if (
 			!e.isAlive &&
 			e.diedAt &&
-			now - (e.diedAt.microsSinceUnixEpoch as bigint) >= DEAD_CLEANUP_US
+			now - (e.diedAt.microsSinceUnixEpoch as bigint) >= ENEMY_DEAD_CLEANUP_US
 		) {
 			const roll = pseudoRand((e.id as bigint) ^ now, 100);
 			let itemType: string | null = null;
@@ -290,7 +291,6 @@ export function enemyTick(ctx: any, { arg }: any) {
 	}
 
 	// ── Boss dead cleanup + boss AI ──────────────────────────────────────────
-	const BOSS_DEAD_CLEANUP_US = 5_000_000n;
 	for (const b of ctx.db.boss.boss_session_id.filter(arg.sessionId)) {
 		if (
 			!b.isAlive &&

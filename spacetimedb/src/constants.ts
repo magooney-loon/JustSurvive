@@ -19,8 +19,8 @@ export const ENEMY_BASE_SPEED: Record<string, bigint> = {
 export const ENEMY_CAP = 36; // 4-player cap; scales down per player count
 export const ENEMY_CAP_BY_PLAYERS: Record<number, number> = { 1: 1, 2: 18, 3: 27, 4: 36 };
 export const MELEE_RANGE = 2000n;
-export const BOSS_MELEE_RANGE = 4700n; // Boss attacks within 4 units
-export const BOSS_STOP_DIST = 4600n; // Boss stops walking at 4 units (visual deadzone)
+export const BOSS_MELEE_RANGE = 4000n; // Boss attacks within 4 units
+export const BOSS_STOP_DIST = 4000n; // Boss stops walking at 4 units (visual deadzone)
 export const SPITTER_RANGE_SQ = 144_000_000n; // 12 world units squared
 export const SPITTER_MIN_DIST_SQ = 36_000_000n; // 6 world units — flee closer than this
 export const CASTER_RANGE_SQ = 64_000_000n; // 8 world units squared
@@ -229,3 +229,83 @@ export const ITEM_DROP_SPD_MAX = 17;
 export const SPAWN_POINT_COUNT = 8;
 export const WALL_SPAWN_RADIUS = 48_500; // world units × 1000, just inside arena wall
 export const ARENA_RADIUS_SRV = 50_000n; // server units — hard wall boundary
+
+// ─── Melee AI ─────────────────────────────────────────────────────────────────
+export const STRAFE_MIN_DIST_SQ = 36_000_000n; // 6 world units — don't strafe when this close
+export const STRAFE_PERIOD_US = 2_500_000n; // 2.5s per strafe cycle phase
+
+// Melee hit damage per enemy type (applied per tick when in melee range)
+export const MELEE_DAMAGE: Record<string, bigint> = {
+	ogre_stalker: 4n,
+	brute: 3n,
+	ogre_berserker: 3n,
+	ogre: 2n,
+	default: 1n
+};
+
+// ─── Spitter AI ───────────────────────────────────────────────────────────────
+export const SPIT_COOLDOWN_US = 7_000_000n; // 7s between acid spit shots
+export const ACID_POOL_LIFETIME_US = 10_000_000n; // 10s before acid pool despawns
+export const ACID_POOL_RADIUS = 2000n; // 2 world units radius
+
+// ─── Enemy Cleanup ────────────────────────────────────────────────────────────
+export const ENEMY_DEAD_CLEANUP_US = 5_000_000n; // 5s after death before removal + item drop
+export const BOSS_DEAD_CLEANUP_US = 5_000_000n; // 5s after boss death before removal
+
+// ─── Boss: Worm Monster ───────────────────────────────────────────────────────
+export const WORM_CHAIN_RANGE_SQ = 20000n * 20000n; // 20 world units — chain charge hits all players within this
+
+// ─── Boss: SCP-096 ────────────────────────────────────────────────────────────
+export const SCP096_AOE_RANGE_SQ = 15000n * 15000n; // 15 world units — AoE slam radius (squared)
+export const SCP096_AOE_KNOCKBACK = 8000n; // knockback applied to players hit by AoE slam
+export const SCP096_CHARGE_INTERVAL_US = 8_000_000n; // 8s period for cycling charge target
+
+// ─── Boss: Rabid Dog ──────────────────────────────────────────────────────────
+export const DOG_LEAP_DISTANCE = 2500n; // distance behind player the dog teleports to on leap
+
+// ─── Gunner ───────────────────────────────────────────────────────────────────
+export const GUNNER_ATTACK_RANGE_SQ = 100_000_000n; // 10 world units max shot range (squared)
+export const GUNNER_SUPPRESS_COOLDOWN_US = 8_000_000n; // 8s between suppress dazes on bosses
+export const GUNNER_SUPPRESS_DAZE_US = 1_000_000n; // 1s daze applied by suppression shot
+export const GUNNER_ADRENALINE_COOLDOWN_US = 5_000_000n; // 5s cooldown on adrenaline ability
+export const GUNNER_FRENZY_RANGE_SQ = 225_000_000n; // 15 world units — frenzy ultimate radius (squared)
+export const GUNNER_FRENZY_DAZE_US = 2_000_000n; // 2s daze applied by frenzy ultimate
+
+// ─── Spotter ──────────────────────────────────────────────────────────────────
+export const STEADY_SHOT_PIERCE_WIDTH_SQ = 2_250_000n; // 1.5 world units perpendicular pierce width (squared)
+export const BARRAGE_DAMAGE = 20n; // damage per enemy hit by spotter ultimate (Barrage)
+export const FLASH_BOSS_COOLDOWN_US = 10_000_000n; // 10s between flash stuns on the same boss
+
+// ─── Tank ─────────────────────────────────────────────────────────────────────
+export const AXE_BOSS_DAZE_COOLDOWN_US = 6_000_000n; // 6s between axe daze procs on bosses
+export const SLAM_DAZE_US = 2_000_000n; // 2s daze applied by ground slam ultimate
+
+// ─── Healer ───────────────────────────────────────────────────────────────────
+export const HEAL_COOLDOWN_US = 3_000_000n; // 3s cooldown between heal beam uses
+export const REVIVE_RANGE_SQ = 9_000_000n; // 3 world units max revive channel range (squared)
+export const REVIVE_SPEED_BOOST_US = 5_000_000n; // 5s speed boost granted after revive
+export const HEALER_ULTIMATE_SPEED_BOOST_US = 3_000_000n; // 3s speed boost from healer ultimate
+
+// ─── Player Movement ──────────────────────────────────────────────────────────
+export const SPRINT_STAMINA_DRAIN = 3n; // stamina drained per move tick while sprinting
+export const STAMINA_RAMP_TIME_US = 5_000_000n; // 5s to ramp from base to max regen rate
+export const STAMINA_REGEN_DELAY_US = 1_000_000n; // 1s delay before stamina regen starts
+export const MICROS_PER_SEC = 1_000_000n; // microseconds in one second
+
+// Class walk/sprint speed limits (server units per second; validated server-side)
+export const CLASS_WALK_SPEED: Record<string, bigint> = {
+	spotter: 5000n,
+	gunner: 4500n,
+	tank: 2500n,
+	healer: 5000n
+};
+export const CLASS_SPRINT_SPEED: Record<string, bigint> = {
+	spotter: 9000n,
+	gunner: 7500n,
+	tank: 3500n,
+	healer: 8500n
+};
+
+// ─── Day Phase ────────────────────────────────────────────────────────────────
+export const DAY_PHASE_DURATION_US = 60_000_000n; // 60s per day/night phase
+export const PHASE_REVIVE_SPEED_BOOST_US = 3_000_000n; // 3s speed boost on phase-end auto-revive

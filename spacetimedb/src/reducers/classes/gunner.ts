@@ -4,7 +4,17 @@
 
 import { SenderError } from 'spacetimedb/server';
 import { ts, damageMultiplier } from '../../helpers.js';
-import { WEAPON_DAMAGE, MARK_DAMAGE_BONUS, ULTIMATE_COOLDOWN_US } from '../../constants.js';
+import {
+	WEAPON_DAMAGE,
+	MARK_DAMAGE_BONUS,
+	ULTIMATE_COOLDOWN_US,
+	GUNNER_ATTACK_RANGE_SQ,
+	GUNNER_SUPPRESS_COOLDOWN_US,
+	GUNNER_SUPPRESS_DAZE_US,
+	GUNNER_ADRENALINE_COOLDOWN_US,
+	GUNNER_FRENZY_RANGE_SQ,
+	GUNNER_FRENZY_DAZE_US
+} from '../../constants.js';
 
 function findGunnerState(ctx: any, sessionId: any, identity: any): any {
 	for (const g of ctx.db.gunnerState.gunner_state_session_id.filter(sessionId)) {
@@ -34,7 +44,7 @@ export function attackEnemy(ctx: any, { sessionId, enemyId, suppress }: any) {
 
 	const dx = (target.posX as bigint) - (ps.posX as bigint);
 	const dz = (target.posZ as bigint) - (ps.posZ as bigint);
-	if (dx * dx + dz * dz > 100_000_000n) return;
+	if (dx * dx + dz * dz > GUNNER_ATTACK_RANGE_SQ) return;
 
 	const now = ctx.timestamp.microsSinceUnixEpoch as bigint;
 	const baseDmg = WEAPON_DAMAGE[ps.classChoice] ?? 15n;
@@ -61,16 +71,15 @@ export function attackEnemy(ctx: any, { sessionId, enemyId, suppress }: any) {
 		let updatedTarget = { ...target, hp: newHp };
 		if (suppress && isBoss) {
 			// Cooldown measured from when the last suppress daze ENDED (dazedUntil stays set after expiry)
-			const GUNNER_SUPPRESS_COOLDOWN_US = 8_000_000n;
 			const lastDazedUntil = target.dazedUntil
 				? (target.dazedUntil.microsSinceUnixEpoch as bigint)
 				: 0n;
 			const canSuppress = now >= lastDazedUntil + GUNNER_SUPPRESS_COOLDOWN_US;
 			if (canSuppress) {
-				updatedTarget = { ...updatedTarget, isDazed: true, dazedUntil: ts(now + 1_000_000n) };
+				updatedTarget = { ...updatedTarget, isDazed: true, dazedUntil: ts(now + GUNNER_SUPPRESS_DAZE_US) };
 			}
 		} else if (suppress) {
-			updatedTarget = { ...updatedTarget, isDazed: true, dazedUntil: ts(now + 1_000_000n) };
+			updatedTarget = { ...updatedTarget, isDazed: true, dazedUntil: ts(now + GUNNER_SUPPRESS_DAZE_US) };
 		}
 		if (isBoss) {
 			ctx.db.boss.id.update(updatedTarget);
@@ -108,7 +117,7 @@ export function adrenaline(ctx: any, { sessionId }: any) {
 		return;
 
 	ctx.db.playerState.id.update({ ...ps, stamina: ps.maxStamina, lastMoveAt: ctx.timestamp });
-	ctx.db.gunnerState.id.update({ ...gs, adrenalineCooldownUntil: ts(now + 5_000_000n), lastAdrenalineAt: ctx.timestamp });
+	ctx.db.gunnerState.id.update({ ...gs, adrenalineCooldownUntil: ts(now + GUNNER_ADRENALINE_COOLDOWN_US), lastAdrenalineAt: ctx.timestamp });
 }
 
 // ─── gunner_ultimate: Frenzy ──────────────────────────────────────────────────
@@ -131,17 +140,15 @@ export function gunnerUltimate(ctx: any, { sessionId }: any) {
 	if (gs.ultimateCooldownUntil && now < (gs.ultimateCooldownUntil.microsSinceUnixEpoch as bigint))
 		return;
 
-	const FRENZY_RANGE_SQ = 225_000_000n; // 15 world units
 	const FRENZY_DAMAGE = (WEAPON_DAMAGE['gunner'] ?? 15n) * damageMultiplier(ps, now);
-	const FRENZY_DAZE_US = 2_000_000n;
 	let scoreAdd = 0n;
 
 	for (const e of ctx.db.enemy.enemy_session_id.filter(sessionId)) {
 		if (!e.isAlive) continue;
 		const ex = (e.posX as bigint) - (ps.posX as bigint);
 		const ez = (e.posZ as bigint) - (ps.posZ as bigint);
-		if (ex * ex + ez * ez > FRENZY_RANGE_SQ) continue;
-		const dazedUntil = ts(now + FRENZY_DAZE_US);
+		if (ex * ex + ez * ez > GUNNER_FRENZY_RANGE_SQ) continue;
+		const dazedUntil = ts(now + GUNNER_FRENZY_DAZE_US);
 		const newHp = (e.hp as bigint) > FRENZY_DAMAGE ? (e.hp as bigint) - FRENZY_DAMAGE : 0n;
 		if (newHp <= 0n) {
 			ctx.db.enemy.id.update({
@@ -163,8 +170,8 @@ export function gunnerUltimate(ctx: any, { sessionId }: any) {
 		if (!b.isAlive) continue;
 		const bx = (b.posX as bigint) - (ps.posX as bigint);
 		const bz = (b.posZ as bigint) - (ps.posZ as bigint);
-		if (bx * bx + bz * bz > FRENZY_RANGE_SQ) continue;
-		const dazedUntil = ts(now + FRENZY_DAZE_US);
+		if (bx * bx + bz * bz > GUNNER_FRENZY_RANGE_SQ) continue;
+		const dazedUntil = ts(now + GUNNER_FRENZY_DAZE_US);
 		const newHp = (b.hp as bigint) > FRENZY_DAMAGE ? (b.hp as bigint) - FRENZY_DAMAGE : 0n;
 		if (newHp <= 0n) {
 			ctx.db.boss.id.update({
