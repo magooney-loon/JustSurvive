@@ -28,6 +28,14 @@
 	let camSwayTarget = 0;
 	const SWAY_LERP = 0.06;
 
+	// Walking/running bob effect
+	let bobPhase = 0;
+	const BOB_SPEED_WALK = 8;
+	const BOB_SPEED_RUN = 14;
+	const BOB_AMOUNT = 0.06;
+	const BOB_RUN_MULT = 1.8;
+	let camBob = 0;
+
 	// Camera smoothing
 	let camTargetX = 0;
 	let camTargetY = 0;
@@ -83,7 +91,7 @@
 		}
 	});
 
-	useTask(() => {
+	useTask((dt) => {
 		if (!camera || stageState.currentStage !== 'game') return;
 		camera.rotation.order = 'YXZ';
 		if (cameraFollow.active) {
@@ -114,6 +122,14 @@
 			// Smooth sway transition
 			camSway += (camSwayTarget - camSway) * SWAY_LERP;
 
+			// Movement bob - subtle vertical bounce based on speed
+			const speed = Math.hypot(localVelocity.x, localVelocity.z);
+			const isRunning = speed > 5;
+			const bobSpeed = isRunning ? BOB_SPEED_RUN : BOB_SPEED_WALK;
+			const bobMult = isRunning ? BOB_RUN_MULT : 1;
+			bobPhase += dt * bobSpeed;
+			camBob = Math.abs(Math.sin(bobPhase)) * BOB_AMOUNT * Math.min(1, speed / 3) * bobMult;
+
 			const targetX = localPos.x + smoothBehindX + rightX * camSway + localVelocity.x * LOOK_AHEAD;
 			const targetY = localPos.y + TPS_Y;
 			const targetZ = localPos.z + smoothBehindZ + rightZ * camSway + localVelocity.z * LOOK_AHEAD;
@@ -128,7 +144,7 @@
 			const shakeX = bossShake.intensity * Math.sin(Date.now() * 0.031) * 0.4;
 
 			camRotYaw += (tpsCamera.yaw - camRotYaw) * LERP_ROT;
-			camera.position.set(camTargetX + shakeX, camTargetY + shakeY, camTargetZ);
+			camera.position.set(camTargetX + shakeX, camTargetY + shakeY + camBob, camTargetZ);
 			camera.rotation.y = camRotYaw;
 			camera.rotation.x = TPS_PITCH;
 		}
