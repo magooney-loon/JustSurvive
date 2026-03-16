@@ -18,7 +18,7 @@
 		BrightnessContrastEffect
 	} from 'postprocessing';
 	import { settingsState, log } from '$root/settings.svelte.js';
-	import { localHealthState, skyState } from '$lib/stores/sky.svelte.js';
+	import { localHealthState, skyState, PHASE_COLOR_GRADING } from '$lib/stores/sky.svelte.js';
 
 	const { scene, renderer, camera, size, autoRender, renderStage } = useThrelte();
 
@@ -41,14 +41,6 @@
 	const GLITCH_START = 0.2;
 	const GLITCH_MAX_STRENGTH = 0.3;
 	const GLITCH_MIN_STRENGTH = 0.05;
-
-	const PHASE_COLOR_GRADING = {
-		sunset: { hue: 0.08, saturation: 0.15, brightness: 0.05, contrast: 0 },
-		dusk: { hue: -0.05, saturation: 0.1, brightness: -0.05, contrast: 0 },
-		twilight: { hue: -0.1, saturation: -0.05, brightness: -0.1, contrast: 0 },
-		night: { hue: -0.15, saturation: -0.25, brightness: -0.2, contrast: 0 },
-		deep_night: { hue: -0.2, saturation: -0.4, brightness: -0.35, contrast: 0 }
-	} as const;
 
 	const setupEffectComposer = () => {
 		// Remove all existing passes to prevent duplicates
