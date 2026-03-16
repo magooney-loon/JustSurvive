@@ -38,11 +38,13 @@
 		const left = input.left ? 1 : 0;
 		const right = input.right ? 1 : 0;
 		const isBackwards = input.back;
+		const isForwards = input.forward;
+		const isPureStrafe = (left || right) && !isForwards && !isBackwards;
 
 		if (left && !right) {
-			targetRotation = isBackwards ? -0.8 : 0.3; // less rotation when going forward
+			targetRotation = isBackwards ? -1.2 : isPureStrafe ? 0.5 : 0.15;
 		} else if (right && !left) {
-			targetRotation = isBackwards ? 0.8 : -0.3; // less rotation when going forward
+			targetRotation = isBackwards ? 1.2 : isPureStrafe ? -0.5 : -0.15;
 		}
 
 		// Smooth rotation

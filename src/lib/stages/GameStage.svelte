@@ -16,7 +16,7 @@
 		spectateState
 	} from '$lib/stores/movement.svelte.js';
 	import { resetAbilities, abilityState } from '$lib/stores/abilities.svelte.js';
-	import { localHealthState, skyState, devSky } from '$lib/stores/sky.svelte.js';
+	import { localHealthState, resetLocalHealth, skyState, devSky } from '$lib/stores/sky.svelte.js';
 	import { onMount } from 'svelte';
 	import PlayerEntity from '$lib/character/PlayerEntity.svelte';
 	import EnemyEntity from '$lib/character/EnemyEntity.svelte';
@@ -99,7 +99,7 @@
 			mieC: 0.007,
 			mieG: 0.8,
 			ambient: 0.6,
-			sun: 1.0,
+			sun: 0.5, // reduced from 1.0
 			sunR: 1.0,
 			sunG: 0.75,
 			sunB: 0.45,
@@ -180,6 +180,13 @@
 		const max = myState?.maxHp ?? null;
 		localHealthState.ratio =
 			hp !== null && max && max > 0n ? Math.max(0, Math.min(1, Number(hp) / Number(max))) : 1;
+	});
+
+	// Reset health state when game session ends
+	$effect(() => {
+		if (session?.status === 'finished') {
+			resetLocalHealth();
+		}
 	});
 
 	// Angle to rotate player group so its -Z faces the aim point

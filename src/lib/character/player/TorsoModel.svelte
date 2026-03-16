@@ -91,7 +91,7 @@
 <GLTF
 	bind:gltf={$gltf}
 	url="{base}models/player/torso.glb"
-	position={[0, 0.1, 0]}
+	position={[0, 0, 0]}
 	rotation={[0, Math.PI, 0]}
 	scale={0.07}
 />

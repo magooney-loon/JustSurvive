@@ -19,3 +19,8 @@ export const skyState = $state({
 	sunB: 0.5,
 	stormIntensity: 0.3
 });
+
+// Reset local health state after game ends
+export function resetLocalHealth() {
+	localHealthState.ratio = 1;
+}

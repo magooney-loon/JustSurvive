@@ -34,6 +34,8 @@
 
 	const [allPlayers] = useTable(tables.playerState);
 	const [reviveChannels] = useTable(tables.reviveChannel);
+	const [enemies] = useTable(tables.enemy);
+	const [bosses] = useTable(tables.boss);
 
 	type Vec3 = { x: number; y: number; z: number };
 	type Vec2 = { x: number; z: number };
@@ -87,6 +89,85 @@
 	const aimPosZ = $derived(isLocal ? displayZ : targetZ);
 	const aimX = $derived(overrideAim?.x ?? aimPosX + -Math.sin(facing) * aimRange);
 	const aimZ = $derived(overrideAim?.z ?? aimPosZ + -Math.cos(facing) * aimRange);
+
+	// Closer reticle position (60% of max range)
+	const closeRange = $derived(aimRange * 0.6);
+	const closeAimX = $derived(aimPosX + -Math.sin(facing) * closeRange);
+	const closeAimZ = $derived(aimPosZ + -Math.cos(facing) * closeRange);
+
+	// Check if any enemy is within close range from reticle position
+	const hasEnemyInRange = $derived.by(() => {
+		if (!isLocal) return false;
+		const cAimX = closeAimX;
+		const cAimZ = closeAimZ;
+
+		// Check distance from PLAYER position for actual range (use full class range)
+		const playerRange = aimRange; // full class range for green
+		const playerRangeSq = playerRange * playerRange;
+		const warningRange = closeRange * 1.2; // 20% beyond reticle for yellow
+		const warningRangeSq = warningRange * warningRange;
+
+		let inRange = false;
+		let inWarningRange = false;
+
+		// Player facing direction vector
+		const faceX = -Math.sin(facing);
+		const faceZ = -Math.cos(facing);
+
+		for (const e of $enemies) {
+			if (!e.isAlive || e.sessionId !== sessionId) continue;
+			const ex = Number(e.posX) / 1000;
+			const ez = Number(e.posZ) / 1000;
+			// Distance from player to enemy
+			const dxPlayer = ex - aimPosX;
+			const dzPlayer = ez - aimPosZ;
+			const distPlayerSq = dxPlayer * dxPlayer + dzPlayer * dzPlayer;
+			// Distance from reticle to enemy (for warning)
+			const dx = ex - cAimX;
+			const dz = ez - cAimZ;
+			const distSq = dx * dx + dz * dz;
+
+			// Check if enemy is in front of player (dot product > 0 means in front)
+			const dotProduct = dxPlayer * faceX + dzPlayer * faceZ;
+			const isInFront = dotProduct > 0;
+
+			if (distPlayerSq <= playerRangeSq && isInFront) inRange = true;
+			if (distSq <= warningRangeSq) inWarningRange = true;
+		}
+		for (const b of $bosses) {
+			if (!b.isAlive || b.sessionId !== sessionId) continue;
+			const bx = Number(b.posX) / 1000;
+			const bz = Number(b.posZ) / 1000;
+			// Distance from player to boss
+			const dxPlayer = bx - aimPosX;
+			const dzPlayer = bz - aimPosZ;
+			const distPlayerSq = dxPlayer * dxPlayer + dzPlayer * dzPlayer;
+			// Distance from reticle to boss (for warning)
+			const dx = bx - cAimX;
+			const dz = bz - cAimZ;
+			const distSq = dx * dx + dz * dz;
+
+			// Check if boss is in front of player
+			const dotProduct = dxPlayer * faceX + dzPlayer * faceZ;
+			const isInFront = dotProduct > 0;
+
+			if (distPlayerSq <= playerRangeSq && isInFront) inRange = true;
+			if (distSq <= warningRangeSq) inWarningRange = true;
+		}
+
+		return { inRange, inWarningRange };
+	});
+
+	const reticleColor = $derived(
+		!hasEnemyInRange
+			? '#fff'
+			: hasEnemyInRange.inRange
+				? '#4f4' // green when in range
+				: hasEnemyInRange.inWarningRange
+					? '#ff0' // yellow when approaching (20% beyond)
+					: '#fff' // white otherwise
+	);
+
 	const isDowned = $derived(player.status === 'downed');
 	const downedTilt = $derived(isDowned ? -Math.PI / 2 : 0);
 	const downedYOffset = $derived(isDowned ? -0.35 : 0);
@@ -96,6 +177,10 @@
 	let speed = $state(0);
 	let prevX = $state(0);
 	let prevZ = $state(0);
+
+	// Smooth reticle transitions
+	let reticleOpacity = $state(0.15);
+	let reticleScale = $state(0.5);
 
 	useTask((dt) => {
 		if (isLocal && overridePos) {
@@ -134,6 +219,18 @@
 			const stride = speed > 6 ? 10 : 7;
 			walkPhase += dt * stride;
 		}
+
+		// Smooth reticle transitions
+		const targetOpacity = !hasEnemyInRange
+			? 0.15 // barely visible when no target
+			: hasEnemyInRange.inRange
+				? 0.85 // full opacity when in range
+				: 0.85; // full opacity when warning
+		const moveSpread = Math.min(1, speed / 8);
+		const targetScale = (!hasEnemyInRange ? 0.5 : 1) + moveSpread * 0.8;
+		const reticleLerp = 1 - Math.pow(0.01, dt);
+		reticleOpacity += (targetOpacity - reticleOpacity) * reticleLerp;
+		reticleScale += (targetScale - reticleScale) * reticleLerp;
 	});
 </script>
 
@@ -144,6 +241,36 @@
 	<LegsModel {speed} />
 	<TorsoModel {speed} isShooting={0} />
 </T.Group>
+
+<!-- Local player reticle floating in air closer to player -->
+{#if isLocal && !isDowned}
+	<T.Group
+		position={[closeAimX, 2, closeAimZ]}
+		rotation={[0, facing + Math.PI, 0]}
+		scale={[reticleScale, reticleScale, reticleScale]}
+	>
+		<T.Mesh rotation={[0, 0, 0]}>
+			<T.RingGeometry args={[0.05, 0.08, 16]} />
+			<T.MeshBasicMaterial
+				color={reticleColor}
+				transparent
+				opacity={reticleOpacity}
+				side={2}
+				depthWrite={false}
+			/>
+		</T.Mesh>
+		<T.Mesh rotation={[0, 0, 0]}>
+			<T.CircleGeometry args={[0.015, 8]} />
+			<T.MeshBasicMaterial
+				color={reticleColor}
+				transparent
+				opacity={reticleOpacity}
+				side={2}
+				depthWrite={false}
+			/>
+		</T.Mesh>
+	</T.Group>
+{/if}
 {#if isDowned}
 	<!-- Downward-pointing arrow, bobbing above body -->
 	<T.Mesh
@@ -206,4 +333,7 @@
 	<GunnerEffects x={displayX} z={displayZ} {isLocal} {player} />
 {/if}
 
-<AimReticle x={aimX} z={aimZ} color={CLASS_COLORS[player.classChoice] ?? '#fff'} />
+<!-- Ground aim reticle for remote players only -->
+{#if !isLocal}
+	<AimReticle x={aimX} z={aimZ} color={CLASS_COLORS[player.classChoice] ?? '#fff'} />
+{/if}

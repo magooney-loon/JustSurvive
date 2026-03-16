@@ -16,11 +16,17 @@
 	let camera = $state.raw<PerspectiveCamera>();
 
 	// TPS: camera offset above and behind the player
-	const TPS_Y = 4;
-	const TPS_Z = 5;
-	const TPS_PITCH = -Math.atan2(TPS_Y, TPS_Z) * 0.6; // look more towards sky
+	const TPS_Y = 3.5;
+	const TPS_Z = 3.5;
+	const TPS_PITCH = -Math.atan2(TPS_Y, TPS_Z) * 0.5; // look more towards sky
 	const EYE_Y_BASE = 1.658; // spectate eye level
 	const BASE_SENS = 0.002;
+
+	// Dynamic shoulder sway based on movement
+	const SWAY_AMOUNT = 0.7; // how far camera sways to shoulder when strafing
+	let camSway = 0;
+	let camSwayTarget = 0;
+	const SWAY_LERP = 0.06;
 
 	// Camera smoothing
 	let camTargetX = 0;
@@ -97,9 +103,20 @@
 			const smoothBehindX = Math.sin(camYawSmooth) * TPS_Z;
 			const smoothBehindZ = Math.cos(camYawSmooth) * TPS_Z;
 
-			const targetX = localPos.x + smoothBehindX + localVelocity.x * LOOK_AHEAD;
+			// Calculate right vector perpendicular to camera facing
+			const rightX = Math.cos(camYawSmooth);
+			const rightZ = -Math.sin(camYawSmooth);
+
+			// Project velocity onto right vector to get strafe amount
+			const strafeVel = localVelocity.x * rightX + localVelocity.z * rightZ;
+			// Target sway: strafe left = camera sways right shoulder, strafe right = camera sways left shoulder
+			camSwayTarget = -Math.max(-1, Math.min(1, strafeVel / 5)) * SWAY_AMOUNT;
+			// Smooth sway transition
+			camSway += (camSwayTarget - camSway) * SWAY_LERP;
+
+			const targetX = localPos.x + smoothBehindX + rightX * camSway + localVelocity.x * LOOK_AHEAD;
 			const targetY = localPos.y + TPS_Y;
-			const targetZ = localPos.z + smoothBehindZ + localVelocity.z * LOOK_AHEAD;
+			const targetZ = localPos.z + smoothBehindZ + rightZ * camSway + localVelocity.z * LOOK_AHEAD;
 
 			// Smooth camera position
 			camTargetX += (targetX - camTargetX) * LERP_POS;
