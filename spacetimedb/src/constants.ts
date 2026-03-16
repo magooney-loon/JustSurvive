@@ -3,7 +3,7 @@ export const TICK_MS = 100n;
 export const MICROS_PER_SEC = 1_000_000n;
 
 // ─── Game Rules ─────────────────────────────────────────────────────────────────
-export const BOSS_SPAWN_INTERVAL_US = 10_000_000n; // 90 seconds
+export const BOSS_SPAWN_INTERVAL_US = 15_000_000n; // 90 seconds
 export const ENEMY_CAP = 36; // 4-player cap; scales down per player count
 export const ENEMY_CAP_BY_PLAYERS: Record<number, number> = { 1: 1, 2: 18, 3: 27, 4: 36 };
 export const MAX_ENEMIES_PER_PLAYER = 3;
@@ -70,7 +70,8 @@ export const BOSS_HP: Record<string, bigint> = {
 	worm_monster: 3500n,
 	rabid_dog: 1500n,
 	scp_096: 2000n,
-	terror_reaper: 2200n
+	terror_reaper: 2200n,
+	katze_miu: 6000n
 };
 
 export const BOSS_SPEED: Record<string, bigint> = {
