@@ -337,20 +337,25 @@
 							{@const isSelected = myEntry?.classChoice === clsId}
 							{@const classLocked =
 								isLockedClass ||
-								isTaken ||
+								(isTaken && !isSelected) ||
 								currentLobby?.status !== 'waiting' ||
 								(currentLobby?.isPublic && !!myEntry?.isReady)}
 							<button
 								onclick={() => {
 									if (!classLocked) {
 										soundActions.playClick();
-										lobbyActions.setClass(clsId, currentLobby.id);
+										if (isSelected) {
+											// Deselect current class
+											lobbyActions.setClass('', currentLobby.id);
+										} else {
+											// Select new class
+											lobbyActions.setClass(clsId, currentLobby.id);
+										}
 									}
 								}}
 								disabled={classLocked}
 								class="rpgui-button"
-								style="width: 100%; min-width: auto; height: auto; padding: 0.6rem 0.25rem; {isSelected &&
-								!isTaken
+								style="width: 100%; min-width: auto; height: auto; padding: 0.6rem 0.25rem; {isSelected
 									? 'background-image: url(' +
 										base +
 										'css/img/button-down.png); outline: 2px solid ' +
@@ -384,9 +389,7 @@
 									{/if}
 									<span
 										style="font-size: 0.7rem; font-weight: 700; text-transform: capitalize; color: {isSelected
-											? isTaken
-												? 'rgba(255,255,255,0.3)'
-												: CLASS_COLORS[clsId]
+											? CLASS_COLORS[clsId]
 											: isTaken
 												? 'rgba(255,255,255,0.3)'
 												: isLockedClass
@@ -395,6 +398,8 @@
 									>
 									{#if isLockedClass}
 										<span style="font-size: 0.5rem; color: #888; font-weight: 700;">LOCKED</span>
+									{:else if isSelected}
+										<span style="font-size: 0.5rem; color: #ff0; font-weight: 700;">SELECTED</span>
 									{:else if isTaken}
 										<span style="font-size: 0.5rem; color: #f66; font-weight: 700;">TAKEN</span>
 									{:else}

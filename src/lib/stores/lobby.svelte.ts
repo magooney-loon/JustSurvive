@@ -1,7 +1,7 @@
 import type { DbConnection } from '$bindings/index.js';
 import type { Identity } from 'spacetimedb';
 
-export type PlayerClass = 'spotter' | 'gunner' | 'tank' | 'healer';
+export type PlayerClass = 'spotter' | 'gunner' | 'tank' | 'healer' | '';
 
 const lobbyState = $state({
 	currentLobbyId: null as bigint | null,
@@ -71,7 +71,7 @@ export const lobbyActions = {
 	},
 	async setClass(cls: PlayerClass, lobbyId: bigint) {
 		if (!conn) return;
-		lobbyState.localPlayerClass = cls;
+		lobbyState.localPlayerClass = cls || null;
 		try {
 			await conn.reducers.setClass({ lobbyId, classChoice: cls });
 		} catch (e) {

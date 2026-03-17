@@ -179,17 +179,20 @@ export function quickJoin(ctx: any, { playerName, classChoice }: any) {
 // ─── set_class ────────────────────────────────────────────────────────────────
 
 export function setClass(ctx: any, { lobbyId, classChoice }: any) {
-	const valid = ['spotter', 'gunner', 'tank', 'healer'];
+	const valid = ['spotter', 'gunner', 'tank', 'healer', ''];
 	if (!valid.includes(classChoice)) throw new SenderError('Invalid class');
 
 	const lobby = ctx.db.lobby.id.find(lobbyId);
 	if (!lobby) throw new SenderError('Lobby not found');
 
-	const sameClassCount = [...ctx.db.lobbyPlayer.lobby_player_lobby_id.filter(lobbyId)].filter(
-		(p: any) => p.classChoice === classChoice && !p.playerIdentity.isEqual(ctx.sender)
-	).length;
-	if (sameClassCount >= 1) {
-		throw new SenderError(`${classChoice} already taken`);
+	// Allow deselecting (empty string) even if class is taken
+	if (classChoice !== '') {
+		const sameClassCount = [...ctx.db.lobbyPlayer.lobby_player_lobby_id.filter(lobbyId)].filter(
+			(p: any) => p.classChoice === classChoice && !p.playerIdentity.isEqual(ctx.sender)
+		).length;
+		if (sameClassCount >= 1) {
+			throw new SenderError(`${classChoice} already taken`);
+		}
 	}
 
 	for (const p of ctx.db.lobbyPlayer.lobby_player_lobby_id.filter(lobbyId)) {
