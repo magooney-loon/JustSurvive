@@ -543,7 +543,7 @@
 		{/if}
 		{#if light}
 			{@const l = light as THREE.PointLight}
-			{(l.intensity = li * 18)}
+			{(l.intensity = li * 12)}
 		{/if}
 		<T is={group} />
 	{/each}
