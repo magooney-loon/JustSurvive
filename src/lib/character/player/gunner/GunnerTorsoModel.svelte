@@ -1,15 +1,17 @@
 <script lang="ts">
 	import { useTask } from '@threlte/core';
 	import { GLTF, useGltfAnimations } from '@threlte/extras';
-	import { input } from '$lib/stores/movement.svelte.js';
 
 	type TorsoAnim = 'Torso_Shooting' | 'Torso_Shooting2' | 'Torso_Running' | 'Torso_Idle';
 
 	type Props = {
 		speed: number;
 		isShooting: number;
+		back?: boolean;
+		left?: boolean;
+		right?: boolean;
 	};
-	let { speed, isShooting }: Props = $props();
+	let { speed, isShooting, back = false, left = false, right = false }: Props = $props();
 
 	const base = import.meta.env.BASE_URL;
 	const { gltf, actions, mixer } = useGltfAnimations<TorsoAnim>();
@@ -42,13 +44,13 @@
 		if (!mixer) return;
 
 		let targetRotation = 0;
-		const left = input.left ? 1 : 0;
-		const right = input.right ? 1 : 0;
-		const isBackwards = input.back;
+		const l = left ? 1 : 0;
+		const r = right ? 1 : 0;
+		const isBackwards = back;
 
-		if (left && !right) {
+		if (l && !r) {
 			targetRotation = isBackwards ? -0.8 : 0.3;
-		} else if (right && !left) {
+		} else if (r && !l) {
 			targetRotation = isBackwards ? 0.8 : -0.3;
 		}
 

@@ -33,6 +33,7 @@
 	import HealerEffects from '$lib/character/player/healer/HealerEffects.svelte';
 	import GunnerEffects from '$lib/character/player/gunner/GunnerEffects.svelte';
 	import { abilityState, shotFlash } from '$lib/stores/abilities.svelte.js';
+	import { input } from '$lib/stores/movement.svelte.js';
 
 	const [allPlayers] = useTable(tables.playerState);
 	const [reviveChannels] = useTable(tables.reviveChannel);
@@ -93,11 +94,13 @@
 		if (isLocal) {
 			return shotFlash.until > Date.now() ? 1 : 0;
 		}
-		// Remote players: check lastShotAt timestamp (within 500ms window)
+		// Remote players: check lastShotAt timestamp
 		if (player.lastShotAt) {
 			const shotMicros = player.lastShotAt.microsSinceUnixEpoch;
-			const nowMicros = BigInt(Date.now() * 1000);
-			if (nowMicros - shotMicros < 500_000n) {
+			const nowMicros = BigInt(Date.now()) * 1000n;
+			const diff = nowMicros - shotMicros;
+			// 500ms = 500,000 micros
+			if (diff < 500_000n && diff >= 0n) {
 				return 1;
 			}
 		}
@@ -264,21 +267,59 @@
 	});
 </script>
 
-<T.Group
-	position={[displayX, displayY + downedYOffset, displayZ]}
-	rotation={[downedTilt, facing, 0]}
->
-	{#if player.classChoice === 'gunner'}
-		<GunnerLegsModel {speed} />
-		<GunnerTorsoModel {speed} {isShooting} />
-	{:else if player.classChoice === 'spotter'}
-		<SpotterLegsModel {speed} />
-		<SpotterTorsoModel {speed} {isShooting} />
-	{:else}
-		<GunnerLegsModel {speed} />
-		<GunnerTorsoModel {speed} {isShooting} />
-	{/if}
-</T.Group>
+{#key player.id}
+	<T.Group
+		position={[displayX, displayY + downedYOffset, displayZ]}
+		rotation={[downedTilt, facing, 0]}
+	>
+		{#if player.classChoice === 'gunner'}
+			<GunnerLegsModel
+				{speed}
+				forward={isLocal ? input.forward : false}
+				back={isLocal ? input.back : false}
+				left={isLocal ? input.left : false}
+				right={isLocal ? input.right : false}
+			/>
+			<GunnerTorsoModel
+				{speed}
+				{isShooting}
+				back={isLocal ? input.back : false}
+				left={isLocal ? input.left : false}
+				right={isLocal ? input.right : false}
+			/>
+		{:else if player.classChoice === 'spotter'}
+			<SpotterLegsModel
+				{speed}
+				forward={isLocal ? input.forward : false}
+				back={isLocal ? input.back : false}
+				left={isLocal ? input.left : false}
+				right={isLocal ? input.right : false}
+			/>
+			<SpotterTorsoModel
+				{speed}
+				{isShooting}
+				back={isLocal ? input.back : false}
+				left={isLocal ? input.left : false}
+				right={isLocal ? input.right : false}
+			/>
+		{:else}
+			<GunnerLegsModel
+				{speed}
+				forward={isLocal ? input.forward : false}
+				back={isLocal ? input.back : false}
+				left={isLocal ? input.left : false}
+				right={isLocal ? input.right : false}
+			/>
+			<GunnerTorsoModel
+				{speed}
+				{isShooting}
+				back={isLocal ? input.back : false}
+				left={isLocal ? input.left : false}
+				right={isLocal ? input.right : false}
+			/>
+		{/if}
+	</T.Group>
+{/key}
 
 <!-- Stun/Slow visual indicator -->
 {#if (isStunned || isSlowed) && !isDowned}

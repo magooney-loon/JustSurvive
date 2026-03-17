@@ -1,14 +1,17 @@
 <script lang="ts">
 	import { useTask } from '@threlte/core';
 	import { GLTF, useGltfAnimations } from '@threlte/extras';
-	import { input } from '$lib/stores/movement.svelte.js';
 
 	type LegsAnim = 'Idle' | 'Forward' | 'ForwardLeft' | 'ForwardRight';
 
 	type Props = {
 		speed: number;
+		forward?: boolean;
+		back?: boolean;
+		left?: boolean;
+		right?: boolean;
 	};
-	let { speed }: Props = $props();
+	let { speed, forward = false, back = false, left = false, right = false }: Props = $props();
 
 	const base = import.meta.env.BASE_URL;
 	const { gltf, actions, mixer } = useGltfAnimations<LegsAnim>();
@@ -31,15 +34,15 @@
 		if (!mixer) return;
 
 		let targetRotation = 0;
-		const left = input.left ? 1 : 0;
-		const right = input.right ? 1 : 0;
-		const isBackwards = input.back;
-		const isForwards = input.forward;
-		const isPureStrafe = (left || right) && !isForwards && !isBackwards;
+		const l = left ? 1 : 0;
+		const r = right ? 1 : 0;
+		const isBackwards = back;
+		const isForwards = forward;
+		const isPureStrafe = (l || r) && !isForwards && !isBackwards;
 
-		if (left && !right) {
+		if (l && !r) {
 			targetRotation = isBackwards ? -1.2 : isPureStrafe ? 0.5 : 0.15;
-		} else if (right && !left) {
+		} else if (r && !l) {
 			targetRotation = isBackwards ? 1.2 : isPureStrafe ? -0.5 : -0.15;
 		}
 
@@ -47,7 +50,7 @@
 		legsRotation += rotDiff * Math.min(1, dt * 12);
 
 		const moveIntensity = Math.min(speed / 4, 1);
-		const rgtNorm = left ? -1 : right ? 1 : 0;
+		const rgtNorm = (left ? -1 : 0) + (right ? 1 : 0);
 
 		const wIdle = 1 - moveIntensity;
 		const wFwd = (1 - Math.abs(rgtNorm)) * moveIntensity;
