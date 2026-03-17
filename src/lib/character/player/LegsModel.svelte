@@ -76,7 +76,7 @@
 
 		// Negative timeScale plays animation in reverse → looks like backward movement
 		const dir = isBackwards ? -1 : 1;
-		const rate = speed > 0.5 ? Math.max(0.35, Math.min(1.4, speed / 7)) : 1;
+		const rate = speed > 0.5 ? Math.max(0.2, Math.min(0.8, speed / 14)) : 1;
 		const timeScale = dir * rate;
 		$actions['Legs_Idle']?.setEffectiveTimeScale(0.5); // half speed idle
 		$actions['Legs_Forward']?.setEffectiveTimeScale(timeScale);
