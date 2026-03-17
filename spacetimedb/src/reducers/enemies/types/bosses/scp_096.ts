@@ -46,7 +46,7 @@ export function handleScp096(
 		!abilitiesLocked &&
 		(!boss.ability1CooldownUntil ||
 			now >= (boss.ability1CooldownUntil.microsSinceUnixEpoch as bigint));
-	const slamRangeSq = BOSS_MELEE_RANGE * BOSS_MELEE_RANGE * 56n; // ~15 units (SCP096_AOE_RANGE_SQ)
+	const slamRangeSq = BOSS_MELEE_RANGE * BOSS_MELEE_RANGE * 64n; // ~20 units
 	if (canAbility1 && players.length > 0) {
 		let hitAny = false;
 		for (const p of players) {

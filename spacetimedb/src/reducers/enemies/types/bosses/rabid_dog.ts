@@ -64,7 +64,7 @@ export function handleRabidDog(
 		!abilitiesLocked &&
 		(!boss.ability2CooldownUntil ||
 			now >= (boss.ability2CooldownUntil.microsSinceUnixEpoch as bigint));
-	if (canAbility2 && chosenDistSq <= BOSS_MELEE_RANGE * BOSS_MELEE_RANGE * 4n) {
+	if (canAbility2 && chosenDistSq <= BOSS_MELEE_RANGE * BOSS_MELEE_RANGE * 16n) {
 		ctx.db.playerState.id.update({ ...chosen, stunUntil: ts(now + BOSS_PLAYER_LONG_STUN_US) });
 		const baseDmg = (BOSS_DAMAGE[boss.bossType] ?? 3n) * 2n;
 		const dmg = (baseDmg * playerScale) / 100n;

@@ -76,7 +76,7 @@ export function handleGhostDragon(
 		!abilitiesLocked &&
 		(!boss.ability2CooldownUntil ||
 			now >= (boss.ability2CooldownUntil.microsSinceUnixEpoch as bigint));
-	const iceBallRangeSq = BOSS_MELEE_RANGE * BOSS_MELEE_RANGE * 4n; // ~2x melee range
+	const iceBallRangeSq = BOSS_MELEE_RANGE * BOSS_MELEE_RANGE * 16n; // ~4x melee range
 	if (canAbility2 && !boss.isHidden && players.length > 0 && chosenDistSq <= iceBallRangeSq) {
 		const stunUntil = ts(now + BOSS_PLAYER_STUN_US);
 		const targets = players.slice(0, 2);

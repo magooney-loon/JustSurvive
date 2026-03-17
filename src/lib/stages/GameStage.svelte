@@ -42,14 +42,14 @@
 	const [droppedItems] = useTable(tables.droppedItem);
 
 	const session = $derived($sessions.find((s) => s.id === lobbyState.currentSessionId));
-	const myTankState = $derived(
+	const myTankState = $derived.by(() =>
 		$tankStates.find(
 			(t) =>
 				t.playerIdentity.toHexString() === $conn.identity?.toHexString() &&
 				t.sessionId === lobbyState.currentSessionId
 		)
 	);
-	const myState = $derived(
+	const myState = $derived.by(() =>
 		$players.find(
 			(p) =>
 				p.playerIdentity.toHexString() === $conn.identity?.toHexString() &&

@@ -92,7 +92,7 @@ export const BOSS_DAMAGE: Record<string, bigint> = {
 	katze_miu: 10n
 };
 
-export const BOSS_MELEE_COOLDOWN_US = 500_000n; // 0.5s between melee hits
+export const BOSS_MELEE_COOLDOWN_US = 900_000n; // 0.9s between melee hits
 
 // ─── Boss: Ghost Dragon ───────────────────────────────────────────────────────
 export const GHOST_ABILITY1_COOLDOWN_US = 20_000_000n; // 20s hide & seek
@@ -103,12 +103,12 @@ export const GHOST_ABILITY2_COOLDOWN_US = 10_000_000n; // 10s ice ball
 export const WORM_ABILITY1_COOLDOWN_US = 12_000_000n; // 12s chain charge
 export const WORM_ABILITY2_COOLDOWN_US = 20_000_000n; // 20s burrow
 export const WORM_BURROW_DURATION_US = 2_500_000n; // 2.5s underground
-export const WORM_CHAIN_RANGE_SQ = 20000n * 20000n; // 20 world units — chain charge hits all players within
+export const WORM_CHAIN_RANGE_SQ = 25000n * 25000n; // 25 world units — chain charge hits all players within
 
 // ─── Boss: Rabid Dog ────────────────────────────────────────────────────────────
 export const DOG_ABILITY1_COOLDOWN_US = 7_000_000n; // 7s leap
 export const DOG_ABILITY2_COOLDOWN_US = 12_000_000n; // 12s stun attack
-export const DOG_LEAP_DISTANCE = 2500n; // distance behind player the dog teleports to on leap
+export const DOG_LEAP_DISTANCE = 5000n; // distance behind player the dog teleports to on leap
 
 // ─── Boss: SCP-096 ────────────────────────────────────────────────────────────
 export const SCP096_ABILITY1_COOLDOWN_US = 14_000_000n; // 14s aoe slam (slow)
@@ -124,8 +124,8 @@ export const REAPER_SOUL_DRAIN_RANGE_SQ = 196_000_000n; // 14 world units — so
 // ─── Boss: Katze Miu ───────────────────────────────────────────────────────────
 export const KATZE_ABILITY1_COOLDOWN_US = 8_000_000n; // 8s uppercut (stun)
 export const KATZE_ABILITY2_COOLDOWN_US = 12_000_000n; // 12s fist spin (slow)
-export const KATZE_UPPERCUT_RANGE_SQ = 4_000_000n; // 2 world units — uppercut range
-export const KATZE_SPIN_RANGE_SQ = 9_000_000n; // 3 world units — fist spin radius
+export const KATZE_UPPERCUT_RANGE_SQ = 9_000_000n; // 3 world units — uppercut range
+export const KATZE_SPIN_RANGE_SQ = 25_000_000n; // 5 world units — fist spin radius
 
 // ─── Boss: Shared Effects ───────────────────────────────────────────────────────
 export const BOSS_PLAYER_STUN_US = 1_000_000n; // 1s stun (ice ball)

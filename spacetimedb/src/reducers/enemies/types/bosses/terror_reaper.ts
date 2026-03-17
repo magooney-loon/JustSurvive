@@ -71,7 +71,7 @@ export function handleTerrorReaper(
 		!abilitiesLocked &&
 		(!boss.ability2CooldownUntil ||
 			now >= (boss.ability2CooldownUntil.microsSinceUnixEpoch as bigint));
-	const blinkRangeSq = BOSS_MELEE_RANGE * BOSS_MELEE_RANGE * 49n; // ~14 units (matches Soul Drain range)
+	const blinkRangeSq = BOSS_MELEE_RANGE * BOSS_MELEE_RANGE * 64n; // ~20 units
 	if (canAbility2 && chosenDistSq <= blinkRangeSq) {
 		// Teleport directly to chosen player
 		boss = {
