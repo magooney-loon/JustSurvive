@@ -24,8 +24,10 @@
 	import { tables } from '$bindings/index.js';
 	import { lobbyState } from '$lib/stores/lobby.svelte.js';
 	import AimReticle from '$lib/character/ui/AimReticle.svelte';
-	import LegsModel from '$lib/character/player/gunner/GunnerLegsModel.svelte';
-	import TorsoModel from '$lib/character/player/gunner/GunnerTorsoModel.svelte';
+	import GunnerLegsModel from '$lib/character/player/gunner/GunnerLegsModel.svelte';
+	import GunnerTorsoModel from '$lib/character/player/gunner/GunnerTorsoModel.svelte';
+	import SpotterLegsModel from '$lib/character/player/spotter/SpotterLegsModel.svelte';
+	import SpotterTorsoModel from '$lib/character/player/spotter/SpotterTorsoModel.svelte';
 	import SpotterEffects from '$lib/character/player/spotter/SpotterEffects.svelte';
 	import TankEffects from '$lib/character/player/tank/TankEffects.svelte';
 	import HealerEffects from '$lib/character/player/healer/HealerEffects.svelte';
@@ -85,17 +87,17 @@
 
 	const aimRange = $derived(CLASS_RANGE[player.classChoice] ?? 10);
 
-	// Gunner shooting: check both local (shotFlash) and remote (lastShotAt)
+	// Gunner & Spotter shooting: check both local and remote
 	const isShooting = $derived.by(() => {
-		if (player.classChoice !== 'gunner') return 0;
+		if (player.classChoice !== 'gunner' && player.classChoice !== 'spotter') return 0;
 		if (isLocal) {
 			return shotFlash.until > Date.now() ? 1 : 0;
 		}
-		// Remote players: check lastShotAt timestamp (within ~200ms window)
+		// Remote players: check lastShotAt timestamp (within 500ms window)
 		if (player.lastShotAt) {
 			const shotMicros = player.lastShotAt.microsSinceUnixEpoch;
 			const nowMicros = BigInt(Date.now() * 1000);
-			if (nowMicros - shotMicros < 250_000n) {
+			if (nowMicros - shotMicros < 500_000n) {
 				return 1;
 			}
 		}
@@ -266,8 +268,16 @@
 	position={[displayX, displayY + downedYOffset, displayZ]}
 	rotation={[downedTilt, facing, 0]}
 >
-	<LegsModel {speed} />
-	<TorsoModel {speed} {isShooting} />
+	{#if player.classChoice === 'gunner'}
+		<GunnerLegsModel {speed} />
+		<GunnerTorsoModel {speed} {isShooting} />
+	{:else if player.classChoice === 'spotter'}
+		<SpotterLegsModel {speed} />
+		<SpotterTorsoModel {speed} {isShooting} />
+	{:else}
+		<GunnerLegsModel {speed} />
+		<GunnerTorsoModel {speed} {isShooting} />
+	{/if}
 </T.Group>
 
 <!-- Stun/Slow visual indicator -->
