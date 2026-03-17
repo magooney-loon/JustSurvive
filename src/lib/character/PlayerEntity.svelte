@@ -32,7 +32,7 @@
 	import TankEffects from '$lib/character/player/tank/TankEffects.svelte';
 	import HealerEffects from '$lib/character/player/healer/HealerEffects.svelte';
 	import GunnerEffects from '$lib/character/player/gunner/GunnerEffects.svelte';
-	import { abilityState, shotFlash } from '$lib/stores/abilities.svelte.js';
+	import { abilityState, shotFlash, steadyShotFlash } from '$lib/stores/abilities.svelte.js';
 	import { input } from '$lib/stores/movement.svelte.js';
 
 	const [allPlayers] = useTable(tables.playerState);
@@ -105,6 +105,10 @@
 	const isShooting = $derived.by(() => {
 		if (player.classChoice !== 'gunner' && player.classChoice !== 'spotter') return 0;
 		if (isLocal) {
+			// Gunner uses shotFlash (auto-fire), Spotter uses steadyShotFlash (steady shot)
+			if (player.classChoice === 'spotter') {
+				return steadyShotFlash.until > Date.now() ? 1 : 0;
+			}
 			return shotFlash.until > Date.now() ? 1 : 0;
 		}
 		// Remote players: use tracked remoteShootingUntil state

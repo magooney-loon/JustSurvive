@@ -2,7 +2,7 @@
 	import { useTask } from '@threlte/core';
 	import { GLTF, useGltfAnimations } from '@threlte/extras';
 
-	type LegsAnim = 'Idle' | 'Forward' | 'ForwardLeft' | 'ForwardRight';
+	type LegsAnim = 'Legs_Idle' | 'Legs_Forward' | 'Legs_Left' | 'Legs_Right';
 
 	type Props = {
 		speed: number;
@@ -17,16 +17,16 @@
 	const { gltf, actions, mixer } = useGltfAnimations<LegsAnim>();
 
 	let legsRotation = $state(0);
-	let currentWeights = $state({ Idle: 1, Forward: 0, ForwardLeft: 0, ForwardRight: 0 });
+	let currentWeights = $state({ Legs_Idle: 1, Legs_Forward: 0, Legs_Left: 0, Legs_Right: 0 });
 	const WEIGHT_LERP = 8;
 
 	$effect(() => {
-		if (!$actions?.['Idle']) return;
-		for (const name of ['Idle', 'Forward', 'ForwardLeft', 'ForwardRight'] as LegsAnim[]) {
+		if (!$actions?.['Legs_Idle']) return;
+		for (const name of ['Legs_Idle', 'Legs_Forward', 'Legs_Left', 'Legs_Right'] as LegsAnim[]) {
 			const a = $actions[name];
 			if (!a) continue;
 			a.reset().play();
-			a.setEffectiveWeight(name === 'Idle' ? 1 : 0);
+			a.setEffectiveWeight(name === 'Legs_Idle' ? 1 : 0);
 		}
 	});
 
@@ -59,15 +59,15 @@
 
 		const lerpFactor = Math.min(1, dt * WEIGHT_LERP);
 		const idleLerpFactor = lerpFactor * 0.5;
-		currentWeights.Idle += (wIdle - currentWeights.Idle) * idleLerpFactor;
-		currentWeights.Forward += (wFwd - currentWeights.Forward) * lerpFactor;
-		currentWeights.ForwardLeft += (wFwdLeft - currentWeights.ForwardLeft) * lerpFactor;
-		currentWeights.ForwardRight += (wFwdRight - currentWeights.ForwardRight) * lerpFactor;
+		currentWeights.Legs_Idle += (wIdle - currentWeights.Legs_Idle) * idleLerpFactor;
+		currentWeights.Legs_Forward += (wFwd - currentWeights.Legs_Forward) * lerpFactor;
+		currentWeights.Legs_Left += (wFwdLeft - currentWeights.Legs_Left) * lerpFactor;
+		currentWeights.Legs_Right += (wFwdRight - currentWeights.Legs_Right) * lerpFactor;
 
-		$actions['Idle']?.setEffectiveWeight(currentWeights.Idle);
-		$actions['Forward']?.setEffectiveWeight(currentWeights.Forward);
-		$actions['ForwardLeft']?.setEffectiveWeight(currentWeights.ForwardLeft);
-		$actions['ForwardRight']?.setEffectiveWeight(currentWeights.ForwardRight);
+		$actions['Legs_Idle']?.setEffectiveWeight(currentWeights.Legs_Idle);
+		$actions['Legs_Forward']?.setEffectiveWeight(currentWeights.Legs_Forward);
+		$actions['Legs_Left']?.setEffectiveWeight(currentWeights.Legs_Left);
+		$actions['Legs_Right']?.setEffectiveWeight(currentWeights.Legs_Right);
 
 		mixer.timeScale = 0.4;
 		mixer.update(dt);

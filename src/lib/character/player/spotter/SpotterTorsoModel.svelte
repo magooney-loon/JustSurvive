@@ -2,7 +2,7 @@
 	import { useTask } from '@threlte/core';
 	import { GLTF, useGltfAnimations } from '@threlte/extras';
 
-	type TorsoAnim = 'TorsoIdle' | 'TorsoForward' | 'Shooting' | 'ShootingIdle';
+	type TorsoAnim = 'Torso_Idle' | 'Torso_Running' | 'Torso_Shooting' | 'Torso_Shooting2';
 
 	type Props = {
 		speed: number;
@@ -17,16 +17,26 @@
 	const { gltf, actions, mixer } = useGltfAnimations<TorsoAnim>();
 
 	let torsoRotation = $state(0);
-	let currentWeights = $state({ TorsoIdle: 1, TorsoForward: 0, Shooting: 0, ShootingIdle: 0 });
+	let currentWeights = $state({
+		Torso_Idle: 1,
+		Torso_Running: 0,
+		Torso_Shooting: 0,
+		Torso_Shooting2: 0
+	});
 	const WEIGHT_LERP = 8;
 
 	$effect(() => {
-		if (!$actions?.['TorsoIdle']) return;
-		for (const name of ['TorsoIdle', 'TorsoForward', 'Shooting', 'ShootingIdle'] as TorsoAnim[]) {
+		if (!$actions?.['Torso_Idle']) return;
+		for (const name of [
+			'Torso_Idle',
+			'Torso_Running',
+			'Torso_Shooting',
+			'Torso_Shooting2'
+		] as TorsoAnim[]) {
 			const a = $actions[name];
 			if (!a) continue;
 			a.reset().play();
-			a.setEffectiveWeight(name === 'TorsoIdle' ? 1 : 0);
+			a.setEffectiveWeight(name === 'Torso_Idle' ? 1 : 0);
 		}
 	});
 
@@ -56,18 +66,19 @@
 
 		const wShooting = shootWeight * moveWeight;
 		const wShootingIdle = shootWeight * (1 - moveWeight);
-		const wTorsoForward = (1 - shootWeight) * moveWeight;
+		const wTorsoRunning = (1 - shootWeight) * moveWeight;
 		const wTorsoIdle = (1 - shootWeight) * (1 - moveWeight);
 
-		currentWeights.Shooting += (wShooting - currentWeights.Shooting) * lerpFactor;
-		currentWeights.ShootingIdle += (wShootingIdle - currentWeights.ShootingIdle) * idleLerpFactor;
-		currentWeights.TorsoForward += (wTorsoForward - currentWeights.TorsoForward) * lerpFactor;
-		currentWeights.TorsoIdle += (wTorsoIdle - currentWeights.TorsoIdle) * idleLerpFactor;
+		currentWeights.Torso_Shooting += (wShooting - currentWeights.Torso_Shooting) * lerpFactor;
+		currentWeights.Torso_Shooting2 +=
+			(wShootingIdle - currentWeights.Torso_Shooting2) * idleLerpFactor;
+		currentWeights.Torso_Running += (wTorsoRunning - currentWeights.Torso_Running) * lerpFactor;
+		currentWeights.Torso_Idle += (wTorsoIdle - currentWeights.Torso_Idle) * idleLerpFactor;
 
-		$actions['Shooting']?.setEffectiveWeight(currentWeights.Shooting);
-		$actions['ShootingIdle']?.setEffectiveWeight(currentWeights.ShootingIdle);
-		$actions['TorsoForward']?.setEffectiveWeight(currentWeights.TorsoForward);
-		$actions['TorsoIdle']?.setEffectiveWeight(currentWeights.TorsoIdle);
+		$actions['Torso_Shooting']?.setEffectiveWeight(currentWeights.Torso_Shooting);
+		$actions['Torso_Shooting2']?.setEffectiveWeight(currentWeights.Torso_Shooting2);
+		$actions['Torso_Running']?.setEffectiveWeight(currentWeights.Torso_Running);
+		$actions['Torso_Idle']?.setEffectiveWeight(currentWeights.Torso_Idle);
 
 		mixer.timeScale = 0.4;
 		mixer.update(dt);
