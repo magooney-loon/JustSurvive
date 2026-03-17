@@ -6,9 +6,7 @@ import { SenderError } from 'spacetimedb/server';
 import { ScheduleAt } from 'spacetimedb';
 import { generateCode, classMaxHp, classMaxStamina, ts } from '../helpers.js';
 import { clearLobbyMessages } from './shared.js';
-import {
-	BOSS_SPAWN_INTERVAL_US
-} from '../constants.js';
+import { BOSS_SPAWN_INTERVAL_US } from '../constants.js';
 
 // ─── create_lobby ─────────────────────────────────────────────────────────────
 
@@ -190,14 +188,13 @@ export function setClass(ctx: any, { lobbyId, classChoice }: any) {
 	const sameClassCount = [...ctx.db.lobbyPlayer.lobby_player_lobby_id.filter(lobbyId)].filter(
 		(p: any) => p.classChoice === classChoice && !p.playerIdentity.isEqual(ctx.sender)
 	).length;
-	if (sameClassCount >= 2) {
-		throw new SenderError(`Max 2 ${classChoice}s allowed per lobby`);
+	if (sameClassCount >= 1) {
+		throw new SenderError(`${classChoice} already taken`);
 	}
 
 	for (const p of ctx.db.lobbyPlayer.lobby_player_lobby_id.filter(lobbyId)) {
 		if (p.playerIdentity.isEqual(ctx.sender)) {
-			if (lobby.isPublic && p.isReady)
-				throw new SenderError('Cannot change class after readying');
+			if (lobby.isPublic && p.isReady) throw new SenderError('Cannot change class after readying');
 			ctx.db.lobbyPlayer.id.update({ ...p, classChoice, isReady: false });
 			return;
 		}

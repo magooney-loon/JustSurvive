@@ -332,10 +332,10 @@
 					<div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.5rem;">
 						{#each Object.values(CLASSES) as cls}
 							{@const clsId = cls.stats.id}
-							{@const isFull = classCounts[clsId] >= 2}
+							{@const isTaken = classCounts[clsId] >= 1}
 							{@const isSelected = myEntry?.classChoice === clsId}
 							{@const classLocked =
-								isFull ||
+								isTaken ||
 								currentLobby?.status !== 'waiting' ||
 								(currentLobby?.isPublic && !!myEntry?.isReady)}
 							<button
@@ -348,7 +348,7 @@
 								disabled={classLocked}
 								class="rpgui-button"
 								style="width: 100%; min-width: auto; height: auto; padding: 0.6rem 0.25rem; {isSelected &&
-								!isFull
+								!isTaken
 									? 'background-image: url(' +
 										base +
 										'css/img/button-down.png); outline: 2px solid ' +
@@ -382,14 +382,18 @@
 									{/if}
 									<span
 										style="font-size: 0.7rem; font-weight: 700; text-transform: capitalize; color: {isSelected
-											? isFull
+											? isTaken
 												? 'rgba(255,255,255,0.3)'
 												: CLASS_COLORS[clsId]
-											: isFull
+											: isTaken
 												? 'rgba(255,255,255,0.3)'
 												: 'white'};">{clsId}</span
 									>
-									<span style="font-size: 0.5rem; opacity: 0.5;">({classCounts[clsId]}/2)</span>
+									{#if isTaken}
+										<span style="font-size: 0.5rem; color: #f66; font-weight: 700;">TAKEN</span>
+									{:else}
+										<span style="font-size: 0.5rem; color: #4f4; font-weight: 700;">AVAILABLE</span>
+									{/if}
 								</div>
 							</button>
 						{/each}

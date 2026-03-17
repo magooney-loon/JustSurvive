@@ -228,6 +228,7 @@ export interface SynergyData {
 }
 
 export const SYNERGIES: Record<SynergyKey, SynergyData> = {
+	// Single class (solo play)
 	spotter: {
 		label: 'Lone Scout',
 		desc: 'Mark targets and flash stun threats solo. Fast, fragile, flying blind on support.',
@@ -248,26 +249,7 @@ export const SYNERGIES: Record<SynergyKey, SynergyData> = {
 		desc: 'No frontline to heal. Survive on skill alone.',
 		color: '#f4a'
 	},
-	spotterx2: {
-		label: 'Twin Eyes',
-		desc: 'Double marks, double flash stuns — crowd control everywhere. Zero sustain though.',
-		color: '#4af'
-	},
-	gunnerx2: {
-		label: 'Twin Barrels',
-		desc: 'Maximum suppression. Enemies barely move. Pray nothing reaches you.',
-		color: '#f84'
-	},
-	tankx2: {
-		label: 'Iron Wall',
-		desc: 'Nothing gets through. Slam and brace forever — but who marks the kills?',
-		color: '#8a4'
-	},
-	healerx2: {
-		label: 'Eternal Life',
-		desc: 'You will never die. You will also never do meaningful damage.',
-		color: '#f4a'
-	},
+	// Two-class synergies
 	'gunner+spotter': {
 		label: 'Marked for Death',
 		desc: 'Spotter reveals, gunner suppresses. Enemies are tagged before they know you exist.',
@@ -298,170 +280,32 @@ export const SYNERGIES: Record<SynergyKey, SynergyData> = {
 		desc: 'Tank braces, healer patches. Nearly unkillable duo — just missing a trigger finger.',
 		color: '#8f8'
 	},
-	'gunner+spotterx2': {
-		label: 'Eagle Eye Overwatch',
-		desc: 'Two spotters feed marks to one gunner. Every enemy is a highlighted target.',
-		color: '#6df'
-	},
-	'spotterx2+tank': {
-		label: 'Recon Fortress',
-		desc: 'Double intel feeding a tanky frontline. Nothing surprises this squad.',
-		color: '#6af'
-	},
-	'gunnerx2+spotter': {
-		label: 'Twin Guns, One Eye',
-		desc: 'One spotter directs two shooters. Coordinated suppression at range.',
-		color: '#fb8'
-	},
-	'gunnerx2+tank': {
-		label: 'Breach & Clear',
-		desc: 'Tank smashes in, two gunners finish the job. Aggressive and effective.',
-		color: '#fc6'
-	},
-	'gunnerx2+healer': {
-		label: 'Glass with Backbone',
-		desc: 'Double DPS sustained by a healer. Explode damage, never stop shooting.',
-		color: '#fca'
-	},
-	'spotter+tankx2': {
-		label: 'Armored Recon',
-		desc: 'Two tanks with scout support. Spotter marks; tanks absorb everything.',
-		color: '#9d6'
-	},
-	'gunner+tankx2': {
-		label: 'Battering Ram',
-		desc: 'Two tanks distract and slam, gunner farms suppressed kills.',
-		color: '#bd6'
-	},
-	'healer+tankx2': {
-		label: 'Immortal Frontline',
-		desc: 'Two tanks and a healer. Nothing dies — including you.',
-		color: '#8fc'
-	},
-	'healerx2+spotter': {
-		label: 'Eyes of God',
-		desc: 'Double sustain and full map awareness. Survive forever, see everything.',
-		color: '#cff'
-	},
-	'gunner+healerx2': {
-		label: 'Pampered DPS',
-		desc: 'One gunner with two dedicated healers. Absolute overkill on sustain.',
-		color: '#faf'
-	},
+	// Three-class synergies
 	'gunner+spotter+tank': {
-		label: 'Warband',
-		desc: 'Mark, slam, suppress. Three damage vectors with zero safety net.',
-		color: '#fa8'
-	},
-	'gunner+healer+spotter': {
-		label: 'Glass Cannon Squad',
-		desc: 'Full intel and firepower with a medic. Win fast or die smart.',
-		color: '#f86'
-	},
-	'healer+spotter+tank': {
-		label: 'The Phalanx',
-		desc: 'Marked threats, tanky frontline, endless heals. Fortress squad.',
-		color: '#8fa'
-	},
-	'gunner+healer+tank': {
-		label: 'The Backbone',
-		desc: 'Core combat trio. DPS, armor, sustain — the classic survival loadout.',
-		color: '#af8'
-	},
-	'gunnerx2+spotterx2': {
-		label: 'Eyes & Firepower',
-		desc: 'Maximum recon and DPS. No defense, but enemies are dead before they arrive.',
-		color: '#fd8'
-	},
-	'spotterx2+tankx2': {
-		label: 'Armored Overwatch',
-		desc: 'Double eyes, double armor. Impenetrable and always aware.',
-		color: '#7cf'
-	},
-	'healerx2+spotterx2': {
-		label: 'Support Fortress',
-		desc: 'Double intel and infinite sustain. You will outlast everything.',
-		color: '#bff'
-	},
-	'gunnerx2+tankx2': {
-		label: 'Steamroller',
-		desc: 'Total offense and defense. Slam, suppress, repeat. Nothing survives.',
-		color: '#fd6'
-	},
-	'gunnerx2+healerx2': {
-		label: 'Sustained Fire',
-		desc: 'Double DPS never stops — two healers make sure of it.',
-		color: '#fcf'
-	},
-	'healerx2+tankx2': {
-		label: 'The Bunker',
-		desc: 'Survive forever, damage nothing. Best defensive quad possible.',
-		color: '#9fc'
-	},
-	'gunner+spotterx2+tank': {
-		label: 'Overwatch Formation',
-		desc: 'Two spotters direct tank and gunner. Every move is calculated.',
-		color: '#7df'
-	},
-	'gunner+healer+spotterx2': {
-		label: 'Precision Squad',
-		desc: 'Intel-heavy strike team. Two eyes guide gun and medic.',
-		color: '#aef'
-	},
-	'healer+spotterx2+tank': {
-		label: 'Turtle Watch',
-		desc: 'Observe and survive. Double intel with tank+healer anchor.',
-		color: '#8df'
-	},
-	'gunnerx2+spotter+tank': {
-		label: 'Suppression Front',
-		desc: 'Tank holds the line, two gunners suppress everything behind it.',
+		label: 'Death Triangle',
+		desc: 'Perfect balance: intel, DPS, and defense. Nothing escapes this squad.',
 		color: '#fc8'
 	},
-	'gunnerx2+healer+spotter': {
-		label: 'Fire Team Alpha',
-		desc: 'Spotter + double DPS + medic. Aggressive intel-driven strike force.',
-		color: '#fb6'
+	'gunner+healer+spotter': {
+		label: 'Sustained Fire',
+		desc: 'Mark, shoot, heal, repeat. Endless pressure with a safety net.',
+		color: '#fbf'
 	},
-	'gunnerx2+healer+tank': {
-		label: 'Assault Squad',
-		desc: 'Heavy DPS with armor and sustain. Balanced but offense-leaning.',
-		color: '#fba'
+	'healer+spotter+tank': {
+		label: 'Immortal Vanguard',
+		desc: 'Unstoppable force meets unmovable object, with healing to match.',
+		color: '#9f9'
 	},
-	'gunner+spotter+tankx2': {
-		label: 'Shield Wall',
-		desc: 'Double tanks absorb chaos while spotter and gunner farm kills behind them.',
-		color: '#ad8'
+	'gunner+healer+tank': {
+		label: 'Juggernaut',
+		desc: 'Tank absorbs, gunner destroys, healer sustains. Pure brute force.',
+		color: '#f98'
 	},
-	'healer+spotter+tankx2': {
-		label: 'Fortified Recon',
-		desc: 'Safe scouting from behind double armor with a healer backup.',
-		color: '#9e8'
-	},
-	'gunner+healer+tankx2': {
-		label: 'Siege Mode',
-		desc: 'Slow and unstoppable. Two tanks advance, gunner suppresses, healer sustains.',
-		color: '#be8'
-	},
-	'gunner+healerx2+spotter': {
-		label: 'Pampered Strike',
-		desc: 'One gunner with double heals and full intel. Basically unkillable DPS.',
-		color: '#fce'
-	},
-	'healerx2+spotter+tank': {
-		label: 'Immortal Phalanx',
-		desc: 'Sustained recon frontline. Tank never dies, spotter never misses.',
-		color: '#afa'
-	},
-	'gunner+healerx2+tank': {
-		label: 'Full Combat Support',
-		desc: 'Balanced with maximum sustain. Classic roles, double the healing.',
-		color: '#bfa'
-	},
+	// Four-class synergy (full squad)
 	'gunner+healer+spotter+tank': {
-		label: 'Full Squad',
-		desc: 'Perfect synergy. Every role covered — textbook survival.',
-		color: '#ff8'
+		label: 'Perfect Squad',
+		desc: 'All four roles united. Intel, DPS, sustain, and defense — the ultimate team.',
+		color: '#fff'
 	}
 };
 
@@ -819,7 +663,7 @@ export function getActiveSynergy(classCounts: Record<string, number>): SynergyDa
 	const key = Object.entries(classCounts)
 		.filter(([, n]) => n > 0)
 		.sort(([a], [b]) => a.localeCompare(b))
-		.map(([cls, n]) => (n >= 2 ? `${cls}x2` : cls))
+		.map(([cls]) => cls)
 		.join('+');
 	return SYNERGIES[key] ?? null;
 }
