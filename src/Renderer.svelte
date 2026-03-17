@@ -32,7 +32,7 @@
 	const VIGNETTE_MAX = 1.8;
 	const VIGNETTE_LERP = 4; // lerp speed (units/sec)
 
-	const PIXELATION_GRANULARITY = 2.5;
+	const PIXELATION_GRANULARITY = 6;
 
 	const GLITCH_START = 0.2;
 	const GLITCH_MAX_STRENGTH = 0.3;
