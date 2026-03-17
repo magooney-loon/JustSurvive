@@ -74,11 +74,11 @@
 		$actions['Legs_Left']?.setEffectiveWeight(currentWeights.Legs_Left);
 		$actions['Legs_Right']?.setEffectiveWeight(currentWeights.Legs_Right);
 
-		// Negative timeScale plays animation in reverse → looks like backward movement
+		// Animation playback speed - same as torso
 		const dir = isBackwards ? -1 : 1;
-		const rate = speed > 0.5 ? Math.max(0.2, Math.min(0.8, speed / 14)) : 1;
+		const rate = speed > 0.5 ? Math.max(0.175, Math.min(0.7, speed / 14)) : 0.25;
 		const timeScale = dir * rate;
-		$actions['Legs_Idle']?.setEffectiveTimeScale(0.5); // half speed idle
+		$actions['Legs_Idle']?.setEffectiveTimeScale(0.25);
 		$actions['Legs_Forward']?.setEffectiveTimeScale(timeScale);
 		$actions['Legs_Left']?.setEffectiveTimeScale(timeScale);
 		$actions['Legs_Right']?.setEffectiveTimeScale(timeScale);
