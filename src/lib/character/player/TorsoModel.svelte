@@ -88,11 +88,11 @@
 		$actions['Torso_Idle']?.setEffectiveWeight(currentWeights.Torso_Idle);
 
 		// Animation playback speed
-		const rate = speed > 0.5 ? Math.max(0.35, Math.min(1.4, speed / 7)) : 1;
+		const rate = speed > 0.5 ? Math.max(0.175, Math.min(0.7, speed / 14)) : 0.5;
 		$actions['Torso_Shooting']?.setEffectiveTimeScale(rate);
-		$actions['Torso_Shooting2']?.setEffectiveTimeScale(0.5);
+		$actions['Torso_Shooting2']?.setEffectiveTimeScale(0.25);
 		$actions['Torso_Running']?.setEffectiveTimeScale(rate);
-		$actions['Torso_Idle']?.setEffectiveTimeScale(0.5);
+		$actions['Torso_Idle']?.setEffectiveTimeScale(0.25);
 
 		mixer.update(dt);
 	});
