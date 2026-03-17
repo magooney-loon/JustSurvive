@@ -332,9 +332,11 @@
 					<div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.5rem;">
 						{#each Object.values(CLASSES) as cls}
 							{@const clsId = cls.stats.id}
-							{@const isTaken = classCounts[clsId] >= 1}
+							{@const isLockedClass = clsId === 'tank' || clsId === 'healer'}
+							{@const isTaken = !isLockedClass && classCounts[clsId] >= 1}
 							{@const isSelected = myEntry?.classChoice === clsId}
 							{@const classLocked =
+								isLockedClass ||
 								isTaken ||
 								currentLobby?.status !== 'waiting' ||
 								(currentLobby?.isPublic && !!myEntry?.isReady)}
@@ -354,7 +356,7 @@
 										'css/img/button-down.png); outline: 2px solid ' +
 										CLASS_COLORS[clsId] +
 										'; outline-offset: -2px;'
-									: ''}"
+									: ''}; {isLockedClass ? 'opacity: 0.4; filter: grayscale(1);' : ''}"
 							>
 								<div
 									style="display: flex; flex-direction: column; align-items: center; gap: 0.15rem;"
@@ -387,9 +389,13 @@
 												: CLASS_COLORS[clsId]
 											: isTaken
 												? 'rgba(255,255,255,0.3)'
-												: 'white'};">{clsId}</span
+												: isLockedClass
+													? 'rgba(255,255,255,0.4)'
+													: 'white'};">{clsId}</span
 									>
-									{#if isTaken}
+									{#if isLockedClass}
+										<span style="font-size: 0.5rem; color: #888; font-weight: 700;">LOCKED</span>
+									{:else if isTaken}
 										<span style="font-size: 0.5rem; color: #f66; font-weight: 700;">TAKEN</span>
 									{:else}
 										<span style="font-size: 0.5rem; color: #4f4; font-weight: 700;">AVAILABLE</span>
