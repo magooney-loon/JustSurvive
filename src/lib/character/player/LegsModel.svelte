@@ -74,7 +74,7 @@
 		$actions['Legs_Left']?.setEffectiveWeight(currentWeights.Legs_Left);
 		$actions['Legs_Right']?.setEffectiveWeight(currentWeights.Legs_Right);
 
-		mixer.timeScale = 0.5;
+		mixer.timeScale = 0.4;
 		mixer.update(dt);
 	});
 </script>

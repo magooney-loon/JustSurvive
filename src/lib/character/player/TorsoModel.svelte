@@ -87,7 +87,7 @@
 		$actions['Torso_Running']?.setEffectiveWeight(currentWeights.Torso_Running);
 		$actions['Torso_Idle']?.setEffectiveWeight(currentWeights.Torso_Idle);
 
-		mixer.timeScale = 0.5;
+		mixer.timeScale = 0.4;
 		mixer.update(dt);
 	});
 </script>
