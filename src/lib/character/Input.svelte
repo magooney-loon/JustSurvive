@@ -15,6 +15,8 @@
 		SPOTTER_FLASH_MS,
 		steadyShotFlash,
 		STEADY_SHOT_FLASH_MS,
+		torsoAbilityFlash,
+		TORSO_ABILITY_FLASH_MS,
 		axeSwingFlash,
 		AXE_SWING_FLASH_MS,
 		ultimateFlash,
@@ -262,6 +264,7 @@
 				spotterFlash.active = true;
 				spotterFlash.yaw = tpsCamera.yaw;
 				spotterFlash.until = Date.now() + SPOTTER_FLASH_MS;
+				torsoAbilityFlash.until = Date.now() + TORSO_ABILITY_FLASH_MS;
 				logAbility.info('SPOTTER: flash');
 			}
 			return;
@@ -276,6 +279,7 @@
 				soundActions.playGunnerAdrenaline();
 				abilityState.adrenalineCooldownUntil = Date.now() + 5000;
 				abilityState.adrenalineUntil = Date.now() + 180;
+				torsoAbilityFlash.until = Date.now() + TORSO_ABILITY_FLASH_MS;
 				logAbility.info('GUNNER: adrenaline triggered');
 			}
 			return;

@@ -32,13 +32,20 @@
 	import TankEffects from '$lib/character/player/tank/TankEffects.svelte';
 	import HealerEffects from '$lib/character/player/healer/HealerEffects.svelte';
 	import GunnerEffects from '$lib/character/player/gunner/GunnerEffects.svelte';
-	import { abilityState, shotFlash, steadyShotFlash } from '$lib/stores/abilities.svelte.js';
+	import {
+		abilityState,
+		shotFlash,
+		steadyShotFlash,
+		torsoAbilityFlash
+	} from '$lib/stores/abilities.svelte.js';
 	import { input } from '$lib/stores/movement.svelte.js';
 
 	const [allPlayers] = useTable(tables.playerState);
 	const [reviveChannels] = useTable(tables.reviveChannel);
 	const [enemies] = useTable(tables.enemy);
 	const [bosses] = useTable(tables.boss);
+	const [gunnerStates] = useTable(tables.gunnerState);
+	const [spotterStates] = useTable(tables.spotterState);
 
 	type Vec3 = { x: number; y: number; z: number };
 	type Vec2 = { x: number; z: number };
@@ -113,6 +120,36 @@
 		}
 		// Remote players: use tracked remoteShootingUntil state
 		return remoteShootingUntil > Date.now() ? 1 : 0;
+	});
+
+	const isUsingAbility = $derived.by(() => {
+		if (player.classChoice !== 'gunner' && player.classChoice !== 'spotter') return 0;
+		if (isLocal) {
+			return torsoAbilityFlash.until > Date.now() ? 1 : 0;
+		}
+		// Remote players: check server state
+		if (player.classChoice === 'spotter') {
+			const mySpotterState = $spotterStates?.find(
+				(s) => s.playerIdentity.toHexString() === player.playerIdentity.toHexString()
+			);
+			if (mySpotterState?.lastFlashAt) {
+				const flashMicros = mySpotterState.lastFlashAt.microsSinceUnixEpoch;
+				const nowMicros = BigInt(Date.now()) * 1000n;
+				const diff = nowMicros - flashMicros;
+				if (diff < 500_000_000n && diff >= 0n) return 1;
+			}
+		} else if (player.classChoice === 'gunner') {
+			const myGunnerState = $gunnerStates?.find(
+				(g) => g.playerIdentity.toHexString() === player.playerIdentity.toHexString()
+			);
+			if (myGunnerState?.lastAdrenalineAt) {
+				const adrenaMicros = myGunnerState.lastAdrenalineAt.microsSinceUnixEpoch;
+				const nowMicros = BigInt(Date.now()) * 1000n;
+				const diff = nowMicros - adrenaMicros;
+				if (diff < 500_000_000n && diff >= 0n) return 1;
+			}
+		}
+		return 0;
 	});
 
 	const facing = $derived(overrideFacing ?? Number(player.facingAngle) / 1000);
@@ -332,6 +369,7 @@
 			<GunnerTorsoModel
 				{speed}
 				{isShooting}
+				{isUsingAbility}
 				back={remoteBack}
 				left={remoteLeft}
 				right={remoteRight}
@@ -347,6 +385,7 @@
 			<SpotterTorsoModel
 				{speed}
 				{isShooting}
+				{isUsingAbility}
 				back={remoteBack}
 				left={remoteLeft}
 				right={remoteRight}
@@ -362,6 +401,7 @@
 			<GunnerTorsoModel
 				{speed}
 				{isShooting}
+				{isUsingAbility}
 				back={remoteBack}
 				left={remoteLeft}
 				right={remoteRight}

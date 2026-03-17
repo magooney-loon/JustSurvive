@@ -47,7 +47,7 @@
 	{@const TorsoModel = getTorsoModel(myEntry.classChoice)}
 	<T.Group position={[0, -0.5, -3]} rotation.y={Math.PI}>
 		<LegsModel speed={0} />
-		<TorsoModel speed={0} isShooting={0} />
+		<TorsoModel speed={0} isShooting={0} isUsingAbility={0} />
 	</T.Group>
 
 	<!-- Other players around local player -->
@@ -63,7 +63,7 @@
 		{@const OtherTorsoModel = getTorsoModel(p.classChoice)}
 		<T.Group position={[pos[0], -1.2 + pos[1], -3]} rotation.y={Math.PI} scale={0.85}>
 			<OtherLegsModel speed={0} />
-			<OtherTorsoModel speed={0} isShooting={0} />
+			<OtherTorsoModel speed={0} isShooting={0} isUsingAbility={0} />
 		</T.Group>
 	{/each}
 {/if}

@@ -31,6 +31,10 @@ export const SPOTTER_FLASH_MS = 500;
 export const steadyShotFlash = $state({ until: 0, yaw: 0 });
 export const STEADY_SHOT_FLASH_MS = 250;
 
+// Torso ability animation (spotter flash stun, gunner adrenaline)
+export const torsoAbilityFlash = $state({ until: 0 });
+export const TORSO_ABILITY_FLASH_MS = 400;
+
 // Axe swing cone — optimistic local effect for the tank
 export const axeSwingFlash = $state({ active: false, yaw: 0, until: 0 });
 export const AXE_SWING_FLASH_MS = 350;
@@ -57,6 +61,7 @@ export function resetAbilities() {
 	healBeam.until = 0;
 	steadyShotFlash.until = 0;
 	steadyShotFlash.yaw = 0;
+	torsoAbilityFlash.until = 0;
 	axeSwingFlash.active = false;
 	axeSwingFlash.yaw = 0;
 	axeSwingFlash.until = 0;
