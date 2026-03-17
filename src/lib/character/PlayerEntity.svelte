@@ -89,22 +89,26 @@
 	const aimRange = $derived(CLASS_RANGE[player.classChoice] ?? 10);
 
 	// Gunner & Spotter shooting: check both local and remote
+	// Remote players: track lastShotAt changes via effect to ensure proper reactivity
+	let remoteShootingUntil = $state(0);
+	let prevShotMicros: bigint | undefined;
+	$effect(() => {
+		if (!isLocal && (player.classChoice === 'gunner' || player.classChoice === 'spotter')) {
+			const micros = player.lastShotAt?.microsSinceUnixEpoch;
+			if (micros !== prevShotMicros && micros != null) {
+				remoteShootingUntil = Date.now() + 500;
+			}
+			prevShotMicros = micros;
+		}
+	});
+
 	const isShooting = $derived.by(() => {
 		if (player.classChoice !== 'gunner' && player.classChoice !== 'spotter') return 0;
 		if (isLocal) {
 			return shotFlash.until > Date.now() ? 1 : 0;
 		}
-		// Remote players: check lastShotAt timestamp
-		if (player.lastShotAt) {
-			const shotMicros = player.lastShotAt.microsSinceUnixEpoch;
-			const nowMicros = BigInt(Date.now()) * 1000n;
-			const diff = nowMicros - shotMicros;
-			// 500ms = 500,000,000 micros
-			if (diff < 500_000_000n && diff >= 0n) {
-				return 1;
-			}
-		}
-		return 0;
+		// Remote players: use tracked remoteShootingUntil state
+		return remoteShootingUntil > Date.now() ? 1 : 0;
 	});
 
 	const facing = $derived(overrideFacing ?? Number(player.facingAngle) / 1000);
