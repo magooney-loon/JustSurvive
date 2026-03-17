@@ -24,7 +24,7 @@
 	import { logAbility } from '$root/settings.svelte.js';
 
 	const ULTIMATE_CD_MS = 35_000;
-	const GUNNER_FIRE_RATE_MS = 250;
+	const GUNNER_FIRE_RATE_MS = 220;
 
 	const keyMap: Record<string, keyof typeof input> = {
 		KeyW: 'forward',

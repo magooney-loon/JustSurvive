@@ -335,7 +335,7 @@
 
 		{#if dead && splatT > 0}
 			<T.Mesh
-				position={[0, 0.01, 0]}
+				position={[0, 0.0, 0]}
 				rotation={[-Math.PI / 2, 0, 0]}
 				scale={[1.0 + splatGrow * 0.6, 1.0 + splatGrow * 0.6, 1]}
 				geometry={splatCircleGeo}
@@ -349,7 +349,7 @@
 				/>
 			</T.Mesh>
 			<T.Mesh
-				position={[0, 0.012, 0]}
+				position={[0, 0.01, 0]}
 				rotation={[-Math.PI / 2, 0, 0]}
 				scale={[1.1 + splatGrow * 1.0, 1.1 + splatGrow * 1.0, 1]}
 				geometry={splatRingGeo}

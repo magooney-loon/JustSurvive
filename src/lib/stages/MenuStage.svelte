@@ -2,8 +2,8 @@
 	import { T } from '@threlte/core';
 	import { useTable, useSpacetimeDB } from 'spacetimedb/svelte';
 	import { tables } from '$bindings/index.js';
-	import LegsModel from '$lib/character/player/LegsModel.svelte';
-	import TorsoModel from '$lib/character/player/TorsoModel.svelte';
+	import LegsModel from '$lib/character/player/gunner/GunnerLegsModel.svelte';
+	import TorsoModel from '$lib/character/player/gunner/GunnerTorsoModel.svelte';
 	import { stageState } from '$root/stage.svelte.js';
 
 	const conn = useSpacetimeDB();

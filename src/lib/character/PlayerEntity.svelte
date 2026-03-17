@@ -24,8 +24,8 @@
 	import { tables } from '$bindings/index.js';
 	import { lobbyState } from '$lib/stores/lobby.svelte.js';
 	import AimReticle from '$lib/character/ui/AimReticle.svelte';
-	import LegsModel from '$lib/character/player/LegsModel.svelte';
-	import TorsoModel from '$lib/character/player/TorsoModel.svelte';
+	import LegsModel from '$lib/character/player/gunner/GunnerLegsModel.svelte';
+	import TorsoModel from '$lib/character/player/gunner/GunnerTorsoModel.svelte';
 	import SpotterEffects from '$lib/character/player/spotter/SpotterEffects.svelte';
 	import TankEffects from '$lib/character/player/tank/TankEffects.svelte';
 	import HealerEffects from '$lib/character/player/healer/HealerEffects.svelte';
@@ -85,10 +85,22 @@
 
 	const aimRange = $derived(CLASS_RANGE[player.classChoice] ?? 10);
 
-	// Only gunner has shooting animations - check if local player is shooting
-	const isShooting = $derived(
-		isLocal && player.classChoice === 'gunner' && shotFlash.until > Date.now() ? 1 : 0
-	);
+	// Gunner shooting: check both local (shotFlash) and remote (lastShotAt)
+	const isShooting = $derived.by(() => {
+		if (player.classChoice !== 'gunner') return 0;
+		if (isLocal) {
+			return shotFlash.until > Date.now() ? 1 : 0;
+		}
+		// Remote players: check lastShotAt timestamp (within ~200ms window)
+		if (player.lastShotAt) {
+			const shotMicros = player.lastShotAt.microsSinceUnixEpoch;
+			const nowMicros = BigInt(Date.now() * 1000);
+			if (nowMicros - shotMicros < 250_000n) {
+				return 1;
+			}
+		}
+		return 0;
+	});
 
 	const facing = $derived(overrideFacing ?? Number(player.facingAngle) / 1000);
 	const aimPosX = $derived(isLocal ? displayX : targetX);

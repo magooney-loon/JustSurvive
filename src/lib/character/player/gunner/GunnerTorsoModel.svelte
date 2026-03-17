@@ -7,7 +7,7 @@
 
 	type Props = {
 		speed: number;
-		isShooting: number; // 0 or 1
+		isShooting: number;
 	};
 	let { speed, isShooting }: Props = $props();
 
@@ -21,9 +21,8 @@
 		Torso_Running: 0,
 		Torso_Idle: 1
 	});
-	const WEIGHT_LERP = 8; // smoothing speed for animation transitions
+	const WEIGHT_LERP = 8;
 
-	// Start all actions playing at weight 0, idle at 1
 	$effect(() => {
 		if (!$actions?.['Torso_Idle']) return;
 		for (const name of [
@@ -42,40 +41,32 @@
 	useTask((dt) => {
 		if (!mixer) return;
 
-		// Calculate torso rotation based on strafe input only
-		// Left strafe: rotate left, Right strafe: rotate right
-		// Pure forward/back: no rotation
 		let targetRotation = 0;
 		const left = input.left ? 1 : 0;
 		const right = input.right ? 1 : 0;
 		const isBackwards = input.back;
 
 		if (left && !right) {
-			targetRotation = isBackwards ? -0.8 : 0.3; // less rotation when going forward
+			targetRotation = isBackwards ? -0.8 : 0.3;
 		} else if (right && !left) {
-			targetRotation = isBackwards ? 0.8 : -0.3; // less rotation when going forward
+			targetRotation = isBackwards ? 0.8 : -0.3;
 		}
 
-		// Smooth rotation
 		const rotDiff = targetRotation - torsoRotation;
 		torsoRotation += rotDiff * Math.min(1, dt * 12);
 
-		// Determine animation weights based on movement and shooting
 		const isMoving = speed > 0.5;
 		const shootWeight = isShooting > 0.5 ? 1 : 0;
 		const moveWeight = isMoving ? 1 : 0;
 
-		// Smooth transitions between animation states
 		const lerpFactor = Math.min(1, dt * WEIGHT_LERP);
-		const idleLerpFactor = lerpFactor * 0.5; // slower idle transition
+		const idleLerpFactor = lerpFactor * 0.5;
 
-		// Calculate target weights
 		const wShooting = shootWeight * moveWeight;
 		const wShootingIdle = shootWeight * (1 - moveWeight);
 		const wTorsoForward = (1 - shootWeight) * moveWeight;
 		const wTorsoIdle = (1 - shootWeight) * (1 - moveWeight);
 
-		// Smooth weight transitions
 		currentWeights.Torso_Shooting += (wShooting - currentWeights.Torso_Shooting) * lerpFactor;
 		currentWeights.Torso_Shooting2 +=
 			(wShootingIdle - currentWeights.Torso_Shooting2) * idleLerpFactor;
@@ -92,7 +83,6 @@
 	});
 </script>
 
-<!-- scale=0.05: torso root positioning -->
 <GLTF
 	bind:gltf={$gltf}
 	url="{base}models/player/GunnerTorso.glb"
