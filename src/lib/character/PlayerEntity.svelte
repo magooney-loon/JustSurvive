@@ -99,8 +99,8 @@
 			const shotMicros = player.lastShotAt.microsSinceUnixEpoch;
 			const nowMicros = BigInt(Date.now()) * 1000n;
 			const diff = nowMicros - shotMicros;
-			// 500ms = 500,000 micros
-			if (diff < 500_000n && diff >= 0n) {
+			// 500ms = 500,000,000 micros
+			if (diff < 500_000_000n && diff >= 0n) {
 				return 1;
 			}
 		}
