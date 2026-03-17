@@ -92,7 +92,7 @@ export const CLASSES: Record<ClassId, ClassData> = {
 			{
 				name: 'Shoot',
 				hudLabel: 'Fire',
-				input: 'LMB',
+				input: 'LMB (Hold)',
 				cooldown: 'None',
 				cooldownMs: 0,
 				desc: 'Fire at an enemy within 10 units. Deals 15 damage (25 vs marked targets). Every 3rd consecutive shot on the same target suppresses it — dazing for 1s. +1 score per hit, +2 on kill.'
@@ -556,11 +556,6 @@ export const TIPS: GameTip[] = [
 		tag: 'Day Cycle',
 		color: '#fa8',
 		text: 'Night and Deep Night bring storms, lightning, and faster, harder enemies. Brace up.'
-	},
-	{
-		tag: 'Day Cycle',
-		color: '#fa8',
-		text: 'Fog rolls in during Sunset or Dusk — once per cycle, lasting 15–30 seconds. Visibility drops sharply.'
 	},
 	{
 		tag: 'Day Cycle',

@@ -24,6 +24,7 @@
 	import { logAbility } from '$root/settings.svelte.js';
 
 	const ULTIMATE_CD_MS = 35_000;
+	const GUNNER_FIRE_RATE_MS = 250;
 
 	const keyMap: Record<string, keyof typeof input> = {
 		KeyW: 'forward',
@@ -54,12 +55,20 @@
 		if (key) input[key] = false;
 	}
 
+	function onMouseUp(e: MouseEvent) {
+		if (myState?.classChoice === 'gunner' && e.button === 0) {
+			gunnerHoldingLeft = false;
+		}
+	}
+
 	const conn = useSpacetimeDB();
 	const [players] = useTable(tables.playerState);
 	const [enemies] = useTable(tables.enemy);
 	const [bosses] = useTable(tables.boss);
 
 	const CHARGE_COOLDOWN_MS = 8000;
+
+	let gunnerHoldingLeft = $state(false);
 
 	const myState = $derived(
 		$players.find(
@@ -191,6 +200,41 @@
 		}
 	}
 
+	function gunnerFire() {
+		if (!myState || myState.status !== 'alive') return;
+		const sid = lobbyState.currentSessionId;
+		if (!sid) return;
+		if (abilityState.gunnerAttackCooldownUntil > Date.now()) return;
+
+		const enemy = nearestEnemyToAim(10_000);
+		if (!enemy) return;
+
+		if (enemy.id === abilityState.lastSuppressedEnemyId) {
+			abilityState.suppressHits++;
+		} else {
+			abilityState.lastSuppressedEnemyId = enemy.id;
+			abilityState.suppressHits = 1;
+		}
+		const suppress = abilityState.suppressHits % 3 === 0;
+		combatActions.attackEnemy(sid, enemy.id, suppress);
+		soundActions.playGunnerShot();
+		soundActions.playHitmarker();
+		shotFlash.until = Date.now() + SHOT_FLASH_MS;
+		abilityState.gunnerAttackCooldownUntil = Date.now() + GUNNER_FIRE_RATE_MS;
+		logAbility.info('GUNNER: attack enemy', enemy.id, 'suppress=', suppress);
+	}
+
+	$effect(() => {
+		if (
+			myState?.classChoice === 'gunner' &&
+			myState.status === 'alive' &&
+			gunnerHoldingLeft &&
+			lobbyState.currentSessionId
+		) {
+			gunnerFire();
+		}
+	});
+
 	function onMouseDown(e: MouseEvent) {
 		logAbility.info('MOUSE DOWN: myState=', myState?.classChoice, 'status=', myState?.status);
 		if (!myState || myState.status !== 'alive') return;
@@ -225,20 +269,7 @@
 
 		if (myState.classChoice === 'gunner') {
 			if (e.button === 0) {
-				const enemy = nearestEnemyToAim(10_000);
-				if (!enemy) return;
-				if (enemy.id === abilityState.lastSuppressedEnemyId) {
-					abilityState.suppressHits++;
-				} else {
-					abilityState.lastSuppressedEnemyId = enemy.id;
-					abilityState.suppressHits = 1;
-				}
-				const suppress = abilityState.suppressHits % 3 === 0;
-				combatActions.attackEnemy(sid, enemy.id, suppress);
-				soundActions.playGunnerShot();
-				soundActions.playHitmarker();
-				shotFlash.until = Date.now() + SHOT_FLASH_MS;
-				logAbility.info('GUNNER: attack enemy', enemy.id, 'suppress=', suppress);
+				gunnerHoldingLeft = true;
 			} else if (e.button === 2) {
 				if (abilityState.adrenalineCooldownUntil > Date.now()) return;
 				combatActions.adrenaline(sid);
@@ -301,4 +332,9 @@
 	}
 </script>
 
-<svelte:window onkeydown={onKeyDown} onkeyup={onKeyUp} onmousedown={onMouseDown} />
+<svelte:window
+	onkeydown={onKeyDown}
+	onkeyup={onKeyUp}
+	onmousedown={onMouseDown}
+	onmouseup={onMouseUp}
+/>

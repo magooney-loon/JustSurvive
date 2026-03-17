@@ -3,7 +3,7 @@
 	import { GLTF, useGltfAnimations } from '@threlte/extras';
 	import { input } from '$lib/stores/movement.svelte.js';
 
-	type TorsoAnim = 'Shooting' | 'ShootingIdle' | 'TorsoForward' | 'TorsoIdle';
+	type TorsoAnim = 'Torso_Shooting' | 'Torso_Shooting2' | 'Torso_Running' | 'Torso_Idle';
 
 	type Props = {
 		speed: number;
@@ -15,17 +15,27 @@
 	const { gltf, actions, mixer } = useGltfAnimations<TorsoAnim>();
 
 	let torsoRotation = $state(0);
-	let currentWeights = $state({ Shooting: 0, ShootingIdle: 0, TorsoForward: 0, TorsoIdle: 1 });
+	let currentWeights = $state({
+		Torso_Shooting: 0,
+		Torso_Shooting2: 0,
+		Torso_Running: 0,
+		Torso_Idle: 1
+	});
 	const WEIGHT_LERP = 8; // smoothing speed for animation transitions
 
 	// Start all actions playing at weight 0, idle at 1
 	$effect(() => {
-		if (!$actions?.['TorsoIdle']) return;
-		for (const name of ['Shooting', 'ShootingIdle', 'TorsoForward', 'TorsoIdle'] as TorsoAnim[]) {
+		if (!$actions?.['Torso_Idle']) return;
+		for (const name of [
+			'Torso_Shooting',
+			'Torso_Shooting2',
+			'Torso_Running',
+			'Torso_Idle'
+		] as TorsoAnim[]) {
 			const a = $actions[name];
 			if (!a) continue;
 			a.reset().play();
-			a.setEffectiveWeight(name === 'TorsoIdle' ? 1 : 0);
+			a.setEffectiveWeight(name === 'Torso_Idle' ? 1 : 0);
 		}
 	});
 
@@ -66,22 +76,23 @@
 		const wTorsoIdle = (1 - shootWeight) * (1 - moveWeight);
 
 		// Smooth weight transitions
-		currentWeights.Shooting += (wShooting - currentWeights.Shooting) * lerpFactor;
-		currentWeights.ShootingIdle += (wShootingIdle - currentWeights.ShootingIdle) * idleLerpFactor;
-		currentWeights.TorsoForward += (wTorsoForward - currentWeights.TorsoForward) * lerpFactor;
-		currentWeights.TorsoIdle += (wTorsoIdle - currentWeights.TorsoIdle) * idleLerpFactor;
+		currentWeights.Torso_Shooting += (wShooting - currentWeights.Torso_Shooting) * lerpFactor;
+		currentWeights.Torso_Shooting2 +=
+			(wShootingIdle - currentWeights.Torso_Shooting2) * idleLerpFactor;
+		currentWeights.Torso_Running += (wTorsoForward - currentWeights.Torso_Running) * lerpFactor;
+		currentWeights.Torso_Idle += (wTorsoIdle - currentWeights.Torso_Idle) * idleLerpFactor;
 
-		$actions['Shooting']?.setEffectiveWeight(currentWeights.Shooting);
-		$actions['ShootingIdle']?.setEffectiveWeight(currentWeights.ShootingIdle);
-		$actions['TorsoForward']?.setEffectiveWeight(currentWeights.TorsoForward);
-		$actions['TorsoIdle']?.setEffectiveWeight(currentWeights.TorsoIdle);
+		$actions['Torso_Shooting']?.setEffectiveWeight(currentWeights.Torso_Shooting);
+		$actions['Torso_Shooting2']?.setEffectiveWeight(currentWeights.Torso_Shooting2);
+		$actions['Torso_Running']?.setEffectiveWeight(currentWeights.Torso_Running);
+		$actions['Torso_Idle']?.setEffectiveWeight(currentWeights.Torso_Idle);
 
 		// Animation playback speed
 		const rate = speed > 0.5 ? Math.max(0.35, Math.min(1.4, speed / 7)) : 1;
-		$actions['Shooting']?.setEffectiveTimeScale(rate);
-		$actions['ShootingIdle']?.setEffectiveTimeScale(0.5);
-		$actions['TorsoForward']?.setEffectiveTimeScale(rate);
-		$actions['TorsoIdle']?.setEffectiveTimeScale(0.5);
+		$actions['Torso_Shooting']?.setEffectiveTimeScale(rate);
+		$actions['Torso_Shooting2']?.setEffectiveTimeScale(0.5);
+		$actions['Torso_Running']?.setEffectiveTimeScale(rate);
+		$actions['Torso_Idle']?.setEffectiveTimeScale(0.5);
 
 		mixer.update(dt);
 	});
@@ -90,7 +101,7 @@
 <!-- scale=0.05: torso root positioning -->
 <GLTF
 	bind:gltf={$gltf}
-	url="{base}models/player/torso.glb"
+	url="{base}models/player/GunnerTorso.glb"
 	position={[0, 0, 0]}
 	rotation={[0, Math.PI, 0]}
 	scale={0.07}

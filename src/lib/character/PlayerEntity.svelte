@@ -30,7 +30,7 @@
 	import TankEffects from '$lib/character/player/tank/TankEffects.svelte';
 	import HealerEffects from '$lib/character/player/healer/HealerEffects.svelte';
 	import GunnerEffects from '$lib/character/player/gunner/GunnerEffects.svelte';
-	import { abilityState } from '$lib/stores/abilities.svelte.js';
+	import { abilityState, shotFlash } from '$lib/stores/abilities.svelte.js';
 
 	const [allPlayers] = useTable(tables.playerState);
 	const [reviveChannels] = useTable(tables.reviveChannel);
@@ -84,6 +84,12 @@
 	};
 
 	const aimRange = $derived(CLASS_RANGE[player.classChoice] ?? 10);
+
+	// Only gunner has shooting animations - check if local player is shooting
+	const isShooting = $derived(
+		isLocal && player.classChoice === 'gunner' && shotFlash.until > Date.now() ? 1 : 0
+	);
+
 	const facing = $derived(overrideFacing ?? Number(player.facingAngle) / 1000);
 	const aimPosX = $derived(isLocal ? displayX : targetX);
 	const aimPosZ = $derived(isLocal ? displayZ : targetZ);
@@ -249,7 +255,7 @@
 	rotation={[downedTilt, facing, 0]}
 >
 	<LegsModel {speed} />
-	<TorsoModel {speed} isShooting={0} />
+	<TorsoModel {speed} {isShooting} />
 </T.Group>
 
 <!-- Stun/Slow visual indicator -->
