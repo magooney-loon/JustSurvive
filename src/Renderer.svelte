@@ -13,7 +13,9 @@
 		VignetteEffect,
 		PixelationEffect,
 		GlitchEffect,
-		GlitchMode
+		GlitchMode,
+		NoiseEffect,
+		BlendFunction
 	} from 'postprocessing';
 	import { settingsState, log } from '$root/settings.svelte.js';
 	import { localHealthState } from '$lib/stores/sky.svelte.js';
@@ -27,6 +29,7 @@
 	let vignetteEffect: VignetteEffect | null = null;
 	let pixelationEffect: PixelationEffect | null = null;
 	let glitchEffect: GlitchEffect | null = null;
+	let noiseEffect: NoiseEffect | null = null;
 
 	const VIGNETTE_BASE = 0.75;
 	const VIGNETTE_MAX = 1.8;
@@ -44,6 +47,7 @@
 		vignetteEffect = null;
 		pixelationEffect = null;
 		glitchEffect = null;
+		noiseEffect = null;
 
 		// Add the render pass
 		const renderPass = new RenderPass(scene, $camera);
@@ -94,7 +98,12 @@
 		const effectPass = new EffectPass($camera, bloomEffect, smaaEffect, vignetteEffect);
 		composer.addPass(effectPass);
 
-		const pixelPass = new EffectPass($camera, pixelationEffect, glitchEffect);
+		// Noise effect for subtle film grain/dithering
+		noiseEffect = new NoiseEffect({
+			premultiply: true,
+			blendFunction: BlendFunction.ADD
+		});
+		const pixelPass = new EffectPass($camera, pixelationEffect, glitchEffect, noiseEffect);
 		composer.addPass(pixelPass);
 	};
 
