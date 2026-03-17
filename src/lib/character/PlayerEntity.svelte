@@ -117,6 +117,9 @@
 	const aimX = $derived(overrideAim?.x ?? aimPosX + -Math.sin(facing) * aimRange);
 	const aimZ = $derived(overrideAim?.z ?? aimPosZ + -Math.cos(facing) * aimRange);
 
+	// Model pivot is at center, offset to place feet on ground
+	const MODEL_Y_OFFSET = -0.45;
+
 	// Closer reticle position (60% of max range)
 	const closeRange = $derived(aimRange * 0.6);
 	const closeAimX = $derived(aimPosX + -Math.sin(facing) * closeRange);
@@ -311,7 +314,7 @@
 
 {#key player.id}
 	<T.Group
-		position={[displayX, displayY + downedYOffset, displayZ]}
+		position={[displayX, displayY + downedYOffset + MODEL_Y_OFFSET, displayZ]}
 		rotation={[downedTilt, facing, 0]}
 	>
 		{#if player.classChoice === 'gunner'}
