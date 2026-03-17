@@ -214,6 +214,42 @@
 	let speed = $state(0);
 	let prevX = $state(0);
 	let prevZ = $state(0);
+	let remoteVelX = $state(0);
+	let remoteVelZ = $state(0);
+
+	// Derived movement direction for remote players (relative to facing)
+	const remoteForward = $derived(
+		isLocal
+			? input.forward
+			: (() => {
+					const forwardVel = -remoteVelX * Math.sin(facing) - remoteVelZ * Math.cos(facing);
+					return forwardVel > 0.5;
+				})()
+	);
+	const remoteBack = $derived(
+		isLocal
+			? input.back
+			: (() => {
+					const forwardVel = -remoteVelX * Math.sin(facing) - remoteVelZ * Math.cos(facing);
+					return forwardVel < -0.5;
+				})()
+	);
+	const remoteLeft = $derived(
+		isLocal
+			? input.left
+			: (() => {
+					const strafeVel = -remoteVelX * Math.cos(facing) + remoteVelZ * Math.sin(facing);
+					return strafeVel > 0.5;
+				})()
+	);
+	const remoteRight = $derived(
+		isLocal
+			? input.right
+			: (() => {
+					const strafeVel = -remoteVelX * Math.cos(facing) + remoteVelZ * Math.sin(facing);
+					return strafeVel < -0.5;
+				})()
+	);
 
 	// Smooth reticle transitions
 	let reticleOpacity = $state(0.15);
@@ -245,6 +281,8 @@
 			const vx = (displayX - prevX) / Math.max(0.0001, dt);
 			const vz = (displayZ - prevZ) / Math.max(0.0001, dt);
 			speed = Math.hypot(vx, vz);
+			remoteVelX = vx;
+			remoteVelZ = vz;
 		}
 
 		prevX = displayX;
@@ -279,47 +317,47 @@
 		{#if player.classChoice === 'gunner'}
 			<GunnerLegsModel
 				{speed}
-				forward={isLocal ? input.forward : false}
-				back={isLocal ? input.back : false}
-				left={isLocal ? input.left : false}
-				right={isLocal ? input.right : false}
+				forward={remoteForward}
+				back={remoteBack}
+				left={remoteLeft}
+				right={remoteRight}
 			/>
 			<GunnerTorsoModel
 				{speed}
 				{isShooting}
-				back={isLocal ? input.back : false}
-				left={isLocal ? input.left : false}
-				right={isLocal ? input.right : false}
+				back={remoteBack}
+				left={remoteLeft}
+				right={remoteRight}
 			/>
 		{:else if player.classChoice === 'spotter'}
 			<SpotterLegsModel
 				{speed}
-				forward={isLocal ? input.forward : false}
-				back={isLocal ? input.back : false}
-				left={isLocal ? input.left : false}
-				right={isLocal ? input.right : false}
+				forward={remoteForward}
+				back={remoteBack}
+				left={remoteLeft}
+				right={remoteRight}
 			/>
 			<SpotterTorsoModel
 				{speed}
 				{isShooting}
-				back={isLocal ? input.back : false}
-				left={isLocal ? input.left : false}
-				right={isLocal ? input.right : false}
+				back={remoteBack}
+				left={remoteLeft}
+				right={remoteRight}
 			/>
 		{:else}
 			<GunnerLegsModel
 				{speed}
-				forward={isLocal ? input.forward : false}
-				back={isLocal ? input.back : false}
-				left={isLocal ? input.left : false}
-				right={isLocal ? input.right : false}
+				forward={remoteForward}
+				back={remoteBack}
+				left={remoteLeft}
+				right={remoteRight}
 			/>
 			<GunnerTorsoModel
 				{speed}
 				{isShooting}
-				back={isLocal ? input.back : false}
-				left={isLocal ? input.left : false}
-				right={isLocal ? input.right : false}
+				back={remoteBack}
+				left={remoteLeft}
+				right={remoteRight}
 			/>
 		{/if}
 	</T.Group>
