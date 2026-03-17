@@ -33,7 +33,7 @@ export const STEADY_SHOT_FLASH_MS = 250;
 
 // Torso ability animation (spotter flash stun, gunner adrenaline)
 export const torsoAbilityFlash = $state({ until: 0 });
-export const TORSO_ABILITY_FLASH_MS = 400;
+export const TORSO_ABILITY_FLASH_MS = 833; // Animation duration
 
 // Axe swing cone — optimistic local effect for the tank
 export const axeSwingFlash = $state({ active: false, yaw: 0, until: 0 });

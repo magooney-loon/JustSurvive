@@ -103,7 +103,7 @@
 		if (!isLocal && (player.classChoice === 'gunner' || player.classChoice === 'spotter')) {
 			const micros = player.lastShotAt?.microsSinceUnixEpoch;
 			if (micros !== prevShotMicros && micros != null) {
-				remoteShootingUntil = Date.now() + 500;
+				remoteShootingUntil = Date.now() + 833;
 			}
 			prevShotMicros = micros;
 		}
@@ -134,7 +134,7 @@
 			);
 			const micros = mySpotterState?.lastFlashAt?.microsSinceUnixEpoch;
 			if (micros !== prevFlashMicros && micros != null) {
-				remoteAbilityUntil = Date.now() + 400;
+				remoteAbilityUntil = Date.now() + 833;
 			}
 			prevFlashMicros = micros;
 		}
@@ -144,7 +144,7 @@
 			);
 			const micros = myGunnerState?.lastAdrenalineAt?.microsSinceUnixEpoch;
 			if (micros !== prevAdrenalineMicros && micros != null) {
-				remoteAbilityUntil = Date.now() + 400;
+				remoteAbilityUntil = Date.now() + 833;
 			}
 			prevAdrenalineMicros = micros;
 		}
