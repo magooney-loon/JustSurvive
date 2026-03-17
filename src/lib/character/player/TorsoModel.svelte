@@ -87,15 +87,6 @@
 		$actions['Torso_Running']?.setEffectiveWeight(currentWeights.Torso_Running);
 		$actions['Torso_Idle']?.setEffectiveWeight(currentWeights.Torso_Idle);
 
-		// Animation playback speed - same as legs, inverted (arms swing opposite to legs), reversed for backwards
-		const dir = isBackwards ? 1 : -1;
-		const rate = speed > 0.5 ? Math.max(0.175, Math.min(0.7, speed / 14)) : 0.25;
-		const timeScale = dir * rate;
-		$actions['Torso_Shooting']?.setEffectiveTimeScale(timeScale);
-		$actions['Torso_Shooting2']?.setEffectiveTimeScale(0.25);
-		$actions['Torso_Running']?.setEffectiveTimeScale(timeScale);
-		$actions['Torso_Idle']?.setEffectiveTimeScale(0.25);
-
 		mixer.update(dt);
 	});
 </script>
