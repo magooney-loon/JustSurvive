@@ -101,7 +101,7 @@
 		// Noise effect for subtle film grain/dithering
 		noiseEffect = new NoiseEffect({
 			premultiply: true,
-			blendFunction: BlendFunction.ADD
+			blendFunction: BlendFunction.SCREEN
 		});
 		const pixelPass = new EffectPass($camera, pixelationEffect, glitchEffect, noiseEffect);
 		composer.addPass(pixelPass);
