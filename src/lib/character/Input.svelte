@@ -177,15 +177,13 @@
 	}
 
 	function fireUltimate() {
-		if (isAbilityLocked()) return;
 		if (!myState || myState.status !== 'alive') return;
 		const sid = lobbyState.currentSessionId;
 		if (!sid) return;
 		if (abilityState.ultimateCooldownUntil > Date.now()) return;
-		lockAbilities();
-		abilityState.ultimateCooldownUntil = Date.now() + ULTIMATE_CD_MS;
 
 		const cls = myState.classChoice;
+		abilityState.ultimateCooldownUntil = Date.now() + ULTIMATE_CD_MS;
 		ultimateFlash.until = Date.now() + ULTIMATE_FLASH_MS;
 		soundActions.playUltimate();
 		if (cls === 'spotter') {
@@ -207,12 +205,10 @@
 	}
 
 	function gunnerFire() {
-		if (isAbilityLocked()) return;
 		if (!myState || myState.status !== 'alive') return;
 		const sid = lobbyState.currentSessionId;
 		if (!sid) return;
 		if (abilityState.gunnerAttackCooldownUntil > Date.now()) return;
-		lockAbilities();
 
 		const enemy = nearestEnemyToAim(10_000);
 		if (!enemy) return;
