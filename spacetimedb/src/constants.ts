@@ -5,7 +5,7 @@ export const MICROS_PER_SEC = 1_000_000n;
 // ─── Game Rules ─────────────────────────────────────────────────────────────────
 export const BOSS_SPAWN_INTERVAL_US = 90_000_000n; // 90 seconds
 export const ENEMY_CAP = 36; // 4-player cap; scales down per player count
-export const ENEMY_CAP_BY_PLAYERS: Record<number, number> = { 1: 1, 2: 18, 3: 27, 4: 36 };
+export const ENEMY_CAP_BY_PLAYERS: Record<number, number> = { 1: 7, 2: 14, 3: 27, 4: 36 };
 export const MAX_ENEMIES_PER_PLAYER = 3;
 export const ENEMY_DEAD_CLEANUP_US = 5_000_000n; // 5s after death before removal + item drop
 export const BOSS_DEAD_CLEANUP_US = 5_000_000n; // 5s after boss death before removal
