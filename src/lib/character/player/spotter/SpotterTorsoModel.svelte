@@ -37,7 +37,7 @@
 		Torso_Shooting2: 0,
 		Torso_Ability: 0
 	});
-	const WEIGHT_LERP = 25;
+	const WEIGHT_LERP = 20;
 
 	$effect(() => {
 		if (!$actions?.['Torso_Idle']) return;
@@ -51,8 +51,10 @@
 			const a = $actions[name];
 			if (!a) continue;
 			a.reset().play();
-			a.setEffectiveWeight(name === 'Torso_Idle' ? 1 : 0);
+			a.setEffectiveWeight(0);
+			a.timeScale = name === 'Torso_Idle' || name === 'Torso_Ability' ? 0.4 : 0.8;
 		}
+		$actions['Torso_Idle']?.setEffectiveWeight(1);
 	});
 
 	useTask((dt) => {
@@ -73,31 +75,36 @@
 		torsoRotation += rotDiff * Math.min(1, dt * 12);
 
 		const isMoving = speed > 0.5;
-		const shootWeight = isShooting > 0.5 ? 1 : 0;
-		const abilityWeight = isUsingAbility > 0.5 ? 1 : 0;
-		const moveWeight = isMoving ? 1 : 0;
+		const shooting = isShooting > 0.5;
+		const ability = isUsingAbility > 0.5;
+
+		let targetAnim: TorsoAnim;
+		if (ability) {
+			targetAnim = 'Torso_Ability';
+		} else if (shooting && isMoving) {
+			targetAnim = 'Torso_Shooting';
+		} else if (shooting && !isMoving) {
+			targetAnim = 'Torso_Shooting2';
+		} else if (isMoving) {
+			targetAnim = 'Torso_Running';
+		} else {
+			targetAnim = 'Torso_Idle';
+		}
 
 		const lerpFactor = Math.min(1, dt * WEIGHT_LERP);
 
-		const wShooting = shootWeight * moveWeight * (1 - abilityWeight);
-		const wShootingIdle = shootWeight * (1 - moveWeight) * (1 - abilityWeight);
-		const wAbility = abilityWeight;
-		const wTorsoRunning = (1 - shootWeight) * moveWeight * (1 - abilityWeight);
-		const wTorsoIdle = (1 - shootWeight) * (1 - moveWeight) * (1 - abilityWeight);
+		for (const name of [
+			'Torso_Idle',
+			'Torso_Running',
+			'Torso_Shooting',
+			'Torso_Shooting2',
+			'Torso_Ability'
+		] as TorsoAnim[]) {
+			const targetWeight = name === targetAnim ? 1 : 0;
+			currentWeights[name] += (targetWeight - currentWeights[name]) * lerpFactor;
+			$actions[name]?.setEffectiveWeight(currentWeights[name]);
+		}
 
-		currentWeights.Torso_Shooting += (wShooting - currentWeights.Torso_Shooting) * lerpFactor;
-		currentWeights.Torso_Shooting2 += (wShootingIdle - currentWeights.Torso_Shooting2) * lerpFactor;
-		currentWeights.Torso_Ability += (wAbility - currentWeights.Torso_Ability) * lerpFactor;
-		currentWeights.Torso_Running += (wTorsoRunning - currentWeights.Torso_Running) * lerpFactor;
-		currentWeights.Torso_Idle += (wTorsoIdle - currentWeights.Torso_Idle) * lerpFactor;
-
-		$actions['Torso_Shooting']?.setEffectiveWeight(currentWeights.Torso_Shooting);
-		$actions['Torso_Shooting2']?.setEffectiveWeight(currentWeights.Torso_Shooting2);
-		$actions['Torso_Ability']?.setEffectiveWeight(currentWeights.Torso_Ability);
-		$actions['Torso_Running']?.setEffectiveWeight(currentWeights.Torso_Running);
-		$actions['Torso_Idle']?.setEffectiveWeight(currentWeights.Torso_Idle);
-
-		mixer.timeScale = 0.5;
 		mixer.update(dt);
 	});
 </script>

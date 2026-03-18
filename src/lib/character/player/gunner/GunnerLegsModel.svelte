@@ -18,7 +18,7 @@
 
 	let legsRotation = $state(0);
 	let currentWeights = $state({ Legs_Idle: 1, Legs_Forward: 0, Legs_Left: 0, Legs_Right: 0 });
-	const WEIGHT_LERP = 8;
+	const WEIGHT_LERP = 40;
 
 	$effect(() => {
 		if (!$actions?.['Legs_Idle']) return;
@@ -27,6 +27,7 @@
 			if (!a) continue;
 			a.reset().play();
 			a.setEffectiveWeight(name === 'Legs_Idle' ? 1 : 0);
+			a.timeScale = name === 'Legs_Idle' ? 0.4 : 0.8;
 		}
 	});
 
@@ -58,8 +59,7 @@
 		const wFwdRight = Math.max(0, rgtNorm) * moveIntensity;
 
 		const lerpFactor = Math.min(1, dt * WEIGHT_LERP);
-		const idleLerpFactor = lerpFactor * 0.5;
-		currentWeights.Legs_Idle += (wIdle - currentWeights.Legs_Idle) * idleLerpFactor;
+		currentWeights.Legs_Idle += (wIdle - currentWeights.Legs_Idle) * lerpFactor;
 		currentWeights.Legs_Forward += (wFwd - currentWeights.Legs_Forward) * lerpFactor;
 		currentWeights.Legs_Left += (wFwdLeft - currentWeights.Legs_Left) * lerpFactor;
 		currentWeights.Legs_Right += (wFwdRight - currentWeights.Legs_Right) * lerpFactor;
@@ -69,7 +69,6 @@
 		$actions['Legs_Left']?.setEffectiveWeight(currentWeights.Legs_Left);
 		$actions['Legs_Right']?.setEffectiveWeight(currentWeights.Legs_Right);
 
-		mixer.timeScale = 0.5;
 		mixer.update(dt);
 	});
 </script>
