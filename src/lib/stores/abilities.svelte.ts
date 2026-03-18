@@ -11,19 +11,8 @@ export const abilityState = $state({
 	adrenalineCooldownUntil: 0, // ms (gunner adrenaline, 5s)
 	gunnerAttackCooldownUntil: 0, // ms (gunner auto-fire rate, ~150ms)
 	ultimateCooldownUntil: 0, // ms (all classes, 35s)
-	adrenalineUntil: 0, // ms — visual effect active during adrenaline
-	lockedUntil: 0 // ms — blocks all abilities while any ability is active
+	adrenalineUntil: 0 // ms — visual effect active during adrenaline
 });
-
-export const ABILITY_LOCK_MS = 150; // Prevent ability overlap
-
-export function isAbilityLocked(): boolean {
-	return abilityState.lockedUntil > Date.now();
-}
-
-export function lockAbilities() {
-	abilityState.lockedUntil = Date.now() + ABILITY_LOCK_MS;
-}
 
 // Heal beam — written by AbilityInput, read by HealBeam (3D scene)
 export const healBeam = $state({ active: false, toX: 0, toZ: 0, until: 0 });
@@ -77,5 +66,4 @@ export function resetAbilities() {
 	axeSwingFlash.yaw = 0;
 	axeSwingFlash.until = 0;
 	ultimateFlash.until = 0;
-	abilityState.lockedUntil = 0;
 }

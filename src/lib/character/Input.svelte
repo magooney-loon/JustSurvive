@@ -7,8 +7,6 @@
 	import { localPos, localAim, tpsCamera } from '$lib/stores/movement.svelte.js';
 	import {
 		abilityState,
-		isAbilityLocked,
-		lockAbilities,
 		healBeam,
 		HEAL_BEAM_MS,
 		shotFlash,
@@ -247,11 +245,9 @@
 
 		if (myState.classChoice === 'spotter') {
 			if (e.button === 0) {
-				if (isAbilityLocked()) return;
 				if (abilityState.markCooldownUntil > Date.now()) return;
 				const enemy = nearestEnemyToAim(15_000);
 				if (enemy) {
-					lockAbilities();
 					combatActions.steadyShot(sid, enemy.id);
 					soundActions.playSpotterMark();
 					soundActions.playHitmarker();
@@ -261,9 +257,7 @@
 					logAbility.info('SPOTTER: steady shot enemy', enemy.id);
 				}
 			} else if (e.button === 2) {
-				if (isAbilityLocked()) return;
 				if (abilityState.pingCooldownUntil > Date.now()) return;
-				lockAbilities();
 				combatActions.spotterFlash(sid);
 				soundActions.playSpotterPing();
 				abilityState.pingCooldownUntil = Date.now() + 3000;
@@ -280,9 +274,7 @@
 			if (e.button === 0) {
 				gunnerHoldingLeft = true;
 			} else if (e.button === 2) {
-				if (isAbilityLocked()) return;
 				if (abilityState.adrenalineCooldownUntil > Date.now()) return;
-				lockAbilities();
 				combatActions.adrenaline(sid);
 				soundActions.playGunnerAdrenaline();
 				abilityState.adrenalineCooldownUntil = Date.now() + 5000;
@@ -295,9 +287,7 @@
 
 		if (myState.classChoice === 'tank') {
 			if (e.button === 0) {
-				if (isAbilityLocked()) return;
 				if (abilityState.bashCooldownUntil > Date.now()) return;
-				lockAbilities();
 				combatActions.axeSwing(sid);
 				soundActions.playTankBash();
 				soundActions.playHitmarker();
@@ -307,9 +297,7 @@
 				axeSwingFlash.until = Date.now() + AXE_SWING_FLASH_MS;
 				logAbility.info('TANK: axe swing');
 			} else if (e.button === 2) {
-				if (isAbilityLocked()) return;
 				if (abilityState.chargeCooldownUntil > Date.now()) return;
-				lockAbilities();
 				combatActions.chargeActivate(sid);
 				soundActions.playTankBrace();
 
@@ -322,9 +310,7 @@
 
 		if (myState.classChoice === 'healer') {
 			if (e.button === 0) {
-				if (isAbilityLocked()) return;
 				if (abilityState.healCooldownUntil > Date.now()) return;
-				lockAbilities();
 				// Server auto-targets lowest HP teammate; find nearest for local VFX only
 				const target = nearestAliveTeammate(10_000);
 				combatActions.healPlayer(sid);
@@ -338,10 +324,8 @@
 				}
 				logAbility.info('HEALER: chain heal');
 			} else if (e.button === 2) {
-				if (isAbilityLocked()) return;
 				const target = nearestDowned(3_000);
 				if (target) {
-					lockAbilities();
 					combatActions.reviveStart(sid, target.playerIdentity);
 					soundActions.playHealerRevive();
 					logAbility.info('HEALER: revive target', target.playerIdentity.toHexString());
