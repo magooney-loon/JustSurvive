@@ -247,16 +247,32 @@
 	);
 
 	const isDowned = $derived(player.status === 'downed');
-	const isStunned = $derived.by(() => {
-		const nowMs = Date.now();
-		return player.stunUntil ? Number(player.stunUntil.microsSinceUnixEpoch) / 1000 > nowMs : false;
+
+	// Time tracker for stun/slow checks
+	let nowMs = $state(0);
+
+	// Track stun/slow state locally to handle latency
+	let remoteStunnedUntil = $state(0);
+	let remoteSlowedUntil = $state(0);
+	let prevStunMicros: bigint | undefined;
+	let prevSlowMicros: bigint | undefined;
+	$effect(() => {
+		const stunMicros = player.stunUntil?.microsSinceUnixEpoch;
+		const slowMicros = player.slowedUntil?.microsSinceUnixEpoch;
+
+		if (stunMicros !== prevStunMicros && stunMicros != null) {
+			remoteStunnedUntil = Date.now() + 2000; // 2 second stun duration
+		}
+		prevStunMicros = stunMicros;
+
+		if (slowMicros !== prevSlowMicros && slowMicros != null) {
+			remoteSlowedUntil = Date.now() + 3000; // 3 second slow duration
+		}
+		prevSlowMicros = slowMicros;
 	});
-	const isSlowed = $derived.by(() => {
-		const nowMs = Date.now();
-		return player.slowedUntil
-			? Number(player.slowedUntil.microsSinceUnixEpoch) / 1000 > nowMs
-			: false;
-	});
+
+	const isStunned = $derived(remoteStunnedUntil > nowMs);
+	const isSlowed = $derived(remoteSlowedUntil > nowMs);
 	const downedTilt = $derived(isDowned ? -Math.PI / 2 : 0);
 	const downedYOffset = $derived(isDowned ? -0.35 : 0);
 
@@ -307,6 +323,8 @@
 	let reticleScale = $state(0.5);
 
 	useTask((dt) => {
+		nowMs = Date.now();
+
 		if (isLocal && overridePos) {
 			// During adrenaline effect, lerp toward target for visual effect
 			// Otherwise snap instantly (optimistic local movement)

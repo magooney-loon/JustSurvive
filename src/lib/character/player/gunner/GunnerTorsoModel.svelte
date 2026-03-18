@@ -44,7 +44,7 @@
 			if (!a) continue;
 			a.reset().play();
 			a.setEffectiveWeight(0);
-			a.timeScale = 0.72;
+			a.timeScale = 0.42;
 		}
 		$actions['Torso_Idle']?.setEffectiveWeight(1);
 	});
