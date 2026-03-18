@@ -1,5 +1,7 @@
 // ─── Pure Utility Functions ───────────────────────────────────────────────────
 
+import { CLASS_MAX_HP, CLASS_MAX_STAMINA } from './constants.js';
+
 export function generateCode(seed: bigint): string {
 	const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
 	let s = seed;
@@ -12,13 +14,11 @@ export function generateCode(seed: bigint): string {
 }
 
 export function classMaxHp(cls: string): bigint {
-	return cls === 'tank' ? 200n : 100n;
+	return CLASS_MAX_HP[cls] ?? 100n;
 }
 
 export function classMaxStamina(cls: string): bigint {
-	if (cls === 'spotter') return 600n;
-	if (cls === 'tank') return 300n;
-	return 80n;
+	return CLASS_MAX_STAMINA[cls] ?? 100n;
 }
 
 // Base stamina regen per second (before ramp)
@@ -40,7 +40,8 @@ export function ts(micros: bigint): any {
 
 // Returns 2n if player has an active double-damage buff, else 1n
 export function damageMultiplier(ps: any, now: bigint): bigint {
-	if (ps.doubleDamageUntil && now < (ps.doubleDamageUntil.microsSinceUnixEpoch as bigint)) return 2n;
+	if (ps.doubleDamageUntil && now < (ps.doubleDamageUntil.microsSinceUnixEpoch as bigint))
+		return 2n;
 	return 1n;
 }
 

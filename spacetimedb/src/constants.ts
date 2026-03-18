@@ -179,6 +179,20 @@ export const CLASS_SPRINT_SPEED: Record<string, bigint> = {
 	healer: 8500n
 };
 
+export const CLASS_MAX_HP: Record<string, bigint> = {
+	spotter: 100n,
+	gunner: 120n,
+	tank: 180n,
+	healer: 90n
+};
+
+export const CLASS_MAX_STAMINA: Record<string, bigint> = {
+	spotter: 100n,
+	gunner: 900n,
+	tank: 150n,
+	healer: 100n
+};
+
 // ─── Class: Spotter ──────────────────────────────────────────────────────────
 export const STEADY_SHOT_DAMAGE = 45n;
 export const STEADY_SHOT_RANGE_SQ = 529_000_000n; // 23 world units squared
