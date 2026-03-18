@@ -134,8 +134,8 @@ export const BOSS_PLAYER_SLOW_US = 3_000_000n; // 3s slow (scp_096)
 
 // ─── Combat: Shared ────────────────────────────────────────────────────────────
 export const MELEE_RANGE = 2000n;
-export const BOSS_MELEE_RANGE = 2200n; // Boss attacks within 2.2 units
-export const BOSS_STOP_DIST = 2000n; // Boss stops walking at 2.0 units (visual deadzone)
+export const BOSS_MELEE_RANGE = 2400n; // Boss attacks within 2.4 units
+export const BOSS_STOP_DIST = 2300n; // Boss stops walking at 2.3 units (visual deadzone)
 
 // Melee hit damage per enemy type (applied per tick when in melee range)
 export const MELEE_DAMAGE: Record<string, bigint> = {
