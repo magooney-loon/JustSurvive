@@ -25,7 +25,7 @@
 			if (!a) continue;
 			a.reset().play();
 			a.setEffectiveWeight(0);
-			a.timeScale = 0.8;
+			a.timeScale = 0.72;
 		}
 		$actions['Legs_Idle']?.setEffectiveWeight(1);
 	});
