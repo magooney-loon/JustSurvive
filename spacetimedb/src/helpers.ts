@@ -1,6 +1,13 @@
 // ─── Pure Utility Functions ───────────────────────────────────────────────────
 
-import { CLASS_MAX_HP, CLASS_MAX_STAMINA } from './constants.js';
+import {
+	CLASS_MAX_HP,
+	CLASS_MAX_STAMINA,
+	CLASS_HP_REGEN_BASE,
+	CLASS_HP_REGEN_MAX,
+	CLASS_STAMINA_REGEN_BASE,
+	CLASS_STAMINA_REGEN_RAMP
+} from './constants.js';
 
 export function generateCode(seed: bigint): string {
 	const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
@@ -21,16 +28,24 @@ export function classMaxStamina(cls: string): bigint {
 	return CLASS_MAX_STAMINA[cls] ?? 100n;
 }
 
+// Base HP regen per second
+export function classBaseHpRegen(cls: string): bigint {
+	return CLASS_HP_REGEN_BASE[cls] ?? 2n;
+}
+
+// Max HP regen per second (after ramp)
+export function classMaxHpRegen(cls: string): bigint {
+	return CLASS_HP_REGEN_MAX[cls] ?? 8n;
+}
+
 // Base stamina regen per second (before ramp)
-export function classBaseRegen(cls: string): bigint {
-	if (cls === 'spotter' || cls === 'tank') return 4n;
-	return 2n;
+export function classBaseStaminaRegen(cls: string): bigint {
+	return CLASS_STAMINA_REGEN_BASE[cls] ?? 2n;
 }
 
 // Max ramp-up stamina regen per second (added on top of base after 5s rest)
-export function classRampRegen(cls: string): bigint {
-	if (cls === 'spotter' || cls === 'tank') return 9n;
-	return 6n;
+export function classRampStaminaRegen(cls: string): bigint {
+	return CLASS_STAMINA_REGEN_RAMP[cls] ?? 6n;
 }
 
 // Shorthand to create a Timestamp-compatible value from raw microseconds

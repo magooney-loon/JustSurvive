@@ -3,7 +3,7 @@
 // advance_day_phase: cycles dawn → day → dusk → night, increments cycle number.
 
 import { ScheduleAt } from 'spacetimedb';
-import { ts, classBaseRegen, classRampRegen } from '../helpers.js';
+import { ts, classBaseStaminaRegen, classRampStaminaRegen } from '../helpers.js';
 import {
 	DAY_PHASES,
 	ARENA_RADIUS_SRV,
@@ -45,8 +45,8 @@ export function movePlayer(
 		}
 	}
 
-	const BASE_REGEN_PER_SEC = classBaseRegen(ps.classChoice);
-	const RAMP_REGEN_PER_SEC = classRampRegen(ps.classChoice);
+	const BASE_REGEN_PER_SEC = classBaseStaminaRegen(ps.classChoice);
+	const RAMP_REGEN_PER_SEC = classRampStaminaRegen(ps.classChoice);
 	const now = ctx.timestamp.microsSinceUnixEpoch as bigint;
 	const lastMoveAt = (ps.lastMoveAt?.microsSinceUnixEpoch ?? now) as bigint;
 	const dtMicros = now > lastMoveAt ? now - lastMoveAt : 0n;
@@ -91,7 +91,11 @@ export function movePlayer(
 		const hasSpeedBoost =
 			ps.speedBoostUntil && (ps.speedBoostUntil.microsSinceUnixEpoch as bigint) > now;
 		// During charge allow 6x base speed; post-charge speed boost is 1.5x
-		const maxSpeed = isTankCharging ? baseSpeed * 6n : hasSpeedBoost ? (baseSpeed * 3n) / 2n : baseSpeed;
+		const maxSpeed = isTankCharging
+			? baseSpeed * 6n
+			: hasSpeedBoost
+				? (baseSpeed * 3n) / 2n
+				: baseSpeed;
 		const maxDist = (maxSpeed * dtMicros * 3n) / (2n * MICROS_PER_SEC);
 		const dx = (posX as bigint) - (ps.posX as bigint);
 		const dz = (posZ as bigint) - (ps.posZ as bigint);
@@ -152,7 +156,9 @@ export function advanceDayPhase(ctx: any, { arg }: any) {
 	// Revive all downed players at the end of each phase
 	for (const p of ctx.db.playerState.player_state_session_id.filter(arg.sessionId)) {
 		if (p.status !== 'downed') continue;
-		const speedBoostUntil = ts((ctx.timestamp.microsSinceUnixEpoch as bigint) + PHASE_REVIVE_SPEED_BOOST_US);
+		const speedBoostUntil = ts(
+			(ctx.timestamp.microsSinceUnixEpoch as bigint) + PHASE_REVIVE_SPEED_BOOST_US
+		);
 		ctx.db.playerState.id.update({ ...p, hp: 50n, status: 'alive', speedBoostUntil });
 	}
 

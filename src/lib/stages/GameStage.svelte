@@ -177,9 +177,13 @@
 				? 0.45
 				: 1.0
 			: 1.0;
+		const myStateAny = myState as any;
+		const walkSpeed = Number(myStateAny.walkSpeed ?? 7500n) / 1000;
+		const sprintSpeed = Number(myStateAny.sprintSpeed ?? 14000n) / 1000;
 		updateLocalMovement(
 			dt,
-			myState.classChoice,
+			walkSpeed,
+			sprintSpeed,
 			hasStamina,
 			camYaw,
 			myTankState?.isCharging ?? false,

@@ -30,6 +30,14 @@
 	const { gltf, actions, mixer } = useGltfAnimations<TorsoAnim>();
 
 	let torsoRotation = $state(0);
+	let currentWeights = $state({
+		Torso_Idle: 1,
+		Torso_Running: 0,
+		Torso_Shooting: 0,
+		Torso_Shooting2: 0,
+		Torso_Ability: 0
+	});
+	const WEIGHT_LERP = 15;
 
 	$effect(() => {
 		if (!$actions?.['Torso_Idle']) return;
@@ -44,7 +52,7 @@
 			if (!a) continue;
 			a.reset().play();
 			a.setEffectiveWeight(0);
-			a.timeScale = 0.72;
+			a.timeScale = 0.42;
 		}
 		$actions['Torso_Idle']?.setEffectiveWeight(1);
 	});
@@ -83,6 +91,7 @@
 			targetAnim = 'Torso_Idle';
 		}
 
+		const lerpFactor = Math.min(1, dt * WEIGHT_LERP);
 		for (const name of [
 			'Torso_Idle',
 			'Torso_Running',
@@ -90,7 +99,10 @@
 			'Torso_Shooting2',
 			'Torso_Ability'
 		] as TorsoAnim[]) {
-			$actions[name]?.setEffectiveWeight(name === targetAnim ? 1 : 0);
+			const targetWeight = name === targetAnim ? 1 : 0;
+			currentWeights[name as TorsoAnim] +=
+				(targetWeight - currentWeights[name as TorsoAnim]) * lerpFactor;
+			$actions[name]?.setEffectiveWeight(currentWeights[name as TorsoAnim]);
 		}
 
 		mixer.update(dt);
@@ -102,5 +114,5 @@
 	url="{base}models/player/SpotterTorso.glb"
 	position={[0, 0, 0]}
 	rotation={[0, Math.PI, 0]}
-	scale={[-0.07, 0.07, 0.07]}
+	scale={0.07}
 />

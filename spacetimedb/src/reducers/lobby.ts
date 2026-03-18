@@ -6,7 +6,7 @@ import { SenderError } from 'spacetimedb/server';
 import { ScheduleAt } from 'spacetimedb';
 import { generateCode, classMaxHp, classMaxStamina, ts } from '../helpers.js';
 import { clearLobbyMessages } from './shared.js';
-import { BOSS_SPAWN_INTERVAL_US } from '../constants.js';
+import { BOSS_SPAWN_INTERVAL_US, CLASS_WALK_SPEED, CLASS_SPRINT_SPEED } from '../constants.js';
 
 // ─── create_lobby ─────────────────────────────────────────────────────────────
 
@@ -366,6 +366,8 @@ export function fireStartGame(ctx: any, { arg }: any) {
 			maxHp: classMaxHp(p.classChoice),
 			stamina: classMaxStamina(p.classChoice),
 			maxStamina: classMaxStamina(p.classChoice),
+			walkSpeed: CLASS_WALK_SPEED[p.classChoice] ?? 7500n,
+			sprintSpeed: CLASS_SPRINT_SPEED[p.classChoice] ?? 9000n,
 			lastMoveAt: ctx.timestamp,
 			staminaRegenStartAt: undefined,
 			staminaRegenCarry: 0n,

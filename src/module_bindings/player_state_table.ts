@@ -19,6 +19,8 @@ export default __t.row({
   maxHp: __t.u64().name("max_hp"),
   stamina: __t.u64(),
   maxStamina: __t.u64().name("max_stamina"),
+  walkSpeed: __t.u64().name("walk_speed"),
+  sprintSpeed: __t.u64().name("sprint_speed"),
   lastMoveAt: __t.timestamp().name("last_move_at"),
   staminaRegenStartAt: __t.option(__t.timestamp()).name("stamina_regen_start_at"),
   staminaRegenCarry: __t.u64().name("stamina_regen_carry"),

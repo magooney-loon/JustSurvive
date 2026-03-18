@@ -32,8 +32,8 @@
 	let bobPhase = 0;
 	const BOB_SPEED_WALK = 8;
 	const BOB_SPEED_RUN = 14;
-	const BOB_AMOUNT = 0.12;
-	const BOB_RUN_MULT = 2.2;
+	const BOB_AMOUNT = 0.06;
+	const BOB_RUN_MULT = 1.5;
 	let camBob = 0;
 
 	// Camera smoothing

@@ -12,19 +12,19 @@ export const BOSS_DEAD_CLEANUP_US = 5_000_000n; // 5s after boss death before re
 
 // ─── Enemy Base Stats ──────────────────────────────────────────────────────────
 export const ENEMY_BASE_SPEED: Record<string, bigint> = {
-	basic: 3200n,
-	fast: 5200n,
-	brute: 2100n,
-	spitter: 2600n,
-	caster: 1400n,
-	caster_railgun: 1200n,
-	caster_chaingun: 1800n,
-	caster_bfg: 5000n,
-	caster_shotgun: 1500n,
-	jumper: 4800n,
-	ogre: 2500n,
-	ogre_berserker: 4200n,
-	ogre_stalker: 1600n
+	basic: 4000n,
+	fast: 6500n,
+	brute: 2600n,
+	spitter: 3200n,
+	caster: 1750n,
+	caster_railgun: 1500n,
+	caster_chaingun: 2250n,
+	caster_bfg: 6250n,
+	caster_shotgun: 1900n,
+	jumper: 6000n,
+	ogre: 3100n,
+	ogre_berserker: 5250n,
+	ogre_stalker: 2000n
 };
 
 export const ENEMY_HP: Record<string, bigint> = {
@@ -75,12 +75,12 @@ export const BOSS_HP: Record<string, bigint> = {
 };
 
 export const BOSS_SPEED: Record<string, bigint> = {
-	ghost_dragon: 4800n,
-	worm_monster: 3500n,
-	rabid_dog: 7000n,
-	scp_096: 5000n,
-	terror_reaper: 3800n,
-	katze_miu: 5400n
+	ghost_dragon: 5800n,
+	worm_monster: 4200n,
+	rabid_dog: 8400n,
+	scp_096: 6000n,
+	terror_reaper: 4600n,
+	katze_miu: 6500n
 };
 
 export const BOSS_DAMAGE: Record<string, bigint> = {
@@ -166,17 +166,17 @@ export const STAMINA_REGEN_DELAY_US = 1_000_000n; // 1s delay before stamina reg
 
 // Class walk/sprint speed limits (server units per second; validated server-side)
 export const CLASS_WALK_SPEED: Record<string, bigint> = {
-	spotter: 5000n,
-	gunner: 4500n,
-	tank: 2500n,
-	healer: 5000n
+	spotter: 7500n,
+	gunner: 7500n,
+	tank: 7500n,
+	healer: 7500n
 };
 
 export const CLASS_SPRINT_SPEED: Record<string, bigint> = {
-	spotter: 9000n,
-	gunner: 7500n,
-	tank: 3500n,
-	healer: 8500n
+	spotter: 14000n,
+	gunner: 14000n,
+	tank: 14000n,
+	healer: 14000n
 };
 
 export const CLASS_MAX_HP: Record<string, bigint> = {
@@ -188,9 +188,39 @@ export const CLASS_MAX_HP: Record<string, bigint> = {
 
 export const CLASS_MAX_STAMINA: Record<string, bigint> = {
 	spotter: 100n,
-	gunner: 900n,
+	gunner: 100n,
 	tank: 150n,
 	healer: 100n
+};
+
+// Class HP regen (HP per second)
+export const CLASS_HP_REGEN_BASE: Record<string, bigint> = {
+	spotter: 2n,
+	gunner: 2n,
+	tank: 4n,
+	healer: 2n
+};
+
+export const CLASS_HP_REGEN_MAX: Record<string, bigint> = {
+	spotter: 8n,
+	gunner: 8n,
+	tank: 10n,
+	healer: 8n
+};
+
+// Class stamina regen (stamina per second)
+export const CLASS_STAMINA_REGEN_BASE: Record<string, bigint> = {
+	spotter: 4n,
+	gunner: 2n,
+	tank: 4n,
+	healer: 2n
+};
+
+export const CLASS_STAMINA_REGEN_RAMP: Record<string, bigint> = {
+	spotter: 9n,
+	gunner: 6n,
+	tank: 9n,
+	healer: 6n
 };
 
 // ─── Class: Spotter ──────────────────────────────────────────────────────────

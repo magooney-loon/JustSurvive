@@ -112,6 +112,8 @@ export const PlayerState = table(
 		maxHp: t.u64(),
 		stamina: t.u64(),
 		maxStamina: t.u64(),
+		walkSpeed: t.u64(),
+		sprintSpeed: t.u64(),
 		lastMoveAt: t.timestamp(),
 		staminaRegenStartAt: t.timestamp().optional(),
 		staminaRegenCarry: t.u64(),

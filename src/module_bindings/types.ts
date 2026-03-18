@@ -261,6 +261,8 @@ export const PlayerState = __t.object("PlayerState", {
   maxHp: __t.u64(),
   stamina: __t.u64(),
   maxStamina: __t.u64(),
+  walkSpeed: __t.u64(),
+  sprintSpeed: __t.u64(),
   lastMoveAt: __t.timestamp(),
   staminaRegenStartAt: __t.option(__t.timestamp()),
   staminaRegenCarry: __t.u64(),

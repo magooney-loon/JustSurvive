@@ -25,11 +25,11 @@ export const SHOT_FLASH_MS = 200;
 
 // Spotter flash stun cone — written by AbilityInput, read by SpotterFlashEffect
 export const spotterFlash = $state({ active: false, yaw: 0, until: 0 });
-export const SPOTTER_FLASH_MS = 500;
+export const SPOTTER_FLASH_MS = 200;
 
 // Steady shot flash — optimistic local effect for the shooter
 export const steadyShotFlash = $state({ until: 0, yaw: 0 });
-export const STEADY_SHOT_FLASH_MS = 250;
+export const STEADY_SHOT_FLASH_MS = 833;
 
 // Torso ability animation (spotter flash stun, gunner adrenaline)
 export const torsoAbilityFlash = $state({ until: 0 });

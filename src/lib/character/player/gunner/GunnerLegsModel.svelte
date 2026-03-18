@@ -17,6 +17,8 @@
 	const { gltf, actions, mixer } = useGltfAnimations<LegsAnim>();
 
 	let legsRotation = $state(0);
+	let currentWeights = $state({ Legs_Idle: 1, Legs_Forward: 0, Legs_Left: 0, Legs_Right: 0 });
+	const WEIGHT_LERP = 15;
 
 	$effect(() => {
 		if (!$actions?.['Legs_Idle']) return;
@@ -51,26 +53,22 @@
 
 		const isMoving = speed > 0.5;
 
-		if (!isMoving) {
-			$actions['Legs_Idle']?.setEffectiveWeight(1);
-			$actions['Legs_Forward']?.setEffectiveWeight(0);
-			$actions['Legs_Left']?.setEffectiveWeight(0);
-			$actions['Legs_Right']?.setEffectiveWeight(0);
-		} else if (l && !r) {
-			$actions['Legs_Idle']?.setEffectiveWeight(0);
-			$actions['Legs_Forward']?.setEffectiveWeight(0);
-			$actions['Legs_Left']?.setEffectiveWeight(1);
-			$actions['Legs_Right']?.setEffectiveWeight(0);
-		} else if (r && !l) {
-			$actions['Legs_Idle']?.setEffectiveWeight(0);
-			$actions['Legs_Forward']?.setEffectiveWeight(0);
-			$actions['Legs_Left']?.setEffectiveWeight(0);
-			$actions['Legs_Right']?.setEffectiveWeight(1);
-		} else {
-			$actions['Legs_Idle']?.setEffectiveWeight(0);
-			$actions['Legs_Forward']?.setEffectiveWeight(1);
-			$actions['Legs_Left']?.setEffectiveWeight(0);
-			$actions['Legs_Right']?.setEffectiveWeight(0);
+		let targetAnim: LegsAnim = 'Legs_Idle';
+		if (isMoving) {
+			if (l && !r) {
+				targetAnim = 'Legs_Left';
+			} else if (r && !l) {
+				targetAnim = 'Legs_Right';
+			} else {
+				targetAnim = 'Legs_Forward';
+			}
+		}
+
+		const lerpFactor = Math.min(1, dt * WEIGHT_LERP);
+		for (const name of ['Legs_Idle', 'Legs_Forward', 'Legs_Left', 'Legs_Right'] as LegsAnim[]) {
+			const targetWeight = name === targetAnim ? 1 : 0;
+			currentWeights[name] += (targetWeight - currentWeights[name]) * lerpFactor;
+			$actions[name]?.setEffectiveWeight(currentWeights[name]);
 		}
 
 		mixer.update(dt);

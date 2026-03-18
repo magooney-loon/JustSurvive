@@ -33,13 +33,6 @@ export { input, localPos, localVelocity };
 export const bossShake = $state({ intensity: 0 });
 export const spectateState = $state({ index: 0 });
 
-export const CLASS_SPEED: Record<string, { walk: number; sprint: number }> = {
-	spotter: { walk: 5, sprint: 9 },
-	gunner: { walk: 4.5, sprint: 7.5 },
-	tank: { walk: 2.5, sprint: 3.5 },
-	healer: { walk: 5, sprint: 8.5 }
-};
-
 export function resetMovement() {
 	input.forward = false;
 	input.back = false;
@@ -64,7 +57,8 @@ export function resetMovement() {
 
 export function updateLocalMovement(
 	dt: number,
-	playerClass: string,
+	walkSpeed: number,
+	sprintSpeed: number,
 	hasStamina: boolean,
 	cameraYaw: number,
 	isBracing: boolean = false,
@@ -96,7 +90,7 @@ export function updateLocalMovement(
 		}
 		return;
 	}
-	const speeds = CLASS_SPEED[playerClass] ?? CLASS_SPEED.gunner;
+	const speeds = { walk: walkSpeed, sprint: sprintSpeed };
 	const isSprinting = input.sprint && hasStamina;
 	const speed = (isSprinting ? speeds.sprint : speeds.walk) * slowMultiplier;
 
