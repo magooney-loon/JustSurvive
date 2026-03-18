@@ -30,14 +30,6 @@
 	const { gltf, actions, mixer } = useGltfAnimations<TorsoAnim>();
 
 	let torsoRotation = $state(0);
-	let currentWeights = $state({
-		Torso_Idle: 1,
-		Torso_Running: 0,
-		Torso_Shooting: 0,
-		Torso_Shooting2: 0,
-		Torso_Ability: 0
-	});
-	const WEIGHT_LERP = 20;
 
 	$effect(() => {
 		if (!$actions?.['Torso_Idle']) return;
@@ -52,7 +44,6 @@
 			if (!a) continue;
 			a.reset().play();
 			a.setEffectiveWeight(0);
-			a.timeScale = name === 'Torso_Idle' || name === 'Torso_Ability' ? 0.4 : 0.8;
 		}
 		$actions['Torso_Idle']?.setEffectiveWeight(1);
 	});
@@ -91,8 +82,6 @@
 			targetAnim = 'Torso_Idle';
 		}
 
-		const lerpFactor = Math.min(1, dt * WEIGHT_LERP);
-
 		for (const name of [
 			'Torso_Idle',
 			'Torso_Running',
@@ -100,9 +89,7 @@
 			'Torso_Shooting2',
 			'Torso_Ability'
 		] as TorsoAnim[]) {
-			const targetWeight = name === targetAnim ? 1 : 0;
-			currentWeights[name] += (targetWeight - currentWeights[name]) * lerpFactor;
-			$actions[name]?.setEffectiveWeight(currentWeights[name]);
+			$actions[name]?.setEffectiveWeight(name === targetAnim ? 1 : 0);
 		}
 
 		mixer.update(dt);

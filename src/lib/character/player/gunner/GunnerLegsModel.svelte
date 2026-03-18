@@ -17,8 +17,6 @@
 	const { gltf, actions, mixer } = useGltfAnimations<LegsAnim>();
 
 	let legsRotation = $state(0);
-	let currentWeights = $state({ Legs_Idle: 1, Legs_Forward: 0, Legs_Left: 0, Legs_Right: 0 });
-	const WEIGHT_LERP = 40;
 
 	$effect(() => {
 		if (!$actions?.['Legs_Idle']) return;
@@ -26,9 +24,9 @@
 			const a = $actions[name];
 			if (!a) continue;
 			a.reset().play();
-			a.setEffectiveWeight(name === 'Legs_Idle' ? 1 : 0);
-			a.timeScale = name === 'Legs_Idle' ? 0.4 : 0.8;
+			a.setEffectiveWeight(0);
 		}
+		$actions['Legs_Idle']?.setEffectiveWeight(1);
 	});
 
 	useTask((dt) => {
@@ -50,24 +48,29 @@
 		const rotDiff = targetRotation - legsRotation;
 		legsRotation += rotDiff * Math.min(1, dt * 12);
 
-		const moveIntensity = Math.min(speed / 4, 1);
-		const rgtNorm = (left ? -1 : 0) + (right ? 1 : 0);
+		const isMoving = speed > 0.5;
 
-		const wIdle = 1 - moveIntensity;
-		const wFwd = (1 - Math.abs(rgtNorm)) * moveIntensity;
-		const wFwdLeft = Math.max(0, -rgtNorm) * moveIntensity;
-		const wFwdRight = Math.max(0, rgtNorm) * moveIntensity;
-
-		const lerpFactor = Math.min(1, dt * WEIGHT_LERP);
-		currentWeights.Legs_Idle += (wIdle - currentWeights.Legs_Idle) * lerpFactor;
-		currentWeights.Legs_Forward += (wFwd - currentWeights.Legs_Forward) * lerpFactor;
-		currentWeights.Legs_Left += (wFwdLeft - currentWeights.Legs_Left) * lerpFactor;
-		currentWeights.Legs_Right += (wFwdRight - currentWeights.Legs_Right) * lerpFactor;
-
-		$actions['Legs_Idle']?.setEffectiveWeight(currentWeights.Legs_Idle);
-		$actions['Legs_Forward']?.setEffectiveWeight(currentWeights.Legs_Forward);
-		$actions['Legs_Left']?.setEffectiveWeight(currentWeights.Legs_Left);
-		$actions['Legs_Right']?.setEffectiveWeight(currentWeights.Legs_Right);
+		if (!isMoving) {
+			$actions['Legs_Idle']?.setEffectiveWeight(1);
+			$actions['Legs_Forward']?.setEffectiveWeight(0);
+			$actions['Legs_Left']?.setEffectiveWeight(0);
+			$actions['Legs_Right']?.setEffectiveWeight(0);
+		} else if (l && !r) {
+			$actions['Legs_Idle']?.setEffectiveWeight(0);
+			$actions['Legs_Forward']?.setEffectiveWeight(0);
+			$actions['Legs_Left']?.setEffectiveWeight(1);
+			$actions['Legs_Right']?.setEffectiveWeight(0);
+		} else if (r && !l) {
+			$actions['Legs_Idle']?.setEffectiveWeight(0);
+			$actions['Legs_Forward']?.setEffectiveWeight(0);
+			$actions['Legs_Left']?.setEffectiveWeight(0);
+			$actions['Legs_Right']?.setEffectiveWeight(1);
+		} else {
+			$actions['Legs_Idle']?.setEffectiveWeight(0);
+			$actions['Legs_Forward']?.setEffectiveWeight(1);
+			$actions['Legs_Left']?.setEffectiveWeight(0);
+			$actions['Legs_Right']?.setEffectiveWeight(0);
+		}
 
 		mixer.update(dt);
 	});
