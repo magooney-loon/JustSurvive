@@ -27,7 +27,8 @@
 			.slice(0, 3)
 	);
 
-	const isInLobby = $derived(stageState.currentStage === 'lobby' && myEntry?.classChoice);
+	const isInLobby = $derived(stageState.currentStage === 'lobby' && myEntry);
+	const hasClass = $derived(!!myEntry?.classChoice);
 
 	function getLegsModel(classChoice: string) {
 		if (classChoice === 'spotter') return SpotterLegsModel;
@@ -41,14 +42,16 @@
 </script>
 
 <!-- Player class model on left side when in lobby -->
-{#if isInLobby && myEntry}
-	<!-- Local player in center -->
-	{@const LegsModel = getLegsModel(myEntry.classChoice)}
-	{@const TorsoModel = getTorsoModel(myEntry.classChoice)}
-	<T.Group position={[0, -0.5, -3]} rotation.y={Math.PI}>
-		<LegsModel speed={0} />
-		<TorsoModel speed={0} isShooting={0} isUsingAbility={0} />
-	</T.Group>
+{#if isInLobby}
+	<!-- Local player in center (only shown if class is selected) -->
+	{#if hasClass && myEntry}
+		{@const LegsModel = getLegsModel(myEntry.classChoice)}
+		{@const TorsoModel = getTorsoModel(myEntry.classChoice)}
+		<T.Group position={[0, -0.5, -3]} rotation.y={Math.PI}>
+			<LegsModel speed={0} />
+			<TorsoModel speed={0} isShooting={0} isUsingAbility={0} />
+		</T.Group>
+	{/if}
 
 	<!-- Other players around local player -->
 	{#each otherPlayers as p, i}
