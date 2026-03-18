@@ -79,12 +79,10 @@
 		const ability = isUsingAbility > 0.5;
 
 		let targetAnim: TorsoAnim;
-		if (ability) {
+		if (shooting) {
+			targetAnim = isMoving ? 'Torso_Shooting' : 'Torso_Shooting2';
+		} else if (ability) {
 			targetAnim = 'Torso_Ability';
-		} else if (shooting && isMoving) {
-			targetAnim = 'Torso_Shooting';
-		} else if (shooting && !isMoving) {
-			targetAnim = 'Torso_Shooting2';
 		} else if (isMoving) {
 			targetAnim = 'Torso_Running';
 		} else {
