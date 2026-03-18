@@ -52,7 +52,7 @@
 			if (!a) continue;
 			a.reset().play();
 			a.setEffectiveWeight(0);
-			a.timeScale = 0.42;
+			a.timeScale = 0.45;
 		}
 		$actions['Torso_Idle']?.setEffectiveWeight(1);
 	});
@@ -111,6 +111,6 @@
 	bind:gltf={$gltf}
 	url="{base}models/player/SpotterTorso.glb"
 	position={[0, 0, 0]}
-	rotation={[0, Math.PI, 0]}
+	rotation={[0, Math.PI / 1.2, 0]}
 	scale={0.07}
 />
