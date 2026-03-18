@@ -30,6 +30,7 @@
 	const { gltf, actions, mixer } = useGltfAnimations<TorsoAnim>();
 
 	let torsoRotation = $state(0);
+	let prevShooting = $state(false);
 	let currentWeights = $state({
 		Torso_Shooting: 0,
 		Torso_Shooting2: 0,
@@ -38,6 +39,8 @@
 		Torso_Ability: 0
 	});
 	const WEIGHT_LERP = 15;
+	const ROT_LERP = 6;
+	const ROT_LERP_SHOOTING = 25;
 
 	$effect(() => {
 		if (!$actions?.['Torso_Idle']) return;
@@ -64,15 +67,17 @@
 		const l = left ? 1 : 0;
 		const r = right ? 1 : 0;
 		const isBackwards = back;
+		const isForwards = !isBackwards && !l && !r && speed > 0.5;
 
 		if (l && !r) {
 			targetRotation = isBackwards ? -0.8 : 0.3;
 		} else if (r && !l) {
 			targetRotation = isBackwards ? 0.8 : -0.3;
+		} else if (isForwards) {
+			targetRotation = 0.15;
+		} else if (isBackwards) {
+			targetRotation = -0.2;
 		}
-
-		const rotDiff = targetRotation - torsoRotation;
-		torsoRotation += rotDiff * Math.min(1, dt * 12);
 
 		const isMoving = speed > 0.5;
 		const shooting = isShooting > 0.5;
@@ -88,6 +93,13 @@
 		} else {
 			targetAnim = 'Torso_Idle';
 		}
+
+		const isTransitioningToShoot = shooting && !prevShooting;
+		const rotLerp = isTransitioningToShoot ? ROT_LERP_SHOOTING : ROT_LERP;
+		const rotDiff = targetRotation - torsoRotation;
+		torsoRotation += rotDiff * Math.min(1, dt * rotLerp);
+
+		prevShooting = shooting;
 
 		const lerpFactor = Math.min(1, dt * WEIGHT_LERP);
 		for (const name of [
