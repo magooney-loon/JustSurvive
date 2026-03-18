@@ -203,7 +203,7 @@
 		align-items: center;
 		justify-content: flex-end;
 		padding-right: 8%;
-		perspective: 1200px;
+		perspective: 1800px;
 		overflow: hidden;
 	"
 >
@@ -237,9 +237,10 @@
 			color: white;
 			display: flex;
 			gap: 1.5rem;
+			height: 1250px;
 			align-items: flex-start;
-			transform: translateZ(-30px) rotateY(-8deg) skewY(1deg);
-			transform-style: preserve-3d;
+			transform: rotateY(-18deg);
+
 			box-shadow:
 				0 0 60px rgba(0,0,0,0.6),
 				-20px 0 40px rgba(0,0,0,0.4),
@@ -551,7 +552,7 @@
 		{#if currentLobby}
 			<div
 				class="rpgui-container framed-grey"
-				style="width: 340px; flex-shrink: 0; display: flex; flex-direction: column; gap: 0.5rem; padding: 1rem;"
+				style="width: 340px; height: 1200px; flex-shrink: 0; display: flex; flex-direction: column; gap: 0.5rem; padding: 1rem;"
 			>
 				<h4>Lobby Chat</h4>
 
@@ -559,7 +560,7 @@
 				<div
 					bind:this={chatEl}
 					class="rpgui-list-imp"
-					style="flex: 1; min-height: 200px; max-height: 420px; overflow-y: auto; display: flex; flex-direction: column; gap: 0.35rem; padding: 0.6rem;"
+					style="flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 0.35rem; padding: 0.6rem;"
 				>
 					{#if chatMessages.length === 0}
 						<p class="rpgui-center" style="color: rgba(255,255,255,0.25);">No messages yet</p>
@@ -621,7 +622,9 @@
 				</div>
 
 				<!-- Boss info carousel -->
-				<div style="padding-top: 0.5rem; border-top: 1px solid rgba(255,255,255,0.08);">
+				<div
+					style="padding-top: 0.5rem; height:450px; border-top: 1px solid rgba(255,255,255,0.08);"
+				>
 					<p
 						class="rpgui-center"
 						style="margin-bottom: 0.4rem; font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.1em; opacity: 0.5;"
@@ -717,9 +720,7 @@
 				</div>
 
 				<!-- Cycling tips -->
-				<div
-					style="padding: 0.55rem 0.6rem; min-height: 3.2rem; position: relative; overflow: hidden;"
-				>
+				<div style="padding: 0.55rem 0.6rem; height: 7rem; position: relative; overflow: hidden;">
 					{#key tipIndex}
 						{@const tip = TIPS[tipIndex]}
 						<div
